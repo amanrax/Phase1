@@ -1,218 +1,824 @@
 // src/pages/EditFarmer.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { farmerService } from "@/services/farmer.service";
+import geoService from "@/services/geo.service";
 
-const API_BASE_URL = "https://glowing-fishstick-xg76vqgjxxph67ww.app.github.dev:8000";
-
-interface FarmerForm {
-  firstName: string;
-  lastName: string;
-  phone: string;
-  province: string;
-  district: string;
+interface FarmerFormData {
+  // Personal Info
+  first_name: string;
+  last_name: string;
+  phone_primary: string;
+  phone_secondary: string;
+  email: string;
+  nrc: string;
+  date_of_birth: string;
+  gender: string;
+  ethnic_group: string;
+  // Address
+  province_code: string;
+  province_name: string;
+  district_code: string;
+  district_name: string;
+  chiefdom_code: string;
+  chiefdom_name: string;
+  village: string;
+  // Farm Info
+  farm_size_hectares: string;
+  crops_grown: string;
+  livestock_types: string;
+  has_irrigation: boolean;
+  years_farming: string;
+  // Household Info
+  household_size: string;
+  number_of_dependents: string;
+  primary_income_source: string;
 }
 
 export default function EditFarmer() {
   const navigate = useNavigate();
   const { farmerId } = useParams<{ farmerId: string }>();
-  const [formData, setFormData] = useState<FarmerForm>({
-    firstName: "",
-    lastName: "",
-    phone: "",
-    province: "",
-    district: "",
+  
+  const [formData, setFormData] = useState<FarmerFormData>({
+    first_name: "",
+    last_name: "",
+    phone_primary: "",
+    phone_secondary: "",
+    email: "",
+    nrc: "",
+    date_of_birth: "",
+    gender: "",
+    ethnic_group: "",
+    province_code: "",
+    province_name: "",
+    district_code: "",
+    district_name: "",
+    chiefdom_code: "",
+    chiefdom_name: "",
+    village: "",
+    farm_size_hectares: "",
+    crops_grown: "",
+    livestock_types: "",
+    has_irrigation: false,
+    years_farming: "",
+    household_size: "",
+    number_of_dependents: "",
+    primary_income_source: "",
   });
+
+  const [provinces, setProvinces] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [chiefdoms, setChiefdoms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    loadProvinces();
     if (farmerId) {
       fetchFarmer();
     }
   }, [farmerId]);
 
+  const loadProvinces = async () => {
+    try {
+      const data = await geoService.provinces();
+      setProvinces(data);
+    } catch (err) {
+      console.error("Failed to load provinces:", err);
+    }
+  };
+
+  const loadDistricts = async (provinceCode: string) => {
+    try {
+      const data = await geoService.districts(provinceCode);
+      setDistricts(data);
+    } catch (err) {
+      console.error("Failed to load districts:", err);
+    }
+  };
+
+  const loadChiefdoms = async (districtCode: string) => {
+    try {
+      const data = await geoService.chiefdoms(districtCode);
+      setChiefdoms(data);
+    } catch (err) {
+      console.error("Failed to load chiefdoms:", err);
+    }
+  };
+
   const fetchFarmer = async () => {
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/farmers/${farmerId}/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const farmer = await response.json();
-        setFormData({
-          firstName: farmer.personal_info?.first_name || "",
-          lastName: farmer.personal_info?.last_name || "",
-          phone: farmer.personal_info?.phone_primary || "",
-          province: farmer.address?.province || "",
-          district: farmer.address?.district || "",
-        });
-      } else {
-        setError("Failed to fetch farmer details");
+      const farmer = await farmerService.getFarmer(farmerId!);
+      
+      // Load districts and chiefdoms if province/district selected
+      if (farmer.address?.province_code) {
+        await loadDistricts(farmer.address.province_code);
       }
+      if (farmer.address?.district_code) {
+        await loadChiefdoms(farmer.address.district_code);
+      }
+
+      setFormData({
+        // Personal Info
+        first_name: farmer.personal_info?.first_name || "",
+        last_name: farmer.personal_info?.last_name || "",
+        phone_primary: farmer.personal_info?.phone_primary || "",
+        phone_secondary: farmer.personal_info?.phone_secondary || "",
+        email: farmer.personal_info?.email || "",
+        nrc: farmer.personal_info?.nrc || "",
+        date_of_birth: farmer.personal_info?.date_of_birth || "",
+        gender: farmer.personal_info?.gender || "",
+        ethnic_group: farmer.personal_info?.ethnic_group || "",
+        // Address
+        province_code: farmer.address?.province_code || "",
+        province_name: farmer.address?.province_name || "",
+        district_code: farmer.address?.district_code || "",
+        district_name: farmer.address?.district_name || "",
+        chiefdom_code: farmer.address?.chiefdom_code || "",
+        chiefdom_name: farmer.address?.chiefdom_name || "",
+        village: farmer.address?.village || "",
+        // Farm Info
+        farm_size_hectares: farmer.farm_info?.farm_size_hectares?.toString() || "",
+        crops_grown: farmer.farm_info?.crops_grown?.join(", ") || "",
+        livestock_types: farmer.farm_info?.livestock_types?.join(", ") || "",
+        has_irrigation: farmer.farm_info?.has_irrigation || false,
+        years_farming: farmer.farm_info?.years_farming?.toString() || "",
+        // Household Info
+        household_size: farmer.household_info?.household_size?.toString() || "",
+        number_of_dependents: farmer.household_info?.number_of_dependents?.toString() || "",
+        primary_income_source: farmer.household_info?.primary_income_source || "",
+      });
     } catch (err: any) {
-      setError(err.message || "Failed to fetch farmer");
+      setError(err.response?.data?.detail || err.message || "Failed to fetch farmer");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (field: keyof FarmerForm, value: string) => {
+  const handleChange = (field: keyof FarmerFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleProvinceChange = async (provinceCode: string) => {
+    const province = provinces.find(p => p.code === provinceCode);
+    setFormData(prev => ({
+      ...prev,
+      province_code: provinceCode,
+      province_name: province?.name || "",
+      district_code: "",
+      district_name: "",
+      chiefdom_code: "",
+      chiefdom_name: "",
+    }));
+    setDistricts([]);
+    setChiefdoms([]);
+    if (provinceCode) {
+      await loadDistricts(provinceCode);
+    }
+  };
+
+  const handleDistrictChange = async (districtCode: string) => {
+    const district = districts.find(d => d.code === districtCode);
+    setFormData(prev => ({
+      ...prev,
+      district_code: districtCode,
+      district_name: district?.name || "",
+      chiefdom_code: "",
+      chiefdom_name: "",
+    }));
+    setChiefdoms([]);
+    if (districtCode) {
+      await loadChiefdoms(districtCode);
+    }
+  };
+
+  const handleChiefdomChange = (chiefdomCode: string) => {
+    const chiefdom = chiefdoms.find(c => c.code === chiefdomCode);
+    setFormData(prev => ({
+      ...prev,
+      chiefdom_code: chiefdomCode,
+      chiefdom_name: chiefdom?.name || "",
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError("");
+    
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/farmers/${farmerId}/`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+      // Clean phone numbers (remove spaces)
+      const cleanPhone = (phone: string) => phone.replace(/[\s\-\(\)]/g, "");
+      
+      const payload: any = {
+        personal_info: {
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          phone_primary: cleanPhone(formData.phone_primary),
+          phone_secondary: formData.phone_secondary ? cleanPhone(formData.phone_secondary) : undefined,
+          email: formData.email || undefined,
+          nrc: formData.nrc,
+          date_of_birth: formData.date_of_birth,
+          gender: formData.gender,
+          ethnic_group: formData.ethnic_group || undefined,
         },
-        body: JSON.stringify({
-          personal_info: {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            phone_primary: formData.phone,
-          },
-          address: {
-            province: formData.province,
-            district: formData.district,
-          },
-        }),
-      });
+        address: {
+          province_code: formData.province_code,
+          province_name: formData.province_name,
+          district_code: formData.district_code,
+          district_name: formData.district_name,
+          chiefdom_code: formData.chiefdom_code || "",
+          chiefdom_name: formData.chiefdom_name || "",
+          village: formData.village,
+        },
+      };
 
-      if (response.ok) {
-        alert("✅ Updated!");
-        navigate("/farmers");
-      } else {
-        setError("Failed to update farmer");
+      // Add farm_info if any farm data exists
+      if (formData.farm_size_hectares || formData.crops_grown) {
+        payload.farm_info = {
+          farm_size_hectares: parseFloat(formData.farm_size_hectares) || 1,
+          crops_grown: formData.crops_grown ? formData.crops_grown.split(",").map((c: string) => c.trim()).filter(Boolean) : [],
+          livestock_types: formData.livestock_types ? formData.livestock_types.split(",").map((l: string) => l.trim()).filter(Boolean) : [],
+          has_irrigation: formData.has_irrigation,
+          years_farming: Math.min(parseInt(formData.years_farming) || 0, 100), // Cap at 100
+        };
       }
+
+      // Add household_info if any household data exists
+      if (formData.household_size || formData.primary_income_source) {
+        payload.household_info = {
+          household_size: parseInt(formData.household_size) || 1,
+          number_of_dependents: parseInt(formData.number_of_dependents) || 0,
+          primary_income_source: formData.primary_income_source || "Farming",
+        };
+      }
+
+      console.log("Update payload:", JSON.stringify(payload, null, 2));
+      await farmerService.update(farmerId!, payload);
+      alert("✅ Farmer updated successfully!");
+      navigate("/farmers");
     } catch (err: any) {
-      setError(err.message || "Error updating farmer");
+      console.error("Update error:", err);
+      console.error("Error response:", err.response?.data);
+      console.error("Full error details:", JSON.stringify(err.response?.data?.detail, null, 2));
+      
+      // Handle validation errors
+      if (err.response?.data?.detail) {
+        if (Array.isArray(err.response.data.detail)) {
+          // Pydantic validation errors
+          const errors = err.response.data.detail.map((e: any) => {
+            console.log("Validation error:", e);
+            return `${e.loc.join('.')}: ${e.msg} (input: ${JSON.stringify(e.input)})`;
+          }).join('\n');
+          setError(errors);
+        } else {
+          setError(err.response.data.detail);
+        }
+      } else {
+        setError(err.message || "Error updating farmer");
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <p style={{ padding: "20px" }}>Loading...</p>;
+  if (loading) {
+    return (
+      <div style={{ padding: "40px", textAlign: "center" }}>
+        <p>⏳ Loading farmer details...</p>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5", padding: "20px" }}>
-      <div
-        style={{
-          maxWidth: "600px",
-          margin: "0 auto",
-          backgroundColor: "white",
-          padding: "30px",
-          borderRadius: "8px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        }}
-      >
-        <button
-          onClick={() => navigate("/farmers")}
-          style={{
-            marginBottom: "20px",
-            padding: "10px 20px",
-            backgroundColor: "#2563EB",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
-        >
-          ← BACK
-        </button>
+    <div style={{ padding: "40px", maxWidth: "900px", margin: "0 auto" }}>
+      <h2>✏️ Edit Farmer</h2>
 
-        <h1>Edit Farmer</h1>
-        {error && (
-          <div
-            style={{
-              backgroundColor: "#FEE2E2",
-              color: "#DC2626",
-              padding: "15px",
-              marginBottom: "20px",
-              borderRadius: "6px",
-            }}
-            role="alert"
-            aria-live="assertive"
-          >
-            {error}
-          </div>
-        )}
+      {error && (
+        <div style={{ 
+          padding: "15px", 
+          backgroundColor: "#fee", 
+          border: "1px solid #fcc",
+          borderRadius: "4px",
+          marginBottom: "20px",
+          color: "#c00"
+        }}>
+          ❌ {error}
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit}>
-          {[
-            { label: "First Name", field: "firstName" },
-            { label: "Last Name", field: "lastName" },
-            { label: "Phone", field: "phone" },
-            { label: "Province", field: "province" },
-            { label: "District", field: "district" },
-          ].map(({ label, field }) => (
-            <div key={field} style={{ marginBottom: "15px" }}>
-              <label style={{ display: "block", fontWeight: "bold", marginBottom: "5px" }} htmlFor={field}>
-                {label}
+      <form onSubmit={handleSubmit}>
+        {/* Personal Information */}
+        <fieldset style={{ 
+          border: "1px solid #ddd", 
+          borderRadius: "8px", 
+          padding: "20px",
+          marginBottom: "30px"
+        }}>
+          <legend style={{ 
+            fontWeight: "bold", 
+            fontSize: "18px",
+            padding: "0 10px"
+          }}>👤 Personal Information</legend>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                First Name <span style={{ color: "red" }}>*</span>
               </label>
               <input
-                id={field}
                 type="text"
-                value={formData[field as keyof FarmerForm]}
-                onChange={(e) => handleChange(field as keyof FarmerForm, e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  boxSizing: "border-box",
+                value={formData.first_name}
+                onChange={(e) => handleChange("first_name", e.target.value)}
+                required
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
                 }}
               />
             </div>
-          ))}
 
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button
-              type="submit"
-              disabled={saving}
-              style={{
-                flex: 1,
-                padding: "12px",
-                backgroundColor: saving ? "#9CA3AF" : "#16A34A",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              {saving ? "⏳ Saving..." : "✅ Save"}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/farmers")}
-              style={{
-                flex: 1,
-                padding: "12px",
-                backgroundColor: "#6B7280",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              ❌ Cancel
-            </button>
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Last Name <span style={{ color: "red" }}>*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.last_name}
+                onChange={(e) => handleChange("last_name", e.target.value)}
+                required
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Primary Phone <span style={{ color: "red" }}>*</span>
+              </label>
+              <input
+                type="tel"
+                value={formData.phone_primary}
+                onChange={(e) => handleChange("phone_primary", e.target.value)}
+                placeholder="+260XXXXXXXXX or 0XXXXXXXXX"
+                required
+                pattern="^(\+260|0)[0-9]{9}$"
+                title="Phone must be in format +260XXXXXXXXX or 0XXXXXXXXX"
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Secondary Phone
+              </label>
+              <input
+                type="tel"
+                value={formData.phone_secondary}
+                onChange={(e) => handleChange("phone_secondary", e.target.value)}
+                placeholder="+260XXXXXXXXX or 0XXXXXXXXX"
+                pattern="^(\+260|0)[0-9]{9}$"
+                title="Phone must be in format +260XXXXXXXXX or 0XXXXXXXXX"
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Email
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+                placeholder="farmer@example.com"
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                NRC <span style={{ color: "red" }}>*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.nrc}
+                onChange={(e) => handleChange("nrc", e.target.value)}
+                placeholder="######/##/#"
+                required
+                pattern="^\d{6}/\d{2}/\d$"
+                title="NRC must be in format ######/##/#"
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Date of Birth <span style={{ color: "red" }}>*</span>
+              </label>
+              <input
+                type="date"
+                value={formData.date_of_birth}
+                onChange={(e) => handleChange("date_of_birth", e.target.value)}
+                required
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Gender <span style={{ color: "red" }}>*</span>
+              </label>
+              <select
+                value={formData.gender}
+                onChange={(e) => handleChange("gender", e.target.value)}
+                required
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Ethnic Group
+              </label>
+              <input
+                type="text"
+                value={formData.ethnic_group}
+                onChange={(e) => handleChange("ethnic_group", e.target.value)}
+                placeholder="Enter ethnic group"
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
           </div>
-        </form>
-      </div>
+        </fieldset>
+
+        {/* Address */}
+        <fieldset style={{ 
+          border: "1px solid #ddd", 
+          borderRadius: "8px", 
+          padding: "20px",
+          marginBottom: "30px"
+        }}>
+          <legend style={{ 
+            fontWeight: "bold", 
+            fontSize: "18px",
+            padding: "0 10px"
+          }}>📍 Address</legend>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Province <span style={{ color: "red" }}>*</span>
+              </label>
+              <select
+                value={formData.province_code}
+                onChange={(e) => handleProvinceChange(e.target.value)}
+                required
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              >
+                <option value="">Select Province</option>
+                {provinces.map(p => (
+                  <option key={p.code} value={p.code}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                District <span style={{ color: "red" }}>*</span>
+              </label>
+              <select
+                value={formData.district_code}
+                onChange={(e) => handleDistrictChange(e.target.value)}
+                required
+                disabled={!formData.province_code}
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                  backgroundColor: !formData.province_code ? "#f5f5f5" : "white"
+                }}
+              >
+                <option value="">Select District</option>
+                {districts.map(d => (
+                  <option key={d.code} value={d.code}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Chiefdom
+              </label>
+              <select
+                value={formData.chiefdom_code}
+                onChange={(e) => handleChiefdomChange(e.target.value)}
+                disabled={!formData.district_code}
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                  backgroundColor: !formData.district_code ? "#f5f5f5" : "white"
+                }}
+              >
+                <option value="">Select Chiefdom</option>
+                {chiefdoms.map(c => (
+                  <option key={c.code} value={c.code}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Village <span style={{ color: "red" }}>*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.village}
+                onChange={(e) => handleChange("village", e.target.value)}
+                required
+                placeholder="Enter village name"
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+          </div>
+        </fieldset>
+
+        {/* Farm Information */}
+        <fieldset style={{ 
+          border: "1px solid #ddd", 
+          borderRadius: "8px", 
+          padding: "20px",
+          marginBottom: "30px"
+        }}>
+          <legend style={{ 
+            fontWeight: "bold", 
+            fontSize: "18px",
+            padding: "0 10px"
+          }}>🌾 Farm Information</legend>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Farm Size (hectares)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={formData.farm_size_hectares}
+                onChange={(e) => handleChange("farm_size_hectares", e.target.value)}
+                placeholder="e.g., 5.5"
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Years Farming
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={formData.years_farming}
+                onChange={(e) => handleChange("years_farming", e.target.value)}
+                placeholder="e.g., 10"
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+              <small style={{ color: "#666", fontSize: "12px" }}>Maximum: 100 years</small>
+            </div>
+
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Crops Grown (comma-separated)
+              </label>
+              <input
+                type="text"
+                value={formData.crops_grown}
+                onChange={(e) => handleChange("crops_grown", e.target.value)}
+                placeholder="e.g., Maize, Groundnuts, Beans"
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Livestock Types (comma-separated)
+              </label>
+              <input
+                type="text"
+                value={formData.livestock_types}
+                onChange={(e) => handleChange("livestock_types", e.target.value)}
+                placeholder="e.g., Cattle, Goats, Chickens"
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={{ display: "flex", alignItems: "center", fontWeight: "500", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={formData.has_irrigation}
+                  onChange={(e) => handleChange("has_irrigation", e.target.checked)}
+                  style={{ marginRight: "8px", width: "18px", height: "18px" }}
+                />
+                Has Irrigation System
+              </label>
+            </div>
+          </div>
+        </fieldset>
+
+        {/* Household Information */}
+        <fieldset style={{ 
+          border: "1px solid #ddd", 
+          borderRadius: "8px", 
+          padding: "20px",
+          marginBottom: "30px"
+        }}>
+          <legend style={{ 
+            fontWeight: "bold", 
+            fontSize: "18px",
+            padding: "0 10px"
+          }}>🏠 Household Information</legend>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Household Size
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={formData.household_size}
+                onChange={(e) => handleChange("household_size", e.target.value)}
+                placeholder="e.g., 5"
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Number of Dependents
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={formData.number_of_dependents}
+                onChange={(e) => handleChange("number_of_dependents", e.target.value)}
+                placeholder="e.g., 3"
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                Primary Income Source
+              </label>
+              <input
+                type="text"
+                value={formData.primary_income_source}
+                onChange={(e) => handleChange("primary_income_source", e.target.value)}
+                placeholder="e.g., Farming, Trading"
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  border: "1px solid #ccc",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+          </div>
+        </fieldset>
+
+        {/* Action Buttons */}
+        <div style={{ display: "flex", gap: "15px", justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            onClick={() => navigate("/farmers")}
+            disabled={saving}
+            style={{
+              padding: "12px 24px",
+              backgroundColor: "#6c757d",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: saving ? "not-allowed" : "pointer",
+              fontSize: "16px",
+              fontWeight: "500",
+              opacity: saving ? 0.6 : 1
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            style={{
+              padding: "12px 24px",
+              backgroundColor: "#28a745",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: saving ? "not-allowed" : "pointer",
+              fontSize: "16px",
+              fontWeight: "500",
+              opacity: saving ? 0.6 : 1
+            }}
+          >
+            {saving ? "💾 Saving..." : "💾 Save Changes"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

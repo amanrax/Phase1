@@ -3,26 +3,19 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import useAuthStore from "@/store/authStore";
 
 // ----------------------------------------
-// ✔ FIXED + SAFE BASE URL for Codespaces
+// Resolve API Base URL
 // ----------------------------------------
 function resolveApiBaseUrl() {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
-
   if (envUrl) return envUrl.replace(/\/$/, "");
-
-  const codespace = import.meta.env.CODESPACE_NAME || process.env.CODESPACE_NAME;
-
-  if (codespace) {
-    return `https://${codespace}-8000.app.github.dev`;
-  }
-
   return "http://localhost:8000";
 }
 
 let API_BASE_URL = resolveApiBaseUrl();
 
-// Force rebuild timestamp: 2025-11-17T12:51:00Z
-console.log("DEBUG API_BASE_URL:", API_BASE_URL);
+if (import.meta.env.DEV) {
+  console.log("[Axios] API_BASE_URL:", API_BASE_URL);
+}
 
 // ----------------------------------------
 // Create axios instance

@@ -50,6 +50,7 @@ class PersonalInfo(BaseModel):
     nrc: str = Field(..., description="National Registration Card number")
     date_of_birth: str = Field(..., description="Date of birth (YYYY-MM-DD)")
     gender: str = Field(..., pattern=r"^(Male|Female|Other)$")
+    ethnic_group: Optional[str] = Field(None, max_length=100, description="Ethnic group")
 
 
 class Address(BaseModel):
@@ -58,8 +59,8 @@ class Address(BaseModel):
     province_name: str = Field(..., max_length=100)
     district_code: str = Field(..., max_length=10)
     district_name: str = Field(..., max_length=100)
-    chiefdom_code: str = Field(..., max_length=20)
-    chiefdom_name: str = Field(..., max_length=100)
+    chiefdom_code: Optional[str] = Field("", max_length=20)
+    chiefdom_name: Optional[str] = Field("", max_length=100)
     village: str = Field(..., max_length=100)
     street: Optional[str] = Field(None, max_length=200)
     gps_latitude: Optional[float] = Field(None, ge=-90, le=90)
@@ -192,13 +193,53 @@ class FarmerOut(BaseModel):
     
     @classmethod
     def from_mongo(cls, data: dict) -> "FarmerOut":
-        """Convert MongoDB document to FarmerOut"""
+        """Convert MongoDB document to FarmerOut (handles legacy data format)"""
         if not data:
             return None
         
         # Convert ObjectId to string
         if "_id" in data:
             data["_id"] = str(data["_id"])
+        
+        # Normalize personal_info (handle legacy format)
+        if "personal_info" in data:
+            pi = data["personal_info"]
+            # Clean empty strings for optional pattern fields
+            if "email" in pi and pi["email"] == "":
+                pi["email"] = None
+            if "phone_secondary" in pi and pi["phone_secondary"] == "":
+                pi["phone_secondary"] = None
+            if "ethnic_group" in pi and pi["ethnic_group"] == "":
+                pi["ethnic_group"] = None
+            # Ensure NRC exists (for legacy data without NRC)
+            if "nrc" not in pi or not pi["nrc"]:
+                pi["nrc"] = "000000/00/0"
+            # Ensure gender exists and capitalize to match pattern
+            if "gender" not in pi or not pi["gender"]:
+                pi["gender"] = "Male"  # Default for legacy data
+            else:
+                pi["gender"] = pi["gender"].capitalize()
+            # Ensure date_of_birth exists
+            if "date_of_birth" not in pi or not pi["date_of_birth"]:
+                pi["date_of_birth"] = "1980-01-01"  # Default for legacy data
+        
+        # Normalize address (handle legacy format with 'province'/'district' fields)
+        if "address" in data:
+            addr = data["address"]
+            # Map legacy province/district to new _code/_name format
+            if "province" in addr and "province_code" not in addr:
+                addr["province_name"] = addr.get("province", "")
+                addr["province_code"] = "LEGACY"
+            if "district" in addr and "district_code" not in addr:
+                addr["district_name"] = addr.get("district", "")
+                addr["district_code"] = "LEGACY"
+            # Ensure required fields exist
+            if "village" not in addr or not addr["village"]:
+                addr["village"] = "Unknown"
+            if "chiefdom_code" not in addr:
+                addr["chiefdom_code"] = ""
+            if "chiefdom_name" not in addr:
+                addr["chiefdom_name"] = ""
         
         return cls(**data)
 

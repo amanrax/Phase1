@@ -32,6 +32,27 @@ export const farmerService = {
   },
 
   /**
+   * Update an existing farmer record.
+   * Backend: PUT /api/farmers/{farmer_id}
+   */
+  async update(farmerId: string, farmerData: Record<string, any>) {
+    if (!farmerId) throw new Error("Missing farmerId");
+    if (!farmerData) throw new Error("Missing farmer data");
+    const { data } = await axiosClient.put(`/farmers/${farmerId}`, farmerData);
+    return data;
+  },
+
+  /**
+   * Delete a farmer record.
+   * Backend: DELETE /api/farmers/{farmer_id}
+   */
+  async delete(farmerId: string) {
+    if (!farmerId) throw new Error("Missing farmerId");
+    const { data } = await axiosClient.delete(`/farmers/${farmerId}`);
+    return data;
+  },
+
+  /**
    * Upload a farmer’s photo.
    * Backend: POST /api/farmers/{farmer_id}/upload-photo
    */

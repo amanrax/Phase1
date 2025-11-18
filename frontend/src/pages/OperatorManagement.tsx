@@ -1,5 +1,6 @@
 // src/pages/OperatorManagement.tsx
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { userService } from "@/services/user.service";
 
 interface Operator {
@@ -11,6 +12,7 @@ interface Operator {
 }
 
 export default function OperatorManagement() {
+  const navigate = useNavigate();
   const [operators, setOperators] = useState<Operator[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
@@ -56,7 +58,15 @@ export default function OperatorManagement() {
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">👥 Operator Management</h1>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate("/")}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold"
+              >
+                ← Back
+              </button>
+              <h1 className="text-2xl font-bold">👥 Operator Management</h1>
+            </div>
             <button
               onClick={() => setShowCreateForm(!showCreateForm)}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

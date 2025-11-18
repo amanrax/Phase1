@@ -1,5 +1,5 @@
 // src/pages/FarmerRegistrationWizard/Step4Preview.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { farmerService } from "@/services/farmer.service";
 import { WizardState } from "."; // Import type
 
@@ -14,34 +14,90 @@ export default function Step4Preview({ data, onBack, onSubmitStart, onSubmitEnd 
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
 
+  // Helper to convert empty string to undefined for optional fields
+  const cleanOptionalField = (value: string | undefined): string | undefined => {
+    return value && value.trim() ? value.trim() : undefined;
+  };
+
+  // Helper to clean phone numbers (remove spaces, dashes, parentheses)
+  const cleanPhone = (phone: string | undefined): string => {
+    if (!phone) return "";
+    return phone.replace(/[\s\-\(\)]/g, "");
+  };
+
   const handleSubmit = async () => {
     onSubmitStart();
     setError("");
     setSuccess("");
     try {
-      const payload = {
+      const payload: any = {
         personal_info: {
-          first_name: data.personal.first_name,
-          last_name: data.personal.last_name,
-          phone_primary: data.personal.phone_primary,
+          first_name: data.personal.first_name || "",
+          last_name: data.personal.last_name || "",
+          phone_primary: cleanPhone(data.personal.phone_primary),
+          phone_secondary: cleanOptionalField(cleanPhone(data.personal.phone_secondary)),
+          email: cleanOptionalField(data.personal.email),
+          nrc: data.personal.nrc || "",
+          date_of_birth: data.personal.date_of_birth || "",
+          gender: data.personal.gender || "",
+          ethnic_group: cleanOptionalField(data.personal.ethnic_group),
         },
         address: {
-          province: data.address.province_name,
-          district: data.address.district_name,
-          chiefdom: data.address.chiefdom_name,
-          village: data.address.village,
-          province_code: data.address.province_code,
-          district_code: data.address.district_code,
-          chiefdom_code: data.address.chiefdom_code,
+          province_code: data.address.province_code || "",
+          province_name: data.address.province_name || "",
+          district_code: data.address.district_code || "",
+          district_name: data.address.district_name || "",
+          chiefdom_code: cleanOptionalField(data.address.chiefdom_code) || "",
+          chiefdom_name: cleanOptionalField(data.address.chiefdom_name) || "",
+          village: data.address.village || "",
         },
-        farm: data.farm,
       };
 
+      // Add farm_info if farm data exists
+      if (data.farm?.size_hectares || data.farm?.years_farming) {
+        payload.farm_info = {
+          farm_size_hectares: parseFloat(data.farm.size_hectares || "1") || 1,
+          crops_grown: data.farm.crops?.split(",").map((c: string) => c.trim()).filter(Boolean) || [],
+          livestock_types: data.farm.livestock?.split(",").map((l: string) => l.trim()).filter(Boolean) || [],
+          has_irrigation: data.farm.has_irrigation || false,
+          years_farming: Math.min(parseInt(data.farm.years_farming || "0") || 0, 100), // Cap at 100
+        };
+      }
+
+      // Add household_info if household data exists
+      if (data.farm?.household_size || data.farm?.primary_income) {
+        payload.household_info = {
+          household_size: parseInt(data.farm.household_size || "1") || 1,
+          number_of_dependents: parseInt(data.farm.dependents || "0") || 0,
+          primary_income_source: data.farm.primary_income || "Farming",
+        };
+      }
+
+      console.log("Submitting payload:", JSON.stringify(payload, null, 2));
       const res = await farmerService.create(payload);
       setSuccess(`Created: ${res.farmer_id || "OK"}`);
     } catch (err: any) {
-      console.error(err);
-      setError(err.response?.data?.detail || err.message || "Failed to create");
+      console.error("Full error object:", err);
+      console.error("Error response:", err.response);
+      console.error("Error response data:", err.response?.data);
+      console.error("Validation errors:", JSON.stringify(err.response?.data?.detail, null, 2));
+      // Handle validation errors (422) which come as array of error objects
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail)) {
+          // Format validation errors into readable message
+          const errorMessages = detail.map((e: any) => 
+            `${e.loc?.join('.') || 'Field'}: ${e.msg || 'Invalid'}`
+          ).join('; ');
+          setError(errorMessages);
+        } else if (typeof detail === 'string') {
+          setError(detail);
+        } else {
+          setError(JSON.stringify(detail));
+        }
+      } else {
+        setError(err.message || "Failed to create");
+      }
     } finally {
       onSubmitEnd();
     }
@@ -70,10 +126,31 @@ export default function Step4Preview({ data, onBack, onSubmitStart, onSubmitEnd 
           <strong>Village:</strong> {data.address.village || "-"}
         </div>
         <div style={{ marginTop: 8 }}>
+          <strong>NRC:</strong> {data.personal.nrc || "-"}
+        </div>
+        <div>
+          <strong>Date of Birth:</strong> {data.personal.date_of_birth || "-"}
+        </div>
+        <div>
+          <strong>Gender:</strong> {data.personal.gender || "-"}
+        </div>
+        <div>
+          <strong>Ethnic Group:</strong> {data.personal.ethnic_group || "-"}
+        </div>
+        <div style={{ marginTop: 8 }}>
           <strong>Farm size (ha):</strong> {data.farm?.size_hectares || "-"}
         </div>
         <div>
           <strong>Crops:</strong> {data.farm?.crops || "-"}
+        </div>
+        <div>
+          <strong>Livestock:</strong> {data.farm?.livestock || "-"}
+        </div>
+        <div>
+          <strong>Years Farming:</strong> {data.farm?.years_farming || "-"}
+        </div>
+        <div>
+          <strong>Has Irrigation:</strong> {data.farm?.has_irrigation ? "Yes" : "No"}
         </div>
       </div>
 

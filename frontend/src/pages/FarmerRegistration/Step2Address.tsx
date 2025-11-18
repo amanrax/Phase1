@@ -1,5 +1,5 @@
 // src/pages/FarmerRegistrationWizard/Step2Address.tsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import geoService from "@/services/geo.service";
 
 type AddressData = {
@@ -27,6 +27,12 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
   const [districtCode, setDistrictCode] = useState(data?.district_code || "");
   const [chiefdomCode, setChiefdomCode] = useState(data?.chiefdom_code || "");
   const [village, setVillage] = useState(data?.village || "");
+  const [customProvince, setCustomProvince] = useState("");
+  const [showCustomProvince, setShowCustomProvince] = useState(false);
+  const [customDistrict, setCustomDistrict] = useState("");
+  const [showCustomDistrict, setShowCustomDistrict] = useState(false);
+  const [customChiefdom, setCustomChiefdom] = useState("");
+  const [showCustomChiefdom, setShowCustomChiefdom] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -68,24 +74,49 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
   }, [districtCode]);
 
   const handleNext = () => {
-    if (!provinceCode || !districtCode) {
-      setErr("Please select province and district");
+    if (showCustomProvince && !customProvince.trim()) {
+      setErr("Please enter custom province name");
+      return;
+    }
+    if (!showCustomProvince && !provinceCode) {
+      setErr("Please select a province");
+      return;
+    }
+    if (!showCustomProvince && !showCustomDistrict && !districtCode) {
+      setErr("Please select a district");
+      return;
+    }
+    if (showCustomDistrict && !customDistrict.trim()) {
+      setErr("Please enter custom district name");
       return;
     }
     setErr("");
-    const province = provinces.find((p) => p.code === provinceCode) || { name: "" };
-    const district = districts.find((d) => d.code === districtCode) || { name: "" };
-    const chiefdom = chiefdoms.find((c) => c.code === chiefdomCode) || { name: "" };
+    
+    if (showCustomProvince) {
+      onNext({
+        province_code: "OTHER",
+        province_name: customProvince.trim(),
+        district_code: "OTHER",
+        district_name: "Other",
+        chiefdom_code: "",
+        chiefdom_name: "",
+        village,
+      });
+    } else {
+      const province = provinces.find((p) => p.code === provinceCode) || { name: "" };
+      const districtName = showCustomDistrict ? customDistrict.trim() : (districts.find((d) => d.code === districtCode) || { name: "" }).name;
+      const chiefdomName = showCustomChiefdom ? customChiefdom.trim() : (chiefdoms.find((c) => c.code === chiefdomCode) || { name: "" }).name;
 
-    onNext({
-      province_code: provinceCode,
-      province_name: province.name,
-      district_code: districtCode,
-      district_name: district.name,
-      chiefdom_code: chiefdomCode,
-      chiefdom_name: chiefdom.name,
-      village,
-    });
+      onNext({
+        province_code: provinceCode,
+        province_name: province.name,
+        district_code: showCustomDistrict ? "OTHER" : districtCode,
+        district_name: districtName,
+        chiefdom_code: showCustomChiefdom ? "OTHER" : chiefdomCode,
+        chiefdom_name: chiefdomName,
+        village,
+      });
+    }
   };
 
   return (
@@ -106,8 +137,18 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
         </label>
         <select
           id="province"
-          value={provinceCode}
-          onChange={(e) => setProvinceCode(e.target.value)}
+          value={showCustomProvince ? "OTHER" : provinceCode}
+          onChange={(e) => {
+            if (e.target.value === "OTHER") {
+              setShowCustomProvince(true);
+              setProvinceCode("");
+              setDistrictCode("");
+              setChiefdomCode("");
+            } else {
+              setShowCustomProvince(false);
+              setProvinceCode(e.target.value);
+            }
+          }}
           style={{ width: "100%", padding: 10, marginTop: 6 }}
           aria-required="true"
         >
@@ -117,17 +158,45 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
               {p.name}
             </option>
           ))}
+          <option value="OTHER">Other (specify below)</option>
         </select>
       </div>
 
+      {showCustomProvince && (
+        <div style={{ marginTop: 12 }}>
+          <label htmlFor="customProvince" style={{ fontWeight: "bold" }}>
+            Enter Province Name *
+          </label>
+          <input
+            id="customProvince"
+            value={customProvince}
+            onChange={(e) => setCustomProvince(e.target.value)}
+            style={{ width: "100%", padding: 10, marginTop: 6 }}
+            placeholder="Enter custom province name"
+            aria-required="true"
+          />
+        </div>
+      )}
+
+      {!showCustomProvince && (
+        <>
       <div style={{ marginTop: 12 }}>
         <label htmlFor="district" style={{ fontWeight: "bold" }}>
           District *
         </label>
         <select
           id="district"
-          value={districtCode}
-          onChange={(e) => setDistrictCode(e.target.value)}
+          value={showCustomDistrict ? "OTHER" : districtCode}
+          onChange={(e) => {
+            if (e.target.value === "OTHER") {
+              setShowCustomDistrict(true);
+              setDistrictCode("");
+              setChiefdomCode("");
+            } else {
+              setShowCustomDistrict(false);
+              setDistrictCode(e.target.value);
+            }
+          }}
           style={{ width: "100%", padding: 10, marginTop: 6 }}
           aria-required="true"
         >
@@ -137,8 +206,25 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
               {d.name}
             </option>
           ))}
+          <option value="OTHER">Other (specify below)</option>
         </select>
       </div>
+
+      {showCustomDistrict && (
+        <div style={{ marginTop: 12 }}>
+          <label htmlFor="customDistrict" style={{ fontWeight: "bold" }}>
+            Enter District Name *
+          </label>
+          <input
+            id="customDistrict"
+            value={customDistrict}
+            onChange={(e) => setCustomDistrict(e.target.value)}
+            style={{ width: "100%", padding: 10, marginTop: 6 }}
+            placeholder="Enter custom district name"
+            aria-required="true"
+          />
+        </div>
+      )}
 
       <div style={{ marginTop: 12 }}>
         <label htmlFor="chiefdom" style={{ fontWeight: "bold" }}>
@@ -146,8 +232,16 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
         </label>
         <select
           id="chiefdom"
-          value={chiefdomCode}
-          onChange={(e) => setChiefdomCode(e.target.value)}
+          value={showCustomChiefdom ? "OTHER" : chiefdomCode}
+          onChange={(e) => {
+            if (e.target.value === "OTHER") {
+              setShowCustomChiefdom(true);
+              setChiefdomCode("");
+            } else {
+              setShowCustomChiefdom(false);
+              setChiefdomCode(e.target.value);
+            }
+          }}
           style={{ width: "100%", padding: 10, marginTop: 6 }}
         >
           <option value="">-- choose chiefdom (optional) --</option>
@@ -156,8 +250,26 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
               {c.name}
             </option>
           ))}
+          <option value="OTHER">Other (specify below)</option>
         </select>
       </div>
+
+      {showCustomChiefdom && (
+        <div style={{ marginTop: 12 }}>
+          <label htmlFor="customChiefdom" style={{ fontWeight: "bold" }}>
+            Enter Chiefdom Name
+          </label>
+          <input
+            id="customChiefdom"
+            value={customChiefdom}
+            onChange={(e) => setCustomChiefdom(e.target.value)}
+            style={{ width: "100%", padding: 10, marginTop: 6 }}
+            placeholder="Enter custom chiefdom name"
+          />
+        </div>
+      )}
+        </>
+      )}
 
       <div style={{ marginTop: 12 }}>
         <label htmlFor="village" style={{ fontWeight: "bold" }}>

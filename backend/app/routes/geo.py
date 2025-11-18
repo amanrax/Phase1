@@ -21,7 +21,7 @@ from app.database import get_db
 
 
 logger = logging.getLogger(__name__)
-router = APIRouter(tags=["Geographic Data"])
+router = APIRouter(prefix="/geo", tags=["Geographic Data"])
 
 
 # =======================================================
@@ -103,6 +103,14 @@ def serialize_geo_doc(doc: dict, exclude_id: bool = True) -> dict:
             result[key] = str(value)
         else:
             result[key] = value
+    
+    # Map database field names to API field names
+    if "province_id" in result and "province_code" not in result:
+        result["province_code"] = result.pop("province_id")
+    if "district_id" in result and "district_code" not in result:
+        result["district_code"] = result.pop("district_id")
+    if "chiefdom_id" in result and "chiefdom_code" not in result:
+        result["chiefdom_code"] = result.pop("chiefdom_id")
     
     return result
 
@@ -187,7 +195,7 @@ async def get_province(
     """
     try:
         province = await db.provinces.find_one({
-            "province_code": province_code.upper()
+            "province_id": province_code.upper()
         })
         
         if not province:
@@ -255,7 +263,7 @@ async def list_districts(
         # Build query
         query = {}
         if province_code:
-            query["province_code"] = province_code.upper()
+            query["province_id"] = province_code.upper()
         
         # Execute query, sorted by name
         cursor = db.districts.find(query).sort("district_name", 1)
@@ -306,7 +314,7 @@ async def get_district(
     """
     try:
         district = await db.districts.find_one({
-            "district_code": district_code.upper()
+            "district_id": district_code.upper()
         })
         
         if not district:
@@ -375,7 +383,7 @@ async def list_chiefdoms(
         query = {}
         if district_code:
             # Case-insensitive match
-            query["district_code"] = {
+            query["district_id"] = {
                 "$regex": f"^{district_code}$",
                 "$options": "i"
             }
@@ -442,7 +450,7 @@ async def get_chiefdom(
     """
     try:
         chiefdom = await db.chiefdoms.find_one({
-            "chiefdom_code": chiefdom_code.upper()
+            "chiefdom_id": chiefdom_code.upper()
         })
         
         if not chiefdom:

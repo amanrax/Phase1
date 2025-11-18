@@ -4,12 +4,15 @@ import { useNavigate } from "react-router-dom";
 import { farmerService } from "@/services/farmer.service";
 
 interface Farmer {
+  _id: string;
   farmer_id: string;
-  personal_info?: {
-    first_name?: string;
-    last_name?: string;
-    phone_primary?: string;
-  };
+  first_name: string;
+  last_name: string;
+  phone_primary: string;
+  village?: string;
+  district_name?: string;
+  registration_status?: string;
+  created_at?: string;
 }
 
 export default function FarmersList() {
@@ -23,7 +26,7 @@ export default function FarmersList() {
     setLoading(true);
     setError("");
     try {
-      const data = await farmerService.getFarmers(5, 0);
+      const data = await farmerService.getFarmers(100, 0); // Fetch up to 100 farmers
       // Normalize response data into array of farmers
       const farmerList = Array.isArray(data.results)
         ? data.results
@@ -36,6 +39,21 @@ export default function FarmersList() {
       setError(err.response?.data?.detail || "Failed to load farmers");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (farmerId: string, farmerName: string) => {
+    if (!confirm(`Are you sure you want to delete ${farmerName}?`)) {
+      return;
+    }
+
+    try {
+      await farmerService.delete(farmerId);
+      // Refresh the list after successful deletion
+      await fetchFarmers();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.detail || "Failed to delete farmer");
     }
   };
 
@@ -146,13 +164,13 @@ export default function FarmersList() {
                 >
                   <td style={{ padding: "15px" }}>{i + 1}</td>
                   <td style={{ padding: "15px", fontWeight: "bold" }}>
-                    {f.personal_info?.first_name || "-"}
+                    {f.first_name || "-"}
                   </td>
                   <td style={{ padding: "15px" }}>
-                    {f.personal_info?.last_name || "-"}
+                    {f.last_name || "-"}
                   </td>
                   <td style={{ padding: "15px" }}>
-                    {f.personal_info?.phone_primary || "-"}
+                    {f.phone_primary || "-"}
                   </td>
                   <td
                     style={{
@@ -163,7 +181,7 @@ export default function FarmersList() {
                   >
                     <button
                       onClick={() => navigate(`/farmers/edit/${f.farmer_id}`)}
-                      aria-label={`Edit farmer ${f.personal_info?.first_name}`}
+                      aria-label={`Edit farmer ${f.first_name}`}
                       style={{
                         color: "#2563EB",
                         border: "none",
@@ -175,7 +193,8 @@ export default function FarmersList() {
                       ✏️
                     </button>
                     <button
-                      aria-label={`Delete farmer ${f.personal_info?.first_name}`}
+                      onClick={() => handleDelete(f.farmer_id, `${f.first_name} ${f.last_name}`)}
+                      aria-label={`Delete farmer ${f.first_name}`}
                       style={{
                         color: "#DC2626",
                         border: "none",

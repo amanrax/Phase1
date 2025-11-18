@@ -222,16 +222,25 @@ class FarmerService:
         # Transform to list items
         result = []
         for farmer in farmers:
+            # Handle legacy created_at (might be empty string or missing)
+            created_at = farmer.get("created_at")
+            if not created_at or created_at == "":
+                created_at = datetime.now(datetime.timezone.utc) if hasattr(datetime, 'timezone') else datetime.utcnow()
+            
+            # Handle legacy address format (district vs district_name)
+            address = farmer.get("address", {})
+            district_name = address.get("district_name") or address.get("district", "Unknown")
+            
             result.append(FarmerListItem(
                 _id=str(farmer["_id"]),
                 farmer_id=farmer.get("farmer_id", "UNKNOWN"),
                 registration_status=farmer.get("registration_status", "pending"),
-                created_at=farmer.get("created_at", ""),
+                created_at=created_at,
                 first_name=farmer.get("personal_info", {}).get("first_name", ""),
                 last_name=farmer.get("personal_info", {}).get("last_name", ""),
                 phone_primary=farmer.get("personal_info", {}).get("phone_primary", ""),
-                village=farmer.get("address", {}).get("village", ""),
-                district_name=farmer.get("address", {}).get("district_name", ""),
+                village=address.get("village", ""),
+                district_name=district_name,
             ))
         
         return result

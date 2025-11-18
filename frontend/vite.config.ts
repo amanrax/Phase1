@@ -2,12 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-// Detect GitHub Codespaces backend domain dynamically
-const CODESPACE_NAME = process.env.CODESPACE_NAME
-const PORT = 8000
-const BACKEND_URL = CODESPACE_NAME
-  ? `https://${CODESPACE_NAME}-${PORT}.app.github.dev`
-  : 'http://localhost:8000'
+// Resolve backend URL - prefer env var, fallback to localhost
+const BACKEND_URL = process.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export default defineConfig({
   plugins: [react()],
@@ -27,7 +23,7 @@ export default defineConfig({
         secure: false,
         configure: (proxy) => {
           proxy.on('error', (err) => console.log('Proxy error:', err.message))
-          proxy.on('proxyReq', (proxyReq, req) =>
+          proxy.on('proxyReq', (_proxyReq, req) =>
             console.log('Proxying:', req.method, req.url)
           )
         },

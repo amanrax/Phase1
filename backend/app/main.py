@@ -71,21 +71,33 @@ allowed_origins = [
     "http://127.0.0.1:3000",
 ]
 
+# Allow overriding frontend origin via env (useful in Codespaces)
 frontend_origin_env = os.getenv("FRONTEND_ORIGIN", "")
 if frontend_origin_env:
+    # Add the explicit frontend origin provided via environment
     allowed_origins.append(frontend_origin_env)
 
-allow_origin_regex = r"^https:\/\/[-a-z0-9]+-(5173|8000|3000)\.app\.github\.dev$"
+# Allow GitHub Codespaces subdomains matching either port 5173/8000/3000
+allow_origin_regex = r"^https:\/\/[\-a-z0-9]+-(5173|8000|3000)\.app\.github\.dev$"
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allowed_origins,
+# Build final allowed origins for CORS. Prefer an explicitly provided FRONTEND_ORIGIN
+# rather than a wildcard. This keeps development secure while allowing Codespaces
+# or a host-mapped frontend to be used without requiring '*'.
+if frontend_origin_env:
+    cors_allowed_origins = [frontend_origin_env]
+else:
+    cors_allowed_origins = allowed_origins
+
+cors_kwargs = dict(
+    allow_origins=cors_allowed_origins,
     allow_origin_regex=allow_origin_regex,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["*"],
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=settings.CORS_ALLOW_METHODS,
+    allow_headers=settings.CORS_ALLOW_HEADERS,
     expose_headers=["*"],
 )
+
+app.add_middleware(CORSMiddleware, **cors_kwargs)
 
 # Extra CORS handling for Codespaces
 class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
@@ -116,7 +128,7 @@ app.add_middleware(EnsureCORSHeadersMiddleware)
 app.include_router(auth.router, prefix="/api", tags=["Authentication"])
 app.include_router(users.router, prefix="/api", tags=["Users"])
 app.include_router(farmers.router, prefix="/api", tags=["Farmers"])
-app.include_router(geo.router, prefix="/api", tags=["Geography"])
+app.include_router(geo.router, prefix="/api")
 app.include_router(operators.router, prefix="/api", tags=["Operators"])
 app.include_router(dashboard.router, prefix="/api", tags=["Dashboard"])
 app.include_router(uploads.router, prefix="/api", tags=["Uploads"])

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
+import { dashboardService } from "@/services/dashboard.service";
 
 interface Farmer {
   _id: string;
@@ -39,13 +40,18 @@ export default function AdminDashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await farmerService.getFarmers({ limit: 5 });
-      const farmersList = data.results || [];
+      // Fetch dashboard stats
+      const statsData = await dashboardService.getStats();
+      
+      // Fetch recent farmers for the list
+      const farmersData = await farmerService.getFarmers(5, 0);
+      const farmersList = farmersData.results || farmersData || [];
+      
       setFarmers(farmersList);
       setStats({
-        totalFarmers: data.count || farmersList.length,
-        totalOperators: 0,
-        pendingVerifications: 0,
+        totalFarmers: statsData.farmers?.total || 0,
+        totalOperators: statsData.operators || 0,
+        pendingVerifications: statsData.farmers?.pending || 0,
       });
     } catch (error) {
       console.error("Failed to load data:", error);
