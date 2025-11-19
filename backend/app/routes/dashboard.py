@@ -24,14 +24,26 @@ async def get_dashboard_stats(
     operators = await db.operators.count_documents({})
     recent_farmers = await db.farmers.find({}).sort("created_at", -1).limit(5).to_list(5)
 
-    # Format recent farmer fields for summary
+    # Format recent farmer fields for summary with safe None handling
     recent_results = []
     for f in recent_farmers:
+        # Safe extraction with defaults
+        personal_info = f.get("personal_info") or {}
+        address = f.get("address") or {}
+        
+        # Get names with fallback to empty string
+        first_name = personal_info.get("first_name") or ""
+        last_name = personal_info.get("last_name") or ""
+        
+        # Safely build full name
+        full_name = f"{first_name} {last_name}".strip()
+        if not full_name:
+            full_name = "Unknown"
+        
         recent_results.append({
-            "farmer_id": f.get("farmer_id"),
-            "name": f.get("personal_info", {}).get("first_name") + " " +
-                    f.get("personal_info", {}).get("last_name"),
-            "district": f.get("address", {}).get("district_name"),
+            "farmer_id": f.get("farmer_id") or "N/A",
+            "name": full_name,
+            "district": address.get("district_name") or "N/A",
             "created_at": f.get("created_at")
         })
 
