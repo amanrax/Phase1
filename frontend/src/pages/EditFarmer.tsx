@@ -73,6 +73,14 @@ export default function EditFarmer() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // Add state for "Other" fields
+  const [showCustomProvince, setShowCustomProvince] = useState(false);
+  const [customProvince, setCustomProvince] = useState("");
+  const [showCustomDistrict, setShowCustomDistrict] = useState(false);
+  const [customDistrict, setCustomDistrict] = useState("");
+  const [showCustomChiefdom, setShowCustomChiefdom] = useState(false);
+  const [customChiefdom, setCustomChiefdom] = useState("");
+
   useEffect(() => {
     loadProvinces();
     if (farmerId) {
@@ -119,6 +127,24 @@ export default function EditFarmer() {
         await loadChiefdoms(farmer.address.district_code);
       }
 
+      // Check if values are "Other" (custom entries)
+      const isCustomProvince = farmer.address?.province_code === "OTHER";
+      const isCustomDistrict = farmer.address?.district_code === "OTHER";
+      const isCustomChiefdom = farmer.address?.chiefdom_code === "OTHER";
+
+      if (isCustomProvince) {
+        setShowCustomProvince(true);
+        setCustomProvince(farmer.address?.province_name || "");
+      }
+      if (isCustomDistrict) {
+        setShowCustomDistrict(true);
+        setCustomDistrict(farmer.address?.district_name || "");
+      }
+      if (isCustomChiefdom) {
+        setShowCustomChiefdom(true);
+        setCustomChiefdom(farmer.address?.chiefdom_name || "");
+      }
+
       setFormData({
         // Personal Info
         first_name: farmer.personal_info?.first_name || "",
@@ -131,11 +157,11 @@ export default function EditFarmer() {
         gender: farmer.personal_info?.gender || "",
         ethnic_group: farmer.personal_info?.ethnic_group || "",
         // Address
-        province_code: farmer.address?.province_code || "",
+        province_code: isCustomProvince ? "OTHER" : (farmer.address?.province_code || ""),
         province_name: farmer.address?.province_name || "",
-        district_code: farmer.address?.district_code || "",
+        district_code: isCustomDistrict ? "OTHER" : (farmer.address?.district_code || ""),
         district_name: farmer.address?.district_name || "",
-        chiefdom_code: farmer.address?.chiefdom_code || "",
+        chiefdom_code: isCustomChiefdom ? "OTHER" : (farmer.address?.chiefdom_code || ""),
         chiefdom_name: farmer.address?.chiefdom_name || "",
         village: farmer.address?.village || "",
         // Farm Info
@@ -161,45 +187,94 @@ export default function EditFarmer() {
   };
 
   const handleProvinceChange = async (provinceCode: string) => {
-    const province = provinces.find(p => p.code === provinceCode);
-    setFormData(prev => ({
-      ...prev,
-      province_code: provinceCode,
-      province_name: province?.name || "",
-      district_code: "",
-      district_name: "",
-      chiefdom_code: "",
-      chiefdom_name: "",
-    }));
-    setDistricts([]);
-    setChiefdoms([]);
-    if (provinceCode) {
-      await loadDistricts(provinceCode);
+    if (provinceCode === "OTHER") {
+      setShowCustomProvince(true);
+      setFormData(prev => ({
+        ...prev,
+        province_code: "OTHER",
+        province_name: "",
+        district_code: "",
+        district_name: "",
+        chiefdom_code: "",
+        chiefdom_name: "",
+      }));
+      setDistricts([]);
+      setChiefdoms([]);
+      setShowCustomDistrict(false);
+      setShowCustomChiefdom(false);
+      setCustomDistrict("");
+      setCustomChiefdom("");
+    } else {
+      setShowCustomProvince(false);
+      setCustomProvince("");
+      setShowCustomDistrict(false);
+      setShowCustomChiefdom(false);
+      const province = provinces.find(p => p.code === provinceCode);
+      setFormData(prev => ({
+        ...prev,
+        province_code: provinceCode,
+        province_name: province?.name || "",
+        district_code: "",
+        district_name: "",
+        chiefdom_code: "",
+        chiefdom_name: "",
+      }));
+      setDistricts([]);
+      setChiefdoms([]);
+      if (provinceCode) {
+        await loadDistricts(provinceCode);
+      }
     }
   };
 
   const handleDistrictChange = async (districtCode: string) => {
-    const district = districts.find(d => d.code === districtCode);
-    setFormData(prev => ({
-      ...prev,
-      district_code: districtCode,
-      district_name: district?.name || "",
-      chiefdom_code: "",
-      chiefdom_name: "",
-    }));
-    setChiefdoms([]);
-    if (districtCode) {
-      await loadChiefdoms(districtCode);
+    if (districtCode === "OTHER") {
+      setShowCustomDistrict(true);
+      setFormData(prev => ({
+        ...prev,
+        district_code: "OTHER",
+        district_name: "",
+        chiefdom_code: "",
+        chiefdom_name: "",
+      }));
+      setChiefdoms([]);
+      setShowCustomChiefdom(false);
+    } else {
+      setShowCustomDistrict(false);
+      setCustomDistrict("");
+      const district = districts.find(d => d.code === districtCode);
+      setFormData(prev => ({
+        ...prev,
+        district_code: districtCode,
+        district_name: district?.name || "",
+        chiefdom_code: "",
+        chiefdom_name: "",
+      }));
+      setChiefdoms([]);
+      if (districtCode) {
+        await loadChiefdoms(districtCode);
+      }
     }
   };
 
   const handleChiefdomChange = (chiefdomCode: string) => {
-    const chiefdom = chiefdoms.find(c => c.code === chiefdomCode);
-    setFormData(prev => ({
-      ...prev,
-      chiefdom_code: chiefdomCode,
-      chiefdom_name: chiefdom?.name || "",
-    }));
+    if (chiefdomCode === "OTHER") {
+      setShowCustomChiefdom(true);
+      setFormData(prev => ({
+        ...prev,
+        chiefdom_code: "OTHER",
+        chiefdom_name: "",
+      }));
+    } else {
+      setShowCustomChiefdom(false);
+      setCustomChiefdom("");
+      const chiefdom = chiefdoms.find(c => c.code === chiefdomCode);
+      setFormData(prev => ({
+        ...prev,
+        chiefdom_code: chiefdomCode,
+        chiefdom_name: chiefdom?.name || "",
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -224,12 +299,12 @@ export default function EditFarmer() {
           ethnic_group: formData.ethnic_group || undefined,
         },
         address: {
-          province_code: formData.province_code,
-          province_name: formData.province_name,
-          district_code: formData.district_code,
-          district_name: formData.district_name,
-          chiefdom_code: formData.chiefdom_code || "",
-          chiefdom_name: formData.chiefdom_name || "",
+          province_code: showCustomProvince ? "OTHER" : formData.province_code,
+          province_name: showCustomProvince ? customProvince.trim() : formData.province_name,
+          district_code: showCustomDistrict ? "OTHER" : formData.district_code,
+          district_name: showCustomDistrict ? customDistrict.trim() : formData.district_name,
+          chiefdom_code: showCustomChiefdom ? "OTHER" : (formData.chiefdom_code || ""),
+          chiefdom_name: showCustomChiefdom ? customChiefdom.trim() : (formData.chiefdom_name || ""),
           village: formData.village,
         },
       };
@@ -308,7 +383,11 @@ export default function EditFarmer() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} onKeyDown={(e) => {
+        if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+          e.preventDefault();
+        }
+      }}>
         {/* Personal Information */}
         <fieldset style={{ 
           border: "1px solid #ddd", 
@@ -518,7 +597,7 @@ export default function EditFarmer() {
                 Province <span style={{ color: "red" }}>*</span>
               </label>
               <select
-                value={formData.province_code}
+                value={showCustomProvince ? "OTHER" : formData.province_code}
                 onChange={(e) => handleProvinceChange(e.target.value)}
                 required
                 style={{ 
@@ -532,55 +611,151 @@ export default function EditFarmer() {
                 {provinces.map(p => (
                   <option key={p.code} value={p.code}>{p.name}</option>
                 ))}
+                <option value="OTHER">Other (specify below)</option>
               </select>
             </div>
+
+            {showCustomProvince && (
+              <div>
+                <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                  Enter Province Name <span style={{ color: "red" }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={customProvince}
+                  onChange={(e) => setCustomProvince(e.target.value)}
+                  required
+                  placeholder="Enter custom province name"
+                  style={{ 
+                    width: "100%", 
+                    padding: "10px", 
+                    border: "1px solid #ccc",
+                    borderRadius: "4px"
+                  }}
+                />
+              </div>
+            )}
 
             <div>
               <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
                 District <span style={{ color: "red" }}>*</span>
               </label>
-              <select
-                value={formData.district_code}
-                onChange={(e) => handleDistrictChange(e.target.value)}
-                required
-                disabled={!formData.province_code}
-                style={{ 
-                  width: "100%", 
-                  padding: "10px", 
-                  border: "1px solid #ccc",
-                  borderRadius: "4px",
-                  backgroundColor: !formData.province_code ? "#f5f5f5" : "white"
-                }}
-              >
-                <option value="">Select District</option>
-                {districts.map(d => (
-                  <option key={d.code} value={d.code}>{d.name}</option>
-                ))}
-              </select>
+              {showCustomProvince ? (
+                <input
+                  type="text"
+                  value={customDistrict}
+                  onChange={(e) => setCustomDistrict(e.target.value)}
+                  required
+                  placeholder="Enter custom district name"
+                  style={{ 
+                    width: "100%", 
+                    padding: "10px", 
+                    border: "1px solid #ccc",
+                    borderRadius: "4px"
+                  }}
+                />
+              ) : (
+                <select
+                  value={showCustomDistrict ? "OTHER" : formData.district_code}
+                  onChange={(e) => handleDistrictChange(e.target.value)}
+                  required
+                  disabled={!formData.province_code}
+                  style={{ 
+                    width: "100%", 
+                    padding: "10px", 
+                    border: "1px solid #ccc",
+                    borderRadius: "4px",
+                    backgroundColor: !formData.province_code ? "#f5f5f5" : "white"
+                  }}
+                >
+                  <option value="">Select District</option>
+                  {districts.map(d => (
+                    <option key={d.code} value={d.code}>{d.name}</option>
+                  ))}
+                  <option value="OTHER">Other (specify below)</option>
+                </select>
+              )}
             </div>
+
+            {showCustomDistrict && !showCustomProvince && (
+              <div>
+                <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                  Enter District Name <span style={{ color: "red" }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={customDistrict}
+                  onChange={(e) => setCustomDistrict(e.target.value)}
+                  required
+                  placeholder="Enter custom district name"
+                  style={{ 
+                    width: "100%", 
+                    padding: "10px", 
+                    border: "1px solid #ccc",
+                    borderRadius: "4px"
+                  }}
+                />
+              </div>
+            )}
 
             <div>
               <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
                 Chiefdom
               </label>
-              <select
-                value={formData.chiefdom_code}
-                onChange={(e) => handleChiefdomChange(e.target.value)}
-                disabled={!formData.district_code}
-                style={{ 
-                  width: "100%", 
-                  padding: "10px", 
-                  border: "1px solid #ccc",
-                  borderRadius: "4px",
-                  backgroundColor: !formData.district_code ? "#f5f5f5" : "white"
-                }}
-              >
-                <option value="">Select Chiefdom</option>
-                {chiefdoms.map(c => (
-                  <option key={c.code} value={c.code}>{c.name}</option>
-                ))}
-              </select>
+              {showCustomProvince ? (
+                <input
+                  type="text"
+                  value={customChiefdom}
+                  onChange={(e) => setCustomChiefdom(e.target.value)}
+                  placeholder="Enter custom chiefdom name"
+                  style={{ 
+                    width: "100%", 
+                    padding: "10px", 
+                    border: "1px solid #ccc",
+                    borderRadius: "4px"
+                  }}
+                />
+              ) : (
+                <select
+                  value={showCustomChiefdom ? "OTHER" : formData.chiefdom_code}
+                  onChange={(e) => handleChiefdomChange(e.target.value)}
+                  disabled={!formData.district_code}
+                  style={{ 
+                    width: "100%", 
+                    padding: "10px", 
+                    border: "1px solid #ccc",
+                    borderRadius: "4px",
+                    backgroundColor: !formData.district_code ? "#f5f5f5" : "white"
+                  }}
+                >
+                  <option value="">Select Chiefdom</option>
+                  {chiefdoms.map(c => (
+                    <option key={c.code} value={c.code}>{c.name}</option>
+                  ))}
+                  <option value="OTHER">Other (specify below)</option>
+                </select>
+              )}
             </div>
+
+            {showCustomChiefdom && !showCustomProvince && (
+              <div>
+                <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                  Enter Chiefdom Name
+                </label>
+                <input
+                  type="text"
+                  value={customChiefdom}
+                  onChange={(e) => setCustomChiefdom(e.target.value)}
+                  placeholder="Enter custom chiefdom name"
+                  style={{ 
+                    width: "100%", 
+                    padding: "10px", 
+                    border: "1px solid #ccc",
+                    borderRadius: "4px"
+                  }}
+                />
+              </div>
+            )}
 
             <div>
               <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>

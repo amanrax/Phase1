@@ -144,8 +144,13 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
               setProvinceCode("");
               setDistrictCode("");
               setChiefdomCode("");
+              setShowCustomDistrict(false);
+              setShowCustomChiefdom(false);
+              setCustomDistrict("");
+              setCustomChiefdom("");
             } else {
               setShowCustomProvince(false);
+              setCustomProvince("");
               setProvinceCode(e.target.value);
             }
           }}
@@ -171,6 +176,7 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
             id="customProvince"
             value={customProvince}
             onChange={(e) => setCustomProvince(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
             style={{ width: "100%", padding: 10, marginTop: 6 }}
             placeholder="Enter custom province name"
             aria-required="true"
@@ -178,39 +184,52 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
         </div>
       )}
 
-      {!showCustomProvince && (
-        <>
       <div style={{ marginTop: 12 }}>
         <label htmlFor="district" style={{ fontWeight: "bold" }}>
           District *
         </label>
-        <select
-          id="district"
-          value={showCustomDistrict ? "OTHER" : districtCode}
-          onChange={(e) => {
-            if (e.target.value === "OTHER") {
-              setShowCustomDistrict(true);
-              setDistrictCode("");
-              setChiefdomCode("");
-            } else {
-              setShowCustomDistrict(false);
-              setDistrictCode(e.target.value);
-            }
-          }}
-          style={{ width: "100%", padding: 10, marginTop: 6 }}
-          aria-required="true"
-        >
-          <option value="">-- choose district --</option>
-          {districts.map((d) => (
-            <option key={d.code} value={d.code}>
-              {d.name}
-            </option>
-          ))}
-          <option value="OTHER">Other (specify below)</option>
-        </select>
+        {showCustomProvince ? (
+          <input
+            id="district"
+            value={customDistrict}
+            onChange={(e) => setCustomDistrict(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
+            style={{ width: "100%", padding: 10, marginTop: 6 }}
+            placeholder="Enter custom district name"
+            aria-required="true"
+          />
+        ) : (
+          <select
+            id="district"
+            value={showCustomDistrict ? "OTHER" : districtCode}
+            onChange={(e) => {
+              if (e.target.value === "OTHER") {
+                setShowCustomDistrict(true);
+                setDistrictCode("");
+                setChiefdomCode("");
+                setShowCustomChiefdom(false);
+                setCustomChiefdom("");
+              } else {
+                setShowCustomDistrict(false);
+                setCustomDistrict("");
+                setDistrictCode(e.target.value);
+              }
+            }}
+            style={{ width: "100%", padding: 10, marginTop: 6 }}
+            aria-required="true"
+          >
+            <option value="">-- choose district --</option>
+            {districts.map((d) => (
+              <option key={d.code} value={d.code}>
+                {d.name}
+              </option>
+            ))}
+            <option value="OTHER">Other (specify below)</option>
+          </select>
+        )}
       </div>
 
-      {showCustomDistrict && (
+      {showCustomDistrict && !showCustomProvince && (
         <div style={{ marginTop: 12 }}>
           <label htmlFor="customDistrict" style={{ fontWeight: "bold" }}>
             Enter District Name *
@@ -219,6 +238,7 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
             id="customDistrict"
             value={customDistrict}
             onChange={(e) => setCustomDistrict(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
             style={{ width: "100%", padding: 10, marginTop: 6 }}
             placeholder="Enter custom district name"
             aria-required="true"
@@ -230,31 +250,43 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
         <label htmlFor="chiefdom" style={{ fontWeight: "bold" }}>
           Chiefdom
         </label>
-        <select
-          id="chiefdom"
-          value={showCustomChiefdom ? "OTHER" : chiefdomCode}
-          onChange={(e) => {
-            if (e.target.value === "OTHER") {
-              setShowCustomChiefdom(true);
-              setChiefdomCode("");
-            } else {
-              setShowCustomChiefdom(false);
-              setChiefdomCode(e.target.value);
-            }
-          }}
-          style={{ width: "100%", padding: 10, marginTop: 6 }}
-        >
-          <option value="">-- choose chiefdom (optional) --</option>
-          {chiefdoms.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.name}
-            </option>
-          ))}
-          <option value="OTHER">Other (specify below)</option>
-        </select>
+        {showCustomProvince ? (
+          <input
+            id="chiefdom"
+            value={customChiefdom}
+            onChange={(e) => setCustomChiefdom(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
+            style={{ width: "100%", padding: 10, marginTop: 6 }}
+            placeholder="Enter custom chiefdom name"
+          />
+        ) : (
+          <select
+            id="chiefdom"
+            value={showCustomChiefdom ? "OTHER" : chiefdomCode}
+            onChange={(e) => {
+              if (e.target.value === "OTHER") {
+                setShowCustomChiefdom(true);
+                setChiefdomCode("");
+              } else {
+                setShowCustomChiefdom(false);
+                setCustomChiefdom("");
+                setChiefdomCode(e.target.value);
+              }
+            }}
+            style={{ width: "100%", padding: 10, marginTop: 6 }}
+          >
+            <option value="">-- choose chiefdom (optional) --</option>
+            {chiefdoms.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+            <option value="OTHER">Other (specify below)</option>
+          </select>
+        )}
       </div>
 
-      {showCustomChiefdom && (
+      {showCustomChiefdom && !showCustomProvince && (
         <div style={{ marginTop: 12 }}>
           <label htmlFor="customChiefdom" style={{ fontWeight: "bold" }}>
             Enter Chiefdom Name
@@ -263,12 +295,11 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
             id="customChiefdom"
             value={customChiefdom}
             onChange={(e) => setCustomChiefdom(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
             style={{ width: "100%", padding: 10, marginTop: 6 }}
             placeholder="Enter custom chiefdom name"
           />
         </div>
-      )}
-        </>
       )}
 
       <div style={{ marginTop: 12 }}>
@@ -279,6 +310,7 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
           id="village"
           value={village}
           onChange={(e) => setVillage(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
           style={{ width: "100%", padding: 10, marginTop: 6 }}
         />
       </div>
