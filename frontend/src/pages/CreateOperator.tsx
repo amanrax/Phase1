@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { operatorService } from "@/services/operator.service";
+import geoService from "@/services/geo.service";
 
 export default function CreateOperator() {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [loadingGeo, setLoadingGeo] = useState(false);
+  
+  const [provinces, setProvinces] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -15,15 +20,77 @@ export default function CreateOperator() {
     password: "",
     confirmPassword: "",
     role: "OPERATOR",
-    assigned_district: "",
     assigned_province: "",
+    assigned_province_name: "",
+    assigned_district: "",
+    assigned_district_name: "",
   });
 
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  // Load provinces on component mount
+  useEffect(() => {
+    loadProvinces();
+  }, []);
+
+  // Load districts when province changes
+  useEffect(() => {
+    if (formData.assigned_province) {
+      loadDistricts(formData.assigned_province);
+    } else {
+      setDistricts([]);
+    }
+  }, [formData.assigned_province]);
+
+  const loadProvinces = async () => {
+    try {
+      setLoadingGeo(true);
+      const data = await geoService.provinces();
+      setProvinces(data);
+    } catch (err) {
+      console.error("Failed to load provinces:", err);
+      setError("Failed to load provinces");
+    } finally {
+      setLoadingGeo(false);
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const loadDistricts = async (provinceCode: string) => {
+    try {
+      setLoadingGeo(true);
+      const data = await geoService.districts(provinceCode);
+      setDistricts(data);
+    } catch (err) {
+      console.error("Failed to load districts:", err);
+      setError("Failed to load districts");
+    } finally {
+      setLoadingGeo(false);
+    }
+  };
+
+  const handleChange = (field: string, value: string) => {
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  const handleProvinceChange = (value: string) => {
+    const selectedProvince = provinces.find(p => p.code === value);
+    setFormData((prev: any) => ({
+      ...prev,
+      assigned_province: value,
+      assigned_province_name: selectedProvince?.name || "",
+      assigned_district: "", // Reset district when province changes
+      assigned_district_name: "",
+    }));
+  };
+
+  const handleDistrictChange = (value: string) => {
+    const selectedDistrict = districts.find(d => d.code === value);
+    setFormData((prev: any) => ({
+      ...prev,
+      assigned_district: value,
+      assigned_district_name: selectedDistrict?.name || "",
+    }));
+  };
+
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     setError("");
     setSaving(true);
@@ -46,15 +113,12 @@ export default function CreateOperator() {
 
     try {
       const payload = {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
         email: formData.email,
+        full_name: `${formData.first_name} ${formData.last_name}`,
         phone: cleanPhone,
         password: formData.password,
-        role: formData.role,
-        assigned_district: formData.assigned_district || undefined,
-        assigned_province: formData.assigned_province || undefined,
-        status: "active",
+        assigned_regions: formData.assigned_province_name ? [formData.assigned_province_name] : [],
+        assigned_districts: formData.assigned_district_name ? [formData.assigned_district_name] : [],
       };
 
       await operatorService.create(payload);
@@ -228,26 +292,54 @@ export default function CreateOperator() {
                 <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
                   Assigned Province
                 </label>
-                <input
-                  type="text"
+                <select
                   value={formData.assigned_province}
-                  onChange={(e) => handleChange("assigned_province", e.target.value)}
-                  placeholder="e.g., Lusaka"
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "4px" }}
-                />
+                  onChange={(e: any) => handleProvinceChange(e.target.value)}
+                  disabled={loadingGeo}
+                  style={{ 
+                    width: "100%", 
+                    padding: "10px", 
+                    border: "1px solid #ccc", 
+                    borderRadius: "4px",
+                    opacity: loadingGeo ? 0.6 : 1,
+                    cursor: loadingGeo ? "not-allowed" : "pointer"
+                  }}
+                >
+                  <option value="">{loadingGeo ? "Loading provinces..." : "Select a Province"}</option>
+                  {provinces.map((p: any) => (
+                    <option key={p.code} value={p.code}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
                 <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
                   Assigned District
                 </label>
-                <input
-                  type="text"
+                <select
                   value={formData.assigned_district}
-                  onChange={(e) => handleChange("assigned_district", e.target.value)}
-                  placeholder="e.g., Lusaka District"
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "4px" }}
-                />
+                  onChange={(e: any) => handleDistrictChange(e.target.value)}
+                  disabled={loadingGeo || !formData.assigned_province}
+                  style={{ 
+                    width: "100%", 
+                    padding: "10px", 
+                    border: "1px solid #ccc", 
+                    borderRadius: "4px",
+                    opacity: (loadingGeo || !formData.assigned_province) ? 0.6 : 1,
+                    cursor: (loadingGeo || !formData.assigned_province) ? "not-allowed" : "pointer"
+                  }}
+                >
+                  <option value="">
+                    {!formData.assigned_province ? "Select Province First" : loadingGeo ? "Loading districts..." : "Select a District"}
+                  </option>
+                  {districts.map((d: any) => (
+                    <option key={d.code} value={d.code}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </fieldset>

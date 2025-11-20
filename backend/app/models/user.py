@@ -142,7 +142,7 @@ class UserOut(BaseModel):
     email: EmailStr
     roles: List[UserRole]
     is_active: bool
-    created_at: datetime
+    created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
     full_name: Optional[str] = None
@@ -150,7 +150,7 @@ class UserOut(BaseModel):
     
     model_config = ConfigDict(
         populate_by_name=True,
-        json_encoders={datetime: lambda v: v.isoformat()}
+        json_encoders={datetime: lambda v: v.isoformat() if v else None}
     )
     
     @classmethod
@@ -162,6 +162,15 @@ class UserOut(BaseModel):
         # Convert ObjectId to string
         if "_id" in data:
             data["_id"] = str(data["_id"])
+        
+        # Normalize roles to uppercase (handle legacy lowercase values)
+        if "roles" in data and data["roles"]:
+            data["roles"] = [role.upper() if isinstance(role, str) else role for role in data["roles"]]
+        
+        # Ensure created_at exists (add current time if missing)
+        if "created_at" not in data or data["created_at"] is None:
+            from datetime import datetime, timezone
+            data["created_at"] = datetime.now(timezone.utc)
         
         # Remove password_hash for security
         data.pop("password_hash", None)

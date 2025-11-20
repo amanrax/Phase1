@@ -186,12 +186,18 @@ async def list_farmers(
     """
     farmer_service = FarmerService(db)
     
+    # Filter by operator if current user is an operator
+    created_by_filter = None
+    if current_user.get("roles") and "OPERATOR" in current_user.get("roles", []):
+        created_by_filter = current_user.get("email")
+    
     farmers = await farmer_service.list_farmers(
         skip=skip,
         limit=limit,
         status=status,
         district=district,
-        search=search
+        search=search,
+        created_by=created_by_filter
     )
     
     return farmers
@@ -224,7 +230,12 @@ async def count_farmers(
     """
     farmer_service = FarmerService(db)
     
-    total = await farmer_service.count_farmers(status=status, district=district)
+    # Filter by operator if current user is an operator
+    created_by_filter = None
+    if current_user.get("roles") and "OPERATOR" in current_user.get("roles", []):
+        created_by_filter = current_user.get("email")
+    
+    total = await farmer_service.count_farmers(status=status, district=district, created_by=created_by_filter)
     
     return {
         "total": total,
@@ -288,8 +299,21 @@ async def get_farmer(
             detail=f"Farmer {farmer_id} not found"
         )
     
-    # TODO: Add resource-based access control for FARMER role
-    # if current_user has FARMER role, verify they own this farmer_id
+    # Access control: FARMER role can only view their own data
+    if current_user.get("roles") and "FARMER" in current_user.get("roles", []):
+        # For farmer role, they should be able to view using their email as farmer_id or via user lookup
+        # This requires mapping from user email to farmer record (farmer_id field)
+        # For now, allow the farmer to access if the farmer document has their email in personal_info
+        farmer_email = farmer.get("personal_info", {}).get("email")
+        user_email = current_user.get("email")
+        if farmer_email != user_email and user_email:
+            # Stricter check: see if this farmer was created by this email
+            created_by = farmer.get("created_by")
+            if created_by != user_email:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You can only view your own farmer profile"
+                )
     
     return farmer
 

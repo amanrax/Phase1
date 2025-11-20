@@ -1,0 +1,2421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer Support Management DEMO</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            background: rgba(0,123,255,0.1);
+        }
+
+        .tab-btn.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .login-form {
+            display: none;
+        }
+
+        .login-form.active {
+            display: block;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .dashboard-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .farmer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .farmer-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .farmer-card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .farmer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .farmer-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .farmer-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .farmer-details {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .farmer-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 1000;
+            transition: all 0.3s;
+            max-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .toast.error {
+            background: #dc3545;
+        }
+
+        .toast.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .file-upload {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+
+        .file-upload.dragover {
+            border-color: #007bff;
+            background: #f0f8ff;
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .supply-request-card {
+            border-left: 4px solid #007bff;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: #f8f9ff;
+            border-radius: 8px;
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .request-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .request-date {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .notification-badge {
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2.2rem;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .dashboard-nav {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .nav-actions {
+                justify-content: center;
+            }
+
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+
+            .farmer-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                margin: 20px;
+                width: calc(100% - 40px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Modal Title</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🌾 Farmer Support Management DEMO </h1>
+            <p>Advanced Farmer Support Management</p>
+        </div>
+
+        <!-- Login Page -->
+        <div id="login-page" class="page active">
+            <div class="card">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchLoginTab('admin')">
+                        <span>👨‍💼</span> Admin
+                    </button>
+                    <button class="tab-btn" onclick="switchLoginTab('operator')">
+                        <span>📋</span> Operator
+                    </button>
+                    <button class="tab-btn" onclick="switchLoginTab('farmer')">
+                        <span>👨‍🌾</span> Farmer
+                    </button>
+                </div>
+
+                <!-- Admin Login -->
+                <form id="admin-login" class="login-form active" onsubmit="adminLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label">🔐 Admin Email</label>
+                        <input type="email" class="form-control" id="admin-email" value="admin@agrimanage.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">🔑 Password</label>
+                        <input type="password" class="form-control" id="admin-password" value="admin123" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span>🚀</span> Login as Admin
+                    </button>
+                </form>
+
+                <!-- Operator Login -->
+                <form id="operator-login" class="login-form" onsubmit="operatorLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label">📧 Email Address</label>
+                        <input type="email" class="form-control" id="op-email" value="operator@test.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">🔒 Password</label>
+                        <input type="password" class="form-control" id="op-password" value="password123" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="op-login-btn">
+                        <span id="op-login-icon">📋</span> 
+                        <span id="op-login-text">Login as Operator</span>
+                    </button>
+                </form>
+
+                <!-- Farmer Login -->
+                <form id="farmer-login" class="login-form" onsubmit="farmerLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label">🆔 NRC Number</label>
+                        <input type="text" class="form-control" id="farmer-nrc" value="123456/12/1" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">🎂 Date of Birth</label>
+                        <input type="date" class="form-control" id="farmer-dob" value="1990-01-01" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span>👨‍🌾</span> Login as Farmer
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="admin-dashboard" class="page">
+            <div class="card">
+                <div class="dashboard-nav">
+                    <h2>🔧 Admin Dashboard</h2>
+                    <div class="nav-actions">
+                        <button class="btn btn-success" onclick="showAddOperator()">
+                            <span>➕</span> Add Operator
+                        </button>
+                        <button class="btn btn-info" onclick="showSystemSettings()">
+                            <span>⚙️</span> Settings
+                        </button>
+                        <button class="btn btn-secondary" onclick="logout()">
+                            <span>🚪</span> Logout
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-operators">3</div>
+                        <div class="stat-label">👨‍💼 Total Operators</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-farmers">47</div>
+                        <div class="stat-label">👨‍🌾 Total Farmers</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="pending-requests">12</div>
+                        <div class="stat-label">⏳ Pending Requests</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-land">156.8</div>
+                        <div class="stat-label">🌾 Total Land (ha)</div>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchAdminTab('operators')">
+                        <span>👨‍💼</span> Operators
+                    </button>
+                    <button class="tab-btn" onclick="switchAdminTab('farmers')">
+                        <span>👨‍🌾</span> All Farmers
+                    </button>
+                    <button class="tab-btn" onclick="switchAdminTab('supplies')">
+                        <span>📦</span> Supply Requests
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <button class="tab-btn" onclick="switchAdminTab('reports')">
+                        <span>📊</span> Reports
+                    </button>
+                </div>
+
+                <div id="admin-operators" class="admin-tab-content">
+                    <div id="operators-list"></div>
+                </div>
+
+                <div id="admin-farmers" class="admin-tab-content hidden">
+                    <div id="all-farmers-list"></div>
+                </div>
+
+                <div id="admin-supplies" class="admin-tab-content hidden">
+                    <div id="supply-requests-list"></div>
+                </div>
+
+                <div id="admin-reports" class="admin-tab-content hidden">
+                    <div style="text-align: center; padding: 40px;">
+                        <h3>📊 System Reports</h3>
+                        <p style="margin: 20px 0;">Comprehensive analytics and reporting dashboard</p>
+                        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                            <button class="btn btn-info" onclick="generateReport('growth')">📈 Farmer Growth Report</button>
+                            <button class="btn btn-info" onclick="generateReport('crops')">🌾 Crop Production Report</button>
+                            <button class="btn btn-info" onclick="generateReport('financial')">💰 Financial Report</button>
+                            <button class="btn btn-info" onclick="generateReport('geographic')">📍 Geographic Report</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operator Dashboard -->
+        <div id="operator-dashboard" class="page">
+            <div class="card">
+                <div class="dashboard-nav">
+                    <h2>📋 Operator Dashboard</h2>
+                    <div class="nav-actions">
+                        <button class="btn btn-success" onclick="showAddFarmer()">
+                            <span>➕</span> Add Farmer
+                        </button>
+                        <button class="btn btn-info" onclick="showDocuments()">
+                            <span>📄</span> Documents
+                        </button>
+                        <input type="text" class="form-control" placeholder="🔍 Search farmers..." 
+                               style="max-width: 300px;" onkeyup="searchFarmers(this.value)">
+                        <button class="btn btn-secondary" onclick="logout()">
+                            <span>🚪</span> Logout
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="my-farmers">12</div>
+                        <div class="stat-label">👨‍🌾 My Farmers</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="this-month">3</div>
+                        <div class="stat-label">📅 This Month</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="pending-docs">8</div>
+                        <div class="stat-label">📄 Pending Docs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="my-land">45.2</div>
+                        <div class="stat-label">🌾 Total Land (ha)</div>
+                    </div>
+                </div>
+
+                <div id="farmers-list"></div>
+            </div>
+        </div>
+
+        <!-- Farmer Dashboard -->
+        <div id="farmer-dashboard" class="page">
+            <div class="card">
+                <div class="dashboard-nav">
+                    <h2>👨‍🌾 My Profile</h2>
+                    <div class="nav-actions">
+                        <button class="btn btn-success" onclick="requestSupplies()">
+                            <span>📦</span> Request Supplies
+                        </button>
+                        <button class="btn btn-info" onclick="uploadDocuments()">
+                            <span>📤</span> Upload Docs
+                        </button>
+                        <button class="btn btn-warning" onclick="generateIdCard()">
+                            <span>🎫</span> ID Card
+                        </button>
+                        <button class="btn btn-secondary" onclick="logout()">
+                            <span>🚪</span> Logout
+                        </button>
+                    </div>
+                </div>
+
+                <div id="farmer-profile"></div>
+                <div id="farmer-supplies"></div>
+                <div id="id-card-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        let currentUser = null;
+        let farmers = JSON.parse(localStorage.getItem('agri_farmers') || '[]');
+        let operators = JSON.parse(localStorage.getItem('agri_operators') || '[]');
+        let supplyRequests = JSON.parse(localStorage.getItem('agri_supplies') || '[]');
+        let documents = JSON.parse(localStorage.getItem('agri_documents') || '{}');
+        let uploadedFiles = JSON.parse(localStorage.getItem('agri_files') || '[]');
+
+        // Location Data
+        const locationData = {
+            "Central Province": {
+                "Chibombo District": ["HRH Chief Chitanda", "HRH Chieftainess Mungule"],
+                "Mumbwa District": ["HRH Chief Chibuluma", "HRH Chief Kaindu"],
+                "Serenje District": ["HRH Senior Chief Muchinda", "HRH Chief Kabamba"]
+            },
+            "Eastern Province": {
+                "Chipata District": ["HRH Paramount Chief Mpezeni", "HRH Chief Chinyanku"],
+                "Katete District": ["HRH Paramount Chief Kalonga Gawa", "HRH Chief Kathumba"]
+            },
+            "Northern Province": {
+                "Kasama District": ["HRH Senior Chief Mwamba", "HRH Chief Nkolemfumu"],
+                "Mbala District": ["HRH Senior Chief Nsokolo", "HRH Chief Fwambo"]
+            },
+            "Southern Province": {
+                "Choma District": ["HRH Chief Macha", "HRH Chief Mapanza"],
+                "Monze District": ["HRH Chief Chona", "HRH Chief Monze"]
+            }
+        };
+
+        // Initialize demo data
+        function initializeData() {
+            if (farmers.length === 0) {
+                farmers = [
+                    {
+                        id: 1,
+                        nrc: "123456/12/1",
+                        firstName: "John",
+                        lastName: "Banda",
+                        phone: "0977123456",
+                        email: "john@test.com",
+                        dob: "1990-01-01",
+                        gender: "Male",
+                        province: "Central Province",
+                        district: "Mumbwa District",
+                        chief: "HRH Chief Kaindu",
+                        landArea: "2.5",
+                        crops: "Maize, Beans",
+                        status: "active",
+                        operatorId: 1,
+                        createdAt: new Date(2024, 8, 15).toISOString()
+                    },
+                    {
+                        id: 2,
+                        nrc: "789012/34/1",
+                        firstName: "Mary",
+                        lastName: "Mwansa",
+                        phone: "0966789012",
+                        email: "mary@test.com",
+                        dob: "1985-05-15",
+                        gender: "Female",
+                        province: "Eastern Province",
+                        district: "Chipata District",
+                        chief: "HRH Paramount Chief Mpezeni",
+                        landArea: "1.8",
+                        crops: "Cotton, Sunflower",
+                        status: "pending",
+                        operatorId: 1,
+                        createdAt: new Date(2024, 9, 20).toISOString()
+                    }
+                ];
+                saveData('farmers', farmers);
+            }
+
+            if (operators.length === 0) {
+                operators = [
+                    {
+                        id: 1,
+                        email: "operator@test.com",
+                        name: "Alice Tembo",
+                        phone: "0977555666",
+                        region: "Central Province",
+                        status: "active",
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+                saveData('operators', operators);
+            }
+
+            if (supplyRequests.length === 0) {
+                supplyRequests = [
+                    {
+                        id: 1,
+                        farmerId: 1,
+                        farmerName: "John Banda",
+                        items: ["Seeds - Maize", "Fertilizer - NPK"],
+                        quantity: "50kg Seeds, 25kg Fertilizer",
+                        urgency: "medium",
+                        status: "pending",
+                        notes: "Preparing for planting season",
+                        requestDate: new Date(2024, 9, 25).toISOString()
+                    }
+                ];
+                saveData('supplies', supplyRequests);
+            }
+        }
+
+        // Utility Functions
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.remove('hidden');
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 4000);
+        }
+
+        function saveData(key, data) {
+            localStorage.setItem(`agri_${key}`, JSON.stringify(data));
+        }
+
+        function generateId() {
+            return Date.now() + Math.floor(Math.random() * 1000);
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString();
+        }
+
+        function showModal(title, content) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-body').innerHTML = content;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        // Fixed Page Navigation
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+
+            // Show the requested page
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        // Fixed Authentication Functions
+        function switchLoginTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.login-form').forEach(form => form.classList.remove('active'));
+
+            document.querySelector(`[onclick="switchLoginTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`${tab}-login`).classList.add('active');
+        }
+
+        function adminLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+
+            if (email === 'admin@agrimanage.com' && password === 'admin123') {
+                currentUser = { type: 'admin', email };
+                showToast('Welcome Admin! 🔧');
+                showAdminDashboard();
+            } else {
+                showToast('Invalid admin credentials', 'error');
+            }
+        }
+
+        async function operatorLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('op-email').value;
+            const password = document.getElementById('op-password').value;
+            const button = document.getElementById('op-login-btn');
+            const icon = document.getElementById('op-login-icon');
+            const text = document.getElementById('op-login-text');
+
+            // Show loading state
+            button.disabled = true;
+            icon.innerHTML = '<div class="loading"></div>';
+            text.textContent = 'Logging in...';
+
+            // Simulate faster login
+            setTimeout(() => {
+                const operator = operators.find(op => op.email === email);
+
+                if ((email === 'operator@test.com' && password === 'password123') || operator) {
+                    currentUser = { 
+                        type: 'operator', 
+                        email, 
+                        operator: operator || { id: 1, name: 'Test Operator', region: 'Central Province' }
+                    };
+                    showToast('Login successful! 📋');
+                    showOperatorDashboard();
+                } else {
+                    showToast('Invalid operator credentials', 'error');
+                }
+
+                // Reset button
+                button.disabled = false;
+                icon.textContent = '📋';
+                text.textContent = 'Login as Operator';
+            }, 300);
+        }
+
+        function farmerLogin(event) {
+            event.preventDefault();
+
+            const nrc = document.getElementById('farmer-nrc').value;
+            const dob = document.getElementById('farmer-dob').value;
+
+            const farmer = farmers.find(f => f.nrc === nrc && f.dob === dob);
+
+            if (farmer) {
+                currentUser = { type: 'farmer', farmer };
+                showToast('Welcome back! 👨‍🌾');
+                showFarmerDashboard();
+            } else {
+                showToast('Farmer not found. Please check your details.', 'error');
+            }
+        }
+
+        // Fixed Logout Function
+        function logout() {
+            currentUser = null;
+
+            // Clear all form data
+            document.querySelectorAll('input').forEach(input => {
+                if (input.type !== 'checkbox' && input.type !== 'radio') {
+                    input.value = '';
+                }
+            });
+
+            // Reset login form values to demo data
+            document.getElementById('admin-email').value = 'admin@agrimanage.com';
+            document.getElementById('admin-password').value = 'admin123';
+            document.getElementById('op-email').value = 'operator@test.com';
+            document.getElementById('op-password').value = 'password123';
+            document.getElementById('farmer-nrc').value = '123456/12/1';
+            document.getElementById('farmer-dob').value = '1990-01-01';
+
+            // Show only login page
+            showPage('login-page');
+
+            // Reset login tabs to admin
+            switchLoginTab('admin');
+
+            showToast('Logged out successfully! 👋');
+        }
+
+        // Dashboard Functions
+        function showAdminDashboard() {
+            showPage('admin-dashboard');
+            loadAdminStats();
+            loadOperatorsList();
+        }
+
+        function showOperatorDashboard() {
+            showPage('operator-dashboard');
+            loadOperatorStats();
+            loadFarmersList();
+        }
+
+        function showFarmerDashboard() {
+            showPage('farmer-dashboard');
+            loadFarmerProfile();
+            loadFarmerSupplies();
+        }
+
+        function loadAdminStats() {
+            document.getElementById('total-operators').textContent = operators.length;
+            document.getElementById('total-farmers').textContent = farmers.length;
+            document.getElementById('pending-requests').textContent = supplyRequests.filter(r => r.status === 'pending').length;
+            document.getElementById('total-land').textContent = farmers.reduce((sum, f) => sum + parseFloat(f.landArea || 0), 0).toFixed(1);
+        }
+
+        function switchAdminTab(tab) {
+            // Remove active class from all tab buttons in admin dashboard
+            document.querySelectorAll('#admin-dashboard .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.admin-tab-content').forEach(content => content.classList.add('hidden'));
+
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            document.getElementById(`admin-${tab}`).classList.remove('hidden');
+
+            // Load appropriate content
+            if (tab === 'operators') loadOperatorsList();
+            if (tab === 'farmers') loadAllFarmersList();
+            if (tab === 'supplies') loadSupplyRequestsList();
+        }
+
+        function loadOperatorsList() {
+            const container = document.getElementById('operators-list');
+            container.innerHTML = '';
+
+            if (operators.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 40px; color: #666;">No operators registered. Click "Add Operator" to get started.</p>';
+                return;
+            }
+
+            const operatorsGrid = document.createElement('div');
+            operatorsGrid.className = 'farmer-grid';
+
+            operators.forEach(operator => {
+                const operatorFarmers = farmers.filter(f => f.operatorId === operator.id);
+                const operatorCard = document.createElement('div');
+                operatorCard.className = 'farmer-card';
+                operatorCard.innerHTML = `
+                    <div class="farmer-header">
+                        <div>
+                            <div class="farmer-name">👨‍💼 ${operator.name}</div>
+                            <div style="color: #666; font-size: 14px;">${operator.email}</div>
+                        </div>
+                        <div class="farmer-status ${operator.status === 'active' ? 'status-active' : 'status-pending'}">
+                            ${operator.status}
+                        </div>
+                    </div>
+                    <div class="farmer-details">
+                        📞 ${operator.phone}<br>
+                        📍 ${operator.region}<br>
+                        👨‍🌾 Managing ${operatorFarmers.length} farmers<br>
+                        📅 Joined ${formatDate(operator.createdAt)}
+                    </div>
+                    <div class="farmer-actions">
+                        <button class="btn btn-info" onclick="viewOperator(${operator.id})">👁️ View</button>
+                        <button class="btn btn-secondary" onclick="editOperator(${operator.id})">✏️ Edit</button>
+                        <button class="btn btn-danger" onclick="deleteOperator(${operator.id})">🗑️ Delete</button>
+                    </div>
+                `;
+                operatorsGrid.appendChild(operatorCard);
+            });
+
+            container.appendChild(operatorsGrid);
+        }
+
+        function showAddOperator() {
+            showModal('Add New Operator', `
+                <form onsubmit="saveOperator(event)">
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label class="form-label">👤 Full Name</label>
+                            <input type="text" class="form-control" id="op-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">📧 Email</label>
+                            <input type="email" class="form-control" id="op-email-new" required>
+                        </div>
+                    </div>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label class="form-label">📞 Phone</label>
+                            <input type="tel" class="form-control" id="op-phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">📍 Region</label>
+                            <select class="form-control" id="op-region" required>
+                                <option value="">Select Region</option>
+                                <option value="Central Province">Central Province</option>
+                                <option value="Eastern Province">Eastern Province</option>
+                                <option value="Northern Province">Northern Province</option>
+                                <option value="Southern Province">Southern Province</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">🔑 Initial Password</label>
+                        <input type="password" class="form-control" id="op-password-new" value="password123" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">💾 Create Operator</button>
+                </form>
+            `);
+        }
+
+        function saveOperator(event) {
+            event.preventDefault();
+
+            const newOperator = {
+                id: generateId(),
+                name: document.getElementById('op-name').value,
+                email: document.getElementById('op-email-new').value,
+                phone: document.getElementById('op-phone').value,
+                region: document.getElementById('op-region').value,
+                password: document.getElementById('op-password-new').value,
+                status: 'active',
+                createdAt: new Date().toISOString()
+            };
+
+            operators.push(newOperator);
+            saveData('operators', operators);
+            closeModal();
+            loadOperatorsList();
+            loadAdminStats();
+            showToast('Operator created successfully! ✅');
+        }
+
+        // Fixed Operator Functions
+        function viewOperator(id) {
+            const operator = operators.find(op => op.id === id);
+            if (!operator) return;
+
+            const operatorFarmers = farmers.filter(f => f.operatorId === id);
+
+            showModal(`👨‍💼 ${operator.name}`, `
+                <div style="line-height: 1.8;">
+                    <div class="two-column">
+                        <div>
+                            <h4>👤 Operator Details</h4>
+                            <p><strong>Email:</strong> ${operator.email}</p>
+                            <p><strong>Phone:</strong> ${operator.phone}</p>
+                            <p><strong>Region:</strong> ${operator.region}</p>
+                            <p><strong>Status:</strong> <span class="farmer-status status-active">${operator.status}</span></p>
+                            <p><strong>Joined:</strong> ${formatDate(operator.createdAt)}</p>
+                        </div>
+                        <div>
+                            <h4>📊 Performance</h4>
+                            <p><strong>Farmers Managed:</strong> ${operatorFarmers.length}</p>
+                            <p><strong>Total Land:</strong> ${operatorFarmers.reduce((sum, f) => sum + parseFloat(f.landArea || 0), 0).toFixed(1)} hectares</p>
+                            <p><strong>Active Farmers:</strong> ${operatorFarmers.filter(f => f.status === 'active').length}</p>
+                            <p><strong>Recent Registrations:</strong> ${operatorFarmers.filter(f => {
+                                const created = new Date(f.createdAt);
+                                const oneMonthAgo = new Date();
+                                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                                return created > oneMonthAgo;
+                            }).length}</p>
+                        </div>
+                    </div>
+                </div>
+            `);
+        }
+
+        function editOperator(id) {
+            const operator = operators.find(op => op.id === id);
+            if (!operator) return;
+
+            showModal('Edit Operator', `
+                <form onsubmit="updateOperator(event, ${id})">
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label class="form-label">👤 Full Name</label>
+                            <input type="text" class="form-control" id="edit-op-name" value="${operator.name}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">📧 Email</label>
+                            <input type="email" class="form-control" id="edit-op-email" value="${operator.email}" required>
+                        </div>
+                    </div>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label class="form-label">📞 Phone</label>
+                            <input type="tel" class="form-control" id="edit-op-phone" value="${operator.phone}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">📍 Region</label>
+                            <select class="form-control" id="edit-op-region" required>
+                                <option value="Central Province" ${operator.region === 'Central Province' ? 'selected' : ''}>Central Province</option>
+                                <option value="Eastern Province" ${operator.region === 'Eastern Province' ? 'selected' : ''}>Eastern Province</option>
+                                <option value="Northern Province" ${operator.region === 'Northern Province' ? 'selected' : ''}>Northern Province</option>
+                                <option value="Southern Province" ${operator.region === 'Southern Province' ? 'selected' : ''}>Southern Province</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📊 Status</label>
+                        <select class="form-control" id="edit-op-status" required>
+                            <option value="active" ${operator.status === 'active' ? 'selected' : ''}>Active</option>
+                            <option value="inactive" ${operator.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">💾 Update Operator</button>
+                </form>
+            `);
+        }
+
+        function updateOperator(event, id) {
+            event.preventDefault();
+
+            const index = operators.findIndex(op => op.id === id);
+            if (index === -1) return;
+
+            operators[index] = {
+                ...operators[index],
+                name: document.getElementById('edit-op-name').value,
+                email: document.getElementById('edit-op-email').value,
+                phone: document.getElementById('edit-op-phone').value,
+                region: document.getElementById('edit-op-region').value,
+                status: document.getElementById('edit-op-status').value
+            };
+
+            saveData('operators', operators);
+            closeModal();
+            loadOperatorsList();
+            showToast('Operator updated successfully! ✅');
+        }
+
+        function deleteOperator(id) {
+            const operator = operators.find(op => op.id === id);
+            const operatorFarmers = farmers.filter(f => f.operatorId === id);
+
+            if (operatorFarmers.length > 0) {
+                showToast(`Cannot delete operator. ${operatorFarmers.length} farmers are assigned to this operator.`, 'error');
+                return;
+            }
+
+            if (confirm(`⚠️ Are you sure you want to delete operator "${operator.name}"? This action cannot be undone.`)) {
+                operators = operators.filter(op => op.id !== id);
+                saveData('operators', operators);
+                loadOperatorsList();
+                loadAdminStats();
+                showToast('Operator deleted successfully! 🗑️');
+            }
+        }
+
+        // Supply Request Functions
+        function requestSupplies() {
+            showModal('Request Agricultural Supplies', `
+                <form onsubmit="submitSupplyRequest(event)">
+                    <div class="form-group">
+                        <label class="form-label">📦 Required Items (Select all that apply)</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" value="Seeds - Maize"> 🌽 Maize Seeds
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" value="Seeds - Beans"> 🫘 Bean Seeds
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" value="Fertilizer - NPK"> 💊 NPK Fertilizer
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" value="Fertilizer - Organic"> 🌿 Organic Fertilizer
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" value="Pesticides"> 🛡️ Pesticides
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" value="Tools - Hoes"> 🔨 Farming Tools
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📏 Quantity Details</label>
+                        <textarea class="form-control" id="supply-quantity" placeholder="e.g., 25kg Maize seeds, 50kg NPK fertilizer, 10 liters pesticide..." required rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">⚡ Urgency Level</label>
+                        <select class="form-control" id="supply-urgency" required>
+                            <option value="low">🟢 Low - Can wait (1-2 months)</option>
+                            <option value="medium" selected>🟡 Medium - Next few weeks</option>
+                            <option value="high">🔴 High - Urgent (within days)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📝 Additional Notes</label>
+                        <textarea class="form-control" id="supply-notes" placeholder="Any special requirements, delivery instructions, or additional information..." rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">📤 Submit Supply Request</button>
+                </form>
+            `);
+        }
+
+        function submitSupplyRequest(event) {
+            event.preventDefault();
+
+            const selectedItems = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(cb => cb.value);
+
+            if (selectedItems.length === 0) {
+                showToast('Please select at least one item', 'error');
+                return;
+            }
+
+            const request = {
+                id: generateId(),
+                farmerId: currentUser.farmer.id,
+                farmerName: `${currentUser.farmer.firstName} ${currentUser.farmer.lastName}`,
+                items: selectedItems,
+                quantity: document.getElementById('supply-quantity').value,
+                urgency: document.getElementById('supply-urgency').value,
+                status: 'pending',
+                notes: document.getElementById('supply-notes').value,
+                requestDate: new Date().toISOString()
+            };
+
+            supplyRequests.push(request);
+            saveData('supplies', supplyRequests);
+            closeModal();
+            loadFarmerSupplies();
+            showToast('Supply request submitted successfully! 📦');
+        }
+
+        function loadSupplyRequestsList() {
+            const container = document.getElementById('supply-requests-list');
+            container.innerHTML = '';
+
+            if (supplyRequests.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 40px; color: #666;">No supply requests yet.</p>';
+                return;
+            }
+
+            supplyRequests.forEach(request => {
+                const urgencyColors = {
+                    low: '#28a745',
+                    medium: '#ffc107',
+                    high: '#dc3545'
+                };
+
+                const statusColors = {
+                    pending: '#6c757d',
+                    approved: '#28a745',
+                    rejected: '#dc3545'
+                };
+
+                const requestCard = document.createElement('div');
+                requestCard.className = 'supply-request-card';
+                requestCard.style.borderLeftColor = urgencyColors[request.urgency];
+
+                requestCard.innerHTML = `
+                    <div class="request-header">
+                        <div class="request-title">📦 ${request.farmerName} - Request #${request.id.toString().slice(-4)}</div>
+                        <div class="request-date">${formatDate(request.requestDate)}</div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <p><strong>Items:</strong> ${request.items.join(', ')}</p>
+                        <p><strong>Quantity:</strong> ${request.quantity}</p>
+                        <p><strong>Urgency:</strong> <span style="color: ${urgencyColors[request.urgency]}; font-weight: 600;">${request.urgency.toUpperCase()}</span></p>
+                        <p><strong>Status:</strong> <span style="color: ${statusColors[request.status]}; font-weight: 600;">${request.status.toUpperCase()}</span></p>
+                        ${request.notes ? `<p><strong>Notes:</strong> ${request.notes}</p>` : ''}
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-success" onclick="approveSupply(${request.id})">✅ Approve</button>
+                        <button class="btn btn-danger" onclick="rejectSupply(${request.id})">❌ Reject</button>
+                        <button class="btn btn-info" onclick="viewSupplyDetails(${request.id})">👁️ View Details</button>
+                    </div>
+                `;
+                container.appendChild(requestCard);
+            });
+        }
+
+        function approveSupply(requestId) {
+            const index = supplyRequests.findIndex(r => r.id === requestId);
+            if (index !== -1) {
+                supplyRequests[index].status = 'approved';
+                saveData('supplies', supplyRequests);
+                loadSupplyRequestsList();
+                showToast('Supply request approved! ✅');
+            }
+        }
+
+        function rejectSupply(requestId) {
+            const index = supplyRequests.findIndex(r => r.id === requestId);
+            if (index !== -1) {
+                supplyRequests[index].status = 'rejected';
+                saveData('supplies', supplyRequests);
+                loadSupplyRequestsList();
+                showToast('Supply request rejected! ❌');
+            }
+        }
+
+        function viewSupplyDetails(requestId) {
+            const request = supplyRequests.find(r => r.id === requestId);
+            if (!request) return;
+
+            const urgencyColors = {
+                low: '#28a745',
+                medium: '#ffc107',
+                high: '#dc3545'
+            };
+
+            showModal(`Supply Request Details - #${request.id.toString().slice(-4)}`, `
+                <div style="line-height: 1.8;">
+                    <div class="two-column">
+                        <div>
+                            <h4>👨‍🌾 Farmer Information</h4>
+                            <p><strong>Name:</strong> ${request.farmerName}</p>
+                            <p><strong>Request Date:</strong> ${formatDate(request.requestDate)}</p>
+                            <p><strong>Status:</strong> <span style="text-transform: uppercase; font-weight: 600;">${request.status}</span></p>
+                            <p><strong>Urgency:</strong> <span style="color: ${urgencyColors[request.urgency]}; font-weight: 600;">${request.urgency.toUpperCase()}</span></p>
+                        </div>
+                        <div>
+                            <h4>📦 Request Details</h4>
+                            <p><strong>Items Requested:</strong></p>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                ${request.items.map(item => `<li>${item}</li>`).join('')}
+                            </ul>
+                            <p><strong>Quantity Details:</strong> ${request.quantity}</p>
+                            ${request.notes ? `<p><strong>Notes:</strong> ${request.notes}</p>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `);
+        }
+
+        // Fixed Document Upload Functions
+        function uploadDocuments() {
+            showModal('Upload Documents', `
+                <div style="margin-bottom: 20px;">
+                    <p><strong>📄 Supported file types:</strong> Images (JPG, PNG), PDFs, Documents (DOC, DOCX)</p>
+                    <p><strong>📏 Maximum file size:</strong> 10MB per file</p>
+                </div>
+
+                <div class="file-upload" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                    <div style="font-size: 48px; margin-bottom: 15px;">📤</div>
+                    <div>
+                        <strong>Drag and drop files here</strong><br>
+                        <p style="margin: 10px 0;">or</p>
+                        <button type="button" class="btn btn-primary" onclick="selectFiles()" style="width: auto;">Choose Files</button>
+                    </div>
+                    <input type="file" id="file-input" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" style="display: none;" onchange="handleFileSelect(event)">
+                </div>
+
+                <div id="file-list" class="file-list"></div>
+
+                <div style="margin-top: 20px;">
+                    <button type="button" class="btn btn-success" onclick="uploadSelectedFiles()" id="upload-btn" style="display: none;">📤 Upload All Files</button>
+                    <p style="color: #666; font-size: 14px; margin-top: 10px;">📁 Files are stored locally in your browser for demo purposes. In production, files would be uploaded to a secure server.</p>
+                </div>
+            `);
+        }
+
+        function selectFiles() {
+            document.getElementById('file-input').click();
+        }
+
+        function handleFileSelect(event) {
+            handleFiles(event.target.files);
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            handleFiles(event.dataTransfer.files);
+
+            // Remove dragover styling
+            const uploadArea = event.target.closest('.file-upload');
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Add dragover styling
+            const uploadArea = event.target.closest('.file-upload');
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Remove dragover styling
+            const uploadArea = event.target.closest('.file-upload');
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleFiles(files) {
+            const fileList = document.getElementById('file-list');
+            const uploadBtn = document.getElementById('upload-btn');
+
+            Array.from(files).forEach((file, index) => {
+                // Check file size (10MB limit)
+                if (file.size > 10 * 1024 * 1024) {
+                    showToast(`File "${file.name}" is too large. Maximum size is 10MB.`, 'error');
+                    return;
+                }
+
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.setAttribute('data-file-id', index);
+
+                // Get file type icon
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+                const fileIcons = {
+                    'pdf': '📄',
+                    'jpg': '🖼️',
+                    'jpeg': '🖼️',
+                    'png': '🖼️',
+                    'doc': '📃',
+                    'docx': '📃'
+                };
+                const fileIcon = fileIcons[fileExtension] || '📎';
+
+                fileItem.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 24px;">${fileIcon}</span>
+                        <div>
+                            <strong>${file.name}</strong><br>
+                            <small style="color: #666;">${(file.size / 1024).toFixed(1)} KB • ${fileExtension.toUpperCase()}</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-danger" onclick="removeFile(this)" style="padding: 6px 12px;">❌</button>
+                `;
+                fileList.appendChild(fileItem);
+            });
+
+            if (fileList.children.length > 0) {
+                uploadBtn.style.display = 'block';
+            }
+        }
+
+        function removeFile(button) {
+            button.parentElement.remove();
+            const fileList = document.getElementById('file-list');
+            const uploadBtn = document.getElementById('upload-btn');
+
+            if (fileList.children.length === 0) {
+                uploadBtn.style.display = 'none';
+            }
+        }
+
+        function uploadSelectedFiles() {
+            const fileItems = document.querySelectorAll('.file-item');
+            const farmerId = currentUser.farmer.id;
+
+            if (!documents[farmerId]) {
+                documents[farmerId] = [];
+            }
+
+            let uploadedCount = 0;
+            fileItems.forEach(item => {
+                const fileName = item.querySelector('strong').textContent;
+                const fileExtension = fileName.split('.').pop().toLowerCase();
+
+                const docData = {
+                    id: generateId(),
+                    name: fileName,
+                    type: fileExtension,
+                    size: item.querySelector('small').textContent.split(' KB')[0],
+                    uploadDate: new Date().toISOString(),
+                    status: 'uploaded',
+                    farmerId: farmerId
+                };
+
+                documents[farmerId].push(docData);
+                uploadedFiles.push(docData); // Also store in global files list
+                uploadedCount++;
+            });
+
+            saveData('documents', documents);
+            saveData('files', uploadedFiles);
+            closeModal();
+            showToast(`${uploadedCount} document(s) uploaded successfully! 📄`);
+        }
+
+        // Document Management Functions
+        function showDocuments() {
+            if (currentUser.type === 'operator') {
+                // Show documents for all farmers under this operator
+                const operatorFarmers = farmers.filter(f => f.operatorId === currentUser.operator.id);
+                let allDocs = [];
+
+                operatorFarmers.forEach(farmer => {
+                    if (documents[farmer.id]) {
+                        documents[farmer.id].forEach(doc => {
+                            allDocs.push({
+                                ...doc,
+                                farmerName: `${farmer.firstName} ${farmer.lastName}`
+                            });
+                        });
+                    }
+                });
+
+                let docsHtml = '';
+                if (allDocs.length === 0) {
+                    docsHtml = '<p style="text-align: center; padding: 40px; color: #666;">No documents uploaded yet.</p>';
+                } else {
+                    allDocs.forEach(doc => {
+                        const fileIcon = getFileIcon(doc.type);
+                        docsHtml += `
+                            <div class="file-item">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 24px;">${fileIcon}</span>
+                                    <div>
+                                        <strong>${doc.name}</strong><br>
+                                        <small style="color: #666;">
+                                            ${doc.farmerName} • ${doc.size} KB • ${formatDate(doc.uploadDate)}
+                                        </small>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 5px;">
+                                    <button class="btn btn-info" onclick="viewDocument('${doc.id}')" style="padding: 6px 12px;">👁️</button>
+                                    <button class="btn btn-danger" onclick="deleteDocument('${doc.id}')" style="padding: 6px 12px;">🗑️</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                showModal('Document Management', `
+                    <div style="margin-bottom: 20px;">
+                        <h4>📄 All Documents (${allDocs.length} files)</h4>
+                        <p style="color: #666;">Documents uploaded by farmers under your management</p>
+                    </div>
+                    <div class="file-list">${docsHtml}</div>
+                `);
+            }
+        }
+
+        function getFileIcon(fileType) {
+            const icons = {
+                'pdf': '📄',
+                'jpg': '🖼️',
+                'jpeg': '🖼️',
+                'png': '🖼️',
+                'doc': '📃',
+                'docx': '📃'
+            };
+            return icons[fileType.toLowerCase()] || '📎';
+        }
+
+        function viewDocument(docId) {
+            showToast('Document viewing feature would open the file in production', 'warning');
+        }
+
+        function deleteDocument(docId) {
+            if (confirm('Are you sure you want to delete this document?')) {
+                // Remove from all documents
+                Object.keys(documents).forEach(farmerId => {
+                    documents[farmerId] = documents[farmerId].filter(doc => doc.id !== docId);
+                });
+
+                // Remove from uploaded files
+                uploadedFiles = uploadedFiles.filter(file => file.id !== docId);
+
+                saveData('documents', documents);
+                saveData('files', uploadedFiles);
+
+                closeModal();
+                showToast('Document deleted successfully! 🗑️');
+            }
+        }
+
+        // System Settings Function
+        function showSystemSettings() {
+            showModal('System Settings', `
+                <div style="text-align: center; padding: 20px;">
+                    <h3>⚙️ System Configuration</h3>
+                    <p style="margin: 20px 0; color: #666;">Advanced system settings and configuration options</p>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px;">
+                        <button class="btn btn-info" onclick="showToast('Feature in development', 'warning')">🌐 API Settings</button>
+                        <button class="btn btn-info" onclick="showToast('Feature in development', 'warning')">💾 Backup Data</button>
+                        <button class="btn btn-info" onclick="showToast('Feature in development', 'warning')">📊 System Reports</button>
+                        <button class="btn btn-info" onclick="showToast('Feature in development', 'warning')">🔔 Notifications</button>
+                        <button class="btn btn-info" onclick="showToast('Feature in development', 'warning')">👥 User Management</button>
+                        <button class="btn btn-info" onclick="showToast('Feature in development', 'warning')">🔒 Security Settings</button>
+                    </div>
+
+                    <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                        <h4>📁 Storage Information</h4>
+                        <p><strong>Current Storage:</strong> Browser Local Storage (Demo Mode)</p>
+                        <p><strong>Documents Stored:</strong> ${uploadedFiles.length} files</p>
+                        <p><strong>Data Location:</strong> Client-side only</p>
+                        <p style="color: #666; margin-top: 10px; font-size: 14px;">
+                            In production, all data would be stored securely on servers with proper backup and security measures.
+                        </p>
+                    </div>
+                </div>
+            `);
+        }
+
+        // Enhanced Report Generation
+        function generateReport(type) {
+            const reportTypes = {
+                'growth': '📈 Farmer Growth Report',
+                'crops': '🌾 Crop Production Report',
+                'financial': '💰 Financial Report',
+                'geographic': '📍 Geographic Distribution Report'
+            };
+
+            showModal(reportTypes[type], `
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">📊</div>
+                    <h3>Report Generation</h3>
+                    <p style="margin: 20px 0; color: #666;">
+                        ${reportTypes[type]} is being generated with current system data...
+                    </p>
+
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: left;">
+                        <h4>📋 Report Summary:</h4>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Total Farmers: ${farmers.length}</li>
+                            <li>Total Operators: ${operators.length}</li>
+                            <li>Total Land Area: ${farmers.reduce((sum, f) => sum + parseFloat(f.landArea || 0), 0).toFixed(1)} hectares</li>
+                            <li>Active Supply Requests: ${supplyRequests.filter(r => r.status === 'pending').length}</li>
+                            <li>Uploaded Documents: ${uploadedFiles.length} files</li>
+                        </ul>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn btn-success" onclick="showToast('Report exported successfully!', 'success')">📄 Export PDF</button>
+                        <button class="btn btn-info" onclick="showToast('Report exported successfully!', 'success')">📊 Export Excel</button>
+                        <button class="btn btn-warning" onclick="showToast('Email sent successfully!', 'success')">📧 Email Report</button>
+                    </div>
+                </div>
+            `);
+        }
+
+        // Load Operator Stats
+        function loadOperatorStats() {
+            const operatorFarmers = farmers.filter(f => f.operatorId === currentUser.operator.id);
+            const thisMonth = operatorFarmers.filter(f => {
+                const created = new Date(f.createdAt);
+                const now = new Date();
+                return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
+            });
+
+            document.getElementById('my-farmers').textContent = operatorFarmers.length;
+            document.getElementById('this-month').textContent = thisMonth.length;
+            document.getElementById('pending-docs').textContent = Math.floor(Math.random() * 10) + 1;
+            document.getElementById('my-land').textContent = operatorFarmers.reduce((sum, f) => sum + parseFloat(f.landArea || 0), 0).toFixed(1);
+        }
+
+        function loadFarmersList() {
+            const container = document.getElementById('farmers-list');
+            container.innerHTML = '';
+
+            const operatorFarmers = farmers.filter(f => f.operatorId === currentUser.operator.id);
+
+            if (operatorFarmers.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">No farmers assigned yet. Click "Add Farmer" to get started.</div>';
+                return;
+            }
+
+            const farmersGrid = document.createElement('div');
+            farmersGrid.className = 'farmer-grid';
+
+            operatorFarmers.forEach(farmer => {
+                const farmerCard = document.createElement('div');
+                farmerCard.className = 'farmer-card';
+                farmerCard.innerHTML = `
+                    <div class="farmer-header">
+                        <div>
+                            <div class="farmer-name">${farmer.firstName} ${farmer.lastName}</div>
+                            <div style="color: #666; font-size: 14px;">${farmer.nrc}</div>
+                        </div>
+                        <div class="farmer-status ${farmer.status === 'active' ? 'status-active' : 'status-pending'}">
+                            ${farmer.status}
+                        </div>
+                    </div>
+                    <div class="farmer-details">
+                        📱 ${farmer.phone} • 📧 ${farmer.email}<br>
+                        🏠 ${farmer.province}<br>
+                        📍 ${farmer.district}<br>
+                        👑 ${farmer.chief}<br>
+                        🌾 ${farmer.landArea} hectares • ${farmer.crops}<br>
+                        📅 Registered ${formatDate(farmer.createdAt)}
+                    </div>
+                    <div class="farmer-actions">
+                        <button class="btn btn-info" onclick="viewFarmer(${farmer.id})">👁️ View</button>
+                        <button class="btn btn-secondary" onclick="editFarmer(${farmer.id})">✏️ Edit</button>
+                        <button class="btn btn-warning" onclick="generateFarmerIdCard(${farmer.id})">🎫 ID Card</button>
+                        <button class="btn btn-danger" onclick="deleteFarmer(${farmer.id})">🗑️ Delete</button>
+                    </div>
+                `;
+                farmersGrid.appendChild(farmerCard);
+            });
+
+            container.appendChild(farmersGrid);
+        }
+
+        function loadFarmerProfile() {
+            const container = document.getElementById('farmer-profile');
+            const farmer = currentUser.farmer;
+
+            container.innerHTML = `
+                <div class="two-column">
+                    <div>
+                        <h3>👤 Personal Information</h3>
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                            <p><strong>NRC:</strong> ${farmer.nrc}</p>
+                            <p><strong>Name:</strong> ${farmer.firstName} ${farmer.lastName}</p>
+                            <p><strong>Phone:</strong> ${farmer.phone}</p>
+                            <p><strong>Email:</strong> ${farmer.email}</p>
+                            <p><strong>Date of Birth:</strong> ${farmer.dob}</p>
+                            <p><strong>Gender:</strong> ${farmer.gender}</p>
+                            <p><strong>Status:</strong> <span class="farmer-status ${farmer.status === 'active' ? 'status-active' : 'status-pending'}">${farmer.status}</span></p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>🏠 Location & Farming</h3>
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                            <p><strong>Province:</strong> ${farmer.province}</p>
+                            <p><strong>District:</strong> ${farmer.district}</p>
+                            <p><strong>Chief:</strong> ${farmer.chief}</p>
+                            <p><strong>Land Area:</strong> ${farmer.landArea} hectares</p>
+                            <p><strong>Main Crops:</strong> ${farmer.crops}</p>
+                            <p><strong>Registered:</strong> ${formatDate(farmer.createdAt)}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadFarmerSupplies() {
+            const container = document.getElementById('farmer-supplies');
+            const farmerRequests = supplyRequests.filter(r => r.farmerId === currentUser.farmer.id);
+
+            if (farmerRequests.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 20px; margin-top: 20px; background: #f8f9fa; border-radius: 8px;">
+                        <h3>📦 Supply Requests</h3>
+                        <p>No supply requests yet. Click "Request Supplies" to get started!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let suppliesHtml = '<h3 style="margin-top: 30px;">📦 My Supply Requests</h3>';
+
+            farmerRequests.forEach(request => {
+                const urgencyColors = {
+                    low: '#28a745',
+                    medium: '#ffc107',
+                    high: '#dc3545'
+                };
+
+                const statusColors = {
+                    pending: '#6c757d',
+                    approved: '#28a745',
+                    rejected: '#dc3545'
+                };
+
+                suppliesHtml += `
+                    <div class="supply-request-card" style="border-left-color: ${urgencyColors[request.urgency]};">
+                        <div class="request-header">
+                            <div class="request-title">Request #${request.id.toString().slice(-4)}</div>
+                            <div class="request-date">${formatDate(request.requestDate)}</div>
+                        </div>
+                        <div>
+                            <p><strong>Items:</strong> ${request.items.join(', ')}</p>
+                            <p><strong>Quantity:</strong> ${request.quantity}</p>
+                            <p><strong>Status:</strong> <span style="color: ${statusColors[request.status]}; font-weight: 600;">${request.status.toUpperCase()}</span></p>
+                            <p><strong>Urgency:</strong> <span style="color: ${urgencyColors[request.urgency]}; font-weight: 600;">${request.urgency.toUpperCase()}</span></p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = suppliesHtml;
+        }
+
+        // Enhanced ID Card Generation
+        function generateIdCard() {
+            const farmer = currentUser.farmer;
+            const container = document.getElementById('id-card-container');
+
+            container.innerHTML = `
+                <div style="margin-top: 30px;">
+                    <h3>🎫 Digital Farmer ID Card</h3>
+                    <div id="id-card-to-print" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px; margin: 20px 0; position: relative; overflow: hidden;">
+                        <div style="position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);"></div>
+
+                        <div style="text-align: center; margin-bottom: 25px;">
+                            <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">FARMER IDENTIFICATION CARD</div>
+                            <div style="font-size: 14px; opacity: 0.9;">Republic of Zambia - Ministry of Agriculture</div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 300px;">
+                                <div style="margin-bottom: 15px;">
+                                    <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px;">Full Name</div>
+                                    <div style="font-size: 20px; font-weight: 600;">${farmer.firstName} ${farmer.lastName}</div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div>
+                                        <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase;">NRC Number</div>
+                                        <div style="font-size: 16px; font-weight: 600;">${farmer.nrc}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase;">Phone</div>
+                                        <div style="font-size: 16px; font-weight: 600;">${farmer.phone}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase;">District</div>
+                                        <div style="font-size: 16px; font-weight: 600;">${farmer.district.replace(' District', '')}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase;">Land Area</div>
+                                        <div style="font-size: 16px; font-weight: 600;">${farmer.landArea} hectares</div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 15px;">
+                                    <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase;">Main Crops</div>
+                                    <div style="font-size: 16px; font-weight: 600;">${farmer.crops}</div>
+                                </div>
+                            </div>
+
+                            <div style="width: 100px; height: 100px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #333; font-size: 12px; text-align: center; margin-left: 20px;">
+                                <div>
+                                    <div style="font-size: 24px;">📱</div>
+                                    QR CODE<br>
+                                    <strong>${farmer.nrc.split('/')[0]}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="position: absolute; bottom: 10px; right: 20px; font-size: 12px; opacity: 0.7;">
+                            Valid: ${formatDate(farmer.createdAt)} - ${formatDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000))}
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <button class="btn btn-success" onclick="downloadIdCard()">💾 Download PNG</button>
+                        <button class="btn btn-info" onclick="printIdCard()">🖨️ Print Card</button>
+                        <button class="btn btn-warning" onclick="shareIdCard()">📤 Share</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateFarmerIdCard(farmerId) {
+            const farmer = farmers.find(f => f.id === farmerId);
+            if (!farmer) return;
+
+            showModal(`🎫 ID Card - ${farmer.firstName} ${farmer.lastName}`, `
+                <div id="farmer-id-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px; margin: 20px 0; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);"></div>
+
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">FARMER IDENTIFICATION CARD</div>
+                        <div style="font-size: 14px; opacity: 0.9;">Republic of Zambia - Ministry of Agriculture</div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 250px;">
+                            <div style="margin-bottom: 15px;">
+                                <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px;">Full Name</div>
+                                <div style="font-size: 20px; font-weight: 600;">${farmer.firstName} ${farmer.lastName}</div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase;">NRC Number</div>
+                                    <div style="font-size: 16px; font-weight: 600;">${farmer.nrc}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase;">Phone</div>
+                                    <div style="font-size: 16px; font-weight: 600;">${farmer.phone}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase;">District</div>
+                                    <div style="font-size: 16px; font-weight: 600;">${farmer.district.replace(' District', '')}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase;">Land Area</div>
+                                    <div style="font-size: 16px; font-weight: 600;">${farmer.landArea} hectares</div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 15px;">
+                                <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase;">Main Crops</div>
+                                <div style="font-size: 16px; font-weight: 600;">${farmer.crops}</div>
+                            </div>
+                        </div>
+
+                        <div style="width: 80px; height: 80px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #333; font-size: 10px; text-align: center; margin-left: 15px;">
+                            <div>
+                                <div style="font-size: 20px;">📱</div>
+                                QR CODE<br>
+                                <strong>${farmer.nrc.split('/')[0]}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="position: absolute; bottom: 10px; right: 20px; font-size: 12px; opacity: 0.7;">
+                        Valid: ${formatDate(farmer.createdAt)} - ${formatDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000))}
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
+                    <button class="btn btn-success" onclick="showToast('ID card download feature ready for implementation', 'success')">💾 Download</button>
+                    <button class="btn btn-info" onclick="window.print()">🖨️ Print</button>
+                </div>
+            `);
+        }
+
+        function downloadIdCard() {
+            showToast('ID Card download feature ready for implementation with html2canvas', 'warning');
+        }
+
+        function printIdCard() {
+            window.print();
+            showToast('Print dialog opened! 🖨️');
+        }
+
+        function shareIdCard() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Farmer ID Card',
+                    text: 'Check out my digital farmer ID card!',
+                    url: window.location.href
+                });
+            } else {
+                showToast('Sharing feature not available on this device', 'warning');
+            }
+        }
+
+        // Form Functions (Add/Edit Farmers)
+        function showAddFarmer() {
+            showFarmerForm('Add New Farmer', null);
+        }
+
+        function editFarmer(id) {
+            const farmer = farmers.find(f => f.id === id);
+            showFarmerForm('Edit Farmer', farmer);
+        }
+
+        function showFarmerForm(title, farmer) {
+            const isEdit = farmer !== null;
+
+            showModal(title, `
+                <form onsubmit="saveFarmer(event)" id="farmer-form">
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label class="form-label">🆔 NRC Number</label>
+                            <input type="text" class="form-control" id="nrc" value="${isEdit ? farmer.nrc : ''}" ${isEdit ? 'readonly' : ''} required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">👤 First Name</label>
+                            <input type="text" class="form-control" id="firstName" value="${isEdit ? farmer.firstName : ''}" required>
+                        </div>
+                    </div>
+
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label class="form-label">👤 Last Name</label>
+                            <input type="text" class="form-control" id="lastName" value="${isEdit ? farmer.lastName : ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">📞 Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" value="${isEdit ? farmer.phone : ''}" required>
+                        </div>
+                    </div>
+
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label class="form-label">📧 Email</label>
+                            <input type="email" class="form-control" id="email" value="${isEdit ? farmer.email : ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">🎂 Date of Birth</label>
+                            <input type="date" class="form-control" id="dob" value="${isEdit ? farmer.dob : ''}" required>
+                        </div>
+                    </div>
+
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label class="form-label">⚧ Gender</label>
+                            <select class="form-control" id="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="Male" ${isEdit && farmer.gender === 'Male' ? 'selected' : ''}>Male</option>
+                                <option value="Female" ${isEdit && farmer.gender === 'Female' ? 'selected' : ''}>Female</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">🏢 Province</label>
+                            <select class="form-control" id="province" onchange="updateDistricts()" required>
+                                <option value="">Select Province</option>
+                                ${Object.keys(locationData).map(province => 
+                                    `<option value="${province}" ${isEdit && farmer.province === province ? 'selected' : ''}>${province}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label class="form-label">🏘️ District</label>
+                            <select class="form-control" id="district" onchange="updateChiefs()" required>
+                                <option value="">Select District</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">👑 Chief</label>
+                            <select class="form-control" id="chief" required>
+                                <option value="">Select Chief</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label class="form-label">🌾 Land Area (hectares)</label>
+                            <input type="number" class="form-control" id="landArea" step="0.1" value="${isEdit ? farmer.landArea : ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">🌱 Main Crops</label>
+                            <input type="text" class="form-control" id="crops" placeholder="e.g., Maize, Beans, Cotton" value="${isEdit ? farmer.crops : ''}" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        ${isEdit ? '✏️ Update Farmer' : '➕ Create Farmer'}
+                    </button>
+                    <input type="hidden" id="farmer-id" value="${isEdit ? farmer.id : ''}">
+                </form>
+            `);
+
+            if (isEdit) {
+                setTimeout(() => {
+                    updateDistricts();
+                    setTimeout(() => {
+                        document.getElementById('district').value = farmer.district;
+                        updateChiefs();
+                        setTimeout(() => {
+                            document.getElementById('chief').value = farmer.chief;
+                        }, 100);
+                    }, 100);
+                }, 100);
+            }
+        }
+
+        function saveFarmer(event) {
+            event.preventDefault();
+
+            const farmerId = document.getElementById('farmer-id').value;
+            const isEdit = farmerId !== '';
+
+            const farmerData = {
+                nrc: document.getElementById('nrc').value,
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                dob: document.getElementById('dob').value,
+                gender: document.getElementById('gender').value,
+                province: document.getElementById('province').value,
+                district: document.getElementById('district').value,
+                chief: document.getElementById('chief').value,
+                landArea: document.getElementById('landArea').value,
+                crops: document.getElementById('crops').value
+            };
+
+            if (isEdit) {
+                const index = farmers.findIndex(f => f.id == farmerId);
+                farmers[index] = { ...farmers[index], ...farmerData };
+                showToast('Farmer updated successfully! ✅');
+            } else {
+                const newFarmer = {
+                    id: generateId(),
+                    ...farmerData,
+                    status: 'active',
+                    operatorId: currentUser.operator.id,
+                    createdAt: new Date().toISOString()
+                };
+                farmers.push(newFarmer);
+                showToast('Farmer created successfully! ✅');
+            }
+
+            saveData('farmers', farmers);
+            closeModal();
+
+            if (currentUser.type === 'operator') {
+                loadFarmersList();
+                loadOperatorStats();
+            } else if (currentUser.type === 'admin') {
+                loadAllFarmersList();
+                loadAdminStats();
+            }
+        }
+
+        function deleteFarmer(id) {
+            const farmer = farmers.find(f => f.id === id);
+            if (confirm(`⚠️ Are you sure you want to delete "${farmer.firstName} ${farmer.lastName}"? This action cannot be undone.`)) {
+                farmers = farmers.filter(f => f.id !== id);
+                saveData('farmers', farmers);
+
+                if (currentUser.type === 'operator') {
+                    loadFarmersList();
+                    loadOperatorStats();
+                } else if (currentUser.type === 'admin') {
+                    loadAllFarmersList();
+                    loadAdminStats();
+                }
+
+                showToast('Farmer deleted successfully! 🗑️');
+            }
+        }
+
+        function viewFarmer(id) {
+            const farmer = farmers.find(f => f.id === id);
+            if (!farmer) return;
+
+            const operator = operators.find(op => op.id === farmer.operatorId);
+
+            showModal(`👨‍🌾 ${farmer.firstName} ${farmer.lastName}`, `
+                <div style="line-height: 1.8;">
+                    <div class="two-column">
+                        <div>
+                            <h4>👤 Personal Details</h4>
+                            <p><strong>NRC:</strong> ${farmer.nrc}</p>
+                            <p><strong>Phone:</strong> ${farmer.phone}</p>
+                            <p><strong>Email:</strong> ${farmer.email}</p>
+                            <p><strong>DOB:</strong> ${farmer.dob}</p>
+                            <p><strong>Gender:</strong> ${farmer.gender}</p>
+                            <p><strong>Status:</strong> <span class="farmer-status ${farmer.status === 'active' ? 'status-active' : 'status-pending'}">${farmer.status}</span></p>
+                        </div>
+                        <div>
+                            <h4>🏠 Location & Farming</h4>
+                            <p><strong>Province:</strong> ${farmer.province}</p>
+                            <p><strong>District:</strong> ${farmer.district}</p>
+                            <p><strong>Chief:</strong> ${farmer.chief}</p>
+                            <p><strong>Land Area:</strong> ${farmer.landArea} hectares</p>
+                            <p><strong>Main Crops:</strong> ${farmer.crops}</p>
+                            <p><strong>Operator:</strong> ${operator ? operator.name : 'Unknown'}</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                        <p><strong>📅 Registration Date:</strong> ${formatDate(farmer.createdAt)}</p>
+                    </div>
+                </div>
+            `);
+        }
+
+        // Location Update Functions
+        function updateDistricts() {
+            const province = document.getElementById('province').value;
+            const districtSelect = document.getElementById('district');
+            const chiefSelect = document.getElementById('chief');
+
+            districtSelect.innerHTML = '<option value="">Select District</option>';
+            chiefSelect.innerHTML = '<option value="">Select Chief</option>';
+
+            if (province && locationData[province]) {
+                Object.keys(locationData[province]).forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district;
+                    option.textContent = district;
+                    districtSelect.appendChild(option);
+                });
+            }
+        }
+
+        function updateChiefs() {
+            const province = document.getElementById('province').value;
+            const district = document.getElementById('district').value;
+            const chiefSelect = document.getElementById('chief');
+
+            chiefSelect.innerHTML = '<option value="">Select Chief</option>';
+
+            if (province && district && locationData[province] && locationData[province][district]) {
+                locationData[province][district].forEach(chief => {
+                    const option = document.createElement('option');
+                    option.value = chief;
+                    option.textContent = chief;
+                    chiefSelect.appendChild(option);
+                });
+            }
+        }
+
+        // Search Function
+        function searchFarmers(query) {
+            const operatorFarmers = farmers.filter(f => f.operatorId === currentUser.operator.id);
+            const filteredFarmers = operatorFarmers.filter(farmer => 
+                farmer.firstName.toLowerCase().includes(query.toLowerCase()) ||
+                farmer.lastName.toLowerCase().includes(query.toLowerCase()) ||
+                farmer.phone.includes(query) ||
+                farmer.nrc.includes(query) ||
+                farmer.email.toLowerCase().includes(query.toLowerCase())
+            );
+
+            displayFilteredFarmers(filteredFarmers);
+        }
+
+        function displayFilteredFarmers(filteredFarmers) {
+            const container = document.getElementById('farmers-list');
+            container.innerHTML = '';
+
+            if (filteredFarmers.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">No farmers found matching your search.</div>';
+                return;
+            }
+
+            const farmersGrid = document.createElement('div');
+            farmersGrid.className = 'farmer-grid';
+
+            filteredFarmers.forEach(farmer => {
+                const farmerCard = document.createElement('div');
+                farmerCard.className = 'farmer-card';
+                farmerCard.innerHTML = `
+                    <div class="farmer-header">
+                        <div>
+                            <div class="farmer-name">${farmer.firstName} ${farmer.lastName}</div>
+                            <div style="color: #666; font-size: 14px;">${farmer.nrc}</div>
+                        </div>
+                        <div class="farmer-status ${farmer.status === 'active' ? 'status-active' : 'status-pending'}">
+                            ${farmer.status}
+                        </div>
+                    </div>
+                    <div class="farmer-details">
+                        📱 ${farmer.phone} • 📧 ${farmer.email}<br>
+                        🏠 ${farmer.province}<br>
+                        📍 ${farmer.district}<br>
+                        👑 ${farmer.chief}<br>
+                        🌾 ${farmer.landArea} hectares • ${farmer.crops}<br>
+                        📅 Registered ${formatDate(farmer.createdAt)}
+                    </div>
+                    <div class="farmer-actions">
+                        <button class="btn btn-info" onclick="viewFarmer(${farmer.id})">👁️ View</button>
+                        <button class="btn btn-secondary" onclick="editFarmer(${farmer.id})">✏️ Edit</button>
+                        <button class="btn btn-warning" onclick="generateFarmerIdCard(${farmer.id})">🎫 ID Card</button>
+                        <button class="btn btn-danger" onclick="deleteFarmer(${farmer.id})">🗑️ Delete</button>
+                    </div>
+                `;
+                farmersGrid.appendChild(farmerCard);
+            });
+
+            container.appendChild(farmersGrid);
+        }
+
+        // Additional Functions
+        function loadAllFarmersList() {
+            const container = document.getElementById('all-farmers-list');
+            container.innerHTML = '';
+
+            if (farmers.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 40px; color: #666;">No farmers in the system yet.</p>';
+                return;
+            }
+
+            const farmersGrid = document.createElement('div');
+            farmersGrid.className = 'farmer-grid';
+
+            farmers.forEach(farmer => {
+                const operator = operators.find(op => op.id === farmer.operatorId);
+                const farmerCard = document.createElement('div');
+                farmerCard.className = 'farmer-card';
+                farmerCard.innerHTML = `
+                    <div class="farmer-header">
+                        <div>
+                            <div class="farmer-name">${farmer.firstName} ${farmer.lastName}</div>
+                            <div style="color: #666; font-size: 14px;">${farmer.nrc}</div>
+                        </div>
+                        <div class="farmer-status ${farmer.status === 'active' ? 'status-active' : 'status-pending'}">
+                            ${farmer.status}
+                        </div>
+                    </div>
+                    <div class="farmer-details">
+                        📱 ${farmer.phone} • 📧 ${farmer.email}<br>
+                        🏠 ${farmer.province}<br>
+                        📍 ${farmer.district}<br>
+                        👑 ${farmer.chief}<br>
+                        🌾 ${farmer.landArea} hectares • ${farmer.crops}<br>
+                        👨‍💼 Operator: ${operator ? operator.name : 'Unknown'}<br>
+                        📅 Registered ${formatDate(farmer.createdAt)}
+                    </div>
+                    <div class="farmer-actions">
+                        <button class="btn btn-info" onclick="viewFarmer(${farmer.id})">👁️ View</button>
+                        <button class="btn btn-secondary" onclick="editFarmer(${farmer.id})">✏️ Edit</button>
+                        <button class="btn btn-danger" onclick="deleteFarmer(${farmer.id})">🗑️ Delete</button>
+                    </div>
+                `;
+                farmersGrid.appendChild(farmerCard);
+            });
+
+            container.appendChild(farmersGrid);
+        }
+
+        // Initialize Application
+        function initApp() {
+            initializeData();
+            console.log('🌾 AgriManage Pro initialized successfully!');
+            console.log('🔐 Demo Credentials:');
+            console.log('   Admin: admin@agrimanage.com / admin123');
+            console.log('   Operator: operator@test.com / password123');
+            console.log('   Farmer: 123456/12/1 / 1990-01-01');
+            console.log('📁 File Upload Storage: Browser localStorage (demo mode)');
+            console.log('💾 Files stored in: agri_files key in localStorage');
+        }
+
+        // Start the application
+        initApp();
+    </script>
+</body>
+</html>

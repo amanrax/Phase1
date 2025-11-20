@@ -14,6 +14,7 @@ import FarmerRegistration from "@/pages/FarmerRegistration";
 import FarmersList from "@/pages/FarmersList";
 import EditFarmer from "@/pages/EditFarmer";
 import OperatorManagement from "@/pages/OperatorManagement";
+import OperatorDetails from "@/pages/OperatorDetails";
 import FarmerDetails from "@/pages/FarmerDetails";
 
 function App() {
@@ -58,6 +59,16 @@ function App() {
             <ProtectedRoute>
               <RoleRoute requiredRole="admin">
                 <OperatorManagement />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/operators/:operatorId"
+          element={
+            <ProtectedRoute>
+              <RoleRoute requiredRole="admin">
+                <OperatorDetails />
               </RoleRoute>
             </ProtectedRoute>
           }

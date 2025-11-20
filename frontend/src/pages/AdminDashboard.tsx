@@ -63,9 +63,9 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className="app-topbar">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">🛡️ Admin Dashboard</h1>
+          <h1 className="topbar-title">🛡️ Admin Dashboard</h1>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">
               {user?.email} (Admin)

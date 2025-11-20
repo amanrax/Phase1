@@ -182,7 +182,8 @@ class FarmerService:
         limit: int = 100,
         status: Optional[str] = None,
         district: Optional[str] = None,
-        search: Optional[str] = None
+        search: Optional[str] = None,
+        created_by: Optional[str] = None
     ) -> List[FarmerListItem]:
         """
         List farmers with pagination and filtering.
@@ -193,6 +194,7 @@ class FarmerService:
             status: Filter by registration status
             district: Filter by district name
             search: Search in name, phone, farmer_id
+            created_by: Filter by operator email (for operators viewing their own farmers)
         
         Returns:
             List[FarmerListItem]: List of farmer summaries
@@ -205,6 +207,9 @@ class FarmerService:
         
         if district:
             query["address.district_name"] = district
+        
+        if created_by:
+            query["created_by"] = created_by
         
         if search:
             # Search in multiple fields
@@ -248,7 +253,8 @@ class FarmerService:
     async def count_farmers(
         self,
         status: Optional[str] = None,
-        district: Optional[str] = None
+        district: Optional[str] = None,
+        created_by: Optional[str] = None
     ) -> int:
         """
         Count total farmers with optional filters.
@@ -256,6 +262,7 @@ class FarmerService:
         Args:
             status: Filter by registration status
             district: Filter by district name
+            created_by: Filter by operator email
         
         Returns:
             int: Total count
@@ -267,6 +274,9 @@ class FarmerService:
         
         if district:
             query["address.district_name"] = district
+        
+        if created_by:
+            query["created_by"] = created_by
         
         return await self.collection.count_documents(query)
     

@@ -97,8 +97,10 @@ export default function Login() {
 
         {/* Demo Credentials */}
         <div className="mt-6 p-3 bg-gray-50 rounded text-xs" aria-label="Demo Credentials">
-          <p className="font-medium mb-1">Demo Credentials:</p>
-          <p>Admin: admin@agrimanage.com / admin123</p>
+          <p className="font-medium mb-2">Demo Credentials:</p>
+          <p>👤 Admin: admin@agrimanage.com / admin123</p>
+          <p>👨‍🌾 Operator: operator@agrimanage.com / operator123</p>
+          <p>🌾 Farmer: farmer@agrimanage.com / farmer123</p>
         </div>
       </form>
     </div>

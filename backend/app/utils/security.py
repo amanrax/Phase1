@@ -110,6 +110,10 @@ def create_access_token(
     Returns:
         str: Encoded access token
     """
+    # Normalize roles to uppercase (handle legacy lowercase values)
+    if roles:
+        roles = [role.upper() if isinstance(role, str) else role for role in roles]
+    
     additional_claims = {"roles": roles} if roles else {}
     return create_token(
         subject, 

@@ -67,241 +67,206 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-500 via-teal-500 to-blue-600 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-white drop-shadow-lg">
-              Welcome, {farmerData?.personal_info?.first_name || "Farmer"}! 🌾
-            </h1>
-            <p className="text-green-100 text-lg mt-1">
-              Farmer ID:{" "}
-              <span className="font-semibold">{farmerData?.farmer_id}</span>
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleDownloadIDCard}
-              className="bg-white text-green-600 px-6 py-3 rounded-lg hover:bg-green-50 shadow-lg transition font-semibold"
-            >
-              📄 Download ID Card
-            </button>
-            <button
-              onClick={logout}
-              className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 shadow-lg transition font-semibold"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-
-        {/* Profile Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 mb-6">
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Photo Section */}
-            <div className="text-center">
-              <div className="w-56 h-56 mx-auto mb-4 bg-gradient-to-br from-green-100 to-blue-100 rounded-full overflow-hidden shadow-xl">
-                {farmerData?.photo_path ? (
-                  <img
-                    src={farmerData.photo_path}
-                    alt="Farmer"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-8xl">
-                    👨‍🌾
-                  </div>
-                )}
-              </div>
-              <h2 className="text-2xl font-bold text-gray-800">
-                {farmerData?.personal_info?.first_name}{" "}
-                {farmerData?.personal_info?.last_name}
-              </h2>
-              <span className="inline-block mt-3 px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-semibold shadow-sm">
-                {farmerData?.registration_status?.toUpperCase() || "ACTIVE"}
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <header className="app-topbar">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <h1 className="topbar-title">🌾 Farmer Profile</h1>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">
+                {farmerData?.personal_info?.first_name || "Farmer"} {farmerData?.personal_info?.last_name || ""}
               </span>
+              <button
+                onClick={logout}
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-semibold transition"
+                aria-label="Logout"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 font-semibold">Loading your profile...</p>
+          </div>
+        ) : !farmerData ? (
+          <div className="card text-center py-12">
+            <div className="text-6xl mb-4">⚠️</div>
+            <p className="text-gray-700 font-semibold mb-4">Unable to load farmer profile</p>
+            <button
+              onClick={loadFarmerData}
+              className="btn-primary"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              <button
+                onClick={handleDownloadIDCard}
+                className="card p-4 border-l-4 border-green-600 hover:shadow-lg transition"
+              >
+                <div className="text-3xl mb-2">📄</div>
+                <h3 className="font-bold text-gray-900">Download ID Card</h3>
+                <p className="text-sm text-gray-600 mt-1">Get your digital farmer ID</p>
+              </button>
+              <button
+                onClick={() => navigate("/farmers/edit")}
+                className="card p-4 border-l-4 border-blue-600 hover:shadow-lg transition"
+              >
+                <div className="text-3xl mb-2">✏️</div>
+                <h3 className="font-bold text-gray-900">Update Profile</h3>
+                <p className="text-sm text-gray-600 mt-1">Edit your information</p>
+              </button>
             </div>
 
-            {/* Personal Info */}
-            <div className="md:col-span-2">
-              <h3 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-green-500 pb-2">
-                📋 Personal Information
-              </h3>
-              <div className="grid grid-cols-2 gap-6">
-                <InfoCard
-                  icon="📞"
-                  label="Phone"
-                  value={farmerData?.personal_info?.phone_primary}
-                />
-                <InfoCard
-                  icon="📧"
-                  label="Email"
-                  value={farmerData?.personal_info?.email || "N/A"}
-                />
-                <InfoCard
-                  icon="🎂"
-                  label="Date of Birth"
-                  value={farmerData?.personal_info?.date_of_birth || "N/A"}
-                />
-                <InfoCard
-                  icon="⚧"
-                  label="Gender"
-                  value={farmerData?.personal_info?.gender || "N/A"}
-                  capitalize
-                />
-                <InfoCard
-                  icon="🆔"
-                  label="NRC Number"
-                  value={
-                    farmerData?.personal_info?.nrc ||
-                    farmerData?.nrc_number ||
-                    "N/A"
-                  }
-                />
-                <InfoCard
-                  icon="📅"
-                  label="Registration Date"
-                  value={
-                    farmerData?.created_at
-                      ? new Date(farmerData.created_at).toLocaleDateString()
-                      : "N/A"
-                  }
-                />
+            {/* Profile Card */}
+            <div className="card p-8 mb-8">
+              <div className="grid md:grid-cols-3 gap-8">
+                {/* Photo Section */}
+                <div className="text-center">
+                  <div className="w-48 h-48 mx-auto mb-4 bg-gray-200 rounded-full overflow-hidden shadow-md flex items-center justify-center">
+                    {farmerData?.photo_path ? (
+                      <img
+                        src={farmerData.photo_path}
+                        alt="Farmer"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-6xl">👨‍🌾</div>
+                    )}
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {farmerData?.personal_info?.first_name} {farmerData?.personal_info?.last_name}
+                  </h2>
+                  <span className={`inline-block mt-3 px-4 py-1 text-sm font-semibold rounded-full ${
+                    farmerData?.registration_status === "approved" ? "badge-green" : 
+                    farmerData?.registration_status === "pending" ? "badge-yellow" : 
+                    "badge-red"
+                  }`}>
+                    {(farmerData?.registration_status || "PENDING").toUpperCase()}
+                  </span>
+                </div>
+
+                {/* Personal Info */}
+                <div className="md:col-span-2">
+                  <h3 className="text-lg font-bold mb-4 text-gray-900 border-b-2 border-green-600 pb-2">
+                    📋 Personal Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <InfoCard
+                      label="Phone"
+                      value={farmerData?.personal_info?.phone_primary}
+                    />
+                    <InfoCard
+                      label="Farmer ID"
+                      value={farmerData?.farmer_id}
+                    />
+                    <InfoCard
+                      label="NRC Number"
+                      value={farmerData?.personal_info?.nrc || "N/A"}
+                    />
+                    <InfoCard
+                      label="Gender"
+                      value={farmerData?.personal_info?.gender || "N/A"}
+                    />
+                    <InfoCard
+                      label="Date of Birth"
+                      value={farmerData?.personal_info?.date_of_birth || "N/A"}
+                    />
+                    <InfoCard
+                      label="Registration Date"
+                      value={
+                        farmerData?.created_at
+                          ? new Date(farmerData.created_at).toLocaleDateString()
+                          : "N/A"
+                      }
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Address & Farm Info Grid */}
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
-          {/* Address Card */}
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-gray-800 border-b-2 border-blue-500 pb-2">
-              <span>📍</span> Address Information
-            </h3>
-            <div className="space-y-4">
-              <InfoCard
-                icon="🏛️"
-                label="Province"
-                value={farmerData?.address?.province || "N/A"}
-              />
-              <InfoCard
-                icon="🏙️"
-                label="District"
-                value={farmerData?.address?.district || "N/A"}
-              />
-              <InfoCard
-                icon="🏘️"
-                label="Village"
-                value={farmerData?.address?.village || "N/A"}
-              />
-              <InfoCard
-                icon="👑"
-                label="Chiefdom"
-                value={farmerData?.address?.chiefdom || "N/A"}
-              />
+            {/* Address & Farm Info Grid */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Address Card */}
+              <div className="card p-6">
+                <h3 className="text-lg font-bold mb-4 text-gray-900 border-b-2 border-blue-600 pb-2">
+                  📍 Address Information
+                </h3>
+                <div className="space-y-3">
+                  <InfoCard label="Province" value={farmerData?.address?.province_name || "N/A"} />
+                  <InfoCard label="District" value={farmerData?.address?.district_name || "N/A"} />
+                  <InfoCard label="Village" value={farmerData?.address?.village || "N/A"} />
+                  <InfoCard label="Chiefdom" value={farmerData?.address?.chiefdom_name || "N/A"} />
+                </div>
+              </div>
+
+              {/* Farm Info Card */}
+              <div className="card p-6">
+                <h3 className="text-lg font-bold mb-4 text-gray-900 border-b-2 border-green-600 pb-2">
+                  🌾 Farm Information
+                </h3>
+                <div className="space-y-3">
+                  <InfoCard
+                    label="Farm Size"
+                    value={`${farmerData?.farm_info?.farm_size_hectares || 0} ha`}
+                  />
+                  <InfoCard
+                    label="Crops"
+                    value={farmerData?.farm_info?.crops_grown?.join(", ") || "N/A"}
+                  />
+                  <InfoCard
+                    label="Livestock"
+                    value={farmerData?.farm_info?.livestock?.join(", ") || "None"}
+                  />
+                  <InfoCard
+                    label="Irrigation"
+                    value={farmerData?.farm_info?.has_irrigation ? "Yes" : "No"}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Farm Info Card */}
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-gray-800 border-b-2 border-green-500 pb-2">
-              <span>🌾</span> Farm Information
-            </h3>
-            <div className="space-y-4">
-              <InfoCard
-                icon="📏"
-                label="Farm Size"
-                value={`${farmerData?.farm_info?.farm_size_hectares || 0} hectares`}
-              />
-              <InfoCard
-                icon="🌱"
-                label="Crops Grown"
-                value={
-                  farmerData?.farm_info?.crops_grown?.join(", ") || "N/A"
-                }
-              />
-              <InfoCard
-                icon="🐄"
-                label="Livestock"
-                value={farmerData?.farm_info?.livestock?.join(", ") || "None"}
-              />
-              <InfoCard
-                icon="💧"
-                label="Irrigation"
-                value={
-                  farmerData?.farm_info?.has_irrigation
-                    ? "Available"
-                    : "Not Available"
-                }
-              />
-              <InfoCard
-                icon="📊"
-                label="Farming Experience"
-                value={`${farmerData?.farm_info?.farming_experience_years || 0} years`}
-              />
-            </div>
-          </div>
-
-          <div className="inline-block p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl shadow-inner">
+            {/* QR Code Section */}
             {qrCodeUrl && (
-              <img
-                src={qrCodeUrl}
-                alt="QR Code"
-                className="w-56 h-56 mx-auto"
-              />
+              <div className="card p-6 mt-6 text-center">
+                <h3 className="text-lg font-bold mb-4 text-gray-900">🔐 Your QR Code</h3>
+                <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48 mx-auto mb-4" />
+                <p className="text-sm text-gray-600">Present this QR code for quick identification</p>
+              </div>
             )}
-            <p className="text-sm text-gray-600 mt-6 text-center">
-              Present this QR code at agricultural offices, cooperatives, or
-              support centers for quick identification and access to services.
-            </p>
-          </div>
-        </div>
-
-        {/* Footer Info */}
-        <footer className="mt-8 text-center text-white">
-          <p className="text-sm opacity-75">
-            Zambian Farmer Support System • For support, contact your local
-            agricultural officer
-          </p>
-        </footer>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
+
 // ============================================
 // 🧩 REUSABLE INFO CARD COMPONENT
 // ============================================
 function InfoCard({
-  icon,
   label,
   value,
-  capitalize = false,
 }: {
-  icon?: string;
   label: string;
   value?: string | number;
-  capitalize?: boolean;
 }) {
   return (
-    <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg shadow-sm hover:shadow-md transition">
-      <div className="flex items-center gap-3">
-        {icon && <span className="text-2xl">{icon}</span>}
-        <div className="flex-1">
-          <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-            {label}
-          </p>
-          <p
-            className={`text-base font-semibold text-gray-900 mt-1 ${
-              capitalize ? "capitalize" : ""
-            }`}
-          >
-            {value || "N/A"}
-          </p>
-        </div>
-      </div>
+    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+      <p className="text-xs font-bold text-gray-600 uppercase tracking-wide">{label}</p>
+      <p className="text-sm font-semibold text-gray-900">{value || "N/A"}</p>
     </div>
   );
 }

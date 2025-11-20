@@ -146,33 +146,14 @@ export default function OperatorManagement() {
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
       {/* Header */}
-      <div
-        style={{
-          backgroundColor: "#2563EB",
-          color: "white",
-          padding: "15px 20px",
-          display: "flex",
-          gap: "15px",
-          alignItems: "center",
-        }}
-      >
-        <button
-          onClick={() => navigate("/")}
-          aria-label="Back"
-          style={{
-            backgroundColor: "#2563EB",
-            color: "white",
-            border: "2px solid white",
-            padding: "8px 16px",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
-        >
-          ← BACK
-        </button>
-        <h1 style={{ margin: 0 }}>👥 Operator Management</h1>
-      </div>
+      <header className="app-page-header">
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <button onClick={() => navigate("/")} aria-label="Back" className="btn-back">
+            ← BACK
+          </button>
+          <h1 className="app-title" style={{ margin: 0 }}>👥 Operator Management</h1>
+        </div>
+      </header>
 
       {/* Content */}
       <div style={{ maxWidth: "1200px", margin: "20px auto", padding: "0 20px" }}>
