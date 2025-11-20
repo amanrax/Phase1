@@ -1,5 +1,3 @@
-
-
 services:
   # ===============================
   # 🌾 FASTAPI BACKEND SERVICE
@@ -107,7 +105,8 @@ services:
     depends_on:
       - farmer-backend
     environment:
-        - VITE_API_BASE_URL=http://host.docker.internal:8000
+      # Use HTTPS backend URL for Codespaces
+      - VITE_API_BASE_URL=https://effective-space-robot-5g4pgrq5p6fvq6x-8000.app.github.dev
     volumes:
       - ./frontend:/app
       - /app/node_modules

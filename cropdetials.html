@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agricultural Crops of Zambia - Complete Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <!-- Chosen Palette: Calm Harmony (Warm Neutral bg-gray-50, Green bg-green-700 accent, Dark Gray text-gray-800) -->
+    <!-- Application Structure Plan: Tabbed SPA structure. Pages: Overview, Staple Crops, Cash Crops, Data Explorer, Crop Index. 
+         This allows high-level summaries and deep-dive data exploration in one interface.
+         New 'Crop Index' tab provides a searchable database of all crops. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .nav-button {
+            @apply px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-green-100 hover:text-green-800 transition-colors duration-200;
+        }
+        .nav-button.active {
+            @apply bg-green-700 text-white hover:bg-green-800;
+        }
+        .content-page {
+            @apply hidden;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .content-page.active {
+            @apply block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .detail-button {
+            @apply w-full text-left px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-150;
+        }
+        .detail-button.active {
+            @apply bg-green-100 text-green-800 font-semibold;
+        }
+        .stat-card {
+            @apply bg-white p-6 rounded-lg shadow-md border border-gray-100;
+        }
+        .category-card {
+            @apply bg-white p-6 rounded-lg shadow-lg cursor-pointer hover:shadow-xl hover:scale-105 transition-transform duration-200;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 48rem; /* max-w-2xl */
+            margin-left: auto;
+            margin-right: auto;
+            height: 24rem; /* h-96 */
+        }
+        /* Hide scrollbar for filter buttons but allow scrolling */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 20rem; /* h-80 */
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="min-h-screen flex flex-col">
+        
+        <header class="bg-white shadow-sm z-20">
+            <div class="container mx-auto px-4 py-5">
+                <h1 class="text-3xl font-bold text-green-800">Agriculture in Zambia</h1>
+                <p class="text-lg text-gray-600">An Interactive Overview & Crop Index</p>
+            </div>
+        </header>
+
+        <nav class="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+            <div class="container mx-auto px-4 flex flex-wrap justify-center md:justify-start gap-2 py-3 overflow-x-auto">
+                <button id="nav-overview" class="nav-button" onclick="showPage('page-overview')">Overview</button>
+                <button id="nav-staple-crops" class="nav-button" onclick="showPage('page-staple-crops')">Staple Crops</button>
+                <button id="nav-cash-crops" class="nav-button" onclick="showPage('page-cash-crops')">Cash Crops</button>
+                <button id="nav-data-explorer" class="nav-button" onclick="showPage('page-data-explorer')">Data Explorer</button>
+                <button id="nav-full-list" class="nav-button bg-green-50 text-green-700 border border-green-200" onclick="showPage('page-full-list')">Crop Index (List)</button>
+            </div>
+        </nav>
+
+        <main class="container mx-auto px-4 py-8 flex-grow">
+
+            <!-- OVERVIEW PAGE -->
+            <div id="page-overview" class="content-page space-y-8">
+                <section>
+                    <h2 class="text-2xl font-semibold text-gray-700 mb-4">Zambia's Agricultural Landscape</h2>
+                    <p class="text-gray-600 leading-relaxed max-w-3xl">
+                        Agriculture is the backbone of Zambia's economy, employing over half of the workforce. From small-scale subsistence farming to large commercial estates, the sector is diverse. This dashboard allows you to explore the crops that feed the nation and drive the economy.
+                    </p>
+                </section>
+
+                <section>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="stat-card text-center">
+                            <div class="text-4xl font-bold text-green-700">~55%</div>
+                            <div class="text-gray-600 mt-2">of Labor Force in Agriculture</div>
+                        </div>
+                        <div class="stat-card text-center">
+                            <div class="text-4xl font-bold text-green-700">Maize</div>
+                            <div class="text-gray-600 mt-2">Primary National Staple</div>
+                        </div>
+                        <div class="stat-card text-center">
+                            <div class="text-4xl font-bold text-green-700">Soybeans</div>
+                            <div class="text-gray-600 mt-2">Fastest Growing Cash Crop</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Explore Categories</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="category-card bg-green-600 text-white" onclick="showPage('page-staple-crops')">
+                            <h4 class="text-xl font-bold mb-2">Staple Crops</h4>
+                            <p class="text-sm opacity-90">Food security foundations: Maize, Cassava, Millet.</p>
+                            <div class="text-right mt-4 font-bold text-sm">View &rarr;</div>
+                        </div>
+                        <div class="category-card bg-blue-600 text-white" onclick="showPage('page-cash-crops')">
+                            <h4 class="text-xl font-bold mb-2">Cash Crops</h4>
+                            <p class="text-sm opacity-90">Economic drivers: Tobacco, Sugar, Cotton, Coffee.</p>
+                            <div class="text-right mt-4 font-bold text-sm">View &rarr;</div>
+                        </div>
+                        <div class="category-card bg-gray-700 text-white" onclick="showPage('page-data-explorer')">
+                            <h4 class="text-xl font-bold mb-2">Data Explorer</h4>
+                            <p class="text-sm opacity-90">Compare production volumes and export values.</p>
+                            <div class="text-right mt-4 font-bold text-sm">View &rarr;</div>
+                        </div>
+                        <div class="category-card bg-teal-600 text-white" onclick="showPage('page-full-list')">
+                            <h4 class="text-xl font-bold mb-2">Crop Index</h4>
+                            <p class="text-sm opacity-90">Searchable list of all cereals, fruits, and vegetables.</p>
+                            <div class="text-right mt-4 font-bold text-sm">Search &rarr;</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- STAPLE CROPS PAGE -->
+            <div id="page-staple-crops" class="content-page">
+                <section class="space-y-4">
+                    <h2 class="text-2xl font-semibold text-gray-700">Staple Crops: Food Security</h2>
+                    <p class="text-gray-600 leading-relaxed max-w-3xl">
+                        The national diet relies heavily on these crops. Maize is king, but drought-resistant crops like Cassava and Sorghum are vital safety nets.
+                    </p>
+                </section>
+                
+                <section class="mt-8 md:flex md:space-x-8">
+                    <aside class="w-full md:w-1/3 lg:w-1/4 mb-6 md:mb-0">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                            <nav class="flex flex-col">
+                                <button id="btn-staple-maize" class="detail-button" onclick="showStapleDetail('maize')">Maize (Corn)</button>
+                                <button id="btn-staple-cassava" class="detail-button" onclick="showStapleDetail('cassava')">Cassava</button>
+                                <button id="btn-staple-sorghum" class="detail-button" onclick="showStapleDetail('sorghum')">Sorghum & Millet</button>
+                                <button id="btn-staple-groundnuts" class="detail-button" onclick="showStapleDetail('groundnuts')">Groundnuts</button>
+                                <button id="btn-staple-sweet_potato" class="detail-button" onclick="showStapleDetail('sweet_potato')">Sweet Potato</button>
+                            </nav>
+                        </div>
+                    </aside>
+                    <main class="w-full md:w-2/3 lg:w-3/4">
+                        <div class="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+                            <h3 id="staple-title" class="text-2xl font-bold text-green-800 mb-4"></h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div>
+                                    <p id="staple-description" class="text-gray-600 leading-relaxed"></p>
+                                    <h4 class="font-semibold text-gray-700 mt-4 mb-2">Key Facts:</h4>
+                                    <ul id="staple-facts" class="list-disc list-inside text-gray-600 space-y-1 text-sm"></ul>
+                                </div>
+                                <div class="flex flex-col justify-center items-center">
+                                    <div class="relative w-full h-56 max-w-xs mx-auto">
+                                        <canvas id="staple-chart"></canvas>
+                                    </div>
+                                    <p id="staple-chart-label" class="text-xs text-gray-500 mt-2 text-center font-medium"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </section>
+            </div>
+            
+            <!-- CASH CROPS PAGE -->
+            <div id="page-cash-crops" class="content-page">
+                <section class="space-y-4">
+                    <h2 class="text-2xl font-semibold text-gray-700">Cash Crops: Economic Growth</h2>
+                    <p class="text-gray-600 leading-relaxed max-w-3xl">
+                        Grown for sale, trade, and export. Tobacco and Sugar are traditional giants, while Soybeans are rapidly expanding.
+                    </p>
+                </section>
+                
+                <section class="mt-8 md:flex md:space-x-8">
+                    <aside class="w-full md:w-1/3 lg:w-1/4 mb-6 md:mb-0">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                            <nav class="flex flex-col">
+                                <button id="btn-cash-soybeans" class="detail-button" onclick="showCashDetail('soybeans')">Soybeans</button>
+                                <button id="btn-cash-sugar" class="detail-button" onclick="showCashDetail('sugar')">Sugar</button>
+                                <button id="btn-cash-tobacco" class="detail-button" onclick="showCashDetail('tobacco')">Tobacco</button>
+                                <button id="btn-cash-cotton" class="detail-button" onclick="showCashDetail('cotton')">Cotton</button>
+                                <button id="btn-cash-coffee" class="detail-button" onclick="showCashDetail('coffee')">Coffee</button>
+                            </nav>
+                        </div>
+                    </aside>
+                    <main class="w-full md:w-2/3 lg:w-3/4">
+                        <div class="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+                            <h3 id="cash-title" class="text-2xl font-bold text-blue-800 mb-4"></h3>
+                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div>
+                                    <p id="cash-description" class="text-gray-600 leading-relaxed"></p>
+                                    <h4 class="font-semibold text-gray-700 mt-4 mb-2">Key Facts:</h4>
+                                    <ul id="cash-facts" class="list-disc list-inside text-gray-600 space-y-1 text-sm"></ul>
+                                </div>
+                                <div class="flex flex-col justify-center items-center">
+                                    <div class="relative w-full h-56 max-w-xs mx-auto">
+                                        <canvas id="cash-chart"></canvas>
+                                    </div>
+                                    <p id="cash-chart-label" class="text-xs text-gray-500 mt-2 text-center font-medium"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </section>
+            </div>
+
+            <!-- DATA EXPLORER PAGE -->
+            <div id="page-data-explorer" class="content-page">
+                <section class="space-y-4">
+                    <h2 class="text-2xl font-semibold text-gray-700">Data Explorer</h2>
+                    <p class="text-gray-600 leading-relaxed max-w-3xl">
+                        Compare high-volume food crops against high-value export crops.
+                    </p>
+                </section>
+
+                <section class="mt-8 bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+                        <h3 class="text-xl font-semibold text-gray-700">Production vs. Value</h3>
+                        <div>
+                            <label for="chart-select" class="text-sm font-medium text-gray-600 mr-2">View Metric:</label>
+                            <select id="chart-select" class="rounded-md border-gray-300 shadow-sm bg-gray-50 p-2" onchange="updateMainChart(this.value)">
+                                <option value="production">Annual Production (Volume)</option>
+                                <option value="export_value">Est. Export Value (USD)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="main-chart"></canvas>
+                    </div>
+                </section>
+            </div>
+
+            <!-- FULL CROP INDEX PAGE (NEW) -->
+            <div id="page-full-list" class="content-page">
+                <section class="space-y-4">
+                    <h2 class="text-2xl font-semibold text-gray-700">Comprehensive Crop Index</h2>
+                    <p class="text-gray-600 leading-relaxed max-w-3xl">
+                        Explore the full diversity of Zambian agriculture. Use the filters to narrow down by category or search for specific crops like "Mango" or "Wheat".
+                    </p>
+                </section>
+
+                <section class="mt-6 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+                    <!-- Controls -->
+                    <div class="p-4 border-b border-gray-200 bg-gray-50 flex flex-col lg:flex-row gap-4 justify-between items-center">
+                        <div class="flex gap-2 overflow-x-auto w-full lg:w-auto no-scrollbar pb-2 lg:pb-0">
+                            <button onclick="filterCrops('All')" class="filter-btn active-filter px-4 py-1.5 text-sm rounded-full bg-green-700 text-white hover:bg-green-800 transition shadow-sm whitespace-nowrap">All Crops</button>
+                            <button onclick="filterCrops('Cereal')" class="filter-btn px-4 py-1.5 text-sm rounded-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 transition whitespace-nowrap">Cereals</button>
+                            <button onclick="filterCrops('Root')" class="filter-btn px-4 py-1.5 text-sm rounded-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 transition whitespace-nowrap">Roots/Tubers</button>
+                            <button onclick="filterCrops('Legume')" class="filter-btn px-4 py-1.5 text-sm rounded-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 transition whitespace-nowrap">Legumes</button>
+                            <button onclick="filterCrops('Horticulture')" class="filter-btn px-4 py-1.5 text-sm rounded-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 transition whitespace-nowrap">Fruits/Veg</button>
+                            <button onclick="filterCrops('Industrial')" class="filter-btn px-4 py-1.5 text-sm rounded-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 transition whitespace-nowrap">Industrial</button>
+                        </div>
+                        <div class="relative w-full lg:w-64">
+                            <input type="text" id="crop-search" onkeyup="searchCrops()" placeholder="Search crops..." class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <div class="absolute right-3 top-2.5 text-gray-400 pointer-events-none">
+                                🔍
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Crop Name</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Primary Use</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Main Region(s)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="crop-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Rows populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="no-results" class="hidden p-8 text-center text-gray-500 bg-gray-50">
+                        No crops found matching your search.
+                    </div>
+                </section>
+            </div>
+
+        </main>
+
+        <footer class="bg-gray-800 text-gray-300 mt-12 py-6">
+            <div class="container mx-auto px-4 text-center">
+                <p class="text-sm">Generated Interactive Guide for Zambian Agriculture.</p>
+                <p class="text-xs opacity-75 mt-1">Data is illustrative for demonstration purposes.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let currentPage = 'page-overview';
+        let mainChart, stapleChart, cashChart;
+
+        // --- DATA DEFINITIONS ---
+
+        const cropDetails = {
+            maize: {
+                title: "Maize (Corn)",
+                description: "Maize is Zambia's most important crop, forming the basis of the national diet (nshima). It is grown by nearly all small-scale farmers and is the focus of national food security policy.",
+                facts: ["National staple food.", "Grown in all 10 provinces.", "Heavily subsidized.", "Used for food, feed, and brewing."],
+                chartData: { labels: ['Maize', 'Other Staples'], data: [65, 35], bgColor: ['#16a34a', '#d1d5db'], label: "Share of Cereal Staple Consumption" }
+            },
+            cassava: {
+                title: "Cassava",
+                description: "Critical for food security in northern and western regions. High drought tolerance and ability to be stored in the ground make it a reliable safety net.",
+                facts: ["Highly drought-tolerant.", "Staple in North/West.", "Harvested year-round.", "Processed into meal/flour."],
+                chartData: { labels: ['Cassava', 'Other Roots'], data: [70, 30], bgColor: ['#16a34a', '#d1d5db'], label: "Share of Root/Tuber Consumption" }
+            },
+            sorghum: {
+                title: "Sorghum & Millet",
+                description: "Traditional cereals resilient to drought/heat. Vital for food security in the driest valley regions (Gwembe, Zambezi).",
+                facts: ["Extremely drought-resistant.", "Key for arid regions.", "Used for brewing & porridge.", "Nutritious ancient grains."],
+                chartData: { labels: ['Sorghum/Millet', 'Other Cereals'], data: [15, 85], bgColor: ['#16a34a', '#d1d5db'], label: "Share of Drought Cereal" }
+            },
+            groundnuts: {
+                title: "Groundnuts (Peanuts)",
+                description: "Important protein and oil source, often grown by women farmers. Consumed locally or sold in markets.",
+                facts: ["Rich in protein/oil.", "Intercropped with maize.", "Improves soil (Nitrogen).", "Income for female farmers."],
+                chartData: { labels: ['Groundnuts', 'Other Legumes'], data: [45, 55], bgColor: ['#16a34a', '#d1d5db'], label: "Share of Legume Production" }
+            },
+            sweet_potato: {
+                title: "Sweet Potato",
+                description: "Valued for high yield in small areas and nutrition (orange-fleshed varieties). Tubers and leaves are edible.",
+                facts: ["High Vitamin A.", "High yield per hectare.", "Short growing season.", "Dual food source (root/leaf)."],
+                chartData: { labels: ['Sweet Potato', 'Other Roots'], data: [30, 70], bgColor: ['#16a34a', '#d1d5db'], label: "Share of Root Production" }
+            },
+            soybeans: {
+                title: "Soybeans",
+                description: "Explosive growth as a cash crop. Essential for cooking oil and livestock feed (poultry/fish).",
+                facts: ["Fastest growing crop.", "Oil & Feed industry backbone.", "Commercial & smallholder.", "Nitrogen fixing."],
+                chartData: { labels: ['Soybeans', 'Other Oilseeds'], data: [80, 20], bgColor: ['#2563eb', '#d1d5db'], label: "Share of Oilseed Production" }
+            },
+            sugar: {
+                title: "Sugar (Sugarcane)",
+                description: "Massive commercial industry (e.g., Nakambala). A top agricultural export by value, requiring irrigation.",
+                facts: ["Top export earner.", "Large estate driven.", "Major employer.", "Irrigation dependent."],
+                chartData: { labels: ['Sugar', 'Other Processed'], data: [55, 45], bgColor: ['#2563eb', '#d1d5db'], label: "Share of Processed Exports" }
+            },
+            tobacco: {
+                title: "Tobacco",
+                description: "Traditional high-value export. Grown by contracted smallholders. Controversial but economically significant.",
+                facts: ["High value export.", "Contract farming model.", "Labor intensive.", "Environmental concerns."],
+                chartData: { labels: ['Tobacco', 'Other Raw Exports'], data: [30, 70], bgColor: ['#2563eb', '#d1d5db'], label: "Share of Raw Exports" }
+            },
+            cotton: {
+                title: "Cotton",
+                description: "'White Gold' for small farmers in drier zones. Feedstock for ginneries (lint) and oil pressers (seed).",
+                facts: ["Smallholder cash crop.", "Drought tolerant.", "Source of lint & oil.", "Ginnery supported."],
+                chartData: { labels: ['Cotton', 'Other Fibers'], data: [90, 10], bgColor: ['#2563eb', '#d1d5db'], label: "Share of Fiber Crops" }
+            },
+            coffee: {
+                title: "Coffee",
+                description: "High-value specialty crop from Northern regions. 100% exported Arabica coffee.",
+                facts: ["Specialty export.", "High altitude crop.", "Northern Zambia.", "High quality Arabica."],
+                chartData: { labels: ['Coffee', 'Other Specialty'], data: [20, 80], bgColor: ['#2563eb', '#d1d5db'], label: "Share of Niche Exports" }
+            }
+        };
+
+        const chartData = {
+            production: {
+                labels: ["Maize", "Cassava", "Sugarcane", "Soybeans", "Wheat", "Groundnuts", "Sweet Potato", "Cotton", "Sorghum"],
+                datasets: [{
+                    label: 'Annual Production (Metric Tons)',
+                    data: [3200000, 1800000, 4200000, 400000, 200000, 150000, 300000, 50000, 40000],
+                    backgroundColor: ['#16a34a', '#15803d', '#14532d', '#2563eb', '#f59e0b', '#1d4ed8', '#1e40af', '#6b7280', '#d97706'],
+                }]
+            },
+            export_value: {
+                labels: ["Sugar", "Tobacco", "Soybeans", "Coffee", "Cotton", "Maize (Surplus)"],
+                datasets: [{
+                    label: 'Export Value (USD Millions)',
+                    data: [400, 150, 120, 80, 70, 50],
+                    backgroundColor: ['#16a34a', '#15803d', '#14532d', '#2563eb', '#1d4ed8', '#1e40af'],
+                }]
+            }
+        };
+
+        const allCropsList = [
+            { name: "Maize", category: "Cereal", use: "Staple Food / Feed", region: "All Provinces" },
+            { name: "Cassava", category: "Root", use: "Staple Food", region: "Northern, Luapula, Western" },
+            { name: "Wheat", category: "Cereal", use: "Commercial Food", region: "Central, Lusaka, Southern (Irrigated)" },
+            { name: "Rice", category: "Cereal", use: "Food", region: "Western, Northern, Muchinga" },
+            { name: "Sorghum", category: "Cereal", use: "Food / Brewing", region: "Southern, Western (Drier areas)" },
+            { name: "Pearl Millet", category: "Cereal", use: "Food / Brewing", region: "Western, Southern" },
+            { name: "Finger Millet", category: "Cereal", use: "Food / Brewing", region: "Northern, Muchinga" },
+            { name: "Sweet Potato", category: "Root", use: "Food", region: "All Provinces" },
+            { name: "Irish Potato", category: "Root", use: "Food / Commercial", region: "Lusaka, Central" },
+            { name: "Livingstone Potato", category: "Root", use: "Traditional Food", region: "Specific Locales" },
+            { name: "Soybeans", category: "Legume", use: "Cash / Oil / Feed", region: "Central, Lusaka, Southern" },
+            { name: "Groundnuts", category: "Legume", use: "Food / Cash", region: "Eastern, Northern, Central" },
+            { name: "Mixed Beans", category: "Legume", use: "Food / Cash", region: "Northern, Muchinga" },
+            { name: "Cowpeas", category: "Legume", use: "Food", region: "Southern, Eastern" },
+            { name: "Bambara Nuts", category: "Legume", use: "Traditional Food", region: "Various" },
+            { name: "Sunflower", category: "Industrial", use: "Oil / Cash", region: "Eastern, Central, Southern" },
+            { name: "Sugarcane", category: "Industrial", use: "Sugar / Ethanol", region: "Southern (Mazabuka), Luapula" },
+            { name: "Tobacco (Virginia)", category: "Industrial", use: "Export Cash", region: "Central, Eastern, Southern" },
+            { name: "Tobacco (Burley)", category: "Industrial", use: "Export Cash", region: "Eastern" },
+            { name: "Cotton", category: "Industrial", use: "Lint / Oil", region: "Eastern, Central, Southern" },
+            { name: "Coffee", category: "Industrial", use: "High Value Export", region: "Northern, Muchinga" },
+            { name: "Tea", category: "Industrial", use: "Beverage", region: "Kawambwa (Luapula)" },
+            { name: "Macadamia Nuts", category: "Horticulture", use: "High Value Export", region: "Central, Southern" },
+            { name: "Cashew Nuts", category: "Horticulture", use: "Export Cash", region: "Western" },
+            { name: "Tomato", category: "Horticulture", use: "Food / Market", region: "All (Market Gardens)" },
+            { name: "Onion", category: "Horticulture", use: "Food / Market", region: "All (Market Gardens)" },
+            { name: "Cabbage", category: "Horticulture", use: "Food / Market", region: "All Provinces" },
+            { name: "Rape/Kale", category: "Horticulture", use: "Daily Vegetable", region: "All Provinces" },
+            { name: "Pumpkin", category: "Horticulture", use: "Food (Leaves/Fruit)", region: "All Provinces" },
+            { name: "Watermelon", category: "Horticulture", use: "Fruit / Cash", region: "Central, Southern" },
+            { name: "Mango", category: "Horticulture", use: "Fruit", region: "All (Seasonally)" },
+            { name: "Citrus", category: "Horticulture", use: "Fruit / Juice", region: "Central, Copperbelt, Lusaka" },
+            { name: "Banana", category: "Horticulture", use: "Fruit", region: "All Provinces" },
+            { name: "Pineapple", category: "Horticulture", use: "Fruit / Juice", region: "North-Western (Mwinilunga)" },
+            { name: "Avocado", category: "Horticulture", use: "Fruit / Export", region: "Copperbelt, Central" }
+        ];
+
+        // --- FUNCTIONS ---
+
+        function labelWrapping(label, maxWidth) {
+            const lines = [];
+            let currentLine = '';
+            if (typeof label !== 'string') label = label.toString();
+            label.split(' ').forEach(word => {
+                if ((currentLine + ' ' + word).trim().length > maxWidth) {
+                    lines.push(currentLine.trim());
+                    currentLine = word;
+                } else {
+                    currentLine = (currentLine + ' ' + word).trim();
+                }
+            });
+            if (currentLine) lines.push(currentLine.trim());
+            return lines;
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.content-page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.nav-button').forEach(button => button.classList.remove('active'));
+            
+            // Handle nav highlighting
+            const navMap = {
+                'page-overview': 'nav-overview',
+                'page-staple-crops': 'nav-staple-crops',
+                'page-cash-crops': 'nav-cash-crops',
+                'page-data-explorer': 'nav-data-explorer',
+                'page-full-list': 'nav-full-list'
+            };
+            const navId = navMap[pageId];
+            if(navId) {
+                const btn = document.getElementById(navId);
+                btn.classList.add('active');
+                if(pageId === 'page-full-list') {
+                    btn.classList.remove('bg-green-50', 'text-green-700');
+                    btn.classList.add('text-white');
+                } else {
+                    document.getElementById('nav-full-list').classList.remove('active', 'text-white');
+                    document.getElementById('nav-full-list').classList.add('bg-green-50', 'text-green-700');
+                }
+            }
+            
+            currentPage = pageId;
+            window.scrollTo(0, 0);
+        }
+
+        function renderChart(canvasId, data, type = 'doughnut') {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            return new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: data.label,
+                        data: data.data,
+                        backgroundColor: data.bgColor || data.backgroundColor,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12 } }
+                    }
+                }
+            });
+        }
+
+        function showStapleDetail(cropName) {
+            const data = cropDetails[cropName];
+            document.getElementById('staple-title').textContent = data.title;
+            document.getElementById('staple-description').textContent = data.description;
+            
+            const factsList = document.getElementById('staple-facts');
+            factsList.innerHTML = '';
+            data.facts.forEach(fact => {
+                const li = document.createElement('li');
+                li.textContent = fact;
+                factsList.appendChild(li);
+            });
+
+            document.querySelectorAll('#page-staple-crops .detail-button').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-staple-' + cropName).classList.add('active');
+
+            if (stapleChart) stapleChart.destroy();
+            stapleChart = renderChart('staple-chart', data.chartData);
+            document.getElementById('staple-chart-label').textContent = data.chartData.label;
+        }
+
+        function showCashDetail(cropName) {
+            const data = cropDetails[cropName];
+            document.getElementById('cash-title').textContent = data.title;
+            document.getElementById('cash-description').textContent = data.description;
+            
+            const factsList = document.getElementById('cash-facts');
+            factsList.innerHTML = '';
+            data.facts.forEach(fact => {
+                const li = document.createElement('li');
+                li.textContent = fact;
+                factsList.appendChild(li);
+            });
+
+            document.querySelectorAll('#page-cash-crops .detail-button').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-cash-' + cropName).classList.add('active');
+            
+            if (cashChart) cashChart.destroy();
+            cashChart = renderChart('cash-chart', data.chartData);
+            document.getElementById('cash-chart-label').textContent = data.chartData.label;
+        }
+
+        function initMainChart() {
+            const ctx = document.getElementById('main-chart').getContext('2d');
+            mainChart = new Chart(ctx, {
+                type: 'bar',
+                data: JSON.parse(JSON.stringify(chartData.production)), // deep copy
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Production (Metric Tons)' },
+                            ticks: { callback: val => val >= 1000000 ? (val/1000000)+'M' : (val/1000)+'k' }
+                        },
+                        x: { ticks: { callback: function(val) { return labelWrapping(this.getLabelForValue(val), 10); } } }
+                    }
+                }
+            });
+        }
+
+        function updateMainChart(mode) {
+            const newData = chartData[mode];
+            mainChart.data.labels = newData.labels;
+            mainChart.data.datasets = newData.datasets;
+            
+            const yTitle = mode === 'production' ? 'Production (Metric Tons)' : 'Export Value (USD Millions)';
+            const yCallback = mode === 'production' 
+                ? val => val >= 1000000 ? (val/1000000)+'M' : (val/1000)+'k'
+                : val => '$' + val + 'M';
+
+            mainChart.options.scales.y.title.text = yTitle;
+            mainChart.options.scales.y.ticks.callback = yCallback;
+            mainChart.update();
+        }
+
+        // --- CROP LIST FUNCTIONS ---
+
+        function renderCropList(crops) {
+            const tbody = document.getElementById('crop-table-body');
+            tbody.innerHTML = '';
+            
+            if (crops.length === 0) {
+                document.getElementById('no-results').classList.remove('hidden');
+            } else {
+                document.getElementById('no-results').classList.add('hidden');
+                crops.forEach(crop => {
+                    const catColor = crop.category === 'Cereal' ? 'bg-yellow-100 text-yellow-800' :
+                                   crop.category === 'Root' ? 'bg-orange-100 text-orange-800' :
+                                   crop.category === 'Legume' ? 'bg-green-100 text-green-800' :
+                                   crop.category === 'Horticulture' ? 'bg-red-100 text-red-800' :
+                                   'bg-blue-100 text-blue-800'; // Industrial
+
+                    const row = document.createElement('tr');
+                    row.className = "hover:bg-gray-50 transition-colors";
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${crop.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${catColor}">${crop.category}</span></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${crop.use}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-xs">${crop.region}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        }
+
+        function filterCrops(category) {
+            // UI Updates
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active-filter', 'bg-green-700', 'text-white');
+                btn.classList.add('bg-white', 'text-gray-700', 'border', 'border-gray-300');
+                
+                const btnText = btn.innerText;
+                if (category === 'All' && btnText.includes('All')) {
+                    btn.classList.add('active-filter', 'bg-green-700', 'text-white');
+                    btn.classList.remove('bg-white', 'text-gray-700', 'border', 'border-gray-300');
+                } else if (btnText.includes(category) && category !== 'All') {
+                    btn.classList.add('active-filter', 'bg-green-700', 'text-white');
+                    btn.classList.remove('bg-white', 'text-gray-700', 'border', 'border-gray-300');
+                }
+            });
+
+            searchCrops(); // Re-run search with new filter context
+        }
+
+        function searchCrops() {
+            const searchTerm = document.getElementById('crop-search').value.toLowerCase();
+            
+            // Find active category
+            let activeCategory = 'All';
+            const activeBtn = document.querySelector('.active-filter');
+            if (activeBtn) {
+                if (activeBtn.innerText.includes('Cereal')) activeCategory = 'Cereal';
+                else if (activeBtn.innerText.includes('Root')) activeCategory = 'Root';
+                else if (activeBtn.innerText.includes('Legume')) activeCategory = 'Legume';
+                else if (activeBtn.innerText.includes('Horticulture')) activeCategory = 'Horticulture';
+                else if (activeBtn.innerText.includes('Industrial')) activeCategory = 'Industrial';
+            }
+
+            const filtered = allCropsList.filter(crop => {
+                const matchesCategory = activeCategory === 'All' || crop.category === activeCategory;
+                const matchesSearch = crop.name.toLowerCase().includes(searchTerm) || 
+                                      crop.use.toLowerCase().includes(searchTerm) || 
+                                      crop.region.toLowerCase().includes(searchTerm);
+                return matchesCategory && matchesSearch;
+            });
+            
+            renderCropList(filtered);
+        }
+
+        // --- INITIALIZATION ---
+
+        window.addEventListener('DOMContentLoaded', () => {
+            showPage('page-overview');
+            showStapleDetail('maize');
+            showCashDetail('soybeans');
+            initMainChart();
+            renderCropList(allCropsList);
+        });
+
+    </script>
+</body>
+</html>

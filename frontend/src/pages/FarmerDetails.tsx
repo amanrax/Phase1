@@ -57,9 +57,16 @@ export default function FarmerDetails() {
       setLoading(true);
       setError(null);
       const data = await farmerService.getFarmer(farmerId!);
+      
+      if (import.meta.env.DEV) {
+        console.log("Farmer data loaded:", data);
+      }
+      
       setFarmer(data);
     } catch (err: any) {
-      console.error("Failed to load farmer:", err);
+      if (import.meta.env.DEV) {
+        console.error("Failed to load farmer:", err);
+      }
       setError(err.response?.data?.detail || "Failed to load farmer details");
     } finally {
       setLoading(false);
@@ -335,10 +342,10 @@ export default function FarmerDetails() {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-bold mb-4 text-gray-800">📍 Address</h2>
               <div className="grid md:grid-cols-2 gap-4">
-                <InfoField label="Province" value={farmer.address?.province} />
-                <InfoField label="District" value={farmer.address?.district} />
+                <InfoField label="Province" value={farmer.address?.province_name || farmer.address?.province} />
+                <InfoField label="District" value={farmer.address?.district_name || farmer.address?.district} />
                 <InfoField label="Village" value={farmer.address?.village} />
-                <InfoField label="Chiefdom" value={farmer.address?.chiefdom} />
+                <InfoField label="Chiefdom" value={farmer.address?.chiefdom_name || farmer.address?.chiefdom} />
               </div>
             </div>
 
@@ -348,20 +355,20 @@ export default function FarmerDetails() {
               <div className="grid md:grid-cols-2 gap-4">
                 <InfoField
                   label="Farm Size"
-                  value={`${farmer.farm_info?.farm_size_hectares || 0} hectares`}
+                  value={farmer.farm_info?.farm_size_hectares ? `${farmer.farm_info.farm_size_hectares} hectares` : "N/A"}
                 />
                 <InfoField
                   label="Crops"
                   value={farmer.farm_info?.crops_grown?.join(", ")}
                 />
-                <InfoField label="Livestock" value={farmer.farm_info?.livestock?.join(", ")} />
+                <InfoField label="Livestock" value={farmer.farm_info?.livestock_types?.join(", ") || farmer.farm_info?.livestock?.join(", ")} />
                 <InfoField
                   label="Irrigation"
                   value={farmer.farm_info?.has_irrigation ? "Yes" : "No"}
                 />
                 <InfoField
                   label="Experience"
-                  value={`${farmer.farm_info?.farming_experience_years || 0} years`}
+                  value={farmer.farm_info?.farming_experience_years ? `${farmer.farm_info.farming_experience_years} years` : farmer.farm_info?.years_farming ? `${farmer.farm_info.years_farming} years` : "N/A"}
                 />
               </div>
             </div>

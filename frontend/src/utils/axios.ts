@@ -2,16 +2,30 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import useAuthStore from "@/store/authStore";
 
-// ----------------------------------------
-// Resolve API Base URL
-// ----------------------------------------
-function resolveApiBaseUrl() {
-  const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (envUrl) return envUrl.replace(/\/$/, "");
-  return "http://localhost:8000";
-}
+// Detect GitHub Codespaces environment
+const isCodespaces = typeof window !== 'undefined' && window.location.hostname.endsWith('.app.github.dev');
 
-let API_BASE_URL = resolveApiBaseUrl();
+// Build API base URL
+const getApiBaseUrl = (): string => {
+  // Priority 1: Environment variable
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+
+  // Priority 2: Auto-detect Codespaces backend URL
+  if (isCodespaces) {
+    const currentUrl = window.location.hostname;
+    // Replace port 5173 (frontend) with 8000 (backend)
+    const backendUrl = currentUrl.replace('-5173.', '-8000.');
+    return `https://${backendUrl}`;
+  }
+
+  // Priority 3: Local development fallback
+  return "http://localhost:8000";
+};
+
+let API_BASE_URL = getApiBaseUrl();
 
 if (import.meta.env.DEV) {
   console.log("[Axios] API_BASE_URL:", API_BASE_URL);

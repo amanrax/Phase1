@@ -7,6 +7,7 @@ import Step3Farm from "./Step3Farm";
 import Step4Preview from "./Step4Preview";
 import Step5PhotoUpload from "./Step5PhotoUpload";
 import Step6DocumentUpload from "./Step6DocumentUpload";
+import Step7Completion from "./Step7Completion";
 
 export type WizardState = {
   personal: {
@@ -49,10 +50,11 @@ const initialState: WizardState = {
 
 export default function FarmerRegistrationWizard() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(1);
   const [form, setForm] = useState<WizardState>(initialState);
   const [loading, setLoading] = useState(false);
   const [newFarmerId, setNewFarmerId] = useState<string | null>(null);
+  const [farmerName, setFarmerName] = useState<string>("");
 
   const update = <K extends keyof WizardState>(
     section: K,
@@ -64,115 +66,131 @@ export default function FarmerRegistrationWizard() {
     }));
   };
 
+  const handleStep4Complete = async (formValues: any) => {
+    try {
+      // const response = await farmerService.create(formValues);
+      setNewFarmerId("123"); // response.farmer_id
+      setFarmerName(
+        `${formValues.personal_info.first_name} ${formValues.personal_info.last_name}`
+      );
+      setCurrentStep(5);
+    } catch (err: any) {
+      // ...existing error handling...
+    }
+  };
+
+  const handleStep6Complete = () => {
+    setCurrentStep(7);
+  };
+
   return (
     <div
-      style={{ minHeight: "100vh", padding: 20, background: "#f7f7f7" }}
+      style={{ minHeight: "100vh", backgroundColor: "#f9fafb", padding: "20px" }}
     >
       <div
         style={{
-          maxWidth: 900,
+          maxWidth: "900px",
           margin: "0 auto",
-          background: "#fff",
-          padding: 24,
-          borderRadius: 8,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          backgroundColor: "white",
+          borderRadius: "12px",
+          padding: "40px",
+          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
         }}
       >
-        <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: "15px" }}>
-          <button
-            onClick={() => {
-              if (step === 1) {
-                navigate("/");
-              } else {
-                setStep(step - 1);
-              }
-            }}
+        {/* Progress Bar */}
+        <div style={{ marginBottom: "40px" }}>
+          <div
             style={{
-              backgroundColor: "#2563EB",
-              color: "white",
-              border: "none",
-              padding: "8px 16px",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontWeight: "bold",
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "12px",
             }}
           >
-            ← Back
-          </button>
-          <div>
-            <h2 style={{ margin: 0 }}>New Farmer — Registration</h2>
-            <div style={{ marginTop: 8, color: "#666" }}>Step {step} / 6</div>
+            {[1, 2, 3, 4, 5, 6, 7].map((step) => (
+              <div
+                key={step}
+                style={{
+                  flex: 1,
+                  height: "8px",
+                  backgroundColor:
+                    currentStep >= step ? "#2563EB" : "#E5E7EB",
+                  marginRight: step < 7 ? "8px" : "0",
+                  borderRadius: "4px",
+                  transition: "background-color 0.3s",
+                }}
+              />
+            ))}
           </div>
+          <p
+            style={{
+              textAlign: "center",
+              color: "#6B7280",
+              fontSize: "14px",
+              fontWeight: "500",
+            }}
+          >
+            Step {currentStep} of 7
+          </p>
         </div>
 
-        {/* Step 1: Personal Information */}
-        {step === 1 && (
+        {/* Step Content */}
+        {currentStep === 1 && (
           <Step1Personal
             data={form.personal}
             onNext={(vals: WizardState["personal"]) => {
               update("personal", vals);
-              setStep(2);
+              setCurrentStep(2);
             }}
           />
         )}
-
-        {/* Step 2: Address Information */}
-        {step === 2 && (
+        {currentStep === 2 && (
           <Step2Address
             data={form.address}
-            onBack={() => setStep(1)}
+            onBack={() => setCurrentStep(1)}
             onNext={(vals: WizardState["address"]) => {
               update("address", vals);
-              setStep(3);
+              setCurrentStep(3);
             }}
           />
         )}
-
-        {/* Step 3: Farm Information */}
-        {step === 3 && (
+        {currentStep === 3 && (
           <Step3Farm
             data={form.farm || {}}
-            onBack={() => setStep(2)}
+            onBack={() => setCurrentStep(2)}
             onNext={(vals: WizardState["farm"]) => {
               update("farm", vals);
-              setStep(4);
+              setCurrentStep(4);
             }}
           />
         )}
-
-        {/* Step 4: Preview & Submit */}
-        {step === 4 && (
+        {currentStep === 4 && (
           <Step4Preview
             data={form}
-            onBack={() => setStep(3)}
+            onBack={() => setCurrentStep(3)}
             onSubmitStart={() => setLoading(true)}
             onSubmitEnd={() => setLoading(false)}
             onSuccess={(farmerId) => {
               setNewFarmerId(farmerId);
-              setStep(5);
+              setCurrentStep(5);
             }}
           />
         )}
-
-        {/* Step 5: Photo Upload */}
-        {step === 5 && newFarmerId && (
+        {currentStep === 5 && newFarmerId && (
           <Step5PhotoUpload
             farmerId={newFarmerId}
-            onBack={() => setStep(4)}
-            onNext={() => setStep(6)}
+            onBack={() => setCurrentStep(4)}
+            onNext={() => setCurrentStep(6)}
           />
         )}
-
-        {/* Step 6: Document Upload */}
-        {step === 6 && newFarmerId && (
+        {currentStep === 6 && newFarmerId && (
           <Step6DocumentUpload
             farmerId={newFarmerId}
-            onBack={() => setStep(5)}
-            onComplete={() => {
-              alert("✅ Farmer registration complete!");
-              navigate(`/farmers/${newFarmerId}`); // Navigate to the new farmer's detail page
-            }}
+            onBack={() => setCurrentStep(5)}
+            onComplete={handleStep6Complete}
           />
+        )}
+        {currentStep === 7 && newFarmerId && (
+          <Step7Completion farmerId={newFarmerId} farmerName={farmerName} />
         )}
 
         {/* Footer Tip */}

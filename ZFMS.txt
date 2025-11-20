@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZIAMIS Pro | National Agriculture Database</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- BRANDING: Zambia Green (#198a00), Copper Orange (#ef7d00), Black, White -->
+    <style>
+        :root {
+            --zam-green: #15803d;
+            --zam-dark: #14532d;
+            --zam-copper: #c2410c;
+        }
+        body { font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background-color: #f8fafc; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Sidebar Logic */
+        .nav-item { @apply flex items-center px-4 py-3 text-gray-300 hover:bg-green-900 hover:text-white transition-all cursor-pointer border-l-4 border-transparent; }
+        .nav-item.active { @apply bg-green-900 text-white border-orange-500; }
+        .nav-group-title { @apply px-4 mt-6 mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider; }
+        
+        /* Form Wizard Steps */
+        .wizard-step { @apply flex items-center justify-center w-8 h-8 rounded-full border-2 font-bold text-sm transition-colors; }
+        .wizard-active { @apply bg-green-700 text-white border-green-700; }
+        .wizard-done { @apply bg-green-900 text-white border-green-900; }
+        .wizard-pending { @apply text-gray-400 border-gray-300; }
+
+        /* Status Badges */
+        .badge { @apply px-2 py-1 text-xs font-semibold rounded-full; }
+        .badge-green { @apply bg-green-100 text-green-800; }
+        .badge-yellow { @apply bg-yellow-100 text-yellow-800; }
+        .badge-red { @apply bg-red-100 text-red-800; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- LOGIN SCREEN (Overlay) -->
+    <div id="login-screen" class="fixed inset-0 bg-gray-900 z-50 flex items-center justify-center bg-[url('https://images.unsplash.com/photo-1625246333195-78d9c38ad449?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center">
+        <div class="absolute inset-0 bg-green-900/80 backdrop-blur-sm"></div>
+        <div class="relative bg-white p-8 rounded-2xl shadow-2xl w-96 fade-in">
+            <div class="text-center mb-8">
+                <i class="fa-solid fa-wheat-awn text-5xl text-green-700 mb-2"></i>
+                <h1 class="text-2xl font-bold text-gray-800">ZIAMIS Pro</h1>
+                <p class="text-gray-500 text-sm">Ministry of Agriculture</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-600 uppercase">Role Select</label>
+                    <select id="login-role" class="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none">
+                        <option value="admin">Super Admin (Headquarters)</option>
+                        <option value="operator">Field Extension Officer (Camp)</option>
+                    </select>
+                </div>
+                <button onclick="performLogin()" class="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-3 rounded-lg transition shadow-lg">
+                    Secure Login <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+            <div class="mt-6 text-center">
+                <p class="text-xs text-gray-400">&copy; 2025 Govt of Zambia</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP SHELL -->
+    <div id="app-shell" class="hidden flex h-full">
+        
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-gray-900 text-white flex flex-col shadow-xl z-20 flex-shrink-0">
+            <!-- Logo -->
+            <div class="h-16 flex items-center px-6 bg-green-800 shadow-lg">
+                <i class="fa-solid fa-globe text-orange-400 text-lg mr-2"></i>
+                <span class="font-bold tracking-wide text-lg">ZIAMIS <span class="text-orange-400 text-xs">PRO</span></span>
+            </div>
+
+            <!-- Navigation -->
+            <div class="flex-1 overflow-y-auto py-4">
+                
+                <!-- Dashboard Group -->
+                <div class="nav-group-title">Overview</div>
+                <div onclick="nav('dashboard')" id="link-dashboard" class="nav-item active">
+                    <i class="fa-solid fa-chart-line w-6"></i> Dashboard
+                </div>
+                <div onclick="nav('analytics')" id="link-analytics" class="nav-item">
+                    <i class="fa-solid fa-chart-pie w-6"></i> Analytics & Trends
+                </div>
+
+                <!-- Farmer Management Group -->
+                <div class="nav-group-title">Farmer Management</div>
+                <div onclick="nav('registry')" id="link-registry" class="nav-item">
+                    <i class="fa-solid fa-users w-6"></i> Farmer Registry
+                </div>
+                <div onclick="nav('registration')" id="link-registration" class="nav-item">
+                    <i class="fa-solid fa-user-plus w-6"></i> New Registration
+                </div>
+                <div onclick="nav('groups')" id="link-groups" class="nav-item">
+                    <i class="fa-solid fa-people-group w-6"></i> Cooperatives
+                </div>
+
+                <!-- Operations Group -->
+                <div class="nav-group-title">Operations</div>
+                <div onclick="nav('requests')" id="link-requests" class="nav-item">
+                    <i class="fa-solid fa-file-signature w-6"></i> Requests (FISP)
+                    <span class="ml-auto bg-orange-600 text-xs rounded-full px-2 py-0.5">4</span>
+                </div>
+                <div onclick="nav('visits')" id="link-visits" class="nav-item">
+                    <i class="fa-solid fa-person-walking-luggage w-6"></i> Extension Visits
+                </div>
+
+                <!-- Admin Group (Hidden for Operators) -->
+                <div id="admin-menu-group">
+                    <div class="nav-group-title">Administration</div>
+                    <div onclick="nav('users')" id="link-users" class="nav-item">
+                        <i class="fa-solid fa-user-shield w-6"></i> User Management
+                    </div>
+                    <div onclick="nav('reports')" id="link-reports" class="nav-item">
+                        <i class="fa-solid fa-file-arrow-down w-6"></i> System Reports
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Profile Footer -->
+            <div class="p-4 bg-gray-800 border-t border-gray-700 flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center font-bold text-xs" id="user-initials">AD</div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium" id="user-name">Admin User</p>
+                        <p class="text-xs text-gray-400" id="user-role">System Admin</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 flex flex-col bg-slate-50 overflow-hidden relative">
+            
+            <!-- Topbar -->
+            <header class="h-16 bg-white shadow-sm flex items-center justify-between px-8 z-10">
+                <div class="flex items-center">
+                    <h2 id="page-title" class="text-xl font-bold text-gray-800">Executive Dashboard</h2>
+                    <span id="location-crumb" class="hidden md:flex items-center ml-4 text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                        <i class="fa-solid fa-location-dot mr-1 text-green-600"></i> Lusaka HQ
+                    </span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <input type="text" placeholder="Global Search (NRC, Name)..." class="pl-8 pr-4 py-1.5 bg-gray-100 border-transparent focus:bg-white focus:ring-2 focus:ring-green-500 rounded-full text-sm w-64 transition-all">
+                        <i class="fa-solid fa-search absolute left-3 top-2 text-gray-400 text-xs"></i>
+                    </div>
+                    <button class="relative p-2 text-gray-500 hover:text-green-700">
+                        <i class="fa-solid fa-bell text-lg"></i>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full"></span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content Stage -->
+            <div id="stage" class="flex-1 overflow-y-auto p-6 relative">
+                
+                <!-- VIEW: DASHBOARD -->
+                <section id="view-dashboard" class="space-y-6 fade-in">
+                    <!-- Stats Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-600 hover:shadow-md transition">
+                            <div class="flex justify-between">
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Registered Farmers</p>
+                                    <h3 class="text-2xl font-bold text-gray-800 mt-1">1,240,500</h3>
+                                </div>
+                                <div class="bg-green-50 p-3 rounded-lg text-green-600"><i class="fa-solid fa-users text-xl"></i></div>
+                            </div>
+                            <div class="mt-4 flex items-center text-xs text-green-600 font-semibold">
+                                <i class="fa-solid fa-arrow-trend-up mr-1"></i> +2.4% this month
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500 hover:shadow-md transition">
+                            <div class="flex justify-between">
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">FISP Applications</p>
+                                    <h3 class="text-2xl font-bold text-gray-800 mt-1">854,200</h3>
+                                </div>
+                                <div class="bg-orange-50 p-3 rounded-lg text-orange-600"><i class="fa-solid fa-file-signature text-xl"></i></div>
+                            </div>
+                            <div class="mt-4 flex items-center text-xs text-gray-500">
+                                89% Processed
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-600 hover:shadow-md transition">
+                            <div class="flex justify-between">
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Maize Yield (Est)</p>
+                                    <h3 class="text-2xl font-bold text-gray-800 mt-1">3.2M <span class="text-sm font-normal">Tons</span></h3>
+                                </div>
+                                <div class="bg-blue-50 p-3 rounded-lg text-blue-600"><i class="fa-solid fa-wheat-awn text-xl"></i></div>
+                            </div>
+                            <div class="mt-4 flex items-center text-xs text-green-600">
+                                <i class="fa-solid fa-check mr-1"></i> Target Met
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-600 hover:shadow-md transition">
+                            <div class="flex justify-between">
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Active Operators</p>
+                                    <h3 class="text-2xl font-bold text-gray-800 mt-1">452</h3>
+                                </div>
+                                <div class="bg-purple-50 p-3 rounded-lg text-purple-600"><i class="fa-solid fa-user-tag text-xl"></i></div>
+                            </div>
+                            <div class="mt-4 flex items-center text-xs text-gray-500">
+                                Across 116 Districts
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Area -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4">Registration Trends (2024-2025)</h3>
+                            <canvas id="trendChart" height="100"></canvas>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4">Demographics (Gender)</h3>
+                            <canvas id="genderChart" height="200"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-100 font-bold text-gray-700 flex justify-between items-center">
+                            Recent System Activities
+                            <button class="text-xs text-blue-600 hover:underline">View Logs</button>
+                        </div>
+                        <div class="divide-y divide-gray-100">
+                            <div class="px-6 py-3 flex items-center hover:bg-gray-50">
+                                <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                                <p class="text-sm text-gray-600 flex-1">Operator <strong>J. Phiri</strong> registered <strong>15 farmers</strong> in Chongwe.</p>
+                                <span class="text-xs text-gray-400">10m ago</span>
+                            </div>
+                            <div class="px-6 py-3 flex items-center hover:bg-gray-50">
+                                <div class="w-2 h-2 bg-orange-500 rounded-full mr-3"></div>
+                                <p class="text-sm text-gray-600 flex-1"><strong>FISP Batch #402</strong> approved by District Officer.</p>
+                                <span class="text-xs text-gray-400">1h ago</span>
+                            </div>
+                            <div class="px-6 py-3 flex items-center hover:bg-gray-50">
+                                <div class="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                                <p class="text-sm text-gray-600 flex-1">New <strong>Admin User</strong> created for Southern Province.</p>
+                                <span class="text-xs text-gray-400">3h ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW: FARMER REGISTRY -->
+                <section id="view-registry" class="hidden space-y-6 fade-in">
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <!-- Toolbar -->
+                        <div class="p-4 border-b border-gray-200 flex flex-wrap gap-4 justify-between items-center bg-gray-50">
+                            <div class="flex gap-2 items-center">
+                                <h3 class="font-bold text-lg mr-4">Farmer Registry</h3>
+                                <select class="text-sm border-gray-300 rounded-lg px-3 py-2 focus:ring-green-500"><option>All Provinces</option><option>Lusaka</option><option>Eastern</option></select>
+                                <select class="text-sm border-gray-300 rounded-lg px-3 py-2 focus:ring-green-500"><option>Status: All</option><option>Active</option><option>Pending</option></select>
+                            </div>
+                            <button onclick="nav('registration')" class="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-sm font-medium shadow transition">
+                                <i class="fa-solid fa-plus mr-2"></i> Add Farmer
+                            </button>
+                        </div>
+                        
+                        <!-- Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-gray-600">
+                                <thead class="bg-gray-100 text-gray-700 font-bold uppercase text-xs">
+                                    <tr>
+                                        <th class="px-6 py-3">Farmer Info</th>
+                                        <th class="px-6 py-3">Location</th>
+                                        <th class="px-6 py-3">Farm Size</th>
+                                        <th class="px-6 py-3">Crops</th>
+                                        <th class="px-6 py-3">Status</th>
+                                        <th class="px-6 py-3 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    <!-- Row 1 -->
+                                    <tr class="hover:bg-green-50 transition">
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 bg-green-200 text-green-800 rounded-full flex items-center justify-center font-bold text-xs mr-3">JM</div>
+                                                <div>
+                                                    <div class="font-bold text-gray-900">John Mwape</div>
+                                                    <div class="text-xs">NRC: 123456/10/1</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">Chongwe, Kanikatete</td>
+                                        <td class="px-6 py-4">5.2 Ha <span class="text-xs text-gray-400 block">Title Deed</span></td>
+                                        <td class="px-6 py-4">Maize, Soya</td>
+                                        <td class="px-6 py-4"><span class="badge badge-green">Verified</span></td>
+                                        <td class="px-6 py-4 text-right">
+                                            <button class="text-blue-600 hover:text-blue-800 mr-2"><i class="fa-solid fa-eye"></i></button>
+                                            <button class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-pen"></i></button>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 2 -->
+                                    <tr class="hover:bg-green-50 transition">
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 bg-purple-200 text-purple-800 rounded-full flex items-center justify-center font-bold text-xs mr-3">SB</div>
+                                                <div>
+                                                    <div class="font-bold text-gray-900">Sarah Banda</div>
+                                                    <div class="text-xs">NRC: 987654/11/1</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">Rufunsa, Shikabeta</td>
+                                        <td class="px-6 py-4">1.5 Ha <span class="text-xs text-gray-400 block">Customary</span></td>
+                                        <td class="px-6 py-4">Groundnuts, Sunflower</td>
+                                        <td class="px-6 py-4"><span class="badge badge-yellow">Pending</span></td>
+                                        <td class="px-6 py-4 text-right">
+                                            <button class="text-blue-600 hover:text-blue-800 mr-2"><i class="fa-solid fa-eye"></i></button>
+                                            <button class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-pen"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-4 border-t border-gray-200 bg-gray-50 text-xs text-gray-500 flex justify-between items-center">
+                            <span>Showing 1-10 of 12,045</span>
+                            <div class="flex gap-1">
+                                <button class="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100">Prev</button>
+                                <button class="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW: NEW REGISTRATION (WIZARD) -->
+                <section id="view-registration" class="hidden space-y-6 fade-in">
+                    <div class="max-w-5xl mx-auto">
+                        
+                        <!-- Wizard Header -->
+                        <div class="flex justify-between items-center mb-8 px-8">
+                            <div class="flex flex-col items-center">
+                                <div id="w-step-1" class="wizard-step wizard-active">1</div>
+                                <span class="text-xs mt-2 font-bold text-green-800">Bio-Data</span>
+                            </div>
+                            <div class="h-1 bg-gray-300 flex-1 mx-2 mt-[-20px]"></div>
+                            <div class="flex flex-col items-center">
+                                <div id="w-step-2" class="wizard-step wizard-pending">2</div>
+                                <span class="text-xs mt-2 text-gray-500">Location</span>
+                            </div>
+                            <div class="h-1 bg-gray-300 flex-1 mx-2 mt-[-20px]"></div>
+                            <div class="flex flex-col items-center">
+                                <div id="w-step-3" class="wizard-step wizard-pending">3</div>
+                                <span class="text-xs mt-2 text-gray-500">Farm Profile</span>
+                            </div>
+                            <div class="h-1 bg-gray-300 flex-1 mx-2 mt-[-20px]"></div>
+                            <div class="flex flex-col items-center">
+                                <div id="w-step-4" class="wizard-step wizard-pending">4</div>
+                                <span class="text-xs mt-2 text-gray-500">Socio-Econ</span>
+                            </div>
+                        </div>
+
+                        <!-- Form Container -->
+                        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+                            
+                            <!-- SECTION 1: BIO DATA -->
+                            <div id="form-sec-1" class="form-section">
+                                <h3 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b">1. Farmer Identification</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">NRC Number *</label>
+                                        <input type="text" class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 outline-none" placeholder="000000/00/1">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">First Name *</label>
+                                        <input type="text" class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Surname *</label>
+                                        <input type="text" class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 outline-none">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Date of Birth</label>
+                                        <input type="date" class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Gender</label>
+                                        <select class="w-full p-2 border rounded bg-white focus:ring-2 focus:ring-green-500 outline-none">
+                                            <option>Male</option>
+                                            <option>Female</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Marital Status</label>
+                                        <select class="w-full p-2 border rounded bg-white focus:ring-2 focus:ring-green-500 outline-none">
+                                            <option>Married</option>
+                                            <option>Single</option>
+                                            <option>Widowed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Phone (Primary)</label>
+                                        <input type="text" class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 outline-none" placeholder="+260">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Education Level</label>
+                                        <select class="w-full p-2 border rounded bg-white focus:ring-2 focus:ring-green-500 outline-none">
+                                            <option>Primary</option>
+                                            <option>Secondary</option>
+                                            <option>Tertiary</option>
+                                            <option>None</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="flex justify-end mt-8">
+                                    <button onclick="wizardNext(2)" class="bg-green-700 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-800">Next Step <i class="fa-solid fa-arrow-right ml-2"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- SECTION 2: LOCATION -->
+                            <div id="form-sec-2" class="form-section hidden">
+                                <h3 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b">2. Geographic Data</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Province</label>
+                                        <select class="w-full p-2 border rounded bg-white focus:ring-2 focus:ring-green-500 outline-none"><option>Lusaka</option><option>Central</option></select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">District</label>
+                                        <select class="w-full p-2 border rounded bg-white focus:ring-2 focus:ring-green-500 outline-none"><option>Chongwe</option><option>Rufunsa</option></select>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Agricultural Camp</label>
+                                        <select class="w-full p-2 border rounded bg-white focus:ring-2 focus:ring-green-500 outline-none"><option>Kanikatete</option><option>Lwimba</option></select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Village / Zone</label>
+                                        <input type="text" class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 outline-none">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">GPS Latitude</label>
+                                        <input type="text" class="w-full p-2 border rounded bg-gray-50" placeholder="-15.3875" readonly>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">GPS Longitude</label>
+                                        <div class="flex gap-2">
+                                            <input type="text" class="w-full p-2 border rounded bg-gray-50" placeholder="28.3228" readonly>
+                                            <button class="px-3 bg-blue-600 text-white rounded hover:bg-blue-700" title="Get Location"><i class="fa-solid fa-location-crosshairs"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between mt-8">
+                                    <button onclick="wizardNext(1)" class="text-gray-500 font-bold hover:text-gray-700">Back</button>
+                                    <button onclick="wizardNext(3)" class="bg-green-700 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-800">Next Step <i class="fa-solid fa-arrow-right ml-2"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- SECTION 3: FARM PROFILE -->
+                            <div id="form-sec-3" class="form-section hidden">
+                                <h3 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b">3. Farm Characteristics</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Total Hectares</label>
+                                        <input type="number" class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Land Tenure</label>
+                                        <select class="w-full p-2 border rounded bg-white focus:ring-2 focus:ring-green-500 outline-none"><option>Customary</option><option>Title Deed</option></select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Soil Type</label>
+                                        <select class="w-full p-2 border rounded bg-white focus:ring-2 focus:ring-green-500 outline-none"><option>Sandy Loam</option><option>Clay</option></select>
+                                    </div>
+                                </div>
+                                <div class="mb-6">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Crops Cultivated</label>
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                        <label class="flex items-center p-2 border rounded hover:bg-gray-50"><input type="checkbox" class="mr-2 text-green-600"> Maize</label>
+                                        <label class="flex items-center p-2 border rounded hover:bg-gray-50"><input type="checkbox" class="mr-2 text-green-600"> Soya Beans</label>
+                                        <label class="flex items-center p-2 border rounded hover:bg-gray-50"><input type="checkbox" class="mr-2 text-green-600"> Groundnuts</label>
+                                        <label class="flex items-center p-2 border rounded hover:bg-gray-50"><input type="checkbox" class="mr-2 text-green-600"> Sunflower</label>
+                                        <label class="flex items-center p-2 border rounded hover:bg-gray-50"><input type="checkbox" class="mr-2 text-green-600"> Cotton</label>
+                                        <label class="flex items-center p-2 border rounded hover:bg-gray-50"><input type="checkbox" class="mr-2 text-green-600"> Tobacco</label>
+                                        <label class="flex items-center p-2 border rounded hover:bg-gray-50"><input type="checkbox" class="mr-2 text-green-600"> Vegetables</label>
+                                        <label class="flex items-center p-2 border rounded hover:bg-gray-50"><input type="checkbox" class="mr-2 text-green-600"> Fruits</label>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Livestock Inventory</label>
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div><label class="text-xs">Cattle</label><input type="number" class="w-full p-1 border rounded"></div>
+                                        <div><label class="text-xs">Goats</label><input type="number" class="w-full p-1 border rounded"></div>
+                                        <div><label class="text-xs">Pigs</label><input type="number" class="w-full p-1 border rounded"></div>
+                                        <div><label class="text-xs">Poultry</label><input type="number" class="w-full p-1 border rounded"></div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between mt-8">
+                                    <button onclick="wizardNext(2)" class="text-gray-500 font-bold hover:text-gray-700">Back</button>
+                                    <button onclick="wizardNext(4)" class="bg-green-700 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-800">Next Step <i class="fa-solid fa-arrow-right ml-2"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- SECTION 4: SOCIO-ECON -->
+                            <div id="form-sec-4" class="form-section hidden">
+                                <h3 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b">4. Socio-Economic & Financial</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Household Size</label>
+                                        <input type="number" class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Primary Income Source</label>
+                                        <select class="w-full p-2 border rounded bg-white focus:ring-2 focus:ring-green-500 outline-none"><option>Farming Only</option><option>Farming + Business</option></select>
+                                    </div>
+                                </div>
+                                <div class="mb-6">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Financial Services</label>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center"><input type="checkbox" class="mr-2"> Has Bank Account</label>
+                                        <div class="flex items-center gap-2">
+                                            <label class="flex items-center"><input type="checkbox" class="mr-2"> Has Mobile Money</label>
+                                            <select class="p-1 border rounded text-xs"><option>Airtel</option><option>MTN</option><option>Zamtel</option></select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-4 bg-orange-50 border border-orange-100 rounded mb-4">
+                                    <h4 class="font-bold text-orange-800 text-sm mb-2">Vulnerability (FISP Eligibility)</h4>
+                                    <div class="grid grid-cols-2 gap-2 text-sm">
+                                        <label class="flex items-center"><input type="checkbox" class="mr-2"> Female Headed Household</label>
+                                        <label class="flex items-center"><input type="checkbox" class="mr-2"> Youth Farmer (< 35)</label>
+                                        <label class="flex items-center"><input type="checkbox" class="mr-2"> Living with Disability</label>
+                                        <label class="flex items-center"><input type="checkbox" class="mr-2"> Elderly (> 60)</label>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between mt-8">
+                                    <button onclick="wizardNext(3)" class="text-gray-500 font-bold hover:text-gray-700">Back</button>
+                                    <button onclick="submitForm()" class="bg-orange-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-orange-700 shadow-lg transform hover:-translate-y-1 transition">Submit Registration</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW: REQUESTS (FISP) -->
+                <section id="view-requests" class="hidden space-y-6 fade-in">
+                    <h3 class="text-xl font-bold text-gray-800">FISP Requests Management</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- PENDING COLUMN -->
+                        <div class="bg-white p-4 rounded-xl shadow-sm h-[600px] overflow-y-auto border-t-4 border-yellow-400">
+                            <h4 class="font-bold text-gray-600 mb-4 flex justify-between">Pending Approval <span class="bg-gray-200 px-2 rounded text-xs py-1">2</span></h4>
+                            
+                            <!-- Card 1 -->
+                            <div class="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3 hover:shadow-md cursor-pointer">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold bg-gray-100 px-2 py-0.5 rounded">#REQ-1024</span>
+                                    <span class="text-xs text-gray-400">Today</span>
+                                </div>
+                                <p class="font-bold text-sm">Mulenga P. (Chongwe)</p>
+                                <p class="text-xs text-gray-500">Pack: Standard Maize + Urea</p>
+                                <div class="mt-3 flex gap-2">
+                                    <button onclick="showToast('Approved')" class="flex-1 bg-green-600 text-white text-xs py-1 rounded hover:bg-green-700">Approve</button>
+                                    <button onclick="showToast('Rejected')" class="flex-1 bg-red-500 text-white text-xs py-1 rounded hover:bg-red-600">Reject</button>
+                                </div>
+                            </div>
+                             <!-- Card 2 -->
+                             <div class="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3 hover:shadow-md cursor-pointer">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold bg-gray-100 px-2 py-0.5 rounded">#REQ-1025</span>
+                                    <span class="text-xs text-gray-400">Yesterday</span>
+                                </div>
+                                <p class="font-bold text-sm">Phiri J. (Rufunsa)</p>
+                                <p class="text-xs text-gray-500">Pack: Soya + Inoculant</p>
+                                <div class="mt-3 flex gap-2">
+                                    <button class="flex-1 bg-green-600 text-white text-xs py-1 rounded hover:bg-green-700">Approve</button>
+                                    <button class="flex-1 bg-red-500 text-white text-xs py-1 rounded hover:bg-red-600">Reject</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- APPROVED COLUMN -->
+                        <div class="bg-white p-4 rounded-xl shadow-sm h-[600px] overflow-y-auto border-t-4 border-green-600">
+                            <h4 class="font-bold text-gray-600 mb-4 flex justify-between">Approved (Collection) <span class="bg-gray-200 px-2 rounded text-xs py-1">142</span></h4>
+                            <div class="bg-gray-50 border border-gray-200 p-3 rounded-lg mb-2 opacity-75">
+                                <p class="font-bold text-sm">Tembo M.</p>
+                                <p class="text-xs text-green-600"><i class="fa-solid fa-check-circle"></i> Approved by D.O.</p>
+                            </div>
+                        </div>
+
+                        <!-- ISSUED COLUMN -->
+                        <div class="bg-white p-4 rounded-xl shadow-sm h-[600px] overflow-y-auto border-t-4 border-blue-600">
+                            <h4 class="font-bold text-gray-600 mb-4 flex justify-between">Inputs Collected <span class="bg-gray-200 px-2 rounded text-xs py-1">890</span></h4>
+                             <div class="bg-gray-50 border border-gray-200 p-3 rounded-lg mb-2 opacity-50">
+                                <p class="font-bold text-sm text-gray-500 strike-through">Banda A.</p>
+                                <p class="text-xs text-gray-400">Collected 12/10/2024</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW: USER MANAGEMENT (ADMIN ONLY) -->
+                <section id="view-users" class="hidden space-y-6 fade-in">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-gray-800">System Users (Operators)</h3>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"><i class="fa-solid fa-plus"></i> Add Operator</button>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-800 text-white uppercase text-xs">
+                                <tr>
+                                    <th class="px-6 py-3">Name</th>
+                                    <th class="px-6 py-3">Role</th>
+                                    <th class="px-6 py-3">District/Area</th>
+                                    <th class="px-6 py-3">Status</th>
+                                    <th class="px-6 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <tr>
+                                    <td class="px-6 py-4 font-bold">Chanda Mwale</td>
+                                    <td class="px-6 py-4">District Admin</td>
+                                    <td class="px-6 py-4">Chongwe</td>
+                                    <td class="px-6 py-4"><span class="badge badge-green">Active</span></td>
+                                    <td class="px-6 py-4 text-right text-gray-500"><i class="fa-solid fa-gear cursor-pointer"></i></td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 font-bold">Peter Zulu</td>
+                                    <td class="px-6 py-4">Extension Officer</td>
+                                    <td class="px-6 py-4">Rufunsa (Camp A)</td>
+                                    <td class="px-6 py-4"><span class="badge badge-green">Active</span></td>
+                                    <td class="px-6 py-4 text-right text-gray-500"><i class="fa-solid fa-gear cursor-pointer"></i></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- VIEW: REPORTS -->
+                <section id="view-reports" class="hidden space-y-6 fade-in">
+                    <h3 class="text-xl font-bold text-gray-800">Reports Center</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md cursor-pointer border border-gray-100">
+                            <i class="fa-solid fa-file-csv text-3xl text-green-600 mb-4"></i>
+                            <h4 class="font-bold text-gray-800">Farmer Register Export</h4>
+                            <p class="text-xs text-gray-500 mt-1">Full database dump (CSV).</p>
+                            <button class="mt-4 text-xs font-bold text-blue-600 hover:underline">Download &rarr;</button>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md cursor-pointer border border-gray-100">
+                            <i class="fa-solid fa-file-pdf text-3xl text-red-600 mb-4"></i>
+                            <h4 class="font-bold text-gray-800">FISP Distribution Summary</h4>
+                            <p class="text-xs text-gray-500 mt-1">Monthly PDF report.</p>
+                            <button class="mt-4 text-xs font-bold text-blue-600 hover:underline">Download &rarr;</button>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md cursor-pointer border border-gray-100">
+                            <i class="fa-solid fa-chart-simple text-3xl text-orange-600 mb-4"></i>
+                            <h4 class="font-bold text-gray-800">Yield Forecast 2025</h4>
+                            <p class="text-xs text-gray-500 mt-1">Based on registered hectare.</p>
+                            <button class="mt-4 text-xs font-bold text-blue-600 hover:underline">View Analysis &rarr;</button>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded shadow-lg transform translate-y-20 transition-transform duration-300 z-50 flex items-center">
+        <i class="fa-solid fa-circle-check text-green-400 mr-3"></i>
+        <span id="toast-msg">Operation Successful</span>
+    </div>
+
+    <script>
+        // --- AUTHENTICATION & ROLES ---
+        function performLogin() {
+            const role = document.getElementById('login-role').value;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-shell').classList.remove('hidden');
+
+            // Simulate Role Personalization
+            if(role === 'operator') {
+                document.getElementById('admin-menu-group').classList.add('hidden');
+                document.getElementById('user-role').innerText = 'Extension Officer';
+                document.getElementById('user-name').innerText = 'James Phiri';
+                document.getElementById('user-initials').innerText = 'JP';
+                // Restrict dashboard views for realism
+            } else {
+                document.getElementById('admin-menu-group').classList.remove('hidden');
+            }
+            
+            // Init Charts only after shell is visible
+            initCharts();
+        }
+
+        function logout() {
+            location.reload();
+        }
+
+        // --- NAVIGATION ---
+        function nav(viewId) {
+            // Hide all views
+            document.querySelectorAll('section[id^="view-"]').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            // Show Target
+            const target = document.getElementById('view-' + viewId);
+            if(target) {
+                target.classList.remove('hidden');
+                // Trigger animation replay
+                target.classList.remove('fade-in');
+                void target.offsetWidth; 
+                target.classList.add('fade-in');
+            }
+            
+            // Highlight Sidebar
+            const link = document.getElementById('link-' + viewId);
+            if(link) link.classList.add('active');
+        }
+
+        // --- WIZARD LOGIC ---
+        function wizardNext(step) {
+            // Hide all form sections
+            for(let i=1; i<=4; i++) document.getElementById('form-sec-'+i).classList.add('hidden');
+            // Show target
+            document.getElementById('form-sec-'+step).classList.remove('hidden');
+            
+            // Update Header Indicators
+            for(let i=1; i<=4; i++) {
+                const badge = document.getElementById('w-step-'+i);
+                badge.className = 'wizard-step'; // Reset
+                if(i < step) badge.classList.add('wizard-done');
+                else if (i === step) badge.classList.add('wizard-active');
+                else badge.classList.add('wizard-pending');
+            }
+        }
+
+        function submitForm() {
+            const btn = document.querySelector('button[onclick="submitForm()"]');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+            setTimeout(() => {
+                showToast('Farmer Registration Saved!');
+                btn.innerHTML = 'Submit Registration';
+                wizardNext(1); // Reset
+                nav('registry'); // Go to table
+            }, 1500);
+        }
+
+        // --- UTILS ---
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('translate-y-20');
+            setTimeout(() => toast.classList.add('translate-y-20'), 3000);
+        }
+
+        // --- ANALYTICS ---
+        function initCharts() {
+            // 1. Trend Chart (Line)
+            new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'New Registrations',
+                        data: [120, 190, 300, 500, 450, 600],
+                        borderColor: '#15803d',
+                        backgroundColor: 'rgba(21, 128, 61, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // 2. Demographics (Pie)
+            new Chart(document.getElementById('genderChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Male', 'Female', 'Youth (<35)'],
+                    datasets: [{
+                        data: [45, 30, 25],
+                        backgroundColor: ['#1e293b', '#ea580c', '#15803d']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+    </script>
+</body>
+</html>
