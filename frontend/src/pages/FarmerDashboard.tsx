@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 
-export default function Dashboard() {
+export default function FarmerDashboard() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
@@ -18,7 +18,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (farmerData?.farmer_id) {
-      farmerService.getQRCode(farmerData.farmer_id).then(setQrCodeUrl);
+      const url = farmerService.getQRCode(farmerData.farmer_id);
+      setQrCodeUrl(url);
     }
   }, [farmerData?.farmer_id]);
 
@@ -120,7 +121,7 @@ export default function Dashboard() {
                 <p className="text-sm text-gray-600 mt-1">Get your digital farmer ID</p>
               </button>
               <button
-                onClick={() => navigate("/farmers/edit")}
+                onClick={() => navigate(`/farmers/edit/${farmerData.farmer_id}`)}
                 className="card p-4 border-l-4 border-blue-600 hover:shadow-lg transition"
               >
                 <div className="text-3xl mb-2">✏️</div>

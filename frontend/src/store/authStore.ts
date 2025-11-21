@@ -66,6 +66,8 @@ const useAuthStore = create<AuthState>()(
             message = detail;
           }
 
+          alert(`Login Error: ${message}`);
+
           set({
             error: message,
             isLoading: false,

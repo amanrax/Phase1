@@ -48,6 +48,7 @@ export default function Login() {
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-lg shadow-xl w-96"
         aria-label="Login Form"
+        autoComplete="off"
       >
         <h1 className="text-3xl font-bold mb-6 text-center">🌾 Farmer System</h1>
 
@@ -84,6 +85,7 @@ export default function Login() {
           className="w-full px-4 py-2 border border-gray-300 rounded mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
           aria-label={usernameLabel}
+          autoComplete="off"
         />
 
         {/* Password or DOB */}
@@ -92,13 +94,14 @@ export default function Login() {
         </label>
         <input
           id="password-input"
-          type="password"
+          type={isFarmer ? "text" : "password"}
           placeholder={passwordPlaceholder}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
           aria-label={passwordLabel}
+          autoComplete="off"
         />
 
         {/* Error Message */}

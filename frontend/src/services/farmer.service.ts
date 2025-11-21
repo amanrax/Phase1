@@ -111,7 +111,7 @@ export const farmerService = {
    * Backend: POST /api/farmers/{farmer_id}/generate-idcard
    */
   async generateIDCard(farmerId: string): Promise<any> {
-    const response = await api.post(`/farmers/${farmerId}/generate-id-card`);
+    const response = await api.post(`/farmers/${farmerId}/generate-idcard`);
     return response.data;
   },
 
@@ -120,7 +120,7 @@ export const farmerService = {
    * Backend: GET /api/farmers/{farmer_id}/download-idcard
    */
   async downloadIDCard(farmerId: string): Promise<void> {
-    const response = await api.get(`/farmers/${farmerId}/id-card`, {
+    const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
       responseType: "blob",
     });
     const url = window.URL.createObjectURL(new Blob([response.data]));

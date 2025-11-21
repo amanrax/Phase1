@@ -15,6 +15,7 @@ import FarmersList from "@/pages/FarmersList";
 import EditFarmer from "@/pages/EditFarmer";
 import OperatorManagement from "@/pages/OperatorManagement";
 import OperatorDetails from "@/pages/OperatorDetails";
+import FarmerDashboard from "@/pages/FarmerDashboard";
 import FarmerDetails from "@/pages/FarmerDetails";
 
 function App() {
@@ -111,7 +112,7 @@ function App() {
           path="/farmers/edit/:farmerId"
           element={
             <ProtectedRoute>
-              <RoleRoute requiredRole={["admin", "operator"]}>
+              <RoleRoute requiredRole={["admin", "operator", "farmer"]}>
                 <EditFarmer />
               </RoleRoute>
             </ProtectedRoute>
@@ -134,7 +135,7 @@ function App() {
           element={
             <ProtectedRoute>
               <RoleRoute requiredRole="farmer">
-                <Dashboard />
+                <FarmerDashboard />
               </RoleRoute>
             </ProtectedRoute>
           }

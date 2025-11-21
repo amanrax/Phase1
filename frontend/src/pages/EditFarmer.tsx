@@ -1,6 +1,7 @@
 // src/pages/EditFarmer.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import geoService from "@/services/geo.service";
 
@@ -37,6 +38,7 @@ interface FarmerFormData {
 
 export default function EditFarmer() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const { farmerId } = useParams<{ farmerId: string }>();
   
   const [formData, setFormData] = useState<FarmerFormData>({
@@ -332,7 +334,11 @@ export default function EditFarmer() {
       console.log("Update payload:", JSON.stringify(payload, null, 2));
       await farmerService.update(farmerId!, payload);
       alert("✅ Farmer updated successfully!");
-      navigate("/farmers");
+      if (user && user.roles.includes("FARMER")) {
+        navigate("/farmer-dashboard");
+      } else {
+        navigate("/farmers");
+      }
     } catch (err: any) {
       console.error("Update error:", err);
       console.error("Error response:", err.response?.data);
@@ -959,7 +965,13 @@ export default function EditFarmer() {
         <div style={{ display: "flex", gap: "15px", justifyContent: "flex-end" }}>
           <button
             type="button"
-            onClick={() => navigate("/farmers")}
+            onClick={() => {
+              if (user && user.roles.includes("FARMER")) {
+                navigate("/farmer-dashboard");
+              } else {
+                navigate("/farmers");
+              }
+            }}
             disabled={saving}
             style={{
               padding: "12px 24px",
