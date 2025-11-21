@@ -14,21 +14,21 @@ users = [
     {
         "email": "admin@agrimanage.com",
         "password_hash": pwd_ctx.hash("admin123"),
-        "roles": ["admin"],
+        "roles": ["ADMIN"],  # Uppercase for consistency with backend role checks
         "is_active": True,
         "full_name": "System Admin"
     },
     {
         "email": "operator@agrimanage.com",
         "password_hash": pwd_ctx.hash("operator123"),
-        "roles": ["operator"],
+        "roles": ["OPERATOR"],  # Uppercase for consistency with backend role checks
         "is_active": True,
         "full_name": "Operator User"
     },
     {
         "email": "viewer@agrimanage.com",
         "password_hash": pwd_ctx.hash("viewer123"),
-        "roles": ["viewer"],
+        "roles": ["VIEWER"],  # Uppercase for consistency with backend role checks
         "is_active": True,
         "full_name": "Viewer User"
     }

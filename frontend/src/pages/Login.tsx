@@ -18,11 +18,29 @@ export default function Login() {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate(`/${userType}-dashboard`);
+      // Determine dashboard based on actual user roles from the login response
+      const user = useAuthStore.getState().user;
+      if (user?.roles.includes("ADMIN")) {
+        navigate('/admin-dashboard');
+      } else if (user?.roles.includes("OPERATOR")) {
+        navigate('/operator-dashboard');
+      } else if (user?.roles.includes("FARMER")) {
+        navigate('/farmer-dashboard');
+      } else {
+        navigate('/dashboard'); // Fallback
+      }
     } catch {
       console.error("Login failed");
     }
   };
+  
+  const isFarmer = userType === "farmer";
+  const usernameLabel = isFarmer ? "NRC Number" : "Email";
+  const usernamePlaceholder = isFarmer ? "e.g., 123456/12/1" : "e.g., user@example.com";
+  const passwordLabel = isFarmer ? "Date of Birth" : "Password";
+  const passwordPlaceholder = isFarmer ? "YYYY-MM-DD" : "Enter your password";
+  const usernameInputType = isFarmer ? "text" : "email";
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 to-purple-600">
@@ -53,26 +71,34 @@ export default function Login() {
           ))}
         </div>
 
-        {/* Email */}
+        {/* Username (Email or NRC) */}
+        <label htmlFor="username-input" className="block text-sm font-medium text-gray-700 mb-1">
+          {usernameLabel}
+        </label>
         <input
-          type="email"
-          placeholder="Email"
+          id="username-input"
+          type={usernameInputType}
+          placeholder={usernamePlaceholder}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
-          aria-label="Email"
+          aria-label={usernameLabel}
         />
 
-        {/* Password */}
+        {/* Password or DOB */}
+        <label htmlFor="password-input" className="block text-sm font-medium text-gray-700 mb-1">
+          {passwordLabel}
+        </label>
         <input
+          id="password-input"
           type="password"
-          placeholder="Password"
+          placeholder={passwordPlaceholder}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
-          aria-label="Password"
+          aria-label={passwordLabel}
         />
 
         {/* Error Message */}
@@ -100,7 +126,7 @@ export default function Login() {
           <p className="font-medium mb-2">Demo Credentials:</p>
           <p>👤 Admin: admin@agrimanage.com / admin123</p>
           <p>👨‍🌾 Operator: operator@agrimanage.com / operator123</p>
-          <p>🌾 Farmer: farmer@agrimanage.com / farmer123</p>
+          <p>🌾 Farmer: 123456/12/1 / 1990-01-15 (NRC / YYYY-MM-DD)</p>
         </div>
       </form>
     </div>

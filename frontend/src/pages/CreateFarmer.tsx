@@ -1,6 +1,7 @@
 // src/pages/FarmerRegistration/CreateFarmer.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import geoService from "@/services/geo.service";
 
 type Crop = {
   product: string;
@@ -19,6 +20,9 @@ type FormData = {
   chiefdom: string;
   district: string;
   province: string;
+  province_code: string;
+  district_code: string;
+  chiefdom_code: string;
   zone_no: string;
   zone_name: string;
   locality: string;
@@ -34,19 +38,6 @@ type FormData = {
   distribution_model: string;
   status: string;
 };
-
-const PROVINCES = [
-  "Central",
-  "Copperbelt",
-  "Eastern",
-  "Luapula",
-  "Lusaka",
-  "Muchinga",
-  "Northern",
-  "North-Western",
-  "Southern",
-  "Western",
-];
 
 const CROPS = [
   "Maize",
@@ -67,6 +58,10 @@ export default function CreateFarmer() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showBackButton] = useState(true);
+  const [loadingGeo, setLoadingGeo] = useState(false);
+  const [provinces, setProvinces] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [chiefdoms, setChiefdoms] = useState<any[]>([]);
   const [form, setForm] = useState<FormData>({
     farmer_name: "",
     nrc_no: "",
@@ -77,6 +72,9 @@ export default function CreateFarmer() {
     chiefdom: "",
     district: "",
     province: "",
+    province_code: "",
+    district_code: "",
+    chiefdom_code: "",
     zone_no: "",
     zone_name: "",
     locality: "",
@@ -92,6 +90,102 @@ export default function CreateFarmer() {
     distribution_model: "FIFO",
     status: "Active",
   });
+
+  // Load provinces on component mount
+  useEffect(() => {
+    loadProvinces();
+  }, []);
+
+  // Load districts when province changes
+  useEffect(() => {
+    if (form.province_code) {
+      loadDistricts(form.province_code);
+    } else {
+      setDistricts([]);
+      setChiefdoms([]);
+    }
+  }, [form.province_code]);
+
+  // Load chiefdoms when district changes
+  useEffect(() => {
+    if (form.district_code) {
+      loadChiefdoms(form.district_code);
+    } else {
+      setChiefdoms([]);
+    }
+  }, [form.district_code]);
+
+  const loadProvinces = async () => {
+    try {
+      setLoadingGeo(true);
+      const data = await geoService.provinces();
+      setProvinces(data);
+    } catch (err) {
+      console.error("Failed to load provinces:", err);
+      setError("Failed to load provinces");
+    } finally {
+      setLoadingGeo(false);
+    }
+  };
+
+  const loadDistricts = async (provinceCode: string) => {
+    try {
+      setLoadingGeo(true);
+      const data = await geoService.districts(provinceCode);
+      setDistricts(data);
+    } catch (err) {
+      console.error("Failed to load districts:", err);
+      setError("Failed to load districts");
+    } finally {
+      setLoadingGeo(false);
+    }
+  };
+
+  const loadChiefdoms = async (districtCode: string) => {
+    try {
+      setLoadingGeo(true);
+      const data = await geoService.chiefdoms(districtCode);
+      setChiefdoms(data);
+    } catch (err) {
+      console.error("Failed to load chiefdoms:", err);
+      setError("Failed to load chiefdoms");
+    } finally {
+      setLoadingGeo(false);
+    }
+  };
+
+  const handleProvinceChange = (value: string) => {
+    const selectedProvince = provinces.find(p => p.code === value);
+    setForm((prev: any) => ({
+      ...prev,
+      province_code: value,
+      province: selectedProvince?.name || "",
+      district_code: "",
+      district: "",
+      chiefdom_code: "",
+      chiefdom: "",
+    }));
+  };
+
+  const handleDistrictChange = (value: string) => {
+    const selectedDistrict = districts.find(d => d.code === value);
+    setForm((prev: any) => ({
+      ...prev,
+      district_code: value,
+      district: selectedDistrict?.name || "",
+      chiefdom_code: "",
+      chiefdom: "",
+    }));
+  };
+
+  const handleChiefdomChange = (value: string) => {
+    const selectedChiefdom = chiefdoms.find(c => c.code === value);
+    setForm((prev: any) => ({
+      ...prev,
+      chiefdom_code: value,
+      chiefdom: selectedChiefdom?.name || "",
+    }));
+  }
 
   const update = <K extends keyof FormData>(key: K, val: FormData[K]) =>
     setForm((prev) => ({ ...prev, [key]: val }));
@@ -268,39 +362,58 @@ export default function CreateFarmer() {
                   <label style={styles.label}>🗺️ Province *</label>
                   <select
                     style={styles.select}
-                    value={form.province}
-                    onChange={(e) => update("province", e.target.value)}
+                    value={form.province_code}
+                    onChange={(e) => handleProvinceChange(e.target.value)}
+                    disabled={loadingGeo}
                     required
                   >
-                    <option value="">Select</option>
-                    {PROVINCES.map((p) => (
-                      <option key={p}>{p}</option>
+                    <option value="">{loadingGeo ? "Loading provinces..." : "Select a Province"}</option>
+                    {provinces.map((p: any) => (
+                      <option key={p.code} value={p.code}>
+                        {p.name}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div style={styles.fieldGroup}>
                   <label style={styles.label}>📍 District *</label>
-                  <input
-                    style={styles.input}
-                    type="text"
-                    placeholder="District"
-                    value={form.district}
-                    onChange={(e) => update("district", e.target.value)}
+                  <select
+                    style={styles.select}
+                    value={form.district_code}
+                    onChange={(e) => handleDistrictChange(e.target.value)}
+                    disabled={loadingGeo || !form.province_code}
                     required
-                  />
+                  >
+                    <option value="">
+                      {!form.province_code ? "Select Province First" : loadingGeo ? "Loading districts..." : "Select a District"}
+                    </option>
+                    {districts.map((d: any) => (
+                      <option key={d.code} value={d.code}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
               <div style={styles.grid}>
                 <div style={styles.fieldGroup}>
                   <label style={styles.label}>👑 Chiefdom</label>
-                  <input
-                    style={styles.input}
-                    type="text"
-                    placeholder="Chiefdom"
-                    value={form.chiefdom}
-                    onChange={(e) => update("chiefdom", e.target.value)}
-                  />
+                  <select
+                    style={styles.select}
+                    value={form.chiefdom_code}
+                    onChange={(e) => handleChiefdomChange(e.target.value)}
+                    disabled={loadingGeo || !form.district_code}
+                  >
+                    <option value="">
+                      {!form.district_code ? "Select District First" : loadingGeo ? "Loading chiefdoms..." : "Select a Chiefdom"}
+                    </option>
+                    {chiefdoms.map((c: any) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div style={styles.fieldGroup}>
                   <label style={styles.label}>🏘️ Locality *</label>

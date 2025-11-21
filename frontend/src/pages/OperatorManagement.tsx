@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { operatorService } from "@/services/operator.service";
+import geoService from "@/services/geo.service";
 
 interface Operator {
   _id: string;
@@ -32,12 +33,114 @@ export default function OperatorManagement() {
     role: "OPERATOR",
     assigned_district: "",
     assigned_province: "",
+    assigned_province_code: "",
+    assigned_district_code: "",
+    assigned_chiefdom_code: "",
+    assigned_province_custom: "",
+    assigned_district_custom: "",
+    assigned_chiefdom_custom: "",
   });
   const [error, setError] = useState("");
+  const [loadingGeo, setLoadingGeo] = useState(false);
+  const [provinces, setProvinces] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [chiefdoms, setChiefdoms] = useState<any[]>([]);
 
   useEffect(() => {
     loadOperators();
   }, []);
+
+  useEffect(() => {
+    // Load geo data when create form opens
+    if (showCreateForm) {
+      loadProvinces();
+    }
+  }, [showCreateForm]);
+
+  useEffect(() => {
+    if (formData.assigned_province_code) {
+      loadDistricts(formData.assigned_province_code);
+    } else {
+      setDistricts([]);
+      setChiefdoms([]);
+    }
+  }, [formData.assigned_province_code]);
+
+  useEffect(() => {
+    if (formData.assigned_district_code) {
+      loadChiefdoms(formData.assigned_district_code);
+    } else {
+      setChiefdoms([]);
+    }
+  }, [formData.assigned_district_code]);
+
+  const loadProvinces = async () => {
+    try {
+      setLoadingGeo(true);
+      const data = await geoService.provinces();
+      setProvinces(data);
+    } catch (err) {
+      console.error("Failed to load provinces:", err);
+    } finally {
+      setLoadingGeo(false);
+    }
+  };
+
+  const loadDistricts = async (provinceCode: string) => {
+    try {
+      setLoadingGeo(true);
+      const data = await geoService.districts(provinceCode);
+      setDistricts(data);
+    } catch (err) {
+      console.error("Failed to load districts:", err);
+    } finally {
+      setLoadingGeo(false);
+    }
+  };
+
+  const loadChiefdoms = async (districtCode: string) => {
+    try {
+      setLoadingGeo(true);
+      const data = await geoService.chiefdoms(districtCode);
+      setChiefdoms(data);
+    } catch (err) {
+      console.error("Failed to load chiefdoms:", err);
+    } finally {
+      setLoadingGeo(false);
+    }
+  };
+
+  const handleProvinceSelect = (code: string) => {
+    const p = provinces.find((x) => x.code === code);
+    setFormData({
+      ...formData,
+      assigned_province_code: code,
+      assigned_province: p?.name || "",
+      assigned_district: "",
+      assigned_district_code: "",
+      assigned_chiefdom_code: "",
+      assigned_chiefdom: "",
+    });
+  };
+
+  const handleDistrictSelect = (code: string) => {
+    const d = districts.find((x) => x.code === code);
+    setFormData({
+      ...formData,
+      assigned_district_code: code,
+      assigned_district: d?.name || "",
+      assigned_chiefdom_code: "",
+      assigned_chiefdom: "",
+    });
+  };
+
+  const handleChiefdomSelect = (code: string) => {
+    const c = chiefdoms.find((x) => x.code === code);
+    setFormData({
+      ...formData,
+      assigned_chiefdom_code: code,
+    });
+  };
 
   const loadOperators = async () => {
     setLoading(true);
@@ -70,6 +173,18 @@ export default function OperatorManagement() {
     }
 
     try {
+      const resolvedProvince = formData.assigned_province_code === "OTHER"
+        ? formData.assigned_province_custom
+        : formData.assigned_province || undefined;
+
+      const resolvedDistrict = formData.assigned_district_code === "OTHER"
+        ? formData.assigned_district_custom
+        : formData.assigned_district || undefined;
+
+      const resolvedChiefdom = formData.assigned_chiefdom_code === "OTHER"
+        ? formData.assigned_chiefdom_custom
+        : undefined;
+
       const payload = {
         first_name: formData.first_name,
         last_name: formData.last_name,
@@ -77,8 +192,9 @@ export default function OperatorManagement() {
         phone: formData.phone.replace(/[\s\-\(\)]/g, ""),
         password: formData.password,
         role: formData.role,
-        assigned_district: formData.assigned_district || undefined,
-        assigned_province: formData.assigned_province || undefined,
+        assigned_province: resolvedProvince,
+        assigned_district: resolvedDistrict,
+        assigned_chiefdom: resolvedChiefdom,
       };
 
       await operatorService.create(payload);
@@ -94,6 +210,12 @@ export default function OperatorManagement() {
         role: "OPERATOR",
         assigned_district: "",
         assigned_province: "",
+        assigned_province_code: "",
+        assigned_district_code: "",
+        assigned_chiefdom_code: "",
+        assigned_province_custom: "",
+        assigned_district_custom: "",
+        assigned_chiefdom_custom: "",
       });
       loadOperators();
     } catch (err: any) {
@@ -314,27 +436,82 @@ export default function OperatorManagement() {
                   <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
                     Assigned Province
                   </label>
-                  <input
-                    type="text"
-                    value={formData.assigned_province}
-                    onChange={(e) => setFormData({ ...formData, assigned_province: e.target.value })}
-                    placeholder="e.g., Lusaka"
+                  <select
+                    value={formData.assigned_province_code}
+                    onChange={(e) => handleProvinceSelect(e.target.value)}
+                    disabled={loadingGeo}
                     style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                  />
+                  >
+                    <option value="">{loadingGeo ? "Loading provinces..." : "Select a Province"}</option>
+                    {provinces.map((p) => (
+                      <option key={p.code} value={p.code}>{p.name}</option>
+                    ))}
+                    <option value="OTHER">Other (specify)</option>
+                  </select>
+                  {formData.assigned_province_code === "OTHER" && (
+                    <input
+                      type="text"
+                      value={formData.assigned_province_custom}
+                      onChange={(e) => setFormData({ ...formData, assigned_province_custom: e.target.value })}
+                      placeholder="Specify province"
+                      style={{ marginTop: 8, width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+                    />
+                  )}
                 </div>
 
                 <div style={{ gridColumn: "1 / -1" }}>
                   <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
                     Assigned District
                   </label>
-                  <input
-                    type="text"
-                    value={formData.assigned_district}
-                    onChange={(e) => setFormData({ ...formData, assigned_district: e.target.value })}
-                    placeholder="e.g., Lusaka District"
+                  <select
+                    value={formData.assigned_district_code}
+                    onChange={(e) => handleDistrictSelect(e.target.value)}
+                    disabled={loadingGeo || !formData.assigned_province_code}
                     style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                  />
+                  >
+                    <option value="">{!formData.assigned_province_code ? "Select Province First" : loadingGeo ? "Loading districts..." : "Select a District"}</option>
+                    {districts.map((d) => (
+                      <option key={d.code} value={d.code}>{d.name}</option>
+                    ))}
+                    <option value="OTHER">Other (specify)</option>
+                  </select>
+                  {formData.assigned_district_code === "OTHER" && (
+                    <input
+                      type="text"
+                      value={formData.assigned_district_custom}
+                      onChange={(e) => setFormData({ ...formData, assigned_district_custom: e.target.value })}
+                      placeholder="Specify district"
+                      style={{ marginTop: 8, width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+                    />
+                  )}
                 </div>
+              </div>
+
+              <div style={{ marginTop: 8 }}>
+                <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+                  Assigned Chiefdom
+                </label>
+                <select
+                  value={formData.assigned_chiefdom_code}
+                  onChange={(e) => handleChiefdomSelect(e.target.value)}
+                  disabled={loadingGeo || !formData.assigned_district_code}
+                  style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+                >
+                  <option value="">{!formData.assigned_district_code ? "Select District First" : loadingGeo ? "Loading chiefdoms..." : "Select a Chiefdom"}</option>
+                  {chiefdoms.map((c) => (
+                    <option key={c.code} value={c.code}>{c.name}</option>
+                  ))}
+                    <option value="OTHER">Other (specify)</option>
+                </select>
+                  {formData.assigned_chiefdom_code === "OTHER" && (
+                    <input
+                      type="text"
+                      value={formData.assigned_chiefdom_custom}
+                      onChange={(e) => setFormData({ ...formData, assigned_chiefdom_custom: e.target.value })}
+                      placeholder="Specify chiefdom"
+                      style={{ marginTop: 8, width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+                    />
+                  )}
               </div>
 
               <button

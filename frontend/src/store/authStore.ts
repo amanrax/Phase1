@@ -36,7 +36,11 @@ const useAuthStore = create<AuthState>()(
           const response = await authService.login(email, password);
 
           const userRoles = response.user?.roles || [];
-          const primaryRole = userRoles.length > 0 ? userRoles[0] : null;
+          // Normalize role strings to uppercase to match backend role checks
+          const normalizedRoles = userRoles.map((r: any) =>
+            typeof r === "string" ? r.toUpperCase() : r
+          );
+          const primaryRole = normalizedRoles.length > 0 ? normalizedRoles[0] : null;
 
           localStorage.setItem("token", response.access_token);
           if (response.refresh_token) {
@@ -47,7 +51,7 @@ const useAuthStore = create<AuthState>()(
             user: response.user,
             token: response.access_token,
             refreshToken: response.refresh_token || null,
-            roles: userRoles,
+            roles: normalizedRoles,
             role: primaryRole,
             isLoading: false,
             error: null,
@@ -94,11 +98,14 @@ const useAuthStore = create<AuthState>()(
         try {
           const user = await authService.getCurrentUser();
           const userRoles = user?.roles || [];
+          const normalizedRoles = userRoles.map((r: any) =>
+            typeof r === "string" ? r.toUpperCase() : r
+          );
 
           set({
             user,
-            roles: userRoles,
-            role: userRoles[0] || null,
+            roles: normalizedRoles,
+            role: normalizedRoles[0] || null,
             token,
             isLoading: false,
             error: null,
@@ -138,6 +145,17 @@ const useAuthStore = create<AuthState>()(
         roles: state.roles,
         role: state.role,
       }),
+      // Normalize roles to uppercase when loading from localStorage
+      onRehydrateStorage: () => (state) => {
+        if (state?.roles && Array.isArray(state.roles)) {
+          state.roles = state.roles.map((r: any) =>
+            typeof r === "string" ? r.toUpperCase() : r
+          );
+          if (state.roles.length > 0) {
+            state.role = state.roles[0];
+          }
+        }
+      },
     }
   )
 );

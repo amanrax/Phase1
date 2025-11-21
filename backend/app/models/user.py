@@ -45,7 +45,6 @@ class UserRole(str, Enum):
     ADMIN = "ADMIN"
     OPERATOR = "OPERATOR"
     FARMER = "FARMER"
-    VIEWER = "VIEWER"
 
 
 # ============================================
@@ -70,8 +69,8 @@ class UserCreate(UserBase):
         description="User password (min 8 characters)"
     )
     roles: List[UserRole] = Field(
-        default=[UserRole.VIEWER],
-        description="User roles (ADMIN, OPERATOR, FARMER, VIEWER)"
+        default=[UserRole.FARMER],
+        description="User roles (ADMIN, OPERATOR, FARMER)"
     )
     
     @field_validator('password')
@@ -114,7 +113,7 @@ class UserInDB(UserBase):
     id: Optional[PyObjectId] = Field(None, alias="_id")
     password_hash: str = Field(..., description="Hashed password (bcrypt)")
     roles: List[UserRole] = Field(
-        default_factory=lambda: [UserRole.VIEWER],
+        default_factory=lambda: [UserRole.FARMER],
         description="User roles"
     )
     is_active: bool = Field(default=True, description="Account active status")
@@ -139,7 +138,7 @@ class UserInDB(UserBase):
 class UserOut(BaseModel):
     """Model for user output (API responses, excludes password_hash)"""
     id: str = Field(..., alias="_id")
-    email: EmailStr
+    email: Optional[EmailStr] = None
     roles: List[UserRole]
     is_active: bool
     created_at: Optional[datetime] = None
@@ -174,6 +173,9 @@ class UserOut(BaseModel):
         
         # Remove password_hash for security
         data.pop("password_hash", None)
+
+        if "email" not in data:
+            data["email"] = None
         
         return cls(**data)
 
@@ -209,7 +211,7 @@ class TokenData(BaseModel):
 
 class LoginRequest(BaseModel):
     """Login request model"""
-    email: EmailStr = Field(..., description="User email")
+    email: str = Field(..., description="User email or NRC number")
     password: str = Field(..., description="User password")
     
     model_config = ConfigDict(

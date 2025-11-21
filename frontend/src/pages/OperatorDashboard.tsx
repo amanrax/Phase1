@@ -28,10 +28,16 @@ export default function OperatorDashboard() {
   const loadFarmers = async () => {
     setLoading(true);
     try {
-      const data = await farmerService.getFarmers({ limit: 10 });
+      // Call with numeric args (limit, skip) to match service signature
+      const data = await farmerService.getFarmers(10, 0);
       setFarmers(data.results || []);
     } catch (error) {
+      // Log richer error info for debugging (status / response body)
       console.error("Failed to load farmers:", error);
+      if ((error as any)?.response) {
+        console.error("Response status:", (error as any).response.status);
+        console.error("Response data:", (error as any).response.data);
+      }
     } finally {
       setLoading(false);
     }

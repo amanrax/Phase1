@@ -51,7 +51,7 @@ async def generate_idcard(
 async def download_idcard(
     farmer_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    _: dict = Depends(require_role(["ADMIN", "OPERATOR", "VIEWER"]))
+    _: dict = Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))
 ) -> Union[FileResponse, dict]:
     """
     Download generated ID card PDF for a farmer.

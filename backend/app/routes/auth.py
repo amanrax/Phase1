@@ -47,8 +47,8 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post(
     "/login",
     response_model=LoginResponse,
-    summary="Login with email and password",
-    description="Authenticate user and return JWT access token + refresh token"
+    summary="Login with email/NRC and password/DOB",
+    description="Authenticate user with email and password, or farmer with NRC and date of birth (YYYY-MM-DD)."
 )
 async def login(
     credentials: LoginRequest,
@@ -57,83 +57,119 @@ async def login(
     """
     Login endpoint - returns JWT tokens and user information.
     
-    **Flow:**
-    1. Validate email and password
-    2. Check user exists and is active
-    3. Generate access token (30 min) + refresh token (7 days)
-    4. Return tokens with user info
+    **Flow for Standard Users:**
+    1. Validate email and password.
+    2. Check user exists, is active, and verify password hash.
+    3. Generate and return tokens.
     
-    **Example Request:**
-    ```
+    **Flow for Farmers (NRC Login):**
+    1. Check if username is an NRC number.
+    2. Find farmer by NRC in the `farmers` collection.
+    3. Verify password against farmer's date of birth.
+    4. Generate tokens and return a constructed user object.
+    
+    **Example Requests:**
+    ```json
+    // Standard User
     {
         "email": "admin@agrimanage.com",
         "password": "admin123"
     }
-    ```
-    
-    **Example Response:**
-    ```
+
+    // Farmer
     {
-        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-        "token_type": "bearer",
-        "expires_in": 1800,
-        "user": {
-            "_id": "507f1f77bcf86cd799439011",
-            "email": "admin@agrimanage.com",
-            "roles": ["ADMIN"],
-            "is_active": true
-        }
+        "email": "123456/12/1",
+        "password": "1990-01-15"
     }
     ```
     """
-    # Find user by email (case-insensitive)
-    email = credentials.email.lower().strip()
-    user_doc = await db.users.find_one({"email": email})
+    login_identifier = credentials.email.lower().strip()
     
-    # Check if user exists
-    if not user_doc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-            headers={"WWW-Authenticate": "Bearer"},
+    # Check if login is with NRC for a farmer
+    if "@" not in login_identifier:
+        # Assume it's an NRC login for a farmer
+        farmer_doc = await db.farmers.find_one({"personal_info.nrc": login_identifier})
+        
+        if not farmer_doc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid NRC or date of birth",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+            
+        # Verify password against date of birth
+        if credentials.password != farmer_doc.get("personal_info", {}).get("date_of_birth"):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid NRC or date of birth",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+            
+        # Create tokens for the farmer
+        farmer_id = farmer_doc.get("farmer_id")
+        roles = ["FARMER"]
+        access_token = create_access_token(farmer_id, roles=roles)
+        refresh_token = create_refresh_token(farmer_id)
+
+        # Construct a UserOut object for the response
+        user_out = UserOut(
+            id=str(farmer_doc.get("_id")),
+            email=farmer_doc.get("personal_info", {}).get("email"),
+            roles=roles,
+            is_active=True,
+            full_name=f"{farmer_doc.get('personal_info', {}).get('first_name')} {farmer_doc.get('personal_info', {}).get('last_name')}",
+            phone=farmer_doc.get("personal_info", {}).get("phone_primary")
         )
-    
-    # Verify password
-    if not verify_password(credentials.password, user_doc.get("password_hash", "")):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-            headers={"WWW-Authenticate": "Bearer"},
+
+        return LoginResponse(
+            access_token=access_token,
+            token_type="bearer",
+            expires_in=get_token_expiry_seconds("access"),
+            user=user_out
         )
-    
-    # Check if user is active
-    if not user_doc.get("is_active", True):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is disabled. Contact administrator.",
+
+    # Standard email-based login
+    else:
+        user_doc = await db.users.find_one({"email": login_identifier})
+        
+        if not user_doc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        if not verify_password(credentials.password, user_doc.get("password_hash", "")):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        if not user_doc.get("is_active", True):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is disabled. Contact administrator.",
+            )
+            
+        user_roles = user_doc.get("roles", [])
+        access_token = create_access_token(login_identifier, roles=user_roles)
+        refresh_token = create_refresh_token(login_identifier)
+        
+        now = datetime.now(timezone.utc)
+        await db.users.update_one(
+            {"email": login_identifier},
+            {"$set": {"last_login": now}}
         )
-    
-    # Create tokens with roles embedded
-    user_roles = user_doc.get("roles", [])
-    access_token = create_access_token(email, roles=user_roles)
-    refresh_token = create_refresh_token(email)
-    
-    # Update last login timestamp
-    now = datetime.now(timezone.utc)
-    await db.users.update_one(
-        {"email": email},
-        {"$set": {"last_login": now}}
-    )
-    
-    # Build user response
-    user_out = UserOut.from_mongo(user_doc)
-    
-    return LoginResponse(
-        access_token=access_token,
-        token_type="bearer",
-        expires_in=get_token_expiry_seconds("access"),
-        user=user_out
-    )
+        
+        user_out = UserOut.from_mongo(user_doc)
+        
+        return LoginResponse(
+            access_token=access_token,
+            token_type="bearer",
+            expires_in=get_token_expiry_seconds("access"),
+            user=user_out
+        )
 
 
 @router.post(

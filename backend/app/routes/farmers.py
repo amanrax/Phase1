@@ -148,12 +148,12 @@ async def list_farmers(
     district: Optional[str] = Query(None, description="Filter by district name"),
     search: Optional[str] = Query(None, description="Search in name, phone, farmer_id"),
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "VIEWER"]))
+    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))
 ):
     """
     List all farmers with pagination and filtering.
     
-    **Permissions:** ADMIN, OPERATOR, or VIEWER
+    **Permissions:** ADMIN, OPERATOR, or FARMER
     
     **Query Parameters:**
     - `skip`: Pagination offset (default: 0)
@@ -212,7 +212,7 @@ async def count_farmers(
     status: Optional[str] = Query(None, regex="^(pending|approved|rejected)$"),
     district: Optional[str] = Query(None),
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "VIEWER"]))
+    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))
 ):
     """
     Get total farmer count with optional filters.
@@ -258,13 +258,13 @@ async def count_farmers(
 async def get_farmer(
     farmer_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "VIEWER", "FARMER"]))
+    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))
 ):
     """
     Get detailed farmer information.
     
     **Permissions:**
-    - ADMIN/OPERATOR/VIEWER: Can view all farmers
+    - ADMIN/OPERATOR/FARMER: Can view all farmers
     - FARMER: Can only view their own data
     
     **Example Response:**
