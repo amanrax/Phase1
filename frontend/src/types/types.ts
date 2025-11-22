@@ -46,5 +46,6 @@ export interface Farmer {
   farm_info?: FarmInfo;
   household_info?: HouseholdInfo;
   registration_status: "Active" | "Pending" | "Inactive"; // enum for status
+  is_active: boolean;
   created_at: string; // ISO date string
 }

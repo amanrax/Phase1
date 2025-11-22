@@ -17,6 +17,7 @@ interface Farmer {
   };
   registration_status?: string;
   created_at?: string;
+  is_active: boolean; // Added is_active field
 }
 
 export default function FarmersList() {
@@ -25,6 +26,16 @@ export default function FarmersList() {
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+
+  const handleToggleStatus = async (farmerId: string, currentStatus: boolean) => {
+    try {
+      await farmerService.update(farmerId, { is_active: !currentStatus });
+      await fetchFarmers(); // Refresh the list
+    } catch (err: any) {
+      console.error("Toggle status error:", err);
+      setError(err.response?.data?.detail || "Failed to update farmer status");
+    }
+  };
 
   const fetchFarmers = async () => {
     setLoading(true);
@@ -52,6 +63,7 @@ export default function FarmersList() {
         address: f.address || {},
         registration_status: f.registration_status,
         created_at: f.created_at,
+        is_active: f.is_active !== undefined ? f.is_active : true, // Default to true if not present
       }));
       
       setFarmers(mappedFarmers);
@@ -176,6 +188,7 @@ export default function FarmersList() {
                 <th style={{ padding: "15px", textAlign: "left" }}>First Name</th>
                 <th style={{ padding: "15px", textAlign: "left" }}>Last Name</th>
                 <th style={{ padding: "15px", textAlign: "left" }}>Phone</th>
+                <th style={{ padding: "15px", textAlign: "left" }}>Status</th>
                 <th style={{ padding: "15px", textAlign: "left" }}>Actions</th>
               </tr>
             </thead>
@@ -195,6 +208,19 @@ export default function FarmersList() {
                   <td style={{ padding: "15px" }}>
                     {f.personal_info?.phone_primary || "-"}
                   </td>
+                  <td style={{ padding: "15px" }}>
+                    <span
+                      style={{
+                        padding: "5px 10px",
+                        borderRadius: "5px",
+                        color: f.is_active ? "#16A34A" : "#DC2626",
+                        backgroundColor: f.is_active ? "#D1FAE5" : "#FEE2E2",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {f.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </td>
                   <td
                     style={{
                       padding: "15px",
@@ -202,6 +228,22 @@ export default function FarmersList() {
                       gap: "10px",
                     }}
                   >
+                    <button
+                      onClick={() => handleToggleStatus(f.farmer_id, f.is_active)}
+                      aria-label={f.is_active ? "Deactivate farmer" : "Activate farmer"}
+                      style={{
+                        padding: "8px 12px",
+                        backgroundColor: f.is_active ? "#EF4444" : "#22C55E",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                      }}
+                      title={f.is_active ? "Deactivate" : "Activate"}
+                    >
+                      {f.is_active ? "Deactivate" : "Activate"}
+                    </button>
                     <button
                       onClick={() => navigate(`/farmers/${f.farmer_id}`)}
                       aria-label={`View farmer ${f.personal_info?.first_name}`}

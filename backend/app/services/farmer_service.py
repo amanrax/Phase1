@@ -97,6 +97,7 @@ class FarmerService:
             "farm_info": farmer_data.farm_info.model_dump() if farmer_data.farm_info else None,
             "household_info": farmer_data.household_info.model_dump() if farmer_data.household_info else None,
             "documents": None,  # Will be populated during document upload
+            "is_active": True,  # Default to active on creation
         }
         
         # Add metadata
@@ -246,6 +247,7 @@ class FarmerService:
                 phone_primary=farmer.get("personal_info", {}).get("phone_primary", ""),
                 village=address.get("village", ""),
                 district_name=district_name,
+                is_active=farmer.get("is_active", True), # Include is_active
             ))
         
         return result

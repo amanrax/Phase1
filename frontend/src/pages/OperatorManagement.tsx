@@ -13,8 +13,9 @@ interface Operator {
   phone?: string;
   role: string;
   status: string;
-  assigned_district?: string;
-  assigned_province?: string;
+  is_active?: boolean;
+  assigned_districts?: string[];
+  assigned_regions?: string[];
   created_at?: string;
 }
 
@@ -144,9 +145,15 @@ export default function OperatorManagement() {
 
   const loadOperators = async () => {
     setLoading(true);
+    console.log("Loading operators with updated code..."); // Add this line for debugging
     try {
       const data = await operatorService.getOperators(100, 0);
-      const operatorList = data.results || data.operators || data || [];
+      const operatorList = (data.results || data.operators || data || []).map(
+        (op: any) => ({
+          ...op,
+          status: op.is_active ? "active" : "inactive",
+        })
+      );
       setOperators(operatorList);
     } catch (err: any) {
       if (import.meta.env.DEV) {
@@ -243,18 +250,29 @@ export default function OperatorManagement() {
     }
   };
 
-  const handleToggleStatus = async (operatorId: string, currentStatus: string) => {
-    const action = currentStatus === "active" ? "deactivate" : "activate";
+  const handleToggleStatus = async (operator: Operator) => {
+    console.log(
+      "Toggling status for operator:",
+      operator.operator_id,
+      "Current status:",
+      operator.status
+    ); // Add this line for debugging
+    const newStatus = operator.status === "active" ? false : true;
+    const action = newStatus ? "activate" : "deactivate";
     if (!confirm(`Are you sure you want to ${action} this operator?`)) {
       return;
     }
 
     try {
-      if (currentStatus === "active") {
-        await operatorService.deactivate(operatorId);
-      } else {
-        await operatorService.activate(operatorId);
-      }
+      const payload: any = {
+        full_name: operator.full_name,
+        phone: operator.phone,
+        assigned_regions: operator.assigned_regions,
+        assigned_districts: operator.assigned_districts,
+        is_active: newStatus,
+      };
+
+      await operatorService.update(operator.operator_id, payload);
       alert(`✅ Operator ${action}d successfully`);
       loadOperators();
     } catch (err: any) {
@@ -609,10 +627,10 @@ export default function OperatorManagement() {
                       {operator.status?.toUpperCase()}
                     </span>
                   </div>
-                  {operator.assigned_district && (
+                  {operator.assigned_districts && operator.assigned_districts.length > 0 && (
                     <p style={{ fontSize: "13px", color: "#888", marginTop: "8px" }}>
-                      📍 {operator.assigned_district}
-                      {operator.assigned_province && `, ${operator.assigned_province}`}
+                      📍 {operator.assigned_districts[0]}
+                      {operator.assigned_regions && operator.assigned_regions.length > 0 && `, ${operator.assigned_regions[0]}`}
                     </p>
                   )}
                 </div>
@@ -635,7 +653,7 @@ export default function OperatorManagement() {
                   </button>
                   <button
                     onClick={() =>
-                      handleToggleStatus(operator.operator_id, operator.status)
+                      handleToggleStatus(operator)
                     }
                     style={{
                       padding: "8px 16px",

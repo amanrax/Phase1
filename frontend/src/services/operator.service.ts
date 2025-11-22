@@ -36,14 +36,4 @@ export const operatorService = {
     const response = await api.delete(`/operators/${operatorId}`);
     return response.data;
   },
-
-  async activate(operatorId: string): Promise<any> {
-    const response = await api.patch(`/operators/${operatorId}/activate`, {});
-    return response.data;
-  },
-
-  async deactivate(operatorId: string): Promise<any> {
-    const response = await api.patch(`/operators/${operatorId}/deactivate`, {});
-    return response.data;
-  },
 };

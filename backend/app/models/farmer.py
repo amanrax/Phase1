@@ -150,6 +150,7 @@ class FarmerUpdate(BaseModel):
         None, 
         pattern=r"^(pending|approved|rejected)$"
     )
+    is_active: Optional[bool] = None  # <-- Added for activate/deactivate support
     
     model_config = ConfigDict(extra="ignore")
 
@@ -165,6 +166,7 @@ class FarmerInDB(FarmerBase):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
     documents: Optional[Documents] = None
+    is_active: bool = Field(default=True)
     
     model_config = ConfigDict(
         populate_by_name=True,
@@ -185,6 +187,7 @@ class FarmerOut(BaseModel):
     farm_info: Optional[FarmInfo] = None
     household_info: Optional[HouseholdInfo] = None
     documents: Optional[Documents] = None
+    is_active: bool = Field(default=True) # Changed to default=True
     
     model_config = ConfigDict(
         populate_by_name=True,
@@ -260,5 +263,7 @@ class FarmerListItem(BaseModel):
     phone_primary: str
     village: str
     district_name: str
+    is_active: bool # Added is_active to FarmerListItem
     
     model_config = ConfigDict(populate_by_name=True)
+

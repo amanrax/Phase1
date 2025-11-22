@@ -8,6 +8,8 @@ from app.database import get_db
 from app.dependencies.roles import require_role, require_admin, get_current_user
 from app.utils.security import hash_password
 from app.models.user import UserRole
+from bson import ObjectId # Import ObjectId
+
 
 router = APIRouter(prefix="/operators", tags=["Operators"])
 
@@ -210,9 +212,13 @@ async def update_operator(operator_id: str, payload: OperatorUpdate, db=Depends(
     update_data["updated_at"] = datetime.now(timezone.utc)
     await db.operators.update_one({"operator_id": operator_id}, {"$set": update_data})
 
-    # If disabling operator, disable user as well
-    if "is_active" in update_data and update_data["is_active"] is False:
-        await db.users.update_one({"_id": op["user_id"]}, {"$set": {"is_active": False}})
+    # If 'is_active' status is being updated for the operator, update the corresponding user's 'is_active' status as well.
+    if "is_active" in update_data:
+        # Convert user_id string back to ObjectId for the update query
+        await db.users.update_one(
+            {"_id": ObjectId(op["user_id"])},
+            {"$set": {"is_active": update_data["is_active"]}}
+        )
 
     updated = await db.operators.find_one({"operator_id": operator_id})
     return _doc_to_operator(updated)

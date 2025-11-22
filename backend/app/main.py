@@ -73,24 +73,16 @@ allowed_origins = [
 
 # Allow overriding frontend origin via env (useful in Codespaces)
 frontend_origin_env = os.getenv("FRONTEND_ORIGIN", "")
-if frontend_origin_env:
+if frontend_origin_env and frontend_origin_env not in allowed_origins:
     # Add the explicit frontend origin provided via environment
     allowed_origins.append(frontend_origin_env)
 
 # Allow GitHub Codespaces subdomains matching either port 5173/8000/3000
-allow_origin_regex = r"^https:\/\/[\-a-z0-9]+-(5173|8000|3000)\.app\.github\.dev$"
-
-# Build final allowed origins for CORS. Prefer an explicitly provided FRONTEND_ORIGIN
-# rather than a wildcard. This keeps development secure while allowing Codespaces
-# or a host-mapped frontend to be used without requiring '*'.
-if frontend_origin_env:
-    cors_allowed_origins = [frontend_origin_env]
-else:
-    cors_allowed_origins = allowed_origins
+allow_origin_regex = r"^https:\/\/[\-a-z0-9]+-(?:5173|8000|3000)\.app\.github\.dev$"
 
 cors_kwargs = dict(
-    allow_origins=cors_allowed_origins,
-    allow_origin_regex=allow_origin_regex,
+    allow_origins=allowed_origins, # Now contains explicit origins + frontend_origin_env
+    allow_origin_regex=allow_origin_regex, # Also consider regex for dynamic Codespaces origins
     allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=settings.CORS_ALLOW_METHODS,
     allow_headers=settings.CORS_ALLOW_HEADERS,
@@ -99,23 +91,7 @@ cors_kwargs = dict(
 
 app.add_middleware(CORSMiddleware, **cors_kwargs)
 
-# Extra CORS handling for Codespaces
-class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        origin = request.headers.get("origin", "")
-        if origin and (
-            origin.endswith(".app.github.dev")
-            or "localhost" in origin
-            or "127.0.0.1" in origin
-        ):
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,PATCH,OPTIONS"
-            response.headers["Access-Control-Allow-Headers"] = "*"
-        return response
-
-app.add_middleware(EnsureCORSHeadersMiddleware)
+# Removed EnsureCORSHeadersMiddleware as CORSMiddleware with regex should handle Codespaces
 
 # ============================================
 # Register API Routers
