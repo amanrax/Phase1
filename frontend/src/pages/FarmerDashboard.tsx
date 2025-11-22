@@ -56,6 +56,23 @@ export default function FarmerDashboard() {
     }
   };
 
+  const handleViewIDCard = async () => {
+    try {
+      const farmerId = farmerData?.farmer_id;
+      if (!farmerId) {
+        alert("Farmer ID not available");
+        return;
+      }
+      await farmerService.viewIDCard(farmerId);
+    } catch (error: any) {
+      console.error("View ID card failed:", error);
+      alert(
+        error.response?.data?.detail ||
+          "ID card not available yet. Please contact your operator."
+      );
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-400 to-blue-500">
@@ -112,14 +129,15 @@ export default function FarmerDashboard() {
           <>
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-4 mb-8">
-              <button
-                onClick={handleDownloadIDCard}
-                className="card p-4 border-l-4 border-green-600 hover:shadow-lg transition"
-              >
+              <div className="card p-4 border-l-4 border-green-600 hover:shadow-lg transition">
                 <div className="text-3xl mb-2">📄</div>
-                <h3 className="font-bold text-gray-900">Download ID Card</h3>
-                <p className="text-sm text-gray-600 mt-1">Get your digital farmer ID</p>
-              </button>
+                <h3 className="font-bold text-gray-900">ID Card</h3>
+                <p className="text-sm text-gray-600 mt-1">View or download your digital farmer ID</p>
+                <div className="mt-4 flex gap-2">
+                    <button onClick={handleViewIDCard} className="bg-blue-500 text-white px-3 py-1 rounded text-sm">View</button>
+                    <button onClick={handleDownloadIDCard} className="bg-gray-500 text-white px-3 py-1 rounded text-sm">Download</button>
+                </div>
+              </div>
               <button
                 onClick={() => navigate(`/farmers/edit/${farmerData.farmer_id}`)}
                 className="card p-4 border-l-4 border-blue-600 hover:shadow-lg transition"

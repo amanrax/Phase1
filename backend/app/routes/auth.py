@@ -54,6 +54,7 @@ async def login(
     credentials: LoginRequest,
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
+    print(credentials)
     """
     Login endpoint - returns JWT tokens and user information.
     

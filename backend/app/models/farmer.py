@@ -197,51 +197,56 @@ class FarmerOut(BaseModel):
         if not data:
             return None
         
-        # Convert ObjectId to string
-        if "_id" in data:
-            data["_id"] = str(data["_id"])
-        
-        # Normalize personal_info (handle legacy format)
-        if "personal_info" in data:
-            pi = data["personal_info"]
-            # Clean empty strings for optional pattern fields
-            if "email" in pi and pi["email"] == "":
-                pi["email"] = None
-            if "phone_secondary" in pi and pi["phone_secondary"] == "":
-                pi["phone_secondary"] = None
-            if "ethnic_group" in pi and pi["ethnic_group"] == "":
-                pi["ethnic_group"] = None
-            # Ensure NRC exists (for legacy data without NRC)
-            if "nrc" not in pi or not pi["nrc"]:
-                pi["nrc"] = "000000/00/0"
-            # Ensure gender exists and capitalize to match pattern
-            if "gender" not in pi or not pi["gender"]:
-                pi["gender"] = "Male"  # Default for legacy data
-            else:
-                pi["gender"] = pi["gender"].capitalize()
-            # Ensure date_of_birth exists
-            if "date_of_birth" not in pi or not pi["date_of_birth"]:
-                pi["date_of_birth"] = "1980-01-01"  # Default for legacy data
-        
-        # Normalize address (handle legacy format with 'province'/'district' fields)
-        if "address" in data:
-            addr = data["address"]
-            # Map legacy province/district to new _code/_name format
-            if "province" in addr and "province_code" not in addr:
-                addr["province_name"] = addr.get("province", "")
-                addr["province_code"] = "LEGACY"
-            if "district" in addr and "district_code" not in addr:
-                addr["district_name"] = addr.get("district", "")
-                addr["district_code"] = "LEGACY"
-            # Ensure required fields exist
-            if "village" not in addr or not addr["village"]:
-                addr["village"] = "Unknown"
-            if "chiefdom_code" not in addr:
-                addr["chiefdom_code"] = ""
-            if "chiefdom_name" not in addr:
-                addr["chiefdom_name"] = ""
-        
-        return cls(**data)
+        try:
+            # Convert ObjectId to string
+            if "_id" in data:
+                data["_id"] = str(data["_id"])
+            
+            # Normalize personal_info (handle legacy format)
+            if "personal_info" in data:
+                pi = data["personal_info"]
+                # Clean empty strings for optional pattern fields
+                if "email" in pi and pi["email"] == "":
+                    pi["email"] = None
+                if "phone_secondary" in pi and pi["phone_secondary"] == "":
+                    pi["phone_secondary"] = None
+                if "ethnic_group" in pi and pi["ethnic_group"] == "":
+                    pi["ethnic_group"] = None
+                # Ensure NRC exists (for legacy data without NRC)
+                if "nrc" not in pi or not pi["nrc"]:
+                    pi["nrc"] = "000000/00/0"
+                # Ensure gender exists and capitalize to match pattern
+                if "gender" not in pi or not pi["gender"]:
+                    pi["gender"] = "Male"  # Default for legacy data
+                else:
+                    pi["gender"] = pi["gender"].capitalize()
+                # Ensure date_of_birth exists
+                if "date_of_birth" not in pi or not pi["date_of_birth"]:
+                    pi["date_of_birth"] = "1980-01-01"  # Default for legacy data
+            
+            # Normalize address (handle legacy format with 'province'/'district' fields)
+            if "address" in data:
+                addr = data["address"]
+                # Map legacy province/district to new _code/_name format
+                if "province" in addr and "province_code" not in addr:
+                    addr["province_name"] = addr.get("province", "")
+                    addr["province_code"] = "LEGACY"
+                if "district" in addr and "district_code" not in addr:
+                    addr["district_name"] = addr.get("district", "")
+                    addr["district_code"] = "LEGACY"
+                # Ensure required fields exist
+                if "village" not in addr or not addr["village"]:
+                    addr["village"] = "Unknown"
+                if "chiefdom_code" not in addr:
+                    addr["chiefdom_code"] = ""
+                if "chiefdom_name" not in addr:
+                    addr["chiefdom_name"] = ""
+            
+            return cls(**data)
+        except Exception as e:
+            print(f"Error validating farmer data: {e}")
+            print(f"Problematic data: {data}")
+            raise e
 
 
 class FarmerListItem(BaseModel):

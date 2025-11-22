@@ -114,13 +114,11 @@ export default function FarmerDetails() {
   const handleGenerateIDCard = async () => {
     try {
       const response = await farmerService.generateIDCard(farmerId!);
-      alert(response.message || "🎉 ID card generation started!");
+      alert(response.message || "🎉 ID card generation started! The download will start in 5 seconds.");
 
       setTimeout(() => {
-        if (confirm("ID card should be ready. Download now?")) {
-          handleDownloadIDCard();
-        }
-      }, 3000);
+        handleDownloadIDCard();
+      }, 5000); // 5 seconds
     } catch (err: any) {
       console.error("ID card generation failed:", err);
       alert(err.response?.data?.detail || "Failed to generate ID card");

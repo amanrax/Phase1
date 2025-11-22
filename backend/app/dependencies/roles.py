@@ -40,22 +40,18 @@ async def get_current_user(
 ) -> dict:
     """
     Extract and verify JWT token from Authorization header.
-    Returns the full user document from MongoDB.
+    Returns the full user document from MongoDB for standard users,
+    or a constructed user dict for farmers.
     
     Args:
         credentials: HTTPBearer credentials (automatically extracted)
         db: MongoDB database instance
     
     Returns:
-        dict: User document from database
+        dict: User document from database or constructed user dict for farmer
     
     Raises:
         HTTPException: 401 if token invalid, 404 if user not found
-    
-    Usage:
-        @router.get("/protected")
-        async def protected_route(user = Depends(get_current_user)):
-            return {"email": user["email"]}
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -64,42 +60,56 @@ async def get_current_user(
     )
     
     try:
-        # Extract token from credentials
         token = credentials.credentials
-        
-        # Decode and validate token
         payload = decode_token(token)
-        email: str = payload.get("sub")
+        subject: str = payload.get("sub")
         
-        if email is None:
+        if subject is None:
             raise credentials_exception
-        
-        # Fetch user from database
-        user = await db.users.find_one({"email": email})
-        
-        if user is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
-        
-        # Check if user is active
+
+        # If subject is not an email, assume it's a farmer_id
+        if "@" not in subject:
+            farmer = await db.farmers.find_one({"farmer_id": subject})
+            if not farmer:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Farmer not found",
+                )
+            
+            # Construct a user-like dictionary for the farmer
+            user = {
+                "_id": farmer["_id"],
+                "email": farmer.get("personal_info", {}).get("email"),
+                "roles": ["FARMER"],
+                "is_active": True,
+                "farmer_id": farmer.get("farmer_id"),
+                "full_name": f"{farmer.get('personal_info', {}).get('first_name')} {farmer.get('personal_info', {}).get('last_name')}"
+            }
+
+        # Otherwise, it's a standard user with an email
+        else:
+            user = await db.users.find_one({"email": subject})
+            if user is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found",
+                )
+
         if not user.get("is_active", True):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Inactive user account"
+                detail="Inactive user account",
             )
         
         return user
         
     except ValueError as e:
-        # Token decode error from security.py
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except Exception as e:
+    except Exception:
         raise credentials_exception
 
 

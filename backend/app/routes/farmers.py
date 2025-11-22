@@ -301,19 +301,15 @@ async def get_farmer(
     
     # Access control: FARMER role can only view their own data
     if current_user.get("roles") and "FARMER" in current_user.get("roles", []):
-        # For farmer role, they should be able to view using their email as farmer_id or via user lookup
-        # This requires mapping from user email to farmer record (farmer_id field)
-        # For now, allow the farmer to access if the farmer document has their email in personal_info
-        farmer_email = farmer.get("personal_info", {}).get("email")
         user_email = current_user.get("email")
-        if farmer_email != user_email and user_email:
-            # Stricter check: see if this farmer was created by this email
-            created_by = farmer.get("created_by")
-            if created_by != user_email:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You can only view your own farmer profile"
-                )
+        # A farmer can only view their own profile.
+        # The profile is considered "theirs" if the email in their user token
+        # matches the email in the farmer's personal information.
+        if user_email and farmer.personal_info and farmer.personal_info.email != user_email:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only view your own farmer profile"
+            )
     
     return farmer
 
@@ -325,18 +321,18 @@ async def get_farmer(
     "/{farmer_id}",
     response_model=FarmerOut,
     summary="Update farmer",
-    description="Update farmer information (ADMIN or OPERATOR only)"
+    description="Update farmer information. FARMER can only update their own profile."
 )
 async def update_farmer(
     farmer_id: str,
     update_data: FarmerUpdate,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: dict = Depends(require_operator)
+    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))
 ):
     """
     Update farmer information.
     
-    **Permissions:** ADMIN or OPERATOR
+    **Permissions:** ADMIN or OPERATOR or FARMER (own profile)
     
     **Notes:**
     - Partial updates allowed (only send fields to update)
@@ -354,7 +350,16 @@ async def update_farmer(
     ```
     """
     farmer_service = FarmerService(db)
-    
+
+    # Authorization: Farmers can only update their own profile
+    if "FARMER" in current_user.get("roles", []):
+        farmer_to_update = await farmer_service.get_farmer_by_id(farmer_id)
+        if not farmer_to_update or farmer_to_update.personal_info.email != current_user.get("email"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to update this farmer profile."
+            )
+
     updated_farmer = await farmer_service.update_farmer(farmer_id, update_data)
     
     if not updated_farmer:
@@ -622,9 +627,9 @@ async def verify_qr_code(
         "farmer_id": farmer.farmer_id,
         "name": f"{farmer.personal_info.first_name} {farmer.personal_info.last_name}",
         "registration_status": farmer.registration_status,
-        "province": farmer.address.province_name,
-        "district": farmer.address.district_name,
-        "village": farmer.address.village,
+        "province": farmer.address.province_name if farmer.address else "",
+        "district": farmer.address.district_name if farmer.address else "",
+        "village": farmer.address.village if farmer.address else "",
         "verified_at": now.isoformat()
     }
 

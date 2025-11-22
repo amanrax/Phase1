@@ -146,6 +146,7 @@ class UserOut(BaseModel):
     last_login: Optional[datetime] = None
     full_name: Optional[str] = None
     phone: Optional[str] = None
+    farmer_id: Optional[str] = None
     
     model_config = ConfigDict(
         populate_by_name=True,

@@ -132,6 +132,14 @@ export const farmerService = {
     link.remove();
   },
 
+  async viewIDCard(farmerId: string): Promise<void> {
+    const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
+      responseType: "blob",
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    window.open(url, "_blank");
+  },
+
   /**
    * Verify a QR code payload.
    * Backend expects: { farmer_id, timestamp, signature }
