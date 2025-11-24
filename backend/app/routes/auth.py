@@ -97,6 +97,12 @@ async def login(
                 detail="Invalid NRC or date of birth",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+        
+        if not farmer_doc.get("is_active", True):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is disabled. Contact administrator.",
+            )
             
         # Verify password against date of birth
         if credentials.password != farmer_doc.get("personal_info", {}).get("date_of_birth"):
@@ -117,7 +123,7 @@ async def login(
             id=str(farmer_doc.get("_id")),
             email=farmer_doc.get("personal_info", {}).get("email"),
             roles=roles,
-            is_active=True,
+            is_active=farmer_doc.get("is_active", True),
             full_name=f"{farmer_doc.get('personal_info', {}).get('first_name')} {farmer_doc.get('personal_info', {}).get('last_name')}",
             phone=farmer_doc.get("personal_info", {}).get("phone_primary")
         )

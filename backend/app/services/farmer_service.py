@@ -324,6 +324,16 @@ class FarmerService:
             {"$set": update_dict}
         )
         
+        # If 'is_active' is in the update, also update the user record
+        if "is_active" in update_dict:
+            farmer = await self.collection.find_one({"farmer_id": farmer_id})
+            if farmer and farmer.get("personal_info", {}).get("email"):
+                user_email = farmer["personal_info"]["email"]
+                await self.db.users.update_one(
+                    {"email": user_email},
+                    {"$set": {"is_active": update_dict["is_active"]}}
+                )
+
         # Fetch and return updated farmer
         updated = await self.collection.find_one({"farmer_id": farmer_id})
         return FarmerOut.from_mongo(updated)
