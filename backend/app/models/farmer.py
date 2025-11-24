@@ -93,6 +93,13 @@ class Documents(BaseModel):
     qr_code: Optional[str] = Field(None, description="Path to generated QR code")
 
 
+class IdentificationDocument(BaseModel):
+    """Individual identification document"""
+    doc_type: str = Field(..., description="Document type: nrc, land_title, license, certificate")
+    file_path: str = Field(..., description="Path to the document file")
+    uploaded_at: str = Field(..., description="ISO timestamp of upload")
+
+
 # ============================================
 # Main Farmer Models
 # ============================================
@@ -191,6 +198,7 @@ class FarmerOut(BaseModel):
     farm_info: Optional[FarmInfo] = None
     household_info: Optional[HouseholdInfo] = None
     documents: Optional[Documents] = None
+    identification_documents: Optional[List[IdentificationDocument]] = Field(default_factory=list, description="Array of uploaded identification documents")
     is_active: bool = Field(default=True)
     review_notes: Optional[str] = None
     reviewed_by: Optional[str] = None

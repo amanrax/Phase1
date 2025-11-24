@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from starlette.middleware.base import BaseHTTPMiddleware
+from pathlib import Path
 import logging
 import os
 
@@ -86,7 +88,8 @@ cors_kwargs = dict(
     allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=settings.CORS_ALLOW_METHODS,
     allow_headers=settings.CORS_ALLOW_HEADERS,
-    expose_headers=["*"],
+    expose_headers=["Content-Length", "Content-Type", "Authorization"],
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
 
 app.add_middleware(CORSMiddleware, **cors_kwargs)
@@ -113,6 +116,15 @@ app.include_router(farmers_qr.router, prefix="/api", tags=["Farmers QR"])
 app.include_router(health.router, prefix="/api/health", tags=["Health"])
 
 logger.info("✅ All API routers registered")
+
+# ============================================
+# Static Files (Uploads)
+# ============================================
+uploads_dir = Path("uploads")
+uploads_dir.mkdir(exist_ok=True)
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+logger.info("✅ Static files mounted at /uploads")
 
 # ============================================
 # Root Endpoint

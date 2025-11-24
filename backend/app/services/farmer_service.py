@@ -184,7 +184,10 @@ class FarmerService:
         status: Optional[str] = None,
         district: Optional[str] = None,
         search: Optional[str] = None,
-        created_by: Optional[str] = None
+        created_by: Optional[str] = None,
+        farmer_id_exact: Optional[str] = None,
+        nrc: Optional[str] = None,
+        allowed_districts: Optional[List[str]] = None
     ) -> List[FarmerListItem]:
         """
         List farmers with pagination and filtering.
@@ -194,8 +197,11 @@ class FarmerService:
             limit: Maximum number of records to return
             status: Filter by registration status
             district: Filter by district name
-            search: Search in name, phone, farmer_id
+            search: Search in name, phone, farmer_id (ignored if farmer_id_exact or nrc provided)
             created_by: Filter by operator email (for operators viewing their own farmers)
+            farmer_id_exact: Exact farmer_id match (short-circuits other text search)
+            nrc: Exact NRC number (hash lookup; short-circuits other search)
+            allowed_districts: List of districts operator is allowed to see (None = all)
         
         Returns:
             List[FarmerListItem]: List of farmer summaries
@@ -206,14 +212,24 @@ class FarmerService:
         if status:
             query["registration_status"] = status
         
-        if district:
+        # If allowed_districts is provided, filter by those districts
+        if allowed_districts:
+            query["address.district_name"] = {"$in": allowed_districts}
+        elif district:
+            # Only apply single district filter if allowed_districts not specified
             query["address.district_name"] = district
         
         if created_by:
             query["created_by"] = created_by
         
-        if search:
-            # Search in multiple fields
+        # Exact farmer_id match takes precedence over search
+        if farmer_id_exact:
+            query["farmer_id"] = farmer_id_exact
+        # NRC exact (hashed) match takes precedence if farmer_id_exact not provided
+        elif nrc:
+            query["nrc_hash"] = hmac_hash(nrc, salt="nrc")
+        elif search:
+            # Text search across multiple fields
             query["$or"] = [
                 {"farmer_id": {"$regex": search, "$options": "i"}},
                 {"personal_info.first_name": {"$regex": search, "$options": "i"}},
@@ -237,17 +253,27 @@ class FarmerService:
             address = farmer.get("address", {})
             district_name = address.get("district_name") or address.get("district", "Unknown")
             
+            # Handle both nested (personal_info) and flat structure
+            personal_info = farmer.get("personal_info", {})
+            first_name = personal_info.get("first_name") or farmer.get("first_name", "")
+            last_name = personal_info.get("last_name") or farmer.get("last_name", "")
+            phone_primary = personal_info.get("phone_primary") or farmer.get("phone_primary", "")
+            
+            # Legacy farmer_id placeholder if missing
+            farmer_id_value = farmer.get("farmer_id") or f"LEGACY_{str(farmer['_id'])[-8:].upper()}"
+            
             result.append(FarmerListItem(
                 _id=str(farmer["_id"]),
-                farmer_id=farmer.get("farmer_id", "UNKNOWN"),
-                registration_status=farmer.get("registration_status", "pending"),
+                farmer_id=farmer_id_value,
+                registration_status=farmer.get("registration_status", "registered"),
                 created_at=created_at,
-                first_name=farmer.get("personal_info", {}).get("first_name", ""),
-                last_name=farmer.get("personal_info", {}).get("last_name", ""),
-                phone_primary=farmer.get("personal_info", {}).get("phone_primary", ""),
+                first_name=first_name,
+                last_name=last_name,
+                phone_primary=phone_primary,
                 village=address.get("village", ""),
                 district_name=district_name,
-                is_active=farmer.get("is_active", True), # Include is_active
+                is_active=farmer.get("is_active", True),
+                review_notes=farmer.get("review_notes"),
             ))
         
         return result
@@ -256,7 +282,10 @@ class FarmerService:
         self,
         status: Optional[str] = None,
         district: Optional[str] = None,
-        created_by: Optional[str] = None
+        created_by: Optional[str] = None,
+        farmer_id_exact: Optional[str] = None,
+        nrc: Optional[str] = None,
+        allowed_districts: Optional[List[str]] = None
     ) -> int:
         """
         Count total farmers with optional filters.
@@ -265,6 +294,9 @@ class FarmerService:
             status: Filter by registration status
             district: Filter by district name
             created_by: Filter by operator email
+            farmer_id_exact: Exact farmer_id match
+            nrc: Exact NRC number (hashed)
+            allowed_districts: List of districts operator is allowed to see (None = all)
         
         Returns:
             int: Total count
@@ -274,11 +306,20 @@ class FarmerService:
         if status:
             query["registration_status"] = status
         
-        if district:
+        # If allowed_districts is provided, filter by those districts
+        if allowed_districts:
+            query["address.district_name"] = {"$in": allowed_districts}
+        elif district:
+            # Only apply single district filter if allowed_districts not specified
             query["address.district_name"] = district
         
         if created_by:
             query["created_by"] = created_by
+        
+        if farmer_id_exact:
+            query["farmer_id"] = farmer_id_exact
+        elif nrc:
+            query["nrc_hash"] = hmac_hash(nrc, salt="nrc")
         
         return await self.collection.count_documents(query)
     

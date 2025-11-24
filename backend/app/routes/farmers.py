@@ -21,7 +21,9 @@ from fastapi import (
     status,
     BackgroundTasks,
     Query,
+    Response,
 )
+from fastapi.responses import JSONResponse
 from typing import Optional, List
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -147,6 +149,8 @@ async def list_farmers(
     status: Optional[str] = Query(None, regex="^(registered|under_review|verified|rejected|pending_documents)$", description="Filter by registration status"),
     district: Optional[str] = Query(None, description="Filter by district name"),
     search: Optional[str] = Query(None, description="Search in name, phone, farmer_id"),
+    farmer_id_exact: Optional[str] = Query(None, description="Exact farmer_id match (overrides search)"),
+    nrc: Optional[str] = Query(None, description="Exact NRC number match (overrides search)"),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))
 ):
@@ -186,10 +190,20 @@ async def list_farmers(
     """
     farmer_service = FarmerService(db)
     
-    # Filter by operator if current user is an operator
+    # Apply filtering for operators
+    allowed_districts = None
     created_by_filter = None
-    if current_user.get("roles") and "OPERATOR" in current_user.get("roles", []):
-        created_by_filter = current_user.get("email")
+    if current_user.get("roles") and "OPERATOR" in current_user.get("roles", []) and "ADMIN" not in current_user.get("roles", []):
+        # Operator: restrict to assigned districts OR farmers they created
+        user_email = current_user.get("email")
+        operator_doc = await db.operators.find_one({"email": user_email})
+        if operator_doc:
+            allowed_districts = operator_doc.get("assigned_districts", [])
+            operator_id = operator_doc.get("operator_id")
+            # If no districts assigned, filter by created_by (their operator_id or email)
+            if not allowed_districts:
+                created_by_filter = operator_id or user_email
+    # Admin sees all farmers (both None)
     
     farmers = await farmer_service.list_farmers(
         skip=skip,
@@ -197,7 +211,10 @@ async def list_farmers(
         status=status,
         district=district,
         search=search,
-        created_by=created_by_filter
+        created_by=created_by_filter,
+        farmer_id_exact=farmer_id_exact,
+        nrc=nrc,
+        allowed_districts=allowed_districts
     )
     
     return farmers
@@ -211,6 +228,8 @@ async def list_farmers(
 async def count_farmers(
     status: Optional[str] = Query(None, regex="^(registered|under_review|verified|rejected|pending_documents)$"),
     district: Optional[str] = Query(None),
+    farmer_id_exact: Optional[str] = Query(None, description="Exact farmer_id match"),
+    nrc: Optional[str] = Query(None, description="Exact NRC match"),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))
 ):
@@ -230,18 +249,36 @@ async def count_farmers(
     """
     farmer_service = FarmerService(db)
     
-    # Filter by operator if current user is an operator
+    # Apply same operator filtering logic as list endpoint
+    allowed_districts = None
     created_by_filter = None
-    if current_user.get("roles") and "OPERATOR" in current_user.get("roles", []):
-        created_by_filter = current_user.get("email")
+    if current_user.get("roles") and "OPERATOR" in current_user.get("roles", []) and "ADMIN" not in current_user.get("roles", []):
+        user_email = current_user.get("email")
+        operator_doc = await db.operators.find_one({"email": user_email})
+        if operator_doc:
+            allowed_districts = operator_doc.get("assigned_districts", [])
+            operator_id = operator_doc.get("operator_id")
+            # If no districts assigned, filter by created_by
+            if not allowed_districts:
+                created_by_filter = operator_id or user_email
+    # Admin sees all farmers (both None)
     
-    total = await farmer_service.count_farmers(status=status, district=district, created_by=created_by_filter)
+    total = await farmer_service.count_farmers(
+        status=status,
+        district=district,
+        created_by=created_by_filter,
+        farmer_id_exact=farmer_id_exact,
+        nrc=nrc,
+        allowed_districts=allowed_districts
+    )
     
     return {
         "total": total,
         "filters": {
             "status": status,
-            "district": district
+            "district": district,
+            "farmer_id_exact": farmer_id_exact,
+            "nrc": nrc
         }
     }
 
@@ -301,11 +338,10 @@ async def get_farmer(
     
     # Access control: FARMER role can only view their own data
     if current_user.get("roles") and "FARMER" in current_user.get("roles", []):
-        user_email = current_user.get("email")
         # A farmer can only view their own profile.
-        # The profile is considered "theirs" if the email in their user token
-        # matches the email in the farmer's personal information.
-        if user_email and farmer.personal_info and farmer.personal_info.email != user_email:
+        # Check if the farmer_id in the token matches the requested farmer_id
+        user_farmer_id = current_user.get("farmer_id")
+        if user_farmer_id and user_farmer_id != farmer_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only view your own farmer profile"
@@ -353,8 +389,8 @@ async def update_farmer(
 
     # Authorization: Farmers can only update their own profile
     if "FARMER" in current_user.get("roles", []):
-        farmer_to_update = await farmer_service.get_farmer_by_id(farmer_id)
-        if not farmer_to_update or farmer_to_update.personal_info.email != current_user.get("email"):
+        user_farmer_id = current_user.get("farmer_id")
+        if not user_farmer_id or user_farmer_id != farmer_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to update this farmer profile."
@@ -536,12 +572,12 @@ async def upload_farmer_photo(
     farmer_id: str,
     file: UploadFile = File(..., description="Photo file (JPG/PNG, max 10MB)"),
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: dict = Depends(require_operator)
+    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))
 ):
     """
     Upload farmer photo.
     
-    **Permissions:** ADMIN or OPERATOR
+    **Permissions:** ADMIN, OPERATOR, or FARMER (own profile)
     
     **File Requirements:**
     - Formats: JPG, PNG
@@ -592,6 +628,15 @@ async def upload_farmer_photo(
             detail=f"Farmer {farmer_id} not found"
         )
     
+    # Authorization: Farmers can only upload their own photo
+    if "FARMER" in current_user.get("roles", []):
+        user_farmer_id = current_user.get("farmer_id")
+        if not user_farmer_id or user_farmer_id != farmer_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only upload your own photo"
+            )
+    
     # Create upload directory
     upload_dir = Path(settings.UPLOAD_DIR) / farmer_id / "photos"
     upload_dir.mkdir(parents=True, exist_ok=True)
@@ -602,12 +647,12 @@ async def upload_farmer_photo(
     with open(file_path, "wb") as f:
         f.write(file_content)
     
-    # Update farmer document
+    # Update farmer document - use documents.photo for proper nesting
     relative_path = f"/uploads/{farmer_id}/photos/photo.{file_ext}"
     
     await farmer_service.update_documents(
         farmer_id,
-        {"photo": relative_path}
+        {"documents.photo": relative_path}
     )
     
     return {
@@ -749,12 +794,23 @@ async def upload_farmer_document(
     farmer_id: str,
     doc_type: str,
     file: UploadFile = File(...),
-    db: AsyncIOMotorDatabase = Depends(get_db)
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))
 ):
-    """Upload an identification document for a farmer."""
+    """Upload an identification document for a farmer. ADMIN/OPERATOR can upload for any farmer, FARMER can upload their own."""
     from pathlib import Path
     from datetime import datetime
     import time
+    
+    # Validate file size (max 20MB)
+    MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
+    file_content = await file.read()
+    if len(file_content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum size is {MAX_FILE_SIZE / (1024*1024):.0f}MB"
+        )
+    await file.seek(0)  # Reset file pointer for later reading
     
     # Validate doc_type
     valid_doc_types = ["nrc", "land_title", "license", "certificate"]
@@ -764,18 +820,31 @@ async def upload_farmer_document(
             detail=f"Invalid doc_type. Must be one of: {', '.join(valid_doc_types)}"
         )
     
+    # Check if farmer exists and authorize
+    farmer_check = await db.farmers.find_one({"farmer_id": farmer_id})
+    if not farmer_check:
+        raise HTTPException(status_code=404, detail="Farmer not found")
+    
+    # Authorization: Farmers can only upload their own documents
+    if "FARMER" in current_user.get("roles", []):
+        user_farmer_id = current_user.get("farmer_id")
+        if not user_farmer_id or user_farmer_id != farmer_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only upload your own documents"
+            )
+    
     try:
-        # Save file
+        # Save file (reuse content already read for size validation)
         upload_dir = Path("uploads/farmers/documents")
         upload_dir.mkdir(parents=True, exist_ok=True)
         
         timestamp = int(time.time())
-        file_ext = Path(file.filename or "").suffix or ".jpg"
+        file_ext = Path(file.filename or "").suffix or ".pdf"
         file_path = upload_dir / f"{farmer_id}_{doc_type}_{timestamp}{file_ext}"
         
         with open(file_path, "wb") as buffer:
-            content = await file.read()
-            buffer.write(content)
+            buffer.write(file_content)
         
         # Update farmer record
         doc_data = {
@@ -784,27 +853,50 @@ async def upload_farmer_document(
             "uploaded_at": datetime.utcnow().isoformat()
         }
         
-        # Initialize identification_documents if needed
-        await db.farmers.update_one(
+        # Check if document of this type already exists
+        existing_farmer = await db.farmers.find_one(
             {"farmer_id": farmer_id},
-            {"$setOnInsert": {"identification_documents": []}},
-            upsert=False
+            {"identification_documents": 1}
         )
         
-        # Add document
-        result = await db.farmers.update_one(
-            {"farmer_id": farmer_id},
-            {"$push": {"identification_documents": doc_data}}
-        )
+        existing_docs = existing_farmer.get("identification_documents", []) if existing_farmer else []
+        doc_exists = any(doc.get("doc_type") == doc_type for doc in existing_docs)
+        
+        if doc_exists:
+            # Replace existing document of this type
+            result = await db.farmers.update_one(
+                {"farmer_id": farmer_id, "identification_documents.doc_type": doc_type},
+                {"$set": {"identification_documents.$": doc_data}}
+            )
+        else:
+            # Add new document
+            # Initialize identification_documents if needed
+            await db.farmers.update_one(
+                {"farmer_id": farmer_id},
+                {"$setOnInsert": {"identification_documents": []}},
+                upsert=False
+            )
+            
+            result = await db.farmers.update_one(
+                {"farmer_id": farmer_id},
+                {"$push": {"identification_documents": doc_data}}
+            )
         
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Farmer not found")
         
-        return {
-            "message": f"{doc_type} uploaded successfully",
-            "file_path": str(file_path),
-            "doc_type": doc_type
-        }
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": f"{doc_type} uploaded successfully",
+                "file_path": str(file_path),
+                "doc_type": doc_type
+            },
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Credentials": "true",
+            }
+        )
     except HTTPException:
         raise
     except Exception as e:

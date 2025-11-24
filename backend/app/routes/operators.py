@@ -59,14 +59,25 @@ def _doc_to_operator(doc: dict) -> Dict[str, Any]:
 
 async def _get_operator_stats(operator_id: str, db):
     """Quick stats for an operator."""
-    farmer_count = await db.farmers.count_documents({"created_by": operator_id})
+    # Get operator to check assigned districts
+    operator_doc = await db.operators.find_one({"operator_id": operator_id})
+    assigned_districts = operator_doc.get("assigned_districts", []) if operator_doc else []
+    
+    # Build query based on district assignment or created_by
+    if assigned_districts:
+        # Count farmers in assigned districts
+        farmer_query = {"address.district_name": {"$in": assigned_districts}}
+    else:
+        # No districts assigned - count only farmers created by this operator
+        farmer_query = {"created_by": operator_id}
+    
+    farmer_count = await db.farmers.count_documents(farmer_query)
     from datetime import timedelta
     recent_cutoff = datetime.now(timezone.utc) - timedelta(days=30)
-    recent_count = await db.farmers.count_documents(
-        {"created_by": operator_id, "created_at": {"$gte": recent_cutoff}}
-    )
+    recent_query = {**farmer_query, "created_at": {"$gte": recent_cutoff}}
+    recent_count = await db.farmers.count_documents(recent_query)
     pipeline = [
-        {"$match": {"created_by": operator_id}},
+        {"$match": farmer_query},
         {
             "$group": {
                 "_id": None,
