@@ -89,7 +89,7 @@ async def create_farmer(
     **Process:**
     1. Validate farmer data
     2. Generate unique farmer ID (ZM + 8 hex chars)
-    3. Create farmer record with "pending" status
+    3. Create farmer record with "registered" status (initial state)
     4. Return created farmer
     
     **Example Request:**
@@ -144,7 +144,7 @@ async def create_farmer(
 async def list_farmers(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(20, ge=1, le=100, description="Maximum records to return"),
-    status: Optional[str] = Query(None, regex="^(pending|approved|rejected)$", description="Filter by registration status"),
+    status: Optional[str] = Query(None, regex="^(registered|under_review|verified|rejected|pending_documents)$", description="Filter by registration status"),
     district: Optional[str] = Query(None, description="Filter by district name"),
     search: Optional[str] = Query(None, description="Search in name, phone, farmer_id"),
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -158,7 +158,7 @@ async def list_farmers(
     **Query Parameters:**
     - `skip`: Pagination offset (default: 0)
     - `limit`: Max records per page (default: 20, max: 100)
-    - `status`: Filter by status (pending/approved/rejected)
+    - `status`: Filter by status (registered/under_review/verified/rejected/pending_documents)
     - `district`: Filter by district name
     - `search`: Search in farmer_id, name, phone
     
@@ -209,7 +209,7 @@ async def list_farmers(
     description="Get total count of farmers with optional filters"
 )
 async def count_farmers(
-    status: Optional[str] = Query(None, regex="^(pending|approved|rejected)$"),
+    status: Optional[str] = Query(None, regex="^(registered|under_review|verified|rejected|pending_documents)$"),
     district: Optional[str] = Query(None),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))
@@ -372,33 +372,102 @@ async def update_farmer(
 
 
 # =======================================================
-# UPDATE Registration Status
+# REVIEW Farmer (Update Registration Status)
 # =======================================================
 @router.patch(
-    "/{farmer_id}/status",
+    "/{farmer_id}/review",
     response_model=FarmerOut,
-    summary="Update registration status",
-    description="Approve or reject farmer registration (ADMIN or OPERATOR)"
+    summary="Review farmer registration",
+    description="Update registration status with review notes (ADMIN or OPERATOR)"
 )
-async def update_farmer_status(
+async def review_farmer(
     farmer_id: str,
-    new_status: str = Query(..., regex="^(pending|approved|rejected)$"),
+    new_status: str = Query(..., regex="^(registered|under_review|verified|rejected|pending_documents)$"),
+    review_notes: Optional[str] = Query(None, description="Optional review notes"),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(require_operator)
 ):
     """
-    Update farmer registration status.
+    Review and update farmer registration status.
     
     **Permissions:** ADMIN or OPERATOR
     
     **Valid Statuses:**
-    - `pending` - Initial state
-    - `approved` - Farmer approved
+    - `registered` - Initial state after registration
+    - `under_review` - Being reviewed by admin/operator
+    - `verified` - Farmer verified and approved
     - `rejected` - Farmer rejected
+    - `pending_documents` - Waiting for additional documents
     
     **Example:**
     ```
-    PATCH /api/farmers/ZM1A2B3C4D/status?new_status=approved
+    PATCH /api/farmers/ZM1A2B3C4D/review?new_status=verified&review_notes=All documents verified
+    ```
+    """
+    from datetime import datetime, timezone
+    
+    farmer_service = FarmerService(db)
+    
+    # Get existing farmer
+    farmer = await farmer_service.get_farmer_by_id(farmer_id)
+    if not farmer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Farmer {farmer_id} not found"
+        )
+    
+    # Update farmer with new status and review info
+    now = datetime.now(timezone.utc)
+    update_data = FarmerUpdate(
+        registration_status=new_status,
+        review_notes=review_notes
+    )
+    
+    # Also update reviewed_by and reviewed_at metadata
+    await db.farmers.update_one(
+        {"farmer_id": farmer_id},
+        {
+            "$set": {
+                "registration_status": new_status,
+                "review_notes": review_notes,
+                "reviewed_by": current_user.get("email"),
+                "reviewed_at": now,
+                "updated_at": now
+            }
+        }
+    )
+    
+    # Fetch and return updated farmer
+    updated_farmer = await farmer_service.get_farmer_by_id(farmer_id)
+    return updated_farmer
+
+
+# =======================================================
+# UPDATE Registration Status (Legacy endpoint - kept for compatibility)
+# =======================================================
+@router.patch(
+    "/{farmer_id}/status",
+    response_model=FarmerOut,
+    summary="Update registration status (Legacy)",
+    description="Approve or reject farmer registration (ADMIN or OPERATOR)",
+    deprecated=True
+)
+async def update_farmer_status(
+    farmer_id: str,
+    new_status: str = Query(..., regex="^(registered|under_review|verified|rejected|pending_documents)$"),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_operator)
+):
+    """
+    Update farmer registration status (legacy endpoint).
+    
+    **Deprecated:** Use `/farmers/{farmer_id}/review` instead for better tracking.
+    
+    **Permissions:** ADMIN or OPERATOR
+    
+    **Example:**
+    ```
+    PATCH /api/farmers/ZM1A2B3C4D/status?new_status=verified
     ```
     """
     farmer_service = FarmerService(db)

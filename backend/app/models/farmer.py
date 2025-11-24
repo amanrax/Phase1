@@ -148,9 +148,10 @@ class FarmerUpdate(BaseModel):
     household_info: Optional[HouseholdInfo] = None
     registration_status: Optional[str] = Field(
         None, 
-        pattern=r"^(pending|approved|rejected)$"
+        pattern=r"^(registered|under_review|verified|rejected|pending_documents)$"
     )
     is_active: Optional[bool] = None  # <-- Added for activate/deactivate support
+    review_notes: Optional[str] = None  # Admin/operator notes during review
     
     model_config = ConfigDict(extra="ignore")
 
@@ -160,13 +161,16 @@ class FarmerInDB(FarmerBase):
     id: Optional[PyObjectId] = Field(None, alias="_id")
     farmer_id: str = Field(..., description="Unique farmer ID (e.g., ZM12345)")
     registration_status: str = Field(
-        default="pending",
-        pattern=r"^(pending|approved|rejected)$"
+        default="registered",
+        pattern=r"^(registered|under_review|verified|rejected|pending_documents)$"
     )
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
     documents: Optional[Documents] = None
     is_active: bool = Field(default=True)
+    review_notes: Optional[str] = Field(None, description="Admin/operator review notes")
+    reviewed_by: Optional[str] = Field(None, description="Email of admin/operator who reviewed")
+    reviewed_at: Optional[datetime] = Field(None, description="Timestamp of review")
     
     model_config = ConfigDict(
         populate_by_name=True,
@@ -187,7 +191,10 @@ class FarmerOut(BaseModel):
     farm_info: Optional[FarmInfo] = None
     household_info: Optional[HouseholdInfo] = None
     documents: Optional[Documents] = None
-    is_active: bool = Field(default=True) # Changed to default=True
+    is_active: bool = Field(default=True)
+    review_notes: Optional[str] = None
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
     
     model_config = ConfigDict(
         populate_by_name=True,
@@ -263,7 +270,8 @@ class FarmerListItem(BaseModel):
     phone_primary: str
     village: str
     district_name: str
-    is_active: bool # Added is_active to FarmerListItem
+    is_active: bool
+    review_notes: Optional[str] = None
     
     model_config = ConfigDict(populate_by_name=True)
 

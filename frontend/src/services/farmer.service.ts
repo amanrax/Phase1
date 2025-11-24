@@ -43,6 +43,16 @@ export const farmerService = {
   },
 
   /**
+   * Review a farmer's registration (update status with notes).
+   * Backend: PATCH /api/farmers/{farmer_id}/review?new_status=verified&review_notes=...
+   */
+  async review(farmerId: string, queryParams: string) {
+    if (!farmerId) throw new Error("Missing farmerId");
+    const { data } = await api.patch(`/farmers/${farmerId}/review?${queryParams}`);
+    return data;
+  },
+
+  /**
    * Delete a farmer record.
    * Backend: DELETE /api/farmers/{farmer_id}
    */
