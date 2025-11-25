@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { operatorService } from "@/services/operator.service";
+import useAuthStore from "@/store/authStore";
 
 interface OperatorData {
   operator_id: string;
@@ -21,6 +22,7 @@ interface OperatorData {
 export default function OperatorDetails() {
   const { operatorId } = useParams<{ operatorId: string }>();
   const navigate = useNavigate();
+  const role = useAuthStore((s) => s.role);
   const [operator, setOperator] = useState<OperatorData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -139,6 +141,14 @@ export default function OperatorDetails() {
             </div>
 
             <div className="flex gap-3">
+              {role === "ADMIN" && (
+                <button
+                  onClick={() => navigate(`/operators/${operator.operator_id}/edit`)}
+                  className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg font-semibold shadow-lg"
+                >
+                  ✏️ Edit
+                </button>
+              )}
               <button
                 onClick={handleToggleStatus}
                 disabled={updating}

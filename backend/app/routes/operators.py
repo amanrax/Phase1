@@ -225,11 +225,27 @@ async def update_operator(operator_id: str, payload: OperatorUpdate, db=Depends(
 
     # If 'is_active' status is being updated for the operator, update the corresponding user's 'is_active' status as well.
     if "is_active" in update_data:
-        # Convert user_id string back to ObjectId for the update query
-        await db.users.update_one(
-            {"_id": ObjectId(op["user_id"])},
-            {"$set": {"is_active": update_data["is_active"]}}
-        )
+        user_id_value = op.get("user_id")
+        filter_id = None
+        try:
+            # Support both string and ObjectId forms in existing data
+            if isinstance(user_id_value, str):
+                filter_id = ObjectId(user_id_value)
+            else:
+                filter_id = user_id_value
+        except Exception:
+            filter_id = None
+
+        # Fallback by email if user_id is missing or invalid
+        if not filter_id:
+            user_doc = await db.users.find_one({"email": op.get("email")})
+            filter_id = user_doc.get("_id") if user_doc else None
+
+        if filter_id:
+            await db.users.update_one(
+                {"_id": filter_id},
+                {"$set": {"is_active": update_data["is_active"]}}
+            )
 
     updated = await db.operators.find_one({"operator_id": operator_id})
     return _doc_to_operator(updated)
