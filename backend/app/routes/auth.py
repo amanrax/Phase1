@@ -125,7 +125,8 @@ async def login(
             roles=roles,
             is_active=farmer_doc.get("is_active", True),
             full_name=f"{farmer_doc.get('personal_info', {}).get('first_name')} {farmer_doc.get('personal_info', {}).get('last_name')}",
-            phone=farmer_doc.get("personal_info", {}).get("phone_primary")
+            phone=farmer_doc.get("personal_info", {}).get("phone_primary"),
+            farmer_id=farmer_id
         )
 
         return LoginResponse(
