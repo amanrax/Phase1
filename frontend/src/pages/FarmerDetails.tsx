@@ -1,7 +1,8 @@
 // src/pages/FarmerDetails.tsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { farmerService } from "@/services/farmer.service"; // Consistent import style
+import { farmerService } from "@/services/farmer.service";
+import useAuthStore from "@/store/authStore";
 
 interface Farmer {
   farmer_id: string;
@@ -9,23 +10,35 @@ interface Farmer {
     first_name?: string;
     last_name?: string;
     phone_primary?: string;
+    phone_secondary?: string;
     email?: string;
     date_of_birth?: string;
     gender?: string;
     nrc?: string;
+    ethnic_group?: string;
   };
   address?: {
     province?: string;
+    province_name?: string;
     district?: string;
+    district_name?: string;
     village?: string;
     chiefdom?: string;
+    chiefdom_name?: string;
   };
   farm_info?: {
     farm_size_hectares?: number;
     crops_grown?: string[];
     livestock?: string[];
+    livestock_types?: string[];
     has_irrigation?: boolean;
     farming_experience_years?: number;
+    years_farming?: number;
+  };
+  household_info?: {
+    household_size?: number;
+    number_of_dependents?: number;
+    primary_income_source?: string;
   };
   photo_path?: string;
   registration_status?: string;
@@ -35,16 +48,64 @@ interface Farmer {
     file_path: string;
   }>;
   nrc_number?: string;
+  documents?: {
+    photo?: string;
+    nrc_card?: string;
+    land_title?: string;
+    license?: string;
+    certificate?: string;
+  };
+  review_notes?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  is_active?: boolean;
 }
 
 export default function FarmerDetails() {
   const { farmerId } = useParams<{ farmerId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+
+  // Determine back navigation based on user role
+  const getBackPath = () => {
+    if (user?.roles?.includes("FARMER")) {
+      return "/farmer-dashboard";
+    }
+    return "/farmers"; // Admin/Operator go to farmers list
+  };
 
   const [farmer, setFarmer] = useState<Farmer | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { color: string; bg: string; label: string }> = {
+      registered: { color: "#9CA3AF", bg: "#F3F4F6", label: "Registered" },
+      under_review: { color: "#F59E0B", bg: "#FEF3C7", label: "Under Review" },
+      verified: { color: "#10B981", bg: "#D1FAE5", label: "Verified ✓" },
+      rejected: { color: "#EF4444", bg: "#FEE2E2", label: "Rejected ✗" },
+      pending_documents: { color: "#8B5CF6", bg: "#EDE9FE", label: "Pending Docs" },
+    };
+
+    const config = statusConfig[status] || statusConfig.registered;
+
+    return (
+      <span
+        style={{
+          padding: "5px 10px",
+          borderRadius: "5px",
+          color: config.color,
+          backgroundColor: config.bg,
+          fontWeight: "bold",
+          fontSize: "12px",
+          display: "inline-block"
+        }}
+      >
+        {config.label}
+      </span>
+    );
+  };
 
   useEffect(() => {
     if (farmerId) {
@@ -81,6 +142,9 @@ export default function FarmerDetails() {
       setUploading("photo");
       await farmerService.uploadPhoto(farmerId!, file);
       alert("✅ Photo uploaded successfully!");
+      // Reset input
+      e.target.value = "";
+      // Reload farmer data to show new photo
       await loadFarmerData();
     } catch (err: any) {
       console.error("Photo upload failed:", err);
@@ -97,14 +161,28 @@ export default function FarmerDetails() {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    // Client-side file size validation (10MB limit due to Codespaces proxy)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_FILE_SIZE) {
+      alert(`❌ File too large! Maximum size is ${MAX_FILE_SIZE / (1024*1024)}MB.\nYour file: ${(file.size / (1024*1024)).toFixed(2)}MB`);
+      e.target.value = ""; // Reset input
+      return;
+    }
+    
     try {
       setUploading(docType);
       await farmerService.uploadDocument(farmerId!, docType, file);
       alert(`✅ ${docType.replace("_", " ")} uploaded successfully!`);
+      // Reset input
+      e.target.value = "";
+      // Reload farmer data to show new document
       await loadFarmerData();
     } catch (err: any) {
       console.error("Document upload failed:", err);
-      alert(err.message || "Failed to upload document");
+      const errorMsg = err.response?.data?.detail || err.message || "Failed to upload document";
+      alert(`❌ Upload failed: ${errorMsg}`);
+      e.target.value = ""; // Reset input on error too
     } finally {
       setUploading(null);
     }
@@ -176,10 +254,10 @@ export default function FarmerDetails() {
         <div className="text-center">
           <p className="text-xl text-red-600 mb-4">❌ {error}</p>
           <button
-            onClick={() => navigate("/farmers")}
+            onClick={() => navigate(getBackPath())}
             className="text-blue-600 hover:underline"
           >
-            ← Back to farmers list
+            ← Back
           </button>
         </div>
       </div>
@@ -192,10 +270,10 @@ export default function FarmerDetails() {
         <div className="text-center">
           <p className="text-xl text-gray-600 mb-4">Farmer not found</p>
           <button
-            onClick={() => navigate("/farmers")}
+            onClick={() => navigate(getBackPath())}
             className="text-blue-600 hover:underline"
           >
-            ← Back to farmers list
+            ← Back
           </button>
         </div>
       </div>
@@ -209,10 +287,10 @@ export default function FarmerDetails() {
         {/* Header */}
         <div className="mb-6">
           <button
-            onClick={() => navigate("/farmers")}
+            onClick={() => navigate(getBackPath())}
             className="text-blue-600 hover:underline mb-3 flex items-center gap-2"
           >
-            ← Back to Farmers
+            ← Back
           </button>
 
           <div className="flex justify-between items-start">
@@ -253,12 +331,15 @@ export default function FarmerDetails() {
             <h2 className="text-xl font-bold mb-4 text-gray-800">📸 Photo</h2>
 
             <div className="mb-4">
-              {farmer.photo_path ? (
+              {farmer.photo_path || farmer.documents?.photo ? (
                 <div className="relative">
                   <img
-                    src={farmer.photo_path}
+                    src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${farmer.documents?.photo || farmer.photo_path}`}
                     alt="Farmer"
                     className="w-full h-80 object-cover rounded-lg"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Ctext x="50%25" y="50%25" font-size="100" text-anchor="middle" dy=".3em"%3E👤%3C/text%3E%3C/svg%3E';
+                    }}
                   />
                   <button
                     onClick={handleDeletePhoto}
@@ -276,25 +357,27 @@ export default function FarmerDetails() {
               )}
             </div>
 
-            <label className="block">
+            <div className="space-y-3">
               <input
                 type="file"
+                id="photo-upload"
                 accept="image/*"
                 onChange={handlePhotoUpload}
                 disabled={uploading !== null}
-                className="hidden"
+                style={{ display: 'none' }}
                 aria-label="Upload photo"
               />
-              <div
-                className={`text-center px-4 py-3 rounded-lg font-semibold cursor-pointer transition ${
+              <label
+                htmlFor="photo-upload"
+                className={`block text-center px-4 py-3 rounded-lg font-semibold cursor-pointer transition ${
                   uploading === "photo"
                     ? "bg-gray-400 text-white cursor-not-allowed"
                     : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
               >
-                {uploading === "photo" ? "⏳ Uploading..." : "📸 Upload New Photo"}
-              </div>
-            </label>
+                {uploading === "photo" ? "⏳ Uploading..." : "📸 Upload / Replace Photo"}
+              </label>
+            </div>
           </div>
 
           {/* Right Column - Details */}
@@ -309,31 +392,43 @@ export default function FarmerDetails() {
                 />
                 <InfoField label="Last Name" value={farmer.personal_info?.last_name} />
                 <InfoField
-                  label="Phone"
+                  label="Primary Phone"
                   value={farmer.personal_info?.phone_primary}
                 />
+                <InfoField
+                  label="Secondary Phone"
+                  value={farmer.personal_info?.phone_secondary}
+                />
                 <InfoField label="Email" value={farmer.personal_info?.email} />
+                <InfoField label="NRC" value={farmer.personal_info?.nrc || farmer.nrc_number} />
                 <InfoField
                   label="Date of Birth"
                   value={farmer.personal_info?.date_of_birth}
                 />
                 <InfoField label="Gender" value={farmer.personal_info?.gender} capitalize />
-                <InfoField label="NRC" value={farmer.personal_info?.nrc || farmer.nrc_number} />
+                <InfoField
+                  label="Ethnic Group"
+                  value={farmer.personal_info?.ethnic_group}
+                />
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Status</p>
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-                      farmer.registration_status === "active"
-                        ? "bg-green-100 text-green-700"
-                        : farmer.registration_status === "pending"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {farmer.registration_status || "Active"}
-                  </span>
+                  <p className="text-sm text-gray-600 mb-1">Registration Status</p>
+                  {getStatusBadge(farmer.registration_status || "registered")}
                 </div>
               </div>
+              
+              {/* Review Information */}
+              {farmer.review_notes && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h3 className="text-sm font-bold text-gray-700 mb-2">📝 Review Notes</h3>
+                  <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{farmer.review_notes}</p>
+                  {farmer.reviewed_by && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Reviewed by: {farmer.reviewed_by}
+                      {farmer.reviewed_at && ` on ${new Date(farmer.reviewed_at).toLocaleString()}`}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Address Card */}
@@ -353,23 +448,45 @@ export default function FarmerDetails() {
               <div className="grid md:grid-cols-2 gap-4">
                 <InfoField
                   label="Farm Size"
-                  value={farmer.farm_info?.farm_size_hectares ? `${farmer.farm_info.farm_size_hectares} hectares` : "N/A"}
+                  value={farmer.farm_info?.farm_size_hectares ? `${farmer.farm_info.farm_size_hectares} hectares` : undefined}
                 />
                 <InfoField
-                  label="Crops"
+                  label="Farming Experience"
+                  value={farmer.farm_info?.farming_experience_years ? `${farmer.farm_info.farming_experience_years} years` : farmer.farm_info?.years_farming ? `${farmer.farm_info.years_farming} years` : undefined}
+                />
+                <InfoField
+                  label="Crops Grown"
                   value={farmer.farm_info?.crops_grown?.join(", ")}
                 />
                 <InfoField label="Livestock" value={farmer.farm_info?.livestock_types?.join(", ") || farmer.farm_info?.livestock?.join(", ")} />
                 <InfoField
-                  label="Irrigation"
+                  label="Irrigation System"
                   value={farmer.farm_info?.has_irrigation ? "Yes" : "No"}
-                />
-                <InfoField
-                  label="Experience"
-                  value={farmer.farm_info?.farming_experience_years ? `${farmer.farm_info.farming_experience_years} years` : farmer.farm_info?.years_farming ? `${farmer.farm_info.years_farming} years` : "N/A"}
                 />
               </div>
             </div>
+
+            {/* Household Info Card */}
+            {farmer.household_info && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-bold mb-4 text-gray-800">🏠 Household Information</h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <InfoField
+                    label="Household Size"
+                    value={farmer.household_info?.household_size ? `${farmer.household_info.household_size} people` : undefined}
+                  />
+                  <InfoField
+                    label="Number of Dependents"
+                    value={farmer.household_info?.number_of_dependents?.toString()}
+                  />
+                  <InfoField
+                    label="Primary Income Source"
+                    value={farmer.household_info?.primary_income_source}
+                    capitalize
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -379,14 +496,24 @@ export default function FarmerDetails() {
 
           <div className="grid md:grid-cols-4 gap-4">
             {[
-              { type: "nrc", label: "NRC" },
-              { type: "land_title", label: "Land Title" },
-              { type: "license", label: "License" },
-              { type: "certificate", label: "Certificate" },
-            ].map(({ type, label }) => {
+              { type: "nrc", label: "NRC", docKey: "nrc_card" },
+              { type: "land_title", label: "Land Title", docKey: "land_title" },
+              { type: "license", label: "License", docKey: "license" },
+              { type: "certificate", label: "Certificate", docKey: "certificate" },
+            ].map(({ type, label, docKey }) => {
+              // Check both identification_documents array and documents.* fields
               const existingDoc = farmer.identification_documents?.find(
                 (doc: any) => doc.doc_type === type
-              );
+              ) || (farmer.documents?.[docKey] ? { doc_type: type, file_path: farmer.documents[docKey] } : null);
+
+              // Debug logging
+              if (import.meta.env.DEV && type === "nrc") {
+                console.log("NRC Document Detection:", {
+                  identification_documents: farmer.identification_documents,
+                  documents: farmer.documents,
+                  existingDoc
+                });
+              }
 
               return (
                 <div
@@ -400,47 +527,72 @@ export default function FarmerDetails() {
                       <div className="text-green-600 text-sm font-medium flex items-center gap-2">
                         ✓ Uploaded
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(existingDoc.uploaded_at).toLocaleDateString()}
-                      </div>
+                      {existingDoc.uploaded_at && (
+                        <div className="text-xs text-gray-500">
+                          {new Date(existingDoc.uploaded_at).toLocaleDateString()}
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <a
-                          href={existingDoc.file_path}
+                          href={
+                            existingDoc.file_path.startsWith('http') 
+                              ? existingDoc.file_path 
+                              : existingDoc.file_path.startsWith('/uploads')
+                              ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${existingDoc.file_path}`
+                              : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/${existingDoc.file_path}`
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 text-center bg-blue-100 text-blue-700 py-2 rounded text-sm hover:bg-blue-200"
+                          className="flex-1 text-center bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700 font-semibold"
                         >
-                          View
+                          👁️ View
                         </a>
-                        <button
-                          onClick={() => handleDeleteDocument(type)}
-                          className="px-3 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200"
-                          aria-label={`Delete ${label}`}
+                      </div>
+                      {/* Replace button */}
+                      <div>
+                        <input
+                          type="file"
+                          id={`doc-replace-${type}`}
+                          accept="image/*,.pdf"
+                          onChange={(e) => handleDocumentUpload(e, type as any)}
+                          disabled={uploading !== null}
+                          style={{ display: 'none' }}
+                          aria-label={`Replace ${label}`}
+                        />
+                        <label
+                          htmlFor={`doc-replace-${type}`}
+                          className={`block text-center py-2 rounded text-sm font-semibold cursor-pointer transition ${
+                            uploading === type
+                              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                              : "bg-orange-600 text-white hover:bg-orange-700"
+                          }`}
                         >
-                          🗑️
-                        </button>
+                          {uploading === type ? "⏳ Replacing..." : "🔄 Replace"}
+                        </label>
                       </div>
                     </div>
                   ) : (
-                    <label>
+                    <div className="space-y-2">
                       <input
                         type="file"
+                        id={`doc-upload-${type}`}
                         accept="image/*,.pdf"
                         onChange={(e) => handleDocumentUpload(e, type as any)}
                         disabled={uploading !== null}
-                        className="hidden"
+                        style={{ display: 'none' }}
                         aria-label={`Upload ${label}`}
                       />
-                      <div
-                        className={`text-center py-3 rounded-lg text-sm font-medium cursor-pointer transition ${
+                      <label
+                        htmlFor={`doc-upload-${type}`}
+                        className={`block text-center py-3 rounded-lg text-sm font-semibold cursor-pointer transition ${
                           uploading === type
-                            ? "bg-gray-200 text-gray-600 cursor-not-allowed"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                            : "bg-blue-600 text-white hover:bg-blue-700"
                         }`}
                       >
-                        {uploading === type ? "⏳ Uploading..." : "📎 Upload"}
-                      </div>
-                    </label>
+                        {uploading === type ? "⏳ Uploading..." : "📎 Choose File"}
+                      </label>
+                    </div>
                   )}
                 </div>
               );

@@ -210,13 +210,28 @@ export default function Step1Personal({ data, onNext }: Props) {
         <label htmlFor="ethnicGroup" style={{ fontWeight: "bold" }}>
           Ethnic Group
         </label>
-        <input
+        <select
           id="ethnicGroup"
           value={ethnicGroup}
           onChange={(e) => setEthnicGroup(e.target.value)}
           style={{ width: "100%", padding: 10, marginTop: 6 }}
-          placeholder="e.g., Bemba, Tonga, Lozi"
-        />
+        >
+          <option value="">-- select ethnic group (optional) --</option>
+          <option value="Bemba">Bemba</option>
+          <option value="Tonga">Tonga</option>
+          <option value="Chewa">Chewa</option>
+          <option value="Lozi">Lozi</option>
+          <option value="Nsenga">Nsenga</option>
+          <option value="Tumbuka">Tumbuka</option>
+          <option value="Ngoni">Ngoni</option>
+          <option value="Lala">Lala</option>
+          <option value="Kaonde">Kaonde</option>
+          <option value="Lunda">Lunda</option>
+          <option value="Luvale">Luvale</option>
+          <option value="Mambwe">Mambwe</option>
+          <option value="Namwanga">Namwanga</option>
+          <option value="Other">Other</option>
+        </select>
       </div>
 
       <div style={{ display: "flex", gap: 10, marginTop: 18 }}>

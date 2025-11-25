@@ -25,14 +25,29 @@ export default function FarmerDashboard() {
 
   const loadFarmerData = async () => {
     try {
-      // Fetch farmer_id from authenticated user object
-      const farmerId = user?.farmer_id || user?.id || user?.email;
-      if (farmerId) {
-        const data = await farmerService.getFarmer(farmerId);
-        setFarmerData(data);
+      setLoading(true);
+      
+      console.log("Loading farmer data for user:", user);
+
+      // Check if user token contains farmer_id
+      if (!user?.farmer_id) {
+        console.error("No farmer_id in JWT token - authentication issue");
+        console.log("User data:", { email: user?.email, roles: user?.roles, farmer_id: user?.farmer_id });
+        setFarmerData(null);
+        setLoading(false);
+        return;
       }
+
+      // Load farmer data using farmer_id from token
+      console.log("Loading farmer by farmer_id from token:", user.farmer_id);
+      const fullData = await farmerService.getFarmer(user.farmer_id);
+      console.log("Loaded farmer data:", fullData);
+      setFarmerData(fullData);
+      setLoading(false);
+      
     } catch (error) {
       console.error("Failed to load farmer data:", error);
+      setFarmerData(null);
     } finally {
       setLoading(false);
     }
@@ -118,12 +133,21 @@ export default function FarmerDashboard() {
           <div className="card text-center py-12">
             <div className="text-6xl mb-4">⚠️</div>
             <p className="text-gray-700 font-semibold mb-4">Unable to load farmer profile</p>
-            <button
-              onClick={loadFarmerData}
-              className="btn-primary"
-            >
-              Retry
-            </button>
+            <p className="text-sm text-gray-600 mb-6">Your farmer profile could not be found. Please contact your operator or administrator to link your account.</p>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={loadFarmerData}
+                className="btn-primary"
+              >
+                <i className="fa-solid fa-arrows-rotate mr-2"></i> Retry
+              </button>
+              <button
+                onClick={logout}
+                className="bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700"
+              >
+                <i className="fa-solid fa-right-from-bracket mr-2"></i> Logout
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -154,26 +178,28 @@ export default function FarmerDashboard() {
                 {/* Photo Section */}
                 <div className="text-center">
                   <div className="w-48 h-48 mx-auto mb-4 bg-gray-200 rounded-full overflow-hidden shadow-md flex items-center justify-center">
-                    {farmerData?.photo_path ? (
+                    {(farmerData?.documents?.photo || farmerData?.photo_path) ? (
                       <img
-                        src={farmerData.photo_path}
+                        src={farmerData?.documents?.photo || farmerData?.photo_path}
                         alt="Farmer"
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                        }}
                       />
-                    ) : (
-                      <div className="text-6xl">👨‍🌾</div>
-                    )}
+                    ) : null}
+                    <div className={`text-6xl ${(farmerData?.documents?.photo || farmerData?.photo_path) ? 'hidden' : ''}`}>👨‍🌾</div>
                   </div>
                   <h2 className="text-xl font-bold text-gray-900">
                     {farmerData?.personal_info?.first_name} {farmerData?.personal_info?.last_name}
                   </h2>
-                  <span className={`inline-block mt-3 px-4 py-1 text-sm font-semibold rounded-full ${
-                    farmerData?.registration_status === "approved" ? "badge-green" : 
-                    farmerData?.registration_status === "pending" ? "badge-yellow" : 
-                    "badge-red"
-                  }`}>
-                    {(farmerData?.registration_status || "PENDING").toUpperCase()}
-                  </span>
+                  <button
+                    onClick={() => navigate(`/farmers/${farmerData?.farmer_id}`)}
+                    className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-semibold"
+                  >
+                    View Full Profile & Documents
+                  </button>
                 </div>
 
                 {/* Personal Info */}
@@ -246,7 +272,11 @@ export default function FarmerDashboard() {
                   />
                   <InfoCard
                     label="Livestock"
-                    value={farmerData?.farm_info?.livestock?.join(", ") || "None"}
+                    value={farmerData?.farm_info?.livestock_types?.join(", ") || farmerData?.farm_info?.livestock?.join(", ") || "None"}
+                  />
+                  <InfoCard
+                    label="Farming Experience"
+                    value={farmerData?.farm_info?.years_farming ? `${farmerData.farm_info.years_farming} years` : farmerData?.farm_info?.farming_experience_years ? `${farmerData.farm_info.farming_experience_years} years` : "N/A"}
                   />
                   <InfoCard
                     label="Irrigation"

@@ -7,8 +7,22 @@ import { farmerService } from "@/services/farmer.service";
 interface Farmer {
   _id: string;
   farmer_id: string;
-  first_name: string;
-  last_name: string;
+  // FarmerListItem response (flat structure from backend)
+  first_name?: string;
+  last_name?: string;
+  phone_primary?: string;
+  village?: string;
+  district_name?: string;
+  registration_status?: string;
+  is_active?: boolean;
+  // Legacy nested structure (fallback for detailed views)
+  personal_info?: {
+    first_name?: string;
+    last_name?: string;
+    phone_primary?: string;
+    email?: string;
+  };
+  // Legacy flat structure (fallback)
   primary_phone?: string;
   phone?: string;
   email?: string;
@@ -28,9 +42,14 @@ export default function OperatorDashboard() {
   const loadFarmers = async () => {
     setLoading(true);
     try {
+      console.log("Loading farmers for operator:", user);
       // Call with numeric args (limit, skip) to match service signature
       const data = await farmerService.getFarmers(10, 0);
-      setFarmers(data.results || []);
+      console.log("Farmers API response:", data);
+      // Handle different response formats: direct array, or object with results/farmers property
+      const farmersList = Array.isArray(data) ? data : (data.results || data.farmers || []);
+      console.log("Parsed farmers list:", farmersList);
+      setFarmers(farmersList);
     } catch (error) {
       // Log richer error info for debugging (status / response body)
       console.error("Failed to load farmers:", error);
@@ -148,43 +167,50 @@ export default function OperatorDashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {farmers.map((farmer) => (
-                <div
-                  key={farmer._id}
-                  className="border rounded p-4 hover:shadow-md transition hover:bg-gray-50"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-bold text-lg text-gray-900">
-                        {farmer.first_name} {farmer.last_name}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        📱 {farmer.primary_phone || farmer.phone || "N/A"} | 🆔{" "}
-                        {farmer.farmer_id}
-                      </p>
-                      {farmer.email && (
-                        <p className="text-sm text-gray-600">📧 {farmer.email}</p>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
-                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold transition"
-                        aria-label={`View details of ${farmer.first_name}`}
-                      >
-                        View Details
-                      </button>
-                      <button
-                        onClick={() => navigate(`/farmers/${farmer.farmer_id}/edit`)}
-                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-semibold transition"
-                        aria-label={`Edit ${farmer.first_name}`}
-                      >
-                        Edit
-                      </button>
+              {farmers.map((farmer) => {
+                // Handle both flat (FarmerListItem) and nested structures
+                const firstName = farmer.first_name || farmer.personal_info?.first_name || "Unknown";
+                const lastName = farmer.last_name || farmer.personal_info?.last_name || "";
+                const phone = farmer.phone_primary || farmer.personal_info?.phone_primary || farmer.primary_phone || farmer.phone || "N/A";
+                const email = farmer.email || farmer.personal_info?.email;
+                
+                return (
+                  <div
+                    key={farmer._id}
+                    className="border rounded p-4 hover:shadow-md transition hover:bg-gray-50"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-bold text-lg text-gray-900">
+                          {firstName} {lastName}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          📱 {phone} | 🆔 {farmer.farmer_id}
+                        </p>
+                        {email && (
+                          <p className="text-sm text-gray-600">📧 {email}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
+                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold transition"
+                          aria-label={`View details of ${firstName}`}
+                        >
+                          View Details
+                        </button>
+                        <button
+                          onClick={() => navigate(`/farmers/${farmer.farmer_id}/edit`)}
+                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-semibold transition"
+                          aria-label={`Edit ${firstName}`}
+                        >
+                          Edit
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

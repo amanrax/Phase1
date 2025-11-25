@@ -116,51 +116,71 @@ export default function Step4Preview({
     <div>
       <h3>Preview</h3>
       <div style={{ padding: 12, background: "#f3f4f6", borderRadius: 6 }}>
-        <div>
-          <strong>Name:</strong> {data.personal.first_name} {data.personal.last_name}
+        {/* Personal Information */}
+        <div style={{ marginBottom: 16 }}>
+          <h4 style={{ fontSize: 16, fontWeight: "bold", color: "#374151", marginBottom: 8 }}>👤 Personal Information</h4>
+          <div><strong>Name:</strong> {data.personal.first_name} {data.personal.last_name}</div>
+          <div><strong>Primary Phone:</strong> {data.personal.phone_primary || "-"}</div>
+          {data.personal.phone_secondary && (
+            <div><strong>Secondary Phone:</strong> {data.personal.phone_secondary}</div>
+          )}
+          {data.personal.email && (
+            <div><strong>Email:</strong> {data.personal.email}</div>
+          )}
+          <div><strong>NRC:</strong> {data.personal.nrc || "-"}</div>
+          <div><strong>Date of Birth:</strong> {data.personal.date_of_birth || "-"}</div>
+          <div><strong>Gender:</strong> {data.personal.gender || "-"}</div>
+          {data.personal.ethnic_group && (
+            <div><strong>Ethnic Group:</strong> {data.personal.ethnic_group}</div>
+          )}
         </div>
-        <div>
-          <strong>Phone:</strong> {data.personal.phone_primary || "-"}
+
+        {/* Address */}
+        <div style={{ marginBottom: 16 }}>
+          <h4 style={{ fontSize: 16, fontWeight: "bold", color: "#374151", marginBottom: 8 }}>📍 Address</h4>
+          <div><strong>Province:</strong> {data.address.province_name || "-"}</div>
+          <div><strong>District:</strong> {data.address.district_name || "-"}</div>
+          {data.address.chiefdom_name && (
+            <div><strong>Chiefdom:</strong> {data.address.chiefdom_name}</div>
+          )}
+          <div><strong>Village:</strong> {data.address.village || "-"}</div>
         </div>
-        <div style={{ marginTop: 8 }}>
-          <strong>Province:</strong> {data.address.province_name}
-        </div>
-        <div>
-          <strong>District:</strong> {data.address.district_name}
-        </div>
-        <div>
-          <strong>Chiefdom:</strong> {data.address.chiefdom_name || "-"}
-        </div>
-        <div>
-          <strong>Village:</strong> {data.address.village || "-"}
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <strong>NRC:</strong> {data.personal.nrc || "-"}
-        </div>
-        <div>
-          <strong>Date of Birth:</strong> {data.personal.date_of_birth || "-"}
-        </div>
-        <div>
-          <strong>Gender:</strong> {data.personal.gender || "-"}
-        </div>
-        <div>
-          <strong>Ethnic Group:</strong> {data.personal.ethnic_group || "-"}
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <strong>Farm size (ha):</strong> {data.farm?.size_hectares || "-"}
-        </div>
-        <div>
-          <strong>Crops:</strong> {data.farm?.crops || "-"}
-        </div>
-        <div>
-          <strong>Livestock:</strong> {data.farm?.livestock || "-"}
-        </div>
-        <div>
-          <strong>Years Farming:</strong> {data.farm?.years_farming || "-"}
-        </div>
-        <div>
-          <strong>Has Irrigation:</strong> {data.farm?.has_irrigation ? "Yes" : "No"}
-        </div>
+
+        {/* Farm Information */}
+        {(data.farm?.size_hectares || data.farm?.crops || data.farm?.livestock || data.farm?.years_farming) && (
+          <div style={{ marginBottom: 16 }}>
+            <h4 style={{ fontSize: 16, fontWeight: "bold", color: "#374151", marginBottom: 8 }}>🌾 Farm Information</h4>
+            {data.farm?.size_hectares && (
+              <div><strong>Farm Size:</strong> {data.farm.size_hectares} hectares</div>
+            )}
+            {data.farm?.crops && (
+              <div><strong>Crops:</strong> {data.farm.crops}</div>
+            )}
+            {data.farm?.livestock && (
+              <div><strong>Livestock:</strong> {data.farm.livestock}</div>
+            )}
+            {data.farm?.years_farming && (
+              <div><strong>Farming Experience:</strong> {data.farm.years_farming} years</div>
+            )}
+            <div><strong>Irrigation:</strong> {data.farm?.has_irrigation ? "Yes" : "No"}</div>
+          </div>
+        )}
+
+        {/* Household Information */}
+        {(data.farm?.household_size || data.farm?.dependents || data.farm?.primary_income) && (
+          <div>
+            <h4 style={{ fontSize: 16, fontWeight: "bold", color: "#374151", marginBottom: 8 }}>🏠 Household Information</h4>
+            {data.farm?.household_size && (
+              <div><strong>Household Size:</strong> {data.farm.household_size} people</div>
+            )}
+            {data.farm?.dependents && (
+              <div><strong>Dependents:</strong> {data.farm.dependents}</div>
+            )}
+            {data.farm?.primary_income && (
+              <div><strong>Primary Income:</strong> {data.farm.primary_income}</div>
+            )}
+          </div>
+        )}
       </div>
 
       {error && (

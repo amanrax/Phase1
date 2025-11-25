@@ -194,15 +194,13 @@ async def list_farmers(
     allowed_districts = None
     created_by_filter = None
     if current_user.get("roles") and "OPERATOR" in current_user.get("roles", []) and "ADMIN" not in current_user.get("roles", []):
-        # Operator: restrict to assigned districts OR farmers they created
+        # Operator: restrict to assigned districts only (geographic scope)
         user_email = current_user.get("email")
         operator_doc = await db.operators.find_one({"email": user_email})
         if operator_doc:
             allowed_districts = operator_doc.get("assigned_districts", [])
-            operator_id = operator_doc.get("operator_id")
-            # If no districts assigned, filter by created_by (their operator_id or email)
-            if not allowed_districts:
-                created_by_filter = operator_id or user_email
+            # If no districts assigned, operator sees nothing (secure default)
+            # We don't fall back to created_by filtering
     # Admin sees all farmers (both None)
     
     farmers = await farmer_service.list_farmers(
@@ -257,10 +255,7 @@ async def count_farmers(
         operator_doc = await db.operators.find_one({"email": user_email})
         if operator_doc:
             allowed_districts = operator_doc.get("assigned_districts", [])
-            operator_id = operator_doc.get("operator_id")
-            # If no districts assigned, filter by created_by
-            if not allowed_districts:
-                created_by_filter = operator_id or user_email
+            # If no districts assigned, operator sees nothing (secure default)
     # Admin sees all farmers (both None)
     
     total = await farmer_service.count_farmers(

@@ -122,7 +122,7 @@ function App() {
           path="/farmers/:farmerId"
           element={
             <ProtectedRoute>
-              <RoleRoute requiredRole={["admin", "operator"]}>
+              <RoleRoute requiredRole={["admin", "operator", "farmer"]}>
                 <FarmerDetails />
               </RoleRoute>
             </ProtectedRoute>

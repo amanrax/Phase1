@@ -6,9 +6,27 @@ export const farmerService = {
    * Fetch a paginated list of farmers.
    * Backend: GET /api/farmers?limit=10&skip=0
    */
-  async getFarmers(limit = 10, skip = 0) {
-    const { data } = await api.get("/farmers/", { params: { limit, skip } });
+  async getFarmers(limit = 10, skip = 0, filters?: Record<string, any>) {
+    const { data } = await api.get("/farmers/", { params: { limit, skip, ...filters } });
     return data;
+  },
+
+  /**
+   * Search farmer by exact farmer_id.
+   * Backend: GET /api/farmers?farmer_id_exact=ZM12345
+   */
+  async searchByFarmerId(farmerId: string) {
+    const { data } = await api.get("/farmers/", { params: { farmer_id_exact: farmerId, limit: 1 } });
+    return data && data.length > 0 ? data[0] : null;
+  },
+
+  /**
+   * Search farmer by NRC number.
+   * Backend: GET /api/farmers?nrc=123456/12/1
+   */
+  async searchByNRC(nrc: string) {
+    const { data } = await api.get("/farmers/", { params: { nrc, limit: 1 } });
+    return data && data.length > 0 ? data[0] : null;
   },
 
   /**
