@@ -16,9 +16,10 @@ type PersonalData = {
 type Props = {
   data: PersonalData;
   onNext: (values: PersonalData) => void;
+  onBack?: () => void;
 };
 
-export default function Step1Personal({ data, onNext }: Props) {
+export default function Step1Personal({ data, onNext, onBack }: Props) {
   const [firstName, setFirstName] = useState(data.first_name || "");
   const [lastName, setLastName] = useState(data.last_name || "");
   const [phone, setPhone] = useState(data.phone_primary || "");
@@ -235,6 +236,21 @@ export default function Step1Personal({ data, onNext }: Props) {
       </div>
 
       <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+        {onBack && (
+          <button
+            onClick={onBack}
+            style={{ 
+              padding: 12, 
+              background: "#fff", 
+              color: "#374151", 
+              border: "1px solid #d1d5db", 
+              borderRadius: 6 
+            }}
+            aria-label="Go back to previous page"
+          >
+            ← Back
+          </button>
+        )}
         <div style={{ flex: 1 }} />
         <button
           onClick={handleNext}

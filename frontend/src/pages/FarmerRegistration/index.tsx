@@ -137,6 +137,7 @@ export default function FarmerRegistrationWizard() {
         {currentStep === 1 && (
           <Step1Personal
             data={form.personal}
+            onBack={() => navigate(-1)}
             onNext={(vals: WizardState["personal"]) => {
               update("personal", vals);
               setCurrentStep(2);
