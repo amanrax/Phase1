@@ -189,10 +189,22 @@ export default function Step4Preview({
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+      <div style={{ display: "flex", gap: "15px", marginTop: "25px" }}>
         <button
           onClick={onBack}
-          style={{ padding: 12, background: "#6B7280", color: "white", border: "none", borderRadius: 6 }}
+          style={{ 
+            padding: "12px 30px",
+            background: "#6c757d",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.3s"
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = "#5a6268"}
+          onMouseOut={(e) => e.currentTarget.style.background = "#6c757d"}
           aria-label="Back to previous step"
         >
           ← Back
@@ -200,10 +212,22 @@ export default function Step4Preview({
         <div style={{ flex: 1 }} />
         <button
           onClick={handleSubmit}
-          style={{ padding: 12, background: "#16A34A", color: "white", border: "none", borderRadius: 6 }}
+          style={{ 
+            padding: "12px 30px",
+            background: "#007bff",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.3s"
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = "#0056b3"}
+          onMouseOut={(e) => e.currentTarget.style.background = "#007bff"}
           aria-label="Submit registration"
         >
-          Create Farmer & Continue
+          💾 Create Farmer & Continue
         </button>
       </div>
     </div>

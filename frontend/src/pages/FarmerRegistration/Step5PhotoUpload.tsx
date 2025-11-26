@@ -66,22 +66,24 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6">Step 5: Upload Farmer Photo</h2>
+    <div>
+      <h2 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+        📸 Step 5: Upload Farmer Photo
+      </h2>
 
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div style={{ background: "#fafafa", borderRadius: "10px", padding: "25px", border: "1px solid #e0e0e0" }}>
         {/* Preview Area */}
-        <div className="mb-6">
-          <div className="w-full h-80 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+        <div style={{ marginBottom: "20px" }}>
+          <div style={{ width: "100%", height: "320px", background: "#f0f0f0", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             {preview ? (
               <img
                 src={preview}
                 alt="Preview"
-                className="max-w-full max-h-full object-contain"
+                style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
               />
             ) : (
-              <div className="text-center text-gray-400">
-                <div className="text-6xl mb-4">📸</div>
+              <div style={{ textAlign: "center", color: "#999" }}>
+                <div style={{ fontSize: "60px", marginBottom: "15px" }}>📸</div>
                 <p>No photo selected</p>
               </div>
             )}
@@ -89,27 +91,33 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
         </div>
 
         {/* File Input */}
-        <div className="mb-6">
-          <label className="block">
+        <div style={{ marginBottom: "20px" }}>
+          <label>
             <input
               type="file"
               accept="image/*"
               onChange={handleFileSelect}
               disabled={uploading || uploaded}
-              className="hidden"
+              style={{ display: "none" }}
               aria-label="Choose photo to upload"
             />
             <div
-              className={`text-center py-4 border-2 border-dashed rounded-lg cursor-pointer transition ${
-                uploaded
-                  ? "bg-green-50 border-green-300 cursor-not-allowed"
-                  : "hover:border-blue-500 hover:bg-blue-50"
-              }`}
+              style={{
+                textAlign: "center",
+                padding: "16px",
+                border: "2px dashed " + (uploaded ? "#28a745" : "#ddd"),
+                borderRadius: "10px",
+                cursor: uploaded ? "not-allowed" : "pointer",
+                background: uploaded ? "#d4edda" : "white",
+                color: uploaded ? "#155724" : "#333",
+                fontWeight: "600",
+                transition: "all 0.3s"
+              }}
             >
               {uploaded ? (
-                <span className="text-green-600 font-semibold">✓ Photo Uploaded</span>
+                <span>✓ Photo Uploaded</span>
               ) : (
-                <span className="text-gray-700">{photo ? "📷 Change Photo" : "📁 Choose Photo"}</span>
+                <span>{photo ? "📷 Change Photo" : "📁 Choose Photo"}</span>
               )}
             </div>
           </label>
@@ -120,7 +128,21 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
           <button
             onClick={handleUpload}
             disabled={uploading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed mb-4"
+            style={{
+              width: "100%",
+              padding: "14px",
+              background: uploading ? "#6c757d" : "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "15px",
+              fontWeight: "600",
+              cursor: uploading ? "not-allowed" : "pointer",
+              marginBottom: "15px",
+              transition: "all 0.3s"
+            }}
+            onMouseOver={(e) => !uploading && (e.currentTarget.style.background = "#0056b3")}
+            onMouseOut={(e) => !uploading && (e.currentTarget.style.background = "#007bff")}
             aria-label="Upload photo"
           >
             {uploading ? "⏳ Uploading..." : "⬆️ Upload Photo"}
@@ -128,22 +150,35 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
         )}
 
         {/* Info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-blue-800">
+        <div style={{ background: "#e7f3ff", border: "1px solid #b3d9ff", borderRadius: "8px", padding: "15px", marginBottom: "20px" }}>
+          <p style={{ fontSize: "13px", color: "#004085", fontWeight: "600", marginBottom: "8px" }}>
             <strong>Requirements:</strong>
           </p>
-          <ul className="text-sm text-blue-700 mt-2 space-y-1">
-            <li>• File type: JPG, PNG</li>
-            <li>• Maximum size: 5MB</li>
-            <li>• Clear, front-facing photo recommended</li>
+          <ul style={{ fontSize: "13px", color: "#004085", marginTop: "8px", paddingLeft: "20px", lineHeight: "1.8" }}>
+            <li>File type: JPG, PNG</li>
+            <li>Maximum size: 5MB</li>
+            <li>Clear, front-facing photo recommended</li>
           </ul>
         </div>
 
         {/* Navigation */}
-        <div className="flex gap-4">
+        <div style={{ display: "flex", gap: "15px" }}>
           <button
             onClick={onBack}
-            className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600"
+            style={{
+              flex: 1,
+              padding: "14px",
+              background: "#6c757d",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "15px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.3s"
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = "#5a6268"}
+            onMouseOut={(e) => e.currentTarget.style.background = "#6c757d"}
             aria-label="Back to previous step"
           >
             ← Back
@@ -152,7 +187,20 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
           {uploaded ? (
             <button
               onClick={onNext}
-              className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700"
+              style={{
+                flex: 1,
+                padding: "14px",
+                background: "#28a745",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "15px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.3s"
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = "#218838"}
+              onMouseOut={(e) => e.currentTarget.style.background = "#28a745"}
               aria-label="Proceed to documents upload"
             >
               Next: Documents →
@@ -160,7 +208,20 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
           ) : (
             <button
               onClick={handleSkip}
-              className="flex-1 bg-yellow-500 text-white py-3 rounded-lg hover:bg-yellow-600"
+              style={{
+                flex: 1,
+                padding: "14px",
+                background: "#ffc107",
+                color: "#333",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "15px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.3s"
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = "#e0a800"}
+              onMouseOut={(e) => e.currentTarget.style.background = "#ffc107"}
               aria-label="Skip photo upload"
             >
               Skip for Now →

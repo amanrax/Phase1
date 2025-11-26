@@ -21,7 +21,7 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
       <h2 style={{ 
         fontSize: "32px", 
         fontWeight: "bold", 
-        color: "#16A34A",
+        color: "#28a745",
         marginBottom: "16px"
       }}>
         Registration Complete!
@@ -29,33 +29,34 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
       
       <p style={{ 
         fontSize: "18px", 
-        color: "#6B7280",
+        color: "#666",
         marginBottom: "32px"
       }}>
         {farmerName} has been successfully registered
       </p>
 
       <div style={{
-        backgroundColor: "#F3F4F6",
+        backgroundColor: "#f8f9fa",
         padding: "24px",
         borderRadius: "12px",
         marginBottom: "32px",
         maxWidth: "500px",
         marginLeft: "auto",
-        marginRight: "auto"
+        marginRight: "auto",
+        border: "2px solid #667eea"
       }}>
         <p style={{ 
           fontSize: "14px", 
-          color: "#6B7280",
+          color: "#666",
           marginBottom: "8px",
-          fontWeight: "500"
+          fontWeight: "600"
         }}>
           Farmer ID
         </p>
         <p style={{ 
           fontSize: "28px", 
           fontWeight: "bold",
-          color: "#1F2937",
+          color: "#333",
           fontFamily: "monospace",
           letterSpacing: "2px"
         }}>
@@ -63,7 +64,7 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
         </p>
         <p style={{ 
           fontSize: "12px", 
-          color: "#9CA3AF",
+          color: "#999",
           marginTop: "8px"
         }}>
           Save this ID for future reference
@@ -82,7 +83,7 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
           onClick={() => navigate(`/farmers/${farmerId}`)}
           style={{
             padding: "14px 24px",
-            backgroundColor: "#2563EB",
+            backgroundColor: "#007bff",
             color: "white",
             border: "none",
             borderRadius: "8px",
@@ -91,8 +92,8 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
             fontWeight: "600",
             transition: "background-color 0.2s"
           }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#1D4ED8"}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#2563EB"}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#0056b3"}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#007bff"}
         >
           👁️ View Farmer Details
         </button>
@@ -101,7 +102,7 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
           onClick={() => window.location.reload()}
           style={{
             padding: "14px 24px",
-            backgroundColor: "#16A34A",
+            backgroundColor: "#28a745",
             color: "white",
             border: "none",
             borderRadius: "8px",
@@ -110,8 +111,8 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
             fontWeight: "600",
             transition: "background-color 0.2s"
           }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#15803D"}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#16A34A"}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#218838"}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#28a745"}
         >
           ➕ Register Another Farmer
         </button>
@@ -120,7 +121,7 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
           onClick={() => navigate("/farmers")}
           style={{
             padding: "14px 24px",
-            backgroundColor: "#6B7280",
+            backgroundColor: "#6c757d",
             color: "white",
             border: "none",
             borderRadius: "8px",
@@ -129,8 +130,8 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
             fontWeight: "600",
             transition: "background-color 0.2s"
           }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#4B5563"}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#6B7280"}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#5a6268"}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#6c757d"}
         >
           📋 Go to Farmers List
         </button>

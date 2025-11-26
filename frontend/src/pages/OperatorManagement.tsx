@@ -1,29 +1,50 @@
-// src/pages/OperatorManagement.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { operatorService } from "@/services/operator.service";
 import geoService from "@/services/geo.service";
 
+const getErrorMessage = (err: unknown): string => {
+  if (typeof err === "object" && err !== null) {
+    const error = err as Record<string, unknown>;
+    if (error.response && typeof error.response === "object") {
+      const response = error.response as Record<string, unknown>;
+      if (response.data && typeof response.data === "object") {
+        const data = response.data as Record<string, unknown>;
+        if (data.detail) {
+          if (Array.isArray(data.detail)) {
+            return data.detail.map((e: {loc: string[]; msg: string}) => 
+              `${e.loc.join('.')}: ${e.msg}`
+            ).join(', ');
+          }
+          if (typeof data.detail === "string") return data.detail;
+        }
+      }
+    }
+    if (error.message && typeof error.message === "string") {
+      return error.message;
+    }
+  }
+  return "An error occurred";
+};
+
 interface Operator {
   _id: string;
   operator_id: string;
-  first_name: string;
-  last_name: string;
+  full_name: string;
   email: string;
   phone?: string;
-  role: string;
-  status: string;
   is_active?: boolean;
-  assigned_districts?: string[];
-  assigned_regions?: string[];
-  created_at?: string;
+  assigned_district?: string;
 }
+
+interface Province { code: string; name: string }
+interface District { code: string; name: string }
 
 export default function OperatorManagement() {
   const navigate = useNavigate();
   const [operators, setOperators] = useState<Operator[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -31,134 +52,59 @@ export default function OperatorManagement() {
     password: "",
     confirmPassword: "",
     phone: "",
-    role: "OPERATOR",
     assigned_district: "",
-    assigned_province: "",
-    assigned_province_code: "",
-    assigned_district_code: "",
-    assigned_chiefdom_code: "",
-    assigned_province_custom: "",
-    assigned_district_custom: "",
-    assigned_chiefdom_custom: "",
   });
   const [error, setError] = useState("");
-  const [loadingGeo, setLoadingGeo] = useState(false);
-  const [provinces, setProvinces] = useState<any[]>([]);
-  const [districts, setDistricts] = useState<any[]>([]);
-  const [chiefdoms, setChiefdoms] = useState<any[]>([]);
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [selectedProvince, setSelectedProvince] = useState("");
 
   useEffect(() => {
     loadOperators();
+    loadProvinces();
   }, []);
-
-  useEffect(() => {
-    // Load geo data when create form opens
-    if (showCreateForm) {
-      loadProvinces();
-    }
-  }, [showCreateForm]);
-
-  useEffect(() => {
-    if (formData.assigned_province_code) {
-      loadDistricts(formData.assigned_province_code);
-    } else {
-      setDistricts([]);
-      setChiefdoms([]);
-    }
-  }, [formData.assigned_province_code]);
-
-  useEffect(() => {
-    if (formData.assigned_district_code) {
-      loadChiefdoms(formData.assigned_district_code);
-    } else {
-      setChiefdoms([]);
-    }
-  }, [formData.assigned_district_code]);
 
   const loadProvinces = async () => {
     try {
-      setLoadingGeo(true);
       const data = await geoService.provinces();
       setProvinces(data);
     } catch (err) {
       console.error("Failed to load provinces:", err);
-    } finally {
-      setLoadingGeo(false);
     }
   };
 
   const loadDistricts = async (provinceCode: string) => {
     try {
-      setLoadingGeo(true);
       const data = await geoService.districts(provinceCode);
       setDistricts(data);
     } catch (err) {
       console.error("Failed to load districts:", err);
-    } finally {
-      setLoadingGeo(false);
     }
   };
 
-  const loadChiefdoms = async (districtCode: string) => {
-    try {
-      setLoadingGeo(true);
-      const data = await geoService.chiefdoms(districtCode);
-      setChiefdoms(data);
-    } catch (err) {
-      console.error("Failed to load chiefdoms:", err);
-    } finally {
-      setLoadingGeo(false);
+  const handleProvinceChange = async (provinceCode: string) => {
+    setSelectedProvince(provinceCode);
+    setFormData(prev => ({ ...prev, assigned_district: "" }));
+    if (provinceCode) {
+      await loadDistricts(provinceCode);
+    } else {
+      setDistricts([]);
     }
-  };
-
-  const handleProvinceSelect = (code: string) => {
-    const p = provinces.find((x) => x.code === code);
-    setFormData({
-      ...formData,
-      assigned_province_code: code,
-      assigned_province: p?.name || "",
-      assigned_district: "",
-      assigned_district_code: "",
-      assigned_chiefdom_code: "",
-      assigned_chiefdom: "",
-    });
-  };
-
-  const handleDistrictSelect = (code: string) => {
-    const d = districts.find((x) => x.code === code);
-    setFormData({
-      ...formData,
-      assigned_district_code: code,
-      assigned_district: d?.name || "",
-      assigned_chiefdom_code: "",
-      assigned_chiefdom: "",
-    });
-  };
-
-  const handleChiefdomSelect = (code: string) => {
-    const c = chiefdoms.find((x) => x.code === code);
-    setFormData({
-      ...formData,
-      assigned_chiefdom_code: code,
-    });
   };
 
   const loadOperators = async () => {
     setLoading(true);
-    console.log("Loading operators with updated code..."); // Add this line for debugging
     try {
       const data = await operatorService.getOperators(100, 0);
       const operatorList = (data.results || data.operators || data || []).map(
-        (op: any) => ({
+        (op: Operator) => ({
           ...op,
           status: op.is_active ? "active" : "inactive",
         })
       );
       setOperators(operatorList);
-    } catch (err: any) {
-      if (import.meta.env.DEV) {
-        console.error("Failed to load operators:", err);
-      }
+    } catch (err) {
+      console.error("Failed to load operators:", err);
     } finally {
       setLoading(false);
     }
@@ -168,7 +114,6 @@ export default function OperatorManagement() {
     e.preventDefault();
     setError("");
 
-    // Validation
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -180,28 +125,14 @@ export default function OperatorManagement() {
     }
 
     try {
-      const resolvedProvince = formData.assigned_province_code === "OTHER"
-        ? formData.assigned_province_custom
-        : formData.assigned_province || undefined;
-
-      const resolvedDistrict = formData.assigned_district_code === "OTHER"
-        ? formData.assigned_district_custom
-        : formData.assigned_district || undefined;
-
-      const resolvedChiefdom = formData.assigned_chiefdom_code === "OTHER"
-        ? formData.assigned_chiefdom_custom
-        : undefined;
-
       const payload = {
         first_name: formData.first_name,
         last_name: formData.last_name,
         email: formData.email,
-        phone: formData.phone.replace(/[\s\-\(\)]/g, ""),
+        phone: formData.phone.replace(/[\s\-()]/g, ""),
         password: formData.password,
-        role: formData.role,
-        assigned_province: resolvedProvince,
-        assigned_district: resolvedDistrict,
-        assigned_chiefdom: resolvedChiefdom,
+        role: "OPERATOR",
+        assigned_district: formData.assigned_district || undefined,
       };
 
       await operatorService.create(payload);
@@ -214,336 +145,216 @@ export default function OperatorManagement() {
         password: "",
         confirmPassword: "",
         phone: "",
-        role: "OPERATOR",
         assigned_district: "",
-        assigned_province: "",
-        assigned_province_code: "",
-        assigned_district_code: "",
-        assigned_chiefdom_code: "",
-        assigned_province_custom: "",
-        assigned_district_custom: "",
-        assigned_chiefdom_custom: "",
       });
+      setSelectedProvince("");
       loadOperators();
-    } catch (err: any) {
-      if (import.meta.env.DEV) {
-        console.error("Create operator error:", err);
-        console.error("Error response:", err.response?.data);
-      }
-      
-      // Handle validation errors properly
-      let errorMsg = "Failed to create operator";
-      if (err.response?.data?.detail) {
-        if (Array.isArray(err.response.data.detail)) {
-          // Pydantic validation errors
-          errorMsg = err.response.data.detail.map((e: any) => 
-            `${e.loc.join('.')}: ${e.msg}`
-          ).join(', ');
-        } else if (typeof err.response.data.detail === 'string') {
-          errorMsg = err.response.data.detail;
-        }
-      } else if (err.message) {
-        errorMsg = err.message;
-      }
-      
-      setError(errorMsg);
-    }
-  };
-
-  const handleToggleStatus = async (operator: Operator) => {
-    console.log(
-      "Toggling status for operator:",
-      operator.operator_id,
-      "Current status:",
-      operator.status
-    ); // Add this line for debugging
-    const newStatus = operator.status === "active" ? false : true;
-    const action = newStatus ? "activate" : "deactivate";
-    if (!confirm(`Are you sure you want to ${action} this operator?`)) {
-      return;
-    }
-
-    try {
-      const payload: any = {
-        full_name: operator.full_name,
-        phone: operator.phone,
-        assigned_regions: operator.assigned_regions,
-        assigned_districts: operator.assigned_districts,
-        is_active: newStatus,
-      };
-
-      await operatorService.update(operator.operator_id, payload);
-      alert(`✅ Operator ${action}d successfully`);
-      loadOperators();
-    } catch (err: any) {
-      if (import.meta.env.DEV) {
-        console.error(`${action} operator error:`, err);
-      }
-      alert(err.response?.data?.detail || `Failed to ${action} operator`);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     }
   };
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
-      {/* Header */}
-      <header className="app-page-header">
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <button onClick={() => navigate("/")} aria-label="Back" className="btn-back">
-            ← BACK
-          </button>
-          <h1 className="app-title" style={{ margin: 0 }}>👥 Operator Management</h1>
-        </div>
-      </header>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+      <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
+        <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
+          🌾 AgriManage Pro
+        </h1>
+        <p style={{ fontSize: "18px", opacity: 0.9 }}>Operator Management</p>
+      </div>
 
-      {/* Content */}
-      <div style={{ maxWidth: "1200px", margin: "20px auto", padding: "0 20px" }}>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          aria-label={showCreateForm ? "Cancel" : "Create Operator"}
-          style={{
-            marginBottom: "20px",
-            padding: "10px 20px",
-            backgroundColor: showCreateForm ? "#6B7280" : "#16A34A",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
-        >
-          {showCreateForm ? "✕ Cancel" : "➕ Create Operator"}
-        </button>
-
-        {/* Create Form */}
-        {showCreateForm && (
-          <div
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px 40px 20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
+          <button
+            onClick={() => navigate("/admin-dashboard")}
             style={{
-              backgroundColor: "white",
-              padding: "20px",
+              padding: "10px 20px",
+              background: "white",
+              color: "#667eea",
+              border: "none",
               borderRadius: "8px",
-              marginBottom: "20px",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.3s"
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
+            onMouseOut={(e) => e.currentTarget.style.transform = "translateY(0)"}
+          >
+            ← Back
+          </button>
+
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            style={{
+              padding: "10px 25px",
+              background: "#28a745",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.3s"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = "#218838";
+              e.currentTarget.style.transform = "translateY(-2px)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = "#28a745";
+              e.currentTarget.style.transform = "translateY(0)";
             }}
           >
-            <h3 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>
-              Create New Operator
-            </h3>
+            {showCreateForm ? "❌ Cancel" : "➕ Add Operator"}
+          </button>
+        </div>
 
+        {showCreateForm && (
+          <div style={{ background: "white", padding: "30px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
+            <h2 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "20px", color: "#333" }}>➕ Create New Operator</h2>
+            
             {error && (
-              <div
-                role="alert"
-                style={{
-                  backgroundColor: "#FEE2E2",
-                  color: "#DC2626",
-                  padding: "12px",
-                  marginBottom: "15px",
-                  borderRadius: "6px",
-                }}
-              >
-                {error}
+              <div style={{ background: "#f8d7da", color: "#721c24", padding: "12px", borderRadius: "8px", marginBottom: "20px", border: "1px solid #f5c6cb" }}>
+                ❌ {error}
               </div>
             )}
 
-            <form onSubmit={handleCreate} onKeyDown={(e) => {
-              if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
-                e.preventDefault();
-              }
-            }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <form onSubmit={handleCreate} style={{ display: "grid", gap: "15px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
                 <div>
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-                    First Name <span style={{ color: "red" }}>*</span>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                    First Name <span style={{ color: "#dc3545" }}>*</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.first_name}
-                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                    style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+                    onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                    style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-                    Last Name <span style={{ color: "red" }}>*</span>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                    Last Name <span style={{ color: "#dc3545" }}>*</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.last_name}
-                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                    style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                    style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
                   />
                 </div>
+              </div>
 
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
                 <div>
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-                    Email <span style={{ color: "red" }}>*</span>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                    Email <span style={{ color: "#dc3545" }}>*</span>
                   </label>
                   <input
                     type="email"
                     required
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="operator@example.com"
-                    style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-                    Phone <span style={{ color: "red" }}>*</span>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                    Phone
                   </label>
                   <input
                     type="tel"
-                    required
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+260XXXXXXXXX"
-                    pattern="^(\+260|0)[0-9]{9}$"
-                    style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
                   />
-                </div>
-
-                <div>
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-                    Password <span style={{ color: "red" }}>*</span>
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    minLength={8}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Min. 8 characters"
-                    style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-                    Confirm Password <span style={{ color: "red" }}>*</span>
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    minLength={8}
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    placeholder="Repeat password"
-                    style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-                    Role <span style={{ color: "red" }}>*</span>
-                  </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                  >
-                    <option value="OPERATOR">Field Operator</option>
-                    <option value="SUPERVISOR">Supervisor</option>
-                    <option value="ADMIN">Administrator</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-                    Assigned Province
-                  </label>
-                  <select
-                    value={formData.assigned_province_code}
-                    onChange={(e) => handleProvinceSelect(e.target.value)}
-                    disabled={loadingGeo}
-                    style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                  >
-                    <option value="">{loadingGeo ? "Loading provinces..." : "Select a Province"}</option>
-                    {provinces.map((p) => (
-                      <option key={p.code} value={p.code}>{p.name}</option>
-                    ))}
-                    <option value="OTHER">Other (specify)</option>
-                  </select>
-                  {formData.assigned_province_code === "OTHER" && (
-                    <input
-                      type="text"
-                      value={formData.assigned_province_custom}
-                      onChange={(e) => setFormData({ ...formData, assigned_province_custom: e.target.value })}
-                      placeholder="Specify province"
-                      style={{ marginTop: 8, width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                    />
-                  )}
-                </div>
-
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-                    Assigned District
-                  </label>
-                  <select
-                    value={formData.assigned_district_code}
-                    onChange={(e) => handleDistrictSelect(e.target.value)}
-                    disabled={loadingGeo || !formData.assigned_province_code}
-                    style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                  >
-                    <option value="">{!formData.assigned_province_code ? "Select Province First" : loadingGeo ? "Loading districts..." : "Select a District"}</option>
-                    {districts.map((d) => (
-                      <option key={d.code} value={d.code}>{d.name}</option>
-                    ))}
-                    <option value="OTHER">Other (specify)</option>
-                  </select>
-                  {formData.assigned_district_code === "OTHER" && (
-                    <input
-                      type="text"
-                      value={formData.assigned_district_custom}
-                      onChange={(e) => setFormData({ ...formData, assigned_district_custom: e.target.value })}
-                      placeholder="Specify district"
-                      style={{ marginTop: 8, width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                    />
-                  )}
                 </div>
               </div>
 
-              <div style={{ marginTop: 8 }}>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
-                  Assigned Chiefdom
-                </label>
-                <select
-                  value={formData.assigned_chiefdom_code}
-                  onChange={(e) => handleChiefdomSelect(e.target.value)}
-                  disabled={loadingGeo || !formData.assigned_district_code}
-                  style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                >
-                  <option value="">{!formData.assigned_district_code ? "Select District First" : loadingGeo ? "Loading chiefdoms..." : "Select a Chiefdom"}</option>
-                  {chiefdoms.map((c) => (
-                    <option key={c.code} value={c.code}>{c.name}</option>
-                  ))}
-                    <option value="OTHER">Other (specify)</option>
-                </select>
-                  {formData.assigned_chiefdom_code === "OTHER" && (
-                    <input
-                      type="text"
-                      value={formData.assigned_chiefdom_custom}
-                      onChange={(e) => setFormData({ ...formData, assigned_chiefdom_custom: e.target.value })}
-                      placeholder="Specify chiefdom"
-                      style={{ marginTop: 8, width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                    />
-                  )}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                    Password <span style={{ color: "#dc3545" }}>*</span>
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                    Confirm Password <span style={{ color: "#dc3545" }}>*</span>
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                    Province
+                  </label>
+                  <select
+                    value={selectedProvince}
+                    onChange={(e) => handleProvinceChange(e.target.value)}
+                    style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  >
+                    <option value="">Select Province</option>
+                    {provinces.map(p => (
+                      <option key={p.code} value={p.code}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                    Assigned District
+                  </label>
+                  <select
+                    value={formData.assigned_district}
+                    onChange={(e) => setFormData(prev => ({ ...prev, assigned_district: e.target.value }))}
+                    disabled={!selectedProvince}
+                    style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px", opacity: selectedProvince ? 1 : 0.5 }}
+                  >
+                    <option value="">All Districts</option>
+                    {districts.map(d => (
+                      <option key={d.code} value={d.name}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <button
                 type="submit"
                 style={{
-                  marginTop: "15px",
-                  padding: "10px 20px",
-                  backgroundColor: "#16A34A",
+                  padding: "12px",
+                  background: "#007bff",
                   color: "white",
                   border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
+                  borderRadius: "8px",
+                  fontSize: "15px",
                   fontWeight: "600",
+                  cursor: "pointer",
+                  marginTop: "10px",
+                  transition: "all 0.3s"
                 }}
+                onMouseOver={(e) => e.currentTarget.style.background = "#0056b3"}
+                onMouseOut={(e) => e.currentTarget.style.background = "#007bff"}
               >
                 ✅ Create Operator
               </button>
@@ -551,130 +362,134 @@ export default function OperatorManagement() {
           </div>
         )}
 
-        {/* Operators List */}
-        {loading ? (
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "40px",
-              textAlign: "center",
-              borderRadius: "6px",
-            }}
-          >
-            ⏳ Loading operators...
+        <div style={{ background: "white", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", overflow: "hidden" }}>
+          <div style={{ padding: "20px", borderBottom: "1px solid #e0e0e0", background: "#f8f9fa" }}>
+            <h3 style={{ fontSize: "20px", fontWeight: "700", color: "#333", margin: 0 }}>👨‍💼 Operators List</h3>
           </div>
-        ) : operators.length === 0 ? (
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "40px",
-              textAlign: "center",
-              borderRadius: "6px",
-              color: "#666",
-            }}
-          >
-            No operators found
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {operators.map((operator) => (
-              <div
-                key={operator.operator_id || operator._id}
-                style={{
-                  backgroundColor: "white",
-                  borderRadius: "8px",
-                  padding: "20px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                }}
-              >
-                <div>
-                  <h3 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "5px" }}>
-                    {operator.first_name} {operator.last_name}
-                  </h3>
-                  <p style={{ fontSize: "14px", color: "#666", marginBottom: "3px" }}>
-                    📧 {operator.email}
-                  </p>
-                  <p style={{ fontSize: "14px", color: "#666", marginBottom: "3px" }}>
-                    📞 {operator.phone || "No phone"}
-                  </p>
-                  <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-                    <span
-                      style={{
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        backgroundColor: "#DBEAFE",
-                        color: "#1E40AF",
-                      }}
-                    >
-                      {operator.role}
-                    </span>
-                    <span
-                      style={{
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        backgroundColor:
-                          operator.status === "active" ? "#D1FAE5" : "#FEE2E2",
-                        color: operator.status === "active" ? "#065F46" : "#991B1B",
-                      }}
-                    >
-                      {operator.status?.toUpperCase()}
-                    </span>
-                  </div>
-                  {operator.assigned_districts && operator.assigned_districts.length > 0 && (
-                    <p style={{ fontSize: "13px", color: "#888", marginTop: "8px" }}>
-                      📍 {operator.assigned_districts[0]}
-                      {operator.assigned_regions && operator.assigned_regions.length > 0 && `, ${operator.assigned_regions[0]}`}
-                    </p>
-                  )}
-                </div>
 
-                <div style={{ display: "flex", gap: "10px" }}>
-                  <button
-                    onClick={() => navigate(`/operators/${operator.operator_id}`)}
-                    style={{
-                      padding: "8px 16px",
-                      backgroundColor: "#16A34A",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                    }}
+          {loading ? (
+            <div style={{ padding: "60px", textAlign: "center" }}>
+              <div style={{
+                width: "50px",
+                height: "50px",
+                border: "4px solid #f3f3f3",
+                borderTop: "4px solid #667eea",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+                margin: "0 auto 15px"
+              }}></div>
+              <p style={{ color: "#666" }}>Loading operators...</p>
+            </div>
+          ) : operators.length === 0 ? (
+            <div style={{ padding: "60px", textAlign: "center", color: "#666" }}>
+              <div style={{ fontSize: "60px", marginBottom: "15px" }}>👨‍💼</div>
+              <p style={{ fontSize: "16px" }}>No operators found</p>
+            </div>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f8f9fa", borderBottom: "2px solid #dee2e6" }}>
+                  <th style={{ padding: "15px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Name</th>
+                  <th style={{ padding: "15px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Email</th>
+                  <th style={{ padding: "15px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Phone</th>
+                  <th style={{ padding: "15px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>District</th>
+                  <th style={{ padding: "15px", textAlign: "center", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Status</th>
+                  <th style={{ padding: "15px", textAlign: "center", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {operators.map((op) => (
+                  <tr
+                    key={op._id}
+                    style={{ borderBottom: "1px solid #dee2e6", background: "white", transition: "all 0.2s", cursor: "pointer" }}
+                    onMouseOver={(e) => e.currentTarget.style.background = "#f8f9ff"}
+                    onMouseOut={(e) => e.currentTarget.style.background = "white"}
                   >
-                    👁️ View
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleToggleStatus(operator)
-                    }
-                    style={{
-                      padding: "8px 16px",
-                      backgroundColor:
-                        operator.status === "active" ? "#DC2626" : "#16A34A",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {operator.status === "active" ? "🔴 Deactivate" : "🟢 Activate"}
-                  </button>
-                </div>
-              </div>
-            ))}
+                    <td style={{ padding: "15px", fontWeight: "600", color: "#333" }}>{op.full_name}</td>
+                    <td style={{ padding: "15px", color: "#666", fontSize: "14px" }}>{op.email}</td>
+                    <td style={{ padding: "15px", color: "#666", fontSize: "14px" }}>{op.phone || "-"}</td>
+                    <td style={{ padding: "15px", color: "#666", fontSize: "14px" }}>{op.assigned_district || "All Districts"}</td>
+                    <td style={{ padding: "15px", textAlign: "center" }}>
+                      <span style={{
+                        padding: "4px 12px",
+                        borderRadius: "20px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        background: op.is_active !== false ? "#d4edda" : "#f8d7da",
+                        color: op.is_active !== false ? "#155724" : "#721c24"
+                      }}>
+                        {op.is_active !== false ? "✓ Active" : "✗ Inactive"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "15px" }}>
+                      <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+                        <button
+                          onClick={() => navigate(`/operators/${op.operator_id}`)}
+                          style={{
+                            padding: "6px 12px",
+                            border: "none",
+                            borderRadius: "6px",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                            cursor: "pointer",
+                            background: "#17a2b8",
+                            color: "white",
+                            transition: "all 0.2s"
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = "#138496";
+                            e.currentTarget.style.transform = "translateY(-2px)";
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = "#17a2b8";
+                            e.currentTarget.style.transform = "translateY(0)";
+                          }}
+                        >
+                          👁️
+                        </button>
+                        <button
+                          onClick={() => navigate(`/operators/${op.operator_id}/edit`)}
+                          style={{
+                            padding: "6px 12px",
+                            border: "none",
+                            borderRadius: "6px",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                            cursor: "pointer",
+                            background: "#ffc107",
+                            color: "#333",
+                            transition: "all 0.2s"
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = "#e0a800";
+                            e.currentTarget.style.transform = "translateY(-2px)";
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = "#ffc107";
+                            e.currentTarget.style.transform = "translateY(0)";
+                          }}
+                        >
+                          ✏️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <div style={{ padding: "15px", borderTop: "1px solid #e0e0e0", background: "#f8f9fa", fontSize: "13px", color: "#666", textAlign: "center" }}>
+            Showing {operators.length} operator{operators.length !== 1 ? 's' : ''}
           </div>
-        )}
+        </div>
       </div>
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

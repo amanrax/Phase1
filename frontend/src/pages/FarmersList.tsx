@@ -41,7 +41,7 @@ function ReviewModal({ farmer, onClose, onSubmit }: ReviewModalProps) {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.5)",
+        backgroundColor: "rgba(0,0,0,0.6)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -53,22 +53,22 @@ function ReviewModal({ farmer, onClose, onSubmit }: ReviewModalProps) {
         style={{
           backgroundColor: "white",
           padding: "30px",
-          borderRadius: "8px",
+          borderRadius: "15px",
           maxWidth: "500px",
           width: "90%",
-          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+          boxShadow: "0 15px 35px rgba(0,0,0,0.2)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ marginTop: 0, color: "#1F2937" }}>Review Farmer</h2>
-        <p style={{ color: "#6B7280", marginBottom: "20px" }}>
+        <h2 style={{ marginTop: 0, color: "#333", fontSize: "22px", fontWeight: "700" }}>📋 Review Farmer</h2>
+        <p style={{ color: "#666", marginBottom: "20px", fontSize: "14px" }}>
           <strong>{farmer.personal_info?.first_name} {farmer.personal_info?.last_name}</strong>
           <br />
           Farmer ID: {farmer.farmer_id}
         </p>
 
         <div style={{ marginBottom: "20px" }}>
-          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#374151" }}>
+          <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#333", fontSize: "13px" }}>
             Registration Status
           </label>
           <select
@@ -76,9 +76,9 @@ function ReviewModal({ farmer, onClose, onSubmit }: ReviewModalProps) {
             onChange={(e) => setStatus(e.target.value)}
             style={{
               width: "100%",
-              padding: "10px",
-              border: "1px solid #D1D5DB",
-              borderRadius: "6px",
+              padding: "12px",
+              border: "2px solid #e0e0e0",
+              borderRadius: "8px",
               fontSize: "14px",
             }}
           >
@@ -91,7 +91,7 @@ function ReviewModal({ farmer, onClose, onSubmit }: ReviewModalProps) {
         </div>
 
         <div style={{ marginBottom: "20px" }}>
-          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#374151" }}>
+          <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#333", fontSize: "13px" }}>
             Review Notes (Optional)
           </label>
           <textarea
@@ -101,9 +101,9 @@ function ReviewModal({ farmer, onClose, onSubmit }: ReviewModalProps) {
             rows={4}
             style={{
               width: "100%",
-              padding: "10px",
-              border: "1px solid #D1D5DB",
-              borderRadius: "6px",
+              padding: "12px",
+              border: "2px solid #e0e0e0",
+              borderRadius: "8px",
               fontSize: "14px",
               fontFamily: "inherit",
               resize: "vertical",
@@ -116,12 +116,20 @@ function ReviewModal({ farmer, onClose, onSubmit }: ReviewModalProps) {
             onClick={onClose}
             style={{
               padding: "10px 20px",
-              backgroundColor: "#E5E7EB",
-              color: "#374151",
+              backgroundColor: "#6c757d",
+              color: "white",
               border: "none",
-              borderRadius: "6px",
+              borderRadius: "8px",
               cursor: "pointer",
-              fontWeight: "bold",
+              fontWeight: "600",
+              fontSize: "14px",
+              transition: "all 0.3s"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = "#545b62";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = "#6c757d";
             }}
           >
             Cancel
@@ -130,12 +138,20 @@ function ReviewModal({ farmer, onClose, onSubmit }: ReviewModalProps) {
             onClick={() => onSubmit(status, notes)}
             style={{
               padding: "10px 20px",
-              backgroundColor: "#2563EB",
+              backgroundColor: "#007bff",
               color: "white",
               border: "none",
-              borderRadius: "6px",
+              borderRadius: "8px",
               cursor: "pointer",
-              fontWeight: "bold",
+              fontWeight: "600",
+              fontSize: "14px",
+              transition: "all 0.3s"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = "#0056b3";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = "#007bff";
             }}
           >
             Save Review
@@ -153,14 +169,15 @@ export default function FarmersList() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [reviewModalFarmer, setReviewModalFarmer] = useState<Farmer | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { color: string; bg: string; label: string }> = {
-      registered: { color: "#9CA3AF", bg: "#F3F4F6", label: "Registered" },
-      under_review: { color: "#F59E0B", bg: "#FEF3C7", label: "Under Review" },
-      verified: { color: "#10B981", bg: "#D1FAE5", label: "Verified ✓" },
-      rejected: { color: "#EF4444", bg: "#FEE2E2", label: "Rejected ✗" },
-      pending_documents: { color: "#8B5CF6", bg: "#EDE9FE", label: "Pending Docs" },
+      registered: { color: "#6c757d", bg: "#f8f9fa", label: "Registered" },
+      under_review: { color: "#ffc107", bg: "#fff3cd", label: "Under Review" },
+      verified: { color: "#28a745", bg: "#d4edda", label: "Verified ✓" },
+      rejected: { color: "#dc3545", bg: "#f8d7da", label: "Rejected ✗" },
+      pending_documents: { color: "#9333ea", bg: "#f3e8ff", label: "Pending Docs" },
     };
 
     const config = statusConfig[status] || statusConfig.registered;
@@ -168,12 +185,13 @@ export default function FarmersList() {
     return (
       <span
         style={{
-          padding: "5px 10px",
-          borderRadius: "5px",
+          padding: "6px 12px",
+          borderRadius: "20px",
           color: config.color,
           backgroundColor: config.bg,
-          fontWeight: "bold",
+          fontWeight: "600",
           fontSize: "12px",
+          display: "inline-block"
         }}
       >
         {config.label}
@@ -189,9 +207,10 @@ export default function FarmersList() {
       await farmerService.review(farmerId, params.toString());
       setReviewModalFarmer(null);
       await fetchFarmers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Review error:", err);
-      setError(err.response?.data?.detail || "Failed to update farmer review");
+      const error = err as { response?: { data?: { detail?: string } } };
+      setError(error.response?.data?.detail || "Failed to update farmer review");
     }
   };
 
@@ -199,9 +218,10 @@ export default function FarmersList() {
     try {
       await farmerService.update(farmerId, { is_active: !currentStatus });
       await fetchFarmers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Toggle status error:", err);
-      setError(err.response?.data?.detail || "Failed to update farmer status");
+      const error = err as { response?: { data?: { detail?: string } } };
+      setError(error.response?.data?.detail || "Failed to update farmer status");
     }
   };
 
@@ -220,6 +240,7 @@ export default function FarmersList() {
         farmerList = data;
       }
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mappedFarmers = farmerList.map((f: any) => ({
         _id: f._id || f.id,
         farmer_id: f.farmer_id,
@@ -231,15 +252,16 @@ export default function FarmersList() {
         address: f.address || {},
         registration_status: f.registration_status,
         created_at: f.created_at,
-        is_active: f.is_active !== undefined ? f.is_active : true, // Default to true if not present
+        is_active: f.is_active !== undefined ? f.is_active : true,
       }));
       
       setFarmers(mappedFarmers);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (import.meta.env.DEV) {
         console.error("Fetch error:", err);
       }
-      setError(err.response?.data?.detail || "Failed to load farmers");
+      const error = err as { response?: { data?: { detail?: string } } };
+      setError(error.response?.data?.detail || "Failed to load farmers");
     } finally {
       setLoading(false);
     }
@@ -252,240 +274,377 @@ export default function FarmersList() {
 
     try {
       await farmerService.delete(farmerId);
-      // Refresh the list after successful deletion
       await fetchFarmers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      alert(err.response?.data?.detail || "Failed to delete farmer");
+      const error = err as { response?: { data?: { detail?: string } } };
+      alert(error.response?.data?.detail || "Failed to delete farmer");
     }
   };
 
   useEffect(() => {
     fetchFarmers();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const filteredFarmers = farmers.filter(f => {
+    const query = searchQuery.toLowerCase();
+    return (
+      f.personal_info?.first_name?.toLowerCase().includes(query) ||
+      f.personal_info?.last_name?.toLowerCase().includes(query) ||
+      f.personal_info?.phone_primary?.includes(query) ||
+      f.farmer_id.toLowerCase().includes(query)
+    );
+  });
+
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
-      <div
-        style={{
-          backgroundColor: "#2563EB",
-          color: "white",
-          padding: "15px 20px",
-          display: "flex",
-          gap: "15px",
-          alignItems: "center",
-        }}
-      >
-        <button
-          onClick={() => navigate("/")}
-          aria-label="Back"
-          style={{
-            backgroundColor: "#2563EB",
-            color: "white",
-            border: "2px solid white",
-            padding: "8px 16px",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
-        >
-          ← BACK
-        </button>
-        <h1 style={{ margin: 0 }}>All Farmers</h1>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", paddingBottom: "30px" }}>
+      {/* Header */}
+      <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
+        <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
+          🌾 AgriManage Pro
+        </h1>
+        <p style={{ fontSize: "16px", opacity: 0.9 }}>All Farmers Management</p>
       </div>
 
-      <div style={{ maxWidth: "1200px", margin: "20px auto", padding: "0 20px" }}>
-        <button
-          onClick={() => navigate("/farmers/create")}
-          aria-label="Add New Farmer"
-          style={{
-            marginBottom: "20px",
-            padding: "10px 20px",
-            backgroundColor: "#16A34A",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
-        >
-          ➕ Add New
-        </button>
-
-        {error && (
-          <div
-            role="alert"
+      {/* Main Content */}
+      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 20px" }}>
+        {/* Action Bar */}
+        <div style={{
+          background: "white",
+          borderRadius: "12px",
+          padding: "20px 30px",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+          marginBottom: "20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "20px"
+        }}>
+          <button
+            onClick={() => navigate("/")}
             style={{
-              backgroundColor: "#FEE2E2",
-              color: "#DC2626",
-              padding: "15px",
-              marginBottom: "20px",
-              borderRadius: "6px",
+              padding: "10px 20px",
+              border: "2px solid #007bff",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              background: "white",
+              color: "#007bff",
+              transition: "all 0.3s"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = "#007bff";
+              e.currentTarget.style.color = "white";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = "white";
+              e.currentTarget.style.color = "#007bff";
             }}
           >
-            {error}
+            ← Back
+          </button>
+
+          {/* Search */}
+          <input
+            type="text"
+            placeholder="🔍 Search farmers by name, phone, or ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              flex: 1,
+              padding: "12px 20px",
+              border: "2px solid #e0e0e0",
+              borderRadius: "25px",
+              fontSize: "14px",
+              outline: "none"
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = "#007bff";
+              e.currentTarget.style.boxShadow = "0 0 0 3px rgba(0,123,255,0.1)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = "#e0e0e0";
+              e.currentTarget.style.boxShadow = "none";
+            }}
+          />
+
+          <button
+            onClick={() => navigate("/farmers/create")}
+            style={{
+              padding: "10px 20px",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              background: "#28a745",
+              color: "white",
+              transition: "all 0.3s",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = "#218838";
+              e.currentTarget.style.transform = "translateY(-2px)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = "#28a745";
+              e.currentTarget.style.transform = "translateY(0)";
+            }}
+          >
+            <span>➕</span> Add New Farmer
+          </button>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div style={{
+            background: "#f8d7da",
+            color: "#721c24",
+            padding: "15px 20px",
+            marginBottom: "20px",
+            borderRadius: "10px",
+            border: "1px solid #f5c6cb",
+            fontSize: "14px"
+          }}>
+            ⚠️ {error}
           </div>
         )}
 
-        {loading ? (
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "40px",
-              textAlign: "center",
-              borderRadius: "6px",
-            }}
-          >
-            ⏳ Loading...
+        {/* Table Container */}
+        <div style={{
+          background: "white",
+          borderRadius: "15px",
+          boxShadow: "0 15px 35px rgba(0,0,0,0.1)",
+          overflow: "hidden"
+        }}>
+          {loading ? (
+            <div style={{ padding: "60px", textAlign: "center" }}>
+              <div style={{
+                border: "4px solid #f3f3f3",
+                borderTop: "4px solid #007bff",
+                borderRadius: "50%",
+                width: "50px",
+                height: "50px",
+                animation: "spin 1s linear infinite",
+                margin: "0 auto 20px"
+              }}></div>
+              <p style={{ color: "#666", fontSize: "16px" }}>Loading farmers...</p>
+            </div>
+          ) : filteredFarmers.length === 0 ? (
+            <div style={{ padding: "60px", textAlign: "center" }}>
+              <div style={{ fontSize: "4rem", marginBottom: "20px" }}>👨‍🌾</div>
+              <p style={{ color: "#666", fontSize: "18px", fontWeight: "600" }}>
+                {searchQuery ? `No farmers found matching "${searchQuery}"` : "No farmers registered yet"}
+              </p>
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead style={{ background: "#f8f9fa" }}>
+                  <tr>
+                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>#</th>
+                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Farmer ID</th>
+                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>First Name</th>
+                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Last Name</th>
+                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Phone</th>
+                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Status</th>
+                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Active</th>
+                    <th style={{ padding: "15px 20px", textAlign: "center", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredFarmers.map((f, i) => (
+                    <tr
+                      key={f.farmer_id || i}
+                      style={{ borderBottom: "1px solid #f0f0f0", transition: "all 0.2s" }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = "#f8f9ff";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = "white";
+                      }}
+                    >
+                      <td style={{ padding: "15px 20px", fontSize: "14px", color: "#666" }}>{i + 1}</td>
+                      <td style={{ padding: "15px 20px", fontSize: "13px", fontWeight: "600", color: "#333", fontFamily: "monospace" }}>
+                        {f.farmer_id}
+                      </td>
+                      <td style={{ padding: "15px 20px", fontSize: "14px", fontWeight: "600", color: "#333" }}>
+                        {f.personal_info?.first_name || "-"}
+                      </td>
+                      <td style={{ padding: "15px 20px", fontSize: "14px", color: "#666" }}>
+                        {f.personal_info?.last_name || "-"}
+                      </td>
+                      <td style={{ padding: "15px 20px", fontSize: "14px", color: "#666" }}>
+                        {f.personal_info?.phone_primary || "-"}
+                      </td>
+                      <td style={{ padding: "15px 20px" }}>
+                        {getStatusBadge(f.registration_status || "registered")}
+                      </td>
+                      <td style={{ padding: "15px 20px" }}>
+                        <span style={{
+                          padding: "6px 12px",
+                          borderRadius: "20px",
+                          color: f.is_active ? "#28a745" : "#dc3545",
+                          backgroundColor: f.is_active ? "#d4edda" : "#f8d7da",
+                          fontWeight: "600",
+                          fontSize: "12px",
+                          display: "inline-block"
+                        }}>
+                          {f.is_active ? "✓ Active" : "✗ Inactive"}
+                        </span>
+                      </td>
+                      <td style={{ padding: "15px 20px" }}>
+                        <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
+                          <button
+                            onClick={() => setReviewModalFarmer(f)}
+                            title="Review"
+                            style={{
+                              padding: "6px 12px",
+                              background: "#007bff",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              transition: "all 0.2s"
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.background = "#0056b3";
+                              e.currentTarget.style.transform = "translateY(-2px)";
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.background = "#007bff";
+                              e.currentTarget.style.transform = "translateY(0)";
+                            }}
+                          >
+                            📋
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(f.farmer_id, f.is_active)}
+                            title={f.is_active ? "Deactivate" : "Activate"}
+                            style={{
+                              padding: "6px 12px",
+                              background: f.is_active ? "#dc3545" : "#28a745",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              transition: "all 0.2s"
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.opacity = "0.8";
+                              e.currentTarget.style.transform = "translateY(-2px)";
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.opacity = "1";
+                              e.currentTarget.style.transform = "translateY(0)";
+                            }}
+                          >
+                            {f.is_active ? "🔴" : "🟢"}
+                          </button>
+                          <button
+                            onClick={() => navigate(`/farmers/${f.farmer_id}`)}
+                            title="View Details"
+                            style={{
+                              padding: "6px 12px",
+                              background: "#28a745",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              transition: "all 0.2s"
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.background = "#218838";
+                              e.currentTarget.style.transform = "translateY(-2px)";
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.background = "#28a745";
+                              e.currentTarget.style.transform = "translateY(0)";
+                            }}
+                          >
+                            👁️
+                          </button>
+                          <button
+                            onClick={() => navigate(`/farmers/edit/${f.farmer_id}`)}
+                            title="Edit"
+                            style={{
+                              padding: "6px 12px",
+                              background: "#ffc107",
+                              color: "#333",
+                              border: "none",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              transition: "all 0.2s"
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.background = "#e0a800";
+                              e.currentTarget.style.transform = "translateY(-2px)";
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.background = "#ffc107";
+                              e.currentTarget.style.transform = "translateY(0)";
+                            }}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleDelete(
+                              f.farmer_id,
+                              `${f.personal_info?.first_name || ""} ${f.personal_info?.last_name || ""}`.trim() || "Unknown"
+                            )}
+                            title="Delete"
+                            style={{
+                              padding: "6px 12px",
+                              background: "#dc3545",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              transition: "all 0.2s"
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.background = "#c82333";
+                              e.currentTarget.style.transform = "translateY(-2px)";
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.background = "#dc3545";
+                              e.currentTarget.style.transform = "translateY(0)";
+                            }}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Results Count */}
+        {!loading && filteredFarmers.length > 0 && (
+          <div style={{
+            textAlign: "center",
+            color: "white",
+            marginTop: "20px",
+            fontSize: "14px",
+            opacity: 0.9
+          }}>
+            Showing {filteredFarmers.length} of {farmers.length} farmers
           </div>
-        ) : farmers.length === 0 ? (
-          <div
-            style={{
-              padding: "40px",
-              textAlign: "center",
-              color: "#666",
-            }}
-          >
-            No farmers
-          </div>
-        ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", backgroundColor: "white" }} aria-label="Farmers list">
-            <thead style={{ backgroundColor: "#F3F4F6" }}>
-              <tr>
-                <th style={{ padding: "15px", textAlign: "left" }}>#</th>
-                <th style={{ padding: "15px", textAlign: "left" }}>First Name</th>
-                <th style={{ padding: "15px", textAlign: "left" }}>Last Name</th>
-                <th style={{ padding: "15px", textAlign: "left" }}>Phone</th>
-                <th style={{ padding: "15px", textAlign: "left" }}>Registration</th>
-                <th style={{ padding: "15px", textAlign: "left" }}>Active</th>
-                <th style={{ padding: "15px", textAlign: "left" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {farmers.map((f, i) => (
-                <tr
-                  key={f.farmer_id || i}
-                  style={{ borderBottom: "1px solid #E5E7EB" }}
-                >
-                  <td style={{ padding: "15px" }}>{i + 1}</td>
-                  <td style={{ padding: "15px", fontWeight: "bold" }}>
-                    {f.personal_info?.first_name || "-"}
-                  </td>
-                  <td style={{ padding: "15px" }}>
-                    {f.personal_info?.last_name || "-"}
-                  </td>
-                  <td style={{ padding: "15px" }}>
-                    {f.personal_info?.phone_primary || "-"}
-                  </td>
-                  <td style={{ padding: "15px" }}>
-                    {getStatusBadge(f.registration_status || "registered")}
-                  </td>
-                  <td style={{ padding: "15px" }}>
-                    <span
-                      style={{
-                        padding: "5px 10px",
-                        borderRadius: "5px",
-                        color: f.is_active ? "#16A34A" : "#DC2626",
-                        backgroundColor: f.is_active ? "#D1FAE5" : "#FEE2E2",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {f.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td
-                    style={{
-                      padding: "15px",
-                      display: "flex",
-                      gap: "10px",
-                    }}
-                  >
-                    <button
-                      onClick={() => setReviewModalFarmer(f)}
-                      aria-label="Review farmer"
-                      style={{
-                        padding: "8px 12px",
-                        backgroundColor: "#3B82F6",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                        fontSize: "12px",
-                      }}
-                      title="Review Registration"
-                    >
-                      📋 Review
-                    </button>
-                    <button
-                      onClick={() => handleToggleStatus(f.farmer_id, f.is_active)}
-                      aria-label={f.is_active ? "Deactivate farmer" : "Activate farmer"}
-                      style={{
-                        padding: "8px 12px",
-                        backgroundColor: f.is_active ? "#EF4444" : "#22C55E",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                        fontSize: "12px",
-                      }}
-                      title={f.is_active ? "Deactivate" : "Activate"}
-                    >
-                      {f.is_active ? "🔴 Deactivate" : "🟢 Activate"}
-                    </button>
-                    <button
-                      onClick={() => navigate(`/farmers/${f.farmer_id}`)}
-                      aria-label={`View farmer ${f.personal_info?.first_name}`}
-                      style={{
-                        color: "#16A34A",
-                        border: "none",
-                        background: "transparent",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                        fontSize: "18px",
-                      }}
-                      title="View Details"
-                    >
-                      👁️
-                    </button>
-                    <button
-                      onClick={() => navigate(`/farmers/edit/${f.farmer_id}`)}
-                      aria-label={`Edit farmer ${f.personal_info?.first_name}`}
-                      style={{
-                        color: "#2563EB",
-                        border: "none",
-                        background: "transparent",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                        fontSize: "18px",
-                      }}
-                      title="Edit"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => handleDelete(
-                        f.farmer_id, 
-                        `${f.personal_info?.first_name || ""} ${f.personal_info?.last_name || ""}`.trim() || "Unknown"
-                      )}
-                      aria-label={`Delete farmer ${f.personal_info?.first_name}`}
-                      style={{
-                        color: "#DC2626",
-                        border: "none",
-                        background: "transparent",
-                        cursor: "pointer",
-                        fontSize: "18px",
-                      }}
-                      title="Delete"
-                    >
-                      🗑️
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         )}
       </div>
 
@@ -496,6 +655,14 @@ export default function FarmersList() {
           onSubmit={(status, notes) => handleReviewSubmit(reviewModalFarmer.farmer_id, status, notes)}
         />
       )}
+
+      {/* Add spin animation */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

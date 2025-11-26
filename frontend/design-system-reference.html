@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZIAMIS Pro Design System - Visual Reference</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --zam-green: #15803d;
+      --zam-dark: #14532d;
+      --zam-copper: #c2410c;
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    .color-swatch {
+      width: 100%;
+      height: 80px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 p-8">
+  <div class="max-w-7xl mx-auto fade-in">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <i class="fa-solid fa-wheat-awn text-5xl text-green-700 mb-4"></i>
+      <h1 class="text-4xl font-bold text-gray-800 mb-2">ZIAMIS Pro Design System</h1>
+      <p class="text-gray-600">Visual Reference Guide</p>
+    </div>
+
+    <!-- Color Palette -->
+    <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Color Palette</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <!-- Primary Green -->
+        <div>
+          <div class="color-swatch bg-green-700 text-white">#15803d</div>
+          <p class="text-sm font-bold text-gray-700">Primary Green</p>
+          <p class="text-xs text-gray-500">bg-green-700</p>
+          <p class="text-xs text-gray-500">var(--zam-green)</p>
+        </div>
+
+        <!-- Dark Green -->
+        <div>
+          <div class="color-swatch bg-green-900 text-white">#14532d</div>
+          <p class="text-sm font-bold text-gray-700">Dark Green</p>
+          <p class="text-xs text-gray-500">bg-green-900</p>
+          <p class="text-xs text-gray-500">var(--zam-dark)</p>
+        </div>
+
+        <!-- Copper/Orange -->
+        <div>
+          <div class="color-swatch bg-orange-600 text-white">#c2410c</div>
+          <p class="text-sm font-bold text-gray-700">Copper Orange</p>
+          <p class="text-xs text-gray-500">bg-orange-600</p>
+          <p class="text-xs text-gray-500">var(--zam-copper)</p>
+        </div>
+
+        <!-- Slate Background -->
+        <div>
+          <div class="color-swatch bg-slate-50 text-gray-800 border border-gray-300">#f8fafc</div>
+          <p class="text-sm font-bold text-gray-700">Page Background</p>
+          <p class="text-xs text-gray-500">bg-slate-50</p>
+          <p class="text-xs text-gray-500">var(--bg-main)</p>
+        </div>
+
+        <!-- White -->
+        <div>
+          <div class="color-swatch bg-white text-gray-800 border border-gray-300">#ffffff</div>
+          <p class="text-sm font-bold text-gray-700">Card Background</p>
+          <p class="text-xs text-gray-500">bg-white</p>
+          <p class="text-xs text-gray-500">var(--bg-card)</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typography -->
+    <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Typography Scale</h2>
+      <div class="space-y-4">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800">Page Title (text-2xl font-bold)</h1>
+          <p class="text-xs text-gray-500 mt-1">Used for main page headings</p>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-800">Section Header (text-lg font-bold)</h2>
+          <p class="text-xs text-gray-500 mt-1">Used for major section titles</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Subsection Header (text-sm font-bold uppercase)</h3>
+          <p class="text-xs text-gray-500 mt-1">Used for subsection titles</p>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-gray-600 uppercase">Form Label (text-xs font-bold uppercase)</label>
+          <p class="text-xs text-gray-500 mt-1">Used for form field labels</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600">Body Text (text-sm text-gray-600)</p>
+          <p class="text-xs text-gray-500 mt-1">Used for regular content and descriptions</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Button Variants</h2>
+      <div class="flex flex-wrap gap-4">
+        <button class="bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg">
+          <i class="fa-solid fa-save mr-2"></i> Primary Button
+        </button>
+        <button class="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-bold py-3 px-4 rounded-lg transition shadow-lg">
+          <i class="fa-solid fa-times mr-2"></i> Secondary Button
+        </button>
+        <button class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg">
+          <i class="fa-solid fa-trash mr-2"></i> Danger Button
+        </button>
+        <button class="bg-green-700 text-white font-bold py-3 px-4 rounded-lg opacity-50 cursor-not-allowed shadow-lg">
+          <i class="fa-solid fa-spinner mr-2"></i> Disabled Button
+        </button>
+      </div>
+    </div>
+
+    <!-- Badges -->
+    <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Status Badges</h2>
+      <div class="flex flex-wrap gap-4">
+        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+          <i class="fa-solid fa-check mr-1"></i> Verified
+        </span>
+        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+          <i class="fa-solid fa-clock mr-1"></i> Pending
+        </span>
+        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+          <i class="fa-solid fa-times mr-1"></i> Rejected
+        </span>
+        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+          <i class="fa-solid fa-info mr-1"></i> Active
+        </span>
+        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+          <i class="fa-solid fa-user mr-1"></i> Admin
+        </span>
+      </div>
+    </div>
+
+    <!-- Form Elements -->
+    <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Form Elements</h2>
+      <div class="space-y-4 max-w-md">
+        <div>
+          <label class="text-xs font-bold text-gray-600 uppercase">Text Input</label>
+          <input 
+            type="text" 
+            placeholder="Enter text here..."
+            class="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+          />
+        </div>
+        <div>
+          <label class="text-xs font-bold text-gray-600 uppercase">Select Dropdown</label>
+          <select class="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none">
+            <option>Select an option...</option>
+            <option>Option 1</option>
+            <option>Option 2</option>
+            <option>Option 3</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Stat Cards</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Green Border -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-600 hover:shadow-md transition">
+          <div class="flex justify-between">
+            <div>
+              <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Farmers</p>
+              <h3 class="text-2xl font-bold text-gray-800 mt-1">1,240</h3>
+            </div>
+            <div class="bg-green-50 p-3 rounded-lg text-green-600">
+              <i class="fa-solid fa-users text-xl"></i>
+            </div>
+          </div>
+          <div class="mt-4 flex items-center text-xs text-green-600 font-semibold">
+            <i class="fa-solid fa-arrow-trend-up mr-1"></i> +12% this month
+          </div>
+        </div>
+
+        <!-- Orange Border -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500 hover:shadow-md transition">
+          <div class="flex justify-between">
+            <div>
+              <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Pending</p>
+              <h3 class="text-2xl font-bold text-gray-800 mt-1">42</h3>
+            </div>
+            <div class="bg-orange-50 p-3 rounded-lg text-orange-600">
+              <i class="fa-solid fa-clock text-xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Blue Border -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-600 hover:shadow-md transition">
+          <div class="flex justify-between">
+            <div>
+              <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">This Month</p>
+              <h3 class="text-2xl font-bold text-gray-800 mt-1">156</h3>
+            </div>
+            <div class="bg-blue-50 p-3 rounded-lg text-blue-600">
+              <i class="fa-solid fa-calendar text-xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Purple Border -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-600 hover:shadow-md transition">
+          <div class="flex justify-between">
+            <div>
+              <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Active Users</p>
+              <h3 class="text-2xl font-bold text-gray-800 mt-1">24</h3>
+            </div>
+            <div class="bg-purple-50 p-3 rounded-lg text-purple-600">
+              <i class="fa-solid fa-user-check text-xl"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Example -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
+      <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+        <h3 class="font-bold text-lg text-gray-800">
+          <i class="fa-solid fa-table mr-2 text-green-600"></i> Data Table
+        </h3>
+        <button class="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg transition font-bold">
+          <i class="fa-solid fa-plus mr-2"></i> Add Item
+        </button>
+      </div>
+      <table class="w-full text-left text-sm text-gray-600">
+        <thead class="bg-gray-100 text-gray-700 font-bold uppercase text-xs">
+          <tr>
+            <th class="px-6 py-3">Farmer ID</th>
+            <th class="px-6 py-3">Name</th>
+            <th class="px-6 py-3">District</th>
+            <th class="px-6 py-3">Status</th>
+            <th class="px-6 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <tr class="hover:bg-green-50 transition">
+            <td class="px-6 py-4 font-mono text-xs">ZM123ABC45</td>
+            <td class="px-6 py-4">John Mwamba</td>
+            <td class="px-6 py-4">Lusaka</td>
+            <td class="px-6 py-4">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                Verified
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex gap-2">
+                <button class="text-green-600 hover:text-green-700 p-2">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+                <button class="text-blue-600 hover:text-blue-700 p-2">
+                  <i class="fa-solid fa-edit"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr class="hover:bg-green-50 transition">
+            <td class="px-6 py-4 font-mono text-xs">ZM456DEF78</td>
+            <td class="px-6 py-4">Mary Banda</td>
+            <td class="px-6 py-4">Chipata</td>
+            <td class="px-6 py-4">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                Pending
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex gap-2">
+                <button class="text-green-600 hover:text-green-700 p-2">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+                <button class="text-blue-600 hover:text-blue-700 p-2">
+                  <i class="fa-solid fa-edit"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="p-4 border-t border-gray-200 bg-gray-50 text-xs text-gray-500 flex justify-between items-center">
+        <span>Showing 1-10 of 1,240 items</span>
+        <div class="flex gap-1">
+          <button class="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 transition font-semibold">
+            <i class="fa-solid fa-chevron-left mr-1"></i> Prev
+          </button>
+          <button class="px-3 py-1 bg-green-700 text-white border rounded shadow-sm font-semibold">1</button>
+          <button class="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 transition font-semibold">2</button>
+          <button class="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 transition font-semibold">3</button>
+          <button class="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 transition font-semibold">
+            Next <i class="fa-solid fa-chevron-right ml-1"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wizard Steps -->
+    <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Multi-Step Wizard</h2>
+      <div class="flex justify-between items-center px-8">
+        <!-- Step 1 - Completed -->
+        <div class="flex flex-col items-center">
+          <div class="flex items-center justify-center w-8 h-8 rounded-full bg-green-900 text-white border-2 border-green-900 font-bold text-sm">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <span class="text-xs mt-2 font-bold text-green-900">Personal Info</span>
+        </div>
+        <div class="h-1 bg-green-900 flex-1 mx-2 mt-[-20px]"></div>
+
+        <!-- Step 2 - Active -->
+        <div class="flex flex-col items-center">
+          <div class="flex items-center justify-center w-8 h-8 rounded-full bg-green-700 text-white border-2 border-green-700 font-bold text-sm">
+            2
+          </div>
+          <span class="text-xs mt-2 font-bold text-green-800">Contact Details</span>
+        </div>
+        <div class="h-1 bg-gray-300 flex-1 mx-2 mt-[-20px]"></div>
+
+        <!-- Step 3 - Pending -->
+        <div class="flex flex-col items-center">
+          <div class="flex items-center justify-center w-8 h-8 rounded-full text-gray-400 border-2 border-gray-300 font-bold text-sm bg-white">
+            3
+          </div>
+          <span class="text-xs mt-2 text-gray-500">Location</span>
+        </div>
+        <div class="h-1 bg-gray-300 flex-1 mx-2 mt-[-20px]"></div>
+
+        <!-- Step 4 - Pending -->
+        <div class="flex flex-col items-center">
+          <div class="flex items-center justify-center w-8 h-8 rounded-full text-gray-400 border-2 border-gray-300 font-bold text-sm bg-white">
+            4
+          </div>
+          <span class="text-xs mt-2 text-gray-500">Review</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Icon Library -->
+    <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Common Icons (Font Awesome 6.4.0)</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 text-center">
+        <div>
+          <i class="fa-solid fa-users text-3xl text-green-600"></i>
+          <p class="text-xs text-gray-600 mt-2">fa-users</p>
+        </div>
+        <div>
+          <i class="fa-solid fa-user-plus text-3xl text-green-600"></i>
+          <p class="text-xs text-gray-600 mt-2">fa-user-plus</p>
+        </div>
+        <div>
+          <i class="fa-solid fa-chart-line text-3xl text-green-600"></i>
+          <p class="text-xs text-gray-600 mt-2">fa-chart-line</p>
+        </div>
+        <div>
+          <i class="fa-solid fa-wheat-awn text-3xl text-green-600"></i>
+          <p class="text-xs text-gray-600 mt-2">fa-wheat-awn</p>
+        </div>
+        <div>
+          <i class="fa-solid fa-id-card text-3xl text-green-600"></i>
+          <p class="text-xs text-gray-600 mt-2">fa-id-card</p>
+        </div>
+        <div>
+          <i class="fa-solid fa-gear text-3xl text-green-600"></i>
+          <p class="text-xs text-gray-600 mt-2">fa-gear</p>
+        </div>
+        <div>
+          <i class="fa-solid fa-bell text-3xl text-orange-600"></i>
+          <p class="text-xs text-gray-600 mt-2">fa-bell</p>
+        </div>
+        <div>
+          <i class="fa-solid fa-right-from-bracket text-3xl text-red-600"></i>
+          <p class="text-xs text-gray-600 mt-2">fa-right-from-bracket</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center text-gray-500 text-sm mt-12">
+      <p>ZIAMIS Pro Design System v1.0</p>
+      <p class="mt-2">Ministry of Agriculture - Zambia</p>
+      <p class="mt-2 text-xs">
+        <i class="fa-solid fa-circle-check text-green-600"></i> All components are production-ready
+      </p>
+    </div>
+  </div>
+</body>
+</html>

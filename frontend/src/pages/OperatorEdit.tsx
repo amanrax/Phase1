@@ -1,61 +1,58 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { operatorService } from "@/services/operator.service";
 import geoService from "@/services/geo.service";
 
-interface OperatorFormData {
-  full_name: string;
-  email: string;
-  phone: string;
-  assigned_regions: string[];
-  assigned_districts: string[];
-  is_active: boolean;
-}
+const getErrorMessage = (err: unknown): string => {
+  if (typeof err === "object" && err !== null) {
+    const error = err as Record<string, unknown>;
+    if (error.response && typeof error.response === "object") {
+      const response = error.response as Record<string, unknown>;
+      if (response.data && typeof response.data === "object") {
+        const data = response.data as Record<string, string>;
+        return data.detail || "An error occurred";
+      }
+    }
+    if (error.message && typeof error.message === "string") {
+      return error.message;
+    }
+  }
+  return "An error occurred";
+};
 
 interface Province { code: string; name: string }
 interface District { code: string; name: string }
-interface OperatorDTO {
-  operator_id: string;
-  email: string;
-  full_name: string;
-  phone?: string;
-  assigned_regions?: string[];
-  assigned_districts?: string[];
-  is_active?: boolean;
-}
 
 export default function OperatorEdit() {
   const { operatorId } = useParams<{ operatorId: string }>();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState<OperatorFormData>({
+  const [formData, setFormData] = useState({
     full_name: "",
     email: "",
     phone: "",
-    assigned_regions: [],
-    assigned_districts: [],
+    assigned_district: "",
     is_active: true,
   });
 
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
-  const [selectedProvince, setSelectedProvince] = useState<string>("");
+  const [selectedProvince, setSelectedProvince] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
-      await loadProvinces();
-      if (operatorId) {
-        await fetchOperator();
-      }
-    })();
+    loadProvinces();
+    if (operatorId) {
+      fetchOperator();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [operatorId]);
 
   const loadProvinces = async () => {
     try {
-      const data: Province[] = await geoService.provinces();
+      const data = await geoService.provinces();
       setProvinces(data);
     } catch (err) {
       console.error("Failed to load provinces", err);
@@ -64,7 +61,7 @@ export default function OperatorEdit() {
 
   const loadDistricts = async (provinceCode: string) => {
     try {
-      const data: District[] = await geoService.districts(provinceCode);
+      const data = await geoService.districts(provinceCode);
       setDistricts(data);
     } catch (err) {
       console.error("Failed to load districts", err);
@@ -74,77 +71,65 @@ export default function OperatorEdit() {
   const fetchOperator = async () => {
     try {
       setLoading(true);
-      const op: OperatorDTO = await operatorService.getOperator(operatorId!);
+      const op = await operatorService.getOperator(operatorId!);
       setFormData({
         full_name: op.full_name || "",
         email: op.email || "",
         phone: op.phone || "",
-        assigned_regions: Array.isArray(op.assigned_regions) ? op.assigned_regions : [],
-        assigned_districts: Array.isArray(op.assigned_districts) ? op.assigned_districts : [],
+        assigned_district: op.assigned_district || "",
         is_active: op.is_active ?? true,
       });
-      // Try to infer province from assigned_regions (province names)
-      const provinceName = op.assigned_regions && op.assigned_regions.length > 0 ? op.assigned_regions[0] : "";
-      const matchedProvince = provinces.find((p: Province) => p.name === provinceName);
-      if (matchedProvince) {
-        setSelectedProvince(matchedProvince.code);
-        await loadDistricts(matchedProvince.code);
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to load operator");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
 
+  const handleProvinceChange = async (provinceCode: string) => {
+    setSelectedProvince(provinceCode);
+    setFormData(prev => ({ ...prev, assigned_district: "" }));
+    if (provinceCode) {
+      await loadDistricts(provinceCode);
+    } else {
+      setDistricts([]);
+    }
+  };
+
   const handleSave = async () => {
     if (!operatorId) return;
+
+    if (!formData.full_name.trim() || !formData.email.trim()) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
     try {
       setSaving(true);
-      setError(null);
-      const payload: any = {
-        full_name: formData.full_name,
-        phone: formData.phone,
-        assigned_regions: formData.assigned_regions,
-        assigned_districts: formData.assigned_districts,
-        is_active: formData.is_active,
-      };
-      await operatorService.update(operatorId, payload);
+      await operatorService.update(operatorId, formData);
       alert("✅ Operator updated successfully");
-      navigate(`/operators/${operatorId}`);
-    } catch (err: any) {
-      console.error("Save operator failed", err);
-      alert(err.response?.data?.detail || "Failed to save operator");
+      navigate("/operators/manage");
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || "Failed to update operator");
     } finally {
       setSaving(false);
     }
   };
 
-  const toggleDistrict = (name: string) => {
-    setFormData((prev: OperatorFormData) => {
-      const exists = prev.assigned_districts.includes(name);
-      return {
-        ...prev,
-        assigned_districts: exists
-          ? prev.assigned_districts.filter((d: string) => d !== name)
-          : [...prev.assigned_districts, name],
-      };
-    });
-  };
-
-  const setRegionFromProvince = (provinceName: string) => {
-    setFormData((prev: OperatorFormData) => ({
-      ...prev,
-      assigned_regions: provinceName ? [provinceName] : [],
-    }));
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading operator...</p>
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center", color: "white" }}>
+          <div style={{
+            width: "60px",
+            height: "60px",
+            border: "5px solid rgba(255,255,255,0.3)",
+            borderTop: "5px solid white",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+            margin: "0 auto 20px"
+          }}></div>
+          <p style={{ fontSize: "18px" }}>Loading operator data...</p>
         </div>
       </div>
     );
@@ -152,129 +137,249 @@ export default function OperatorEdit() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-xl text-red-600 mb-4">❌ {error}</p>
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center", color: "white" }}>
+          <div style={{ fontSize: "80px", marginBottom: "20px" }}>❌</div>
+          <p style={{ fontSize: "24px", marginBottom: "20px" }}>{error}</p>
+          <button
+            onClick={() => navigate("/operators/manage")}
+            style={{
+              padding: "12px 30px",
+              background: "white",
+              color: "#667eea",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "16px",
+              fontWeight: "600",
+              cursor: "pointer"
+            }}
+          >
+            ← Back
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">✏️ Edit Operator</h1>
-            <p className="text-gray-600 text-sm mt-1">ID: {operatorId}</p>
-          </div>
-          <button
-            onClick={() => navigate(`/operators/${operatorId}`)}
-            className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 py-2 px-4 rounded-lg"
-          >
-            ← Back
-          </button>
-        </div>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+      <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
+        <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
+          🌾 AgriManage Pro
+        </h1>
+        <p style={{ fontSize: "18px", opacity: 0.9 }}>Edit Operator</p>
+      </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <div>
-            <label className="text-xs font-bold text-gray-600 uppercase">Full Name</label>
-            <input
-              className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
-              value={formData.full_name}
-              onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-            />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-gray-600 uppercase">Phone</label>
-            <input
-              className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
-              value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-            />
-          </div>
-        </div>
+      <div style={{ maxWidth: "800px", margin: "0 auto", padding: "0 20px 40px 20px" }}>
+        <button
+          onClick={() => navigate("/operators/manage")}
+          style={{
+            padding: "10px 20px",
+            background: "white",
+            color: "#667eea",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "14px",
+            fontWeight: "600",
+            cursor: "pointer",
+            marginBottom: "20px",
+            transition: "all 0.3s"
+          }}
+          onMouseOver={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
+          onMouseOut={(e) => e.currentTarget.style.transform = "translateY(0)"}
+        >
+          ← Back
+        </button>
 
-        <div className="mt-6">
-          <h2 className="text-lg font-bold text-gray-800 mb-3">📍 Assignment</h2>
-          <div className="grid md:grid-cols-2 gap-6">
+        <div style={{ background: "white", padding: "40px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
+          <h2 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "30px", color: "#333" }}>
+            👨‍💼 Operator Information
+          </h2>
+
+          <div style={{ display: "grid", gap: "20px" }}>
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Province</label>
-              <select
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
-                value={selectedProvince}
-                onChange={async (e) => {
-                  const code = e.target.value;
-                  setSelectedProvince(code);
-                  const province = provinces.find(p => p.code === code);
-                  await loadDistricts(code);
-                  setRegionFromProvince(province?.name || "");
+              <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#666", marginBottom: "8px" }}>
+                Full Name <span style={{ color: "#dc3545" }}>*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.full_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "2px solid #e0e0e0",
+                  borderRadius: "8px",
+                  fontSize: "15px",
+                  transition: "border 0.3s"
                 }}
-              >
-                <option value="">Select province</option>
-                {provinces.map((p) => (
-                  <option key={p.code} value={p.code}>{p.name}</option>
-                ))}
-              </select>
+                onFocus={(e) => e.currentTarget.style.borderColor = "#667eea"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "#e0e0e0"}
+              />
             </div>
+
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Assigned Districts</label>
-              <div className="border border-gray-300 rounded-lg p-3 mt-1 max-h-48 overflow-auto">
-                {districts.length === 0 ? (
-                  <p className="text-sm text-gray-500">Select a province to load districts</p>
-                ) : (
-                  <div className="grid grid-cols-1 gap-2">
-                    {districts.map((d: District) => (
-                      <label key={d.code} className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={formData.assigned_districts.includes(d.name)}
-                          onChange={() => toggleDistrict(d.name)}
-                        />
-                        <span>{d.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
+              <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#666", marginBottom: "8px" }}>
+                Email <span style={{ color: "#dc3545" }}>*</span>
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "2px solid #e0e0e0",
+                  borderRadius: "8px",
+                  fontSize: "15px",
+                  transition: "border 0.3s"
+                }}
+                onFocus={(e) => e.currentTarget.style.borderColor = "#667eea"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "#e0e0e0"}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#666", marginBottom: "8px" }}>
+                Phone
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "2px solid #e0e0e0",
+                  borderRadius: "8px",
+                  fontSize: "15px",
+                  transition: "border 0.3s"
+                }}
+                onFocus={(e) => e.currentTarget.style.borderColor = "#667eea"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "#e0e0e0"}
+              />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#666", marginBottom: "8px" }}>
+                  Province
+                </label>
+                <select
+                  value={selectedProvince}
+                  onChange={(e) => handleProvinceChange(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "2px solid #e0e0e0",
+                    borderRadius: "8px",
+                    fontSize: "15px",
+                    transition: "border 0.3s"
+                  }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = "#667eea"}
+                  onBlur={(e) => e.currentTarget.style.borderColor = "#e0e0e0"}
+                >
+                  <option value="">Select Province</option>
+                  {provinces.map(p => (
+                    <option key={p.code} value={p.code}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#666", marginBottom: "8px" }}>
+                  Assigned District
+                </label>
+                <select
+                  value={formData.assigned_district}
+                  onChange={(e) => setFormData(prev => ({ ...prev, assigned_district: e.target.value }))}
+                  disabled={!selectedProvince}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "2px solid #e0e0e0",
+                    borderRadius: "8px",
+                    fontSize: "15px",
+                    transition: "border 0.3s",
+                    opacity: selectedProvince ? 1 : 0.5
+                  }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = "#667eea"}
+                  onBlur={(e) => e.currentTarget.style.borderColor = "#e0e0e0"}
+                >
+                  <option value="">All Districts</option>
+                  {districts.map(d => (
+                    <option key={d.code} value={d.name}>{d.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div className="mt-6">
-          <label className="text-xs font-bold text-gray-600 uppercase">Status</label>
-          <div className="flex items-center gap-3 mt-2">
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <input
+                type="checkbox"
+                id="is_active"
+                checked={formData.is_active}
+                onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                style={{ width: "20px", height: "20px", cursor: "pointer" }}
+              />
+              <label htmlFor="is_active" style={{ fontSize: "14px", fontWeight: "600", color: "#666", cursor: "pointer" }}>
+                Active Operator
+              </label>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "15px", marginTop: "30px", justifyContent: "flex-end" }}>
             <button
-              className={`font-bold py-2 px-4 rounded-lg transition shadow-lg ${formData.is_active ? 'bg-green-700 hover:bg-green-800 text-white' : 'bg-white border border-gray-300 text-gray-700'}`}
-              onClick={() => setFormData(prev => ({ ...prev, is_active: true }))}
+              onClick={() => navigate("/operators/manage")}
+              style={{
+                padding: "12px 30px",
+                background: "#6c757d",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "15px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.3s"
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = "#5a6268"}
+              onMouseOut={(e) => e.currentTarget.style.background = "#6c757d"}
             >
-              Active
+              Cancel
             </button>
+
             <button
-              className={`font-bold py-2 px-4 rounded-lg transition shadow-lg ${!formData.is_active ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-white border border-gray-300 text-gray-700'}`}
-              onClick={() => setFormData(prev => ({ ...prev, is_active: false }))}
+              onClick={handleSave}
+              disabled={saving}
+              style={{
+                padding: "12px 30px",
+                background: saving ? "#999" : "#28a745",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "15px",
+                fontWeight: "600",
+                cursor: saving ? "not-allowed" : "pointer",
+                transition: "all 0.3s"
+              }}
+              onMouseOver={(e) => {
+                if (!saving) e.currentTarget.style.background = "#218838";
+              }}
+              onMouseOut={(e) => {
+                if (!saving) e.currentTarget.style.background = "#28a745";
+              }}
             >
-              Inactive
+              {saving ? "⏳ Saving..." : "💾 Save Changes"}
             </button>
           </div>
-        </div>
-
-        <div className="mt-8 flex justify-end gap-3">
-          <button
-            onClick={() => navigate(`/operators/${operatorId}`)}
-            className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 py-2 px-4 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={`font-bold py-3 px-4 rounded-lg transition shadow-lg ${saving ? 'opacity-50 cursor-not-allowed' : ''} bg-green-700 hover:bg-green-800 text-white`}
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </button>
         </div>
       </div>
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

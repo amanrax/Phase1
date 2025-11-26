@@ -1,7 +1,23 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { operatorService } from "@/services/operator.service";
-import useAuthStore from "@/store/authStore";
+
+const getErrorMessage = (err: unknown): string => {
+  if (typeof err === "object" && err !== null) {
+    const error = err as Record<string, unknown>;
+    if (error.response && typeof error.response === "object") {
+      const response = error.response as Record<string, unknown>;
+      if (response.data && typeof response.data === "object") {
+        const data = response.data as Record<string, string>;
+        return data.detail || "An error occurred";
+      }
+    }
+    if (error.message && typeof error.message === "string") {
+      return error.message;
+    }
+  }
+  return "An error occurred";
+};
 
 interface OperatorData {
   operator_id: string;
@@ -11,6 +27,7 @@ interface OperatorData {
   is_active: boolean;
   assigned_regions?: string[];
   assigned_districts?: string[];
+  assigned_district?: string;
   farmer_count?: number;
   recent_registrations_30d?: number;
   total_land_hectares?: number;
@@ -22,7 +39,6 @@ interface OperatorData {
 export default function OperatorDetails() {
   const { operatorId } = useParams<{ operatorId: string }>();
   const navigate = useNavigate();
-  const role = useAuthStore((s) => s.role);
   const [operator, setOperator] = useState<OperatorData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +48,7 @@ export default function OperatorDetails() {
     if (operatorId) {
       loadOperatorData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [operatorId]);
 
   const loadOperatorData = async () => {
@@ -39,15 +56,9 @@ export default function OperatorDetails() {
       setLoading(true);
       setError(null);
       const data = await operatorService.getOperator(operatorId!);
-      if (import.meta.env.DEV) {
-        console.log("Operator data:", data);
-      }
       setOperator(data);
-    } catch (err: any) {
-      if (import.meta.env.DEV) {
-        console.error("Failed to load operator:", err);
-      }
-      setError(err.response?.data?.detail || "Failed to load operator details");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err) || "Failed to load operator details");
     } finally {
       setLoading(false);
     }
@@ -56,9 +67,7 @@ export default function OperatorDetails() {
   const handleToggleStatus = async () => {
     if (!operator) return;
     const action = operator.is_active ? "deactivate" : "activate";
-    if (!confirm(`Are you sure you want to ${action} this operator?`)) {
-      return;
-    }
+    if (!confirm(`Are you sure you want to ${action} this operator?`)) return;
 
     try {
       setUpdating(true);
@@ -67,11 +76,8 @@ export default function OperatorDetails() {
       });
       alert(`✅ Operator ${action}d successfully`);
       await loadOperatorData();
-    } catch (err: any) {
-      if (import.meta.env.DEV) {
-        console.error(`${action} operator error:`, err);
-      }
-      alert(err.response?.data?.detail || `Failed to ${action} operator`);
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || `Failed to ${action} operator`);
     } finally {
       setUpdating(false);
     }
@@ -79,255 +85,235 @@ export default function OperatorDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading operator details...</p>
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center", color: "white" }}>
+          <div style={{
+            width: "60px",
+            height: "60px",
+            border: "5px solid rgba(255,255,255,0.3)",
+            borderTop: "5px solid white",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+            margin: "0 auto 20px"
+          }}></div>
+          <p style={{ fontSize: "18px" }}>Loading operator details...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error || !operator) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-xl text-red-600 mb-4">❌ {error}</p>
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center", color: "white" }}>
+          <div style={{ fontSize: "80px", marginBottom: "20px" }}>❌</div>
+          <p style={{ fontSize: "24px", marginBottom: "20px" }}>{error || "Operator not found"}</p>
           <button
             onClick={() => navigate("/operators/manage")}
-            className="text-green-600 hover:underline font-semibold"
-          >
-            ← Back to operators list
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!operator) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-xl text-gray-600 mb-4">Operator not found</p>
-          <button
-            onClick={() => navigate("/operators/manage")}
-            className="text-green-600 hover:underline font-semibold"
-          >
-            ← Back to operators list
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <button
-            onClick={() => navigate("/operators/manage")}
-            className="text-green-600 hover:underline mb-3 flex items-center gap-2 font-semibold"
+            style={{
+              padding: "12px 30px",
+              background: "white",
+              color: "#667eea",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "16px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.3s"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.2)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "none";
+            }}
           >
             ← Back to Operators
           </button>
-
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                👥 {operator.full_name}
-              </h1>
-              <p className="text-gray-600 text-sm mt-1">ID: {operator.operator_id}</p>
-            </div>
-
-            <div className="flex gap-3">
-              {role === "ADMIN" && (
-                <button
-                  onClick={() => navigate(`/operators/${operator.operator_id}/edit`)}
-                  className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg font-semibold shadow-lg"
-                >
-                  ✏️ Edit
-                </button>
-              )}
-              <button
-                onClick={handleToggleStatus}
-                disabled={updating}
-                className={`px-4 py-2 rounded-lg text-white transition font-semibold ${
-                  operator.is_active
-                    ? "bg-red-600 hover:bg-red-700 disabled:bg-gray-400"
-                    : "bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
-                }`}
-              >
-                {operator.is_active ? "🔴 Deactivate" : "🟢 Activate"}
-              </button>
-            </div>
-          </div>
         </div>
+      </div>
+    );
+  }
 
-        {/* Status Badge */}
-        <div className="mb-6">
-          <span
-            className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${
-              operator.is_active
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            }`}
+  return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+      <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
+        <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
+          🌾 AgriManage Pro
+        </h1>
+      </div>
+
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px 20px 20px" }}>
+        {/* Top Actions */}
+        <div style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+          <button
+            onClick={() => navigate("/operators/manage")}
+            style={{
+              padding: "10px 20px",
+              background: "white",
+              color: "#667eea",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.3s"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "none";
+            }}
           >
-            {operator.is_active ? "✓ Active" : "✗ Inactive"}
-          </span>
+            ← Back
+          </button>
+
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <button
+              onClick={() => navigate(`/operators/${operatorId}/edit`)}
+              style={{
+                padding: "10px 20px",
+                background: "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.3s"
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = "#0056b3";
+                e.currentTarget.style.transform = "translateY(-2px)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = "#007bff";
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
+            >
+              ✏️ Edit Operator
+            </button>
+
+            <button
+              onClick={handleToggleStatus}
+              disabled={updating}
+              style={{
+                padding: "10px 20px",
+                background: operator.is_active ? "#dc3545" : "#28a745",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: updating ? "not-allowed" : "pointer",
+                opacity: updating ? 0.6 : 1,
+                transition: "all 0.3s"
+              }}
+              onMouseOver={(e) => {
+                if (!updating) {
+                  e.currentTarget.style.opacity = "0.9";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!updating) {
+                  e.currentTarget.style.opacity = "1";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }
+              }}
+            >
+              {updating ? "⏳ Updating..." : operator.is_active ? "🔴 Deactivate" : "🟢 Activate"}
+            </button>
+          </div>
         </div>
 
-        {/* Details Grid */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Contact Info */}
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-600">
-            <h2 className="text-lg font-bold mb-4 text-gray-800">📧 Contact Information</h2>
-            <div className="space-y-4">
-              <InfoField label="Email" value={operator.email} />
-              <InfoField label="Phone" value={operator.phone || "Not provided"} />
-            </div>
-          </div>
+        {/* Main Content Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "20px" }}>
+          {/* Personal Info Card */}
+          <div style={{ background: "white", padding: "30px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
+            <h2 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "20px", color: "#333" }}>👨‍💼 Operator Information</h2>
 
-          {/* Assignment Info */}
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-600">
-            <h2 className="text-lg font-bold mb-4 text-gray-800">📍 Assignment</h2>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase">Assigned Regions</p>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {operator.assigned_regions && operator.assigned_regions.length > 0 ? (
-                    operator.assigned_regions.map((region) => (
-                      <span key={region} className="badge badge-info">
-                        {region}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-gray-500 text-sm">None assigned</span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase">Assigned Districts</p>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {operator.assigned_districts && operator.assigned_districts.length > 0 ? (
-                    operator.assigned_districts.map((district) => (
-                      <span key={district} className="badge badge-info">
-                        {district}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-gray-500 text-sm">None assigned</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Statistics */}
-          <div className="md:col-span-2 grid md:grid-cols-4 gap-4">
-            <StatCard
-              label="Farmers Registered"
-              value={operator.farmer_count || 0}
-              icon="🌾"
-              color="green"
-            />
-            <StatCard
-              label="Recent (30 days)"
-              value={operator.recent_registrations_30d || 0}
-              icon="📅"
-              color="blue"
-            />
-            <StatCard
-              label="Total Land (hectares)"
-              value={(operator.total_land_hectares || 0).toFixed(2)}
-              icon="📏"
-              color="orange"
-            />
-            <StatCard
-              label="Avg Land (hectares)"
-              value={(operator.avg_land_hectares || 0).toFixed(2)}
-              icon="📊"
-              color="purple"
-            />
-          </div>
-
-          {/* Metadata */}
-          <div className="md:col-span-2 bg-gray-100 rounded-lg p-4 space-y-2">
-            <div>
-              <p className="text-xs font-semibold text-gray-600 uppercase">Created</p>
-              <p className="text-sm text-gray-900">
-                {operator.created_at
-                  ? new Date(operator.created_at).toLocaleString()
-                  : "Unknown"}
+            <div style={{ marginBottom: "20px", paddingBottom: "20px", borderBottom: "1px solid #e0e0e0" }}>
+              <h3 style={{ fontSize: "20px", fontWeight: "700", color: "#667eea", marginBottom: "10px" }}>
+                {operator.full_name}
+              </h3>
+              <p style={{ color: "#666", fontSize: "14px", fontFamily: "monospace", marginBottom: "10px" }}>
+                🆔 {operator.operator_id}
               </p>
+              <span style={{
+                padding: "6px 14px",
+                borderRadius: "20px",
+                fontSize: "13px",
+                fontWeight: "600",
+                background: operator.is_active ? "#d4edda" : "#f8d7da",
+                color: operator.is_active ? "#155724" : "#721c24",
+                display: "inline-block"
+              }}>
+                {operator.is_active ? "✓ Active" : "✗ Inactive"}
+              </span>
             </div>
-            {operator.updated_at && (
+
+            <div style={{ display: "grid", gap: "15px", fontSize: "14px" }}>
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase">Last Updated</p>
-                <p className="text-sm text-gray-900">
-                  {new Date(operator.updated_at).toLocaleString()}
+                <p style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>📧 Email</p>
+                <p style={{ color: "#333" }}>{operator.email}</p>
+              </div>
+              <div>
+                <p style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>📱 Phone</p>
+                <p style={{ color: "#333" }}>{operator.phone || "N/A"}</p>
+              </div>
+              <div>
+                <p style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>📍 Assigned District</p>
+                <p style={{ color: "#333" }}>{operator.assigned_district || operator.assigned_districts?.join(", ") || "All Districts"}</p>
+              </div>
+              <div>
+                <p style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>📅 Created</p>
+                <p style={{ color: "#333" }}>
+                  {operator.created_at ? new Date(operator.created_at).toLocaleDateString() : "N/A"}
                 </p>
               </div>
-            )}
+            </div>
+          </div>
+
+          {/* Statistics Card */}
+          <div style={{ background: "white", padding: "30px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
+            <h2 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "20px", color: "#333" }}>📊 Statistics</h2>
+            
+            <div style={{ display: "grid", gap: "20px" }}>
+              <div style={{ padding: "20px", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", borderRadius: "12px", color: "white" }}>
+                <p style={{ fontSize: "14px", marginBottom: "8px", opacity: 0.9 }}>Total Farmers</p>
+                <p style={{ fontSize: "32px", fontWeight: "700" }}>{operator.farmer_count || 0}</p>
+              </div>
+
+              <div style={{ padding: "20px", background: "linear-gradient(135deg, #28a745 0%, #20c997 100%)", borderRadius: "12px", color: "white" }}>
+                <p style={{ fontSize: "14px", marginBottom: "8px", opacity: 0.9 }}>Recent Registrations (30d)</p>
+                <p style={{ fontSize: "32px", fontWeight: "700" }}>{operator.recent_registrations_30d || 0}</p>
+              </div>
+
+              <div style={{ padding: "20px", background: "linear-gradient(135deg, #ffc107 0%, #ff9800 100%)", borderRadius: "12px", color: "white" }}>
+                <p style={{ fontSize: "14px", marginBottom: "8px", opacity: 0.9 }}>Total Land Managed</p>
+                <p style={{ fontSize: "32px", fontWeight: "700" }}>{operator.total_land_hectares?.toFixed(1) || 0} ha</p>
+              </div>
+
+              <div style={{ padding: "20px", background: "linear-gradient(135deg, #17a2b8 0%, #138496 100%)", borderRadius: "12px", color: "white" }}>
+                <p style={{ fontSize: "14px", marginBottom: "8px", opacity: 0.9 }}>Avg Land per Farmer</p>
+                <p style={{ fontSize: "32px", fontWeight: "700" }}>{operator.avg_land_hectares?.toFixed(2) || 0} ha</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-// Helper Components
-function InfoField({ label, value }: { label: string; value?: string | number }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</p>
-      <p className="text-gray-900 mt-1">{value || "—"}</p>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon,
-  color,
-}: {
-  label: string;
-  value: string | number;
-  icon: string;
-  color: "green" | "blue" | "orange" | "purple";
-}) {
-  const borderColors = {
-    green: "border-green-600",
-    blue: "border-blue-600",
-    orange: "border-orange-500",
-    purple: "border-purple-600",
-  };
-
-  const bgColors = {
-    green: "bg-green-50",
-    blue: "bg-blue-50",
-    orange: "bg-orange-50",
-    purple: "bg-purple-50",
-  };
-
-  const textColors = {
-    green: "text-green-600",
-    blue: "text-blue-600",
-    orange: "text-orange-600",
-    purple: "text-purple-600",
-  };
-
-  return (
-    <div
-      className={`bg-white rounded-lg shadow p-6 border-l-4 ${borderColors[color]}`}
-    >
-      <div className={`text-3xl mb-3 ${bgColors[color]} ${textColors[color]} inline-block p-3 rounded-lg`}>
-        {icon}
-      </div>
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</p>
-      <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

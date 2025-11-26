@@ -68,39 +68,52 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6">Step 6: Upload Documents</h2>
+    <div>
+      <h2 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+        📄 Step 6: Upload Documents
+      </h2>
 
       {/* Progress */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium text-gray-700">Documents Uploaded</span>
-          <span className="text-sm font-semibold text-blue-600">
+      <div style={{ marginBottom: "25px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+          <span style={{ fontSize: "14px", fontWeight: "600", color: "#666" }}>Documents Uploaded</span>
+          <span style={{ fontSize: "14px", fontWeight: "700", color: "#007bff" }}>
             {documents.filter((d) => d.uploaded).length} / {documents.length}
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div style={{ width: "100%", background: "#e0e0e0", borderRadius: "20px", height: "8px", overflow: "hidden" }}>
           <div
-            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${(documents.filter((d) => d.uploaded).length / documents.length) * 100}%` }}
+            style={{
+              background: "#007bff",
+              height: "8px",
+              borderRadius: "20px",
+              transition: "width 0.3s",
+              width: `${(documents.filter((d) => d.uploaded).length / documents.length) * 100}%`
+            }}
           />
         </div>
       </div>
 
       {/* Document List */}
-      <div className="space-y-4 mb-6">
+      <div style={{ display: "grid", gap: "15px", marginBottom: "25px" }}>
         {documents.map((doc, index) => (
           <div
             key={doc.type}
-            className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-300 transition"
+            style={{
+              border: "2px solid #e0e0e0",
+              borderRadius: "10px",
+              padding: "16px",
+              background: "#fafafa",
+              transition: "all 0.3s"
+            }}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{doc.uploaded ? "✅" : "📄"}</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: doc.file && !doc.uploaded ? "10px" : "0" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span style={{ fontSize: "28px" }}>{doc.uploaded ? "✅" : "📄"}</span>
                 <div>
-                  <h3 className="font-semibold text-gray-800">{doc.label}</h3>
+                  <h3 style={{ fontWeight: "600", color: "#333", fontSize: "15px" }}>{doc.label}</h3>
                   {doc.file && !doc.uploaded && (
-                    <p className="text-xs text-gray-500">
+                    <p style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
                       {doc.file.name} ({(doc.file.size / 1024 / 1024).toFixed(2)} MB)
                     </p>
                   )}
@@ -108,20 +121,30 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
               </div>
 
               {doc.uploaded ? (
-                <span className="text-green-600 font-semibold text-sm">Uploaded ✓</span>
+                <span style={{ color: "#28a745", fontWeight: "600", fontSize: "14px" }}>Uploaded ✓</span>
               ) : (
-                <div className="flex gap-2">
-                  <label className="flex-1">
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <label style={{ flex: 1 }}>
                     <input
                       type="file"
                       accept="image/*,.pdf"
                       onChange={(e) => handleFileSelect(index, e)}
                       disabled={doc.uploading}
-                      className="hidden"
+                      style={{ display: "none" }}
                       aria-label={`Upload ${doc.label}`}
                     />
-                    <div className="text-center py-2 border-2 border-dashed rounded cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition">
-                      <span className="text-sm text-gray-700">{doc.file ? "📎 Change File" : "📁 Choose File"}</span>
+                    <div style={{
+                      textAlign: "center",
+                      padding: "8px 16px",
+                      border: "2px dashed #ddd",
+                      borderRadius: "6px",
+                      cursor: doc.uploading ? "not-allowed" : "pointer",
+                      background: "white",
+                      transition: "all 0.3s",
+                      fontSize: "14px",
+                      color: "#666"
+                    }}>
+                      <span>{doc.file ? "📎 Change File" : "📁 Choose File"}</span>
                     </div>
                   </label>
 
@@ -129,7 +152,19 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
                     <button
                       onClick={() => handleUpload(index)}
                       disabled={doc.uploading}
-                      className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      style={{
+                        padding: "8px 20px",
+                        background: doc.uploading ? "#6c757d" : "#007bff",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: doc.uploading ? "not-allowed" : "pointer",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        transition: "all 0.3s"
+                      }}
+                      onMouseOver={(e) => !doc.uploading && (e.currentTarget.style.background = "#0056b3")}
+                      onMouseOut={(e) => !doc.uploading && (e.currentTarget.style.background = "#007bff")}
                       aria-label={`Upload ${doc.label}`}
                     >
                       {doc.uploading ? "⏳" : "⬆️ Upload"}
@@ -143,18 +178,31 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
       </div>
 
       {/* Note */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-        <p className="text-sm text-yellow-800">
+      <div style={{ background: "#fff3cd", border: "1px solid #ffc107", borderRadius: "8px", padding: "15px", marginBottom: "25px" }}>
+        <p style={{ fontSize: "13px", color: "#856404" }}>
           <strong>Note:</strong> At least one document is required to complete registration.
           You can upload additional documents later from the farmer's profile page.
         </p>
       </div>
 
       {/* Navigation */}
-      <div className="flex gap-4">
+      <div style={{ display: "flex", gap: "15px" }}>
         <button
           onClick={onBack}
-          className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600"
+          style={{
+            flex: 1,
+            padding: "14px",
+            background: "#6c757d",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.3s"
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = "#5a6268"}
+          onMouseOut={(e) => e.currentTarget.style.background = "#6c757d"}
           aria-label="Back to previous step"
         >
           ← Back
@@ -163,7 +211,20 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
         <button
           onClick={onComplete}
           disabled={!canComplete}
-          className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          style={{
+            flex: 1,
+            padding: "14px",
+            background: canComplete ? "#28a745" : "#ccc",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: canComplete ? "pointer" : "not-allowed",
+            transition: "all 0.3s"
+          }}
+          onMouseOver={(e) => canComplete && (e.currentTarget.style.background = "#218838")}
+          onMouseOut={(e) => canComplete && (e.currentTarget.style.background = "#28a745")}
           aria-label="Complete registration"
         >
           {canComplete ? "✓ Complete Registration" : `Upload at least 1 document`}

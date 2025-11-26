@@ -8,12 +8,13 @@ export default function FarmerDashboard() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  const [farmerData, setFarmerData] = useState<any>(null);
+  const [farmerData, setFarmerData] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loading, setLoading] = useState(true);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
 
   useEffect(() => {
     loadFarmerData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -29,7 +30,6 @@ export default function FarmerDashboard() {
       
       console.log("Loading farmer data for user:", user);
 
-      // Check if user token contains farmer_id
       if (!user?.farmer_id) {
         console.error("No farmer_id in JWT token - authentication issue");
         console.log("User data:", { email: user?.email, roles: user?.roles, farmer_id: user?.farmer_id });
@@ -38,7 +38,6 @@ export default function FarmerDashboard() {
         return;
       }
 
-      // Load farmer data using farmer_id from token
       console.log("Loading farmer by farmer_id from token:", user.farmer_id);
       const fullData = await farmerService.getFarmer(user.farmer_id);
       console.log("Loaded farmer data:", fullData);
@@ -62,10 +61,11 @@ export default function FarmerDashboard() {
       }
       await farmerService.downloadIDCard(farmerId);
       alert("✅ ID Card downloaded!");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Download failed:", error);
+      const err = error as { response?: { data?: { detail?: string } } };
       alert(
-        error.response?.data?.detail ||
+        err.response?.data?.detail ||
           "ID card not available yet. Please contact your operator."
       );
     }
@@ -79,10 +79,11 @@ export default function FarmerDashboard() {
         return;
       }
       await farmerService.viewIDCard(farmerId);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("View ID card failed:", error);
+      const err = error as { response?: { data?: { detail?: string } } };
       alert(
-        error.response?.data?.detail ||
+        err.response?.data?.detail ||
           "ID card not available yet. Please contact your operator."
       );
     }
@@ -90,144 +91,333 @@ export default function FarmerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-400 to-blue-500">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-white mx-auto mb-4"></div>
-          <p className="text-xl">Loading your profile...</p>
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center", color: "white" }}>
+          <div style={{
+            border: "4px solid rgba(255,255,255,0.3)",
+            borderTop: "4px solid white",
+            borderRadius: "50%",
+            width: "64px",
+            height: "64px",
+            animation: "spin 1s linear infinite",
+            margin: "0 auto 20px"
+          }}></div>
+          <p style={{ fontSize: "20px" }}>Loading your profile...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", paddingBottom: "30px" }}>
       {/* Header */}
-      <header className="app-topbar">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="topbar-title">🌾 Farmer Profile</h1>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                {farmerData?.personal_info?.first_name || "Farmer"} {farmerData?.personal_info?.last_name || ""}
-              </span>
-              <button
-                onClick={logout}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-semibold transition"
-                aria-label="Logout"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
+        <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
+          🌾 AgriManage Pro
+        </h1>
+        <p style={{ fontSize: "16px", opacity: 0.9 }}>My Farmer Profile</p>
+      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 font-semibold">Loading your profile...</p>
-          </div>
-        ) : !farmerData ? (
-          <div className="card text-center py-12">
-            <div className="text-6xl mb-4">⚠️</div>
-            <p className="text-gray-700 font-semibold mb-4">Unable to load farmer profile</p>
-            <p className="text-sm text-gray-600 mb-6">Your farmer profile could not be found. Please contact your operator or administrator to link your account.</p>
-            <div className="flex gap-4 justify-center">
+      {/* Main Content Container */}
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px" }}>
+        {!farmerData ? (
+          // Error State
+          <div style={{
+            background: "white",
+            borderRadius: "15px",
+            padding: "40px",
+            boxShadow: "0 15px 35px rgba(0,0,0,0.1)",
+            textAlign: "center"
+          }}>
+            <div style={{ fontSize: "4rem", marginBottom: "20px" }}>⚠️</div>
+            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#333", marginBottom: "15px" }}>
+              Unable to load farmer profile
+            </h2>
+            <p style={{ fontSize: "14px", color: "#666", marginBottom: "30px" }}>
+              Your farmer profile could not be found. Please contact your operator or administrator to link your account.
+            </p>
+            <div style={{ display: "flex", gap: "15px", justifyContent: "center" }}>
               <button
                 onClick={loadFarmerData}
-                className="btn-primary"
+                style={{
+                  padding: "12px 25px",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  background: "#007bff",
+                  color: "white",
+                  transition: "all 0.3s"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = "#0056b3";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = "#007bff";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
               >
-                <i className="fa-solid fa-arrows-rotate mr-2"></i> Retry
+                <i className="fa-solid fa-arrows-rotate"></i> Retry
               </button>
               <button
                 onClick={logout}
-                className="bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700"
+                style={{
+                  padding: "12px 25px",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  background: "#6c757d",
+                  color: "white",
+                  transition: "all 0.3s"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = "#545b62";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = "#6c757d";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
               >
-                <i className="fa-solid fa-right-from-bracket mr-2"></i> Logout
+                <i className="fa-solid fa-right-from-bracket"></i> Logout
               </button>
             </div>
           </div>
         ) : (
           <>
-            {/* Quick Actions */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              <div className="card p-4 border-l-4 border-green-600 hover:shadow-lg transition">
-                <div className="text-3xl mb-2">📄</div>
-                <h3 className="font-bold text-gray-900">ID Card</h3>
-                <p className="text-sm text-gray-600 mt-1">View or download your digital farmer ID</p>
-                <div className="mt-4 flex gap-2">
-                    <button onClick={handleViewIDCard} className="bg-blue-500 text-white px-3 py-1 rounded text-sm">View</button>
-                    <button onClick={handleDownloadIDCard} className="bg-gray-500 text-white px-3 py-1 rounded text-sm">Download</button>
-                </div>
+            {/* Top Action Bar */}
+            <div style={{
+              background: "white",
+              borderRadius: "12px",
+              padding: "20px 30px",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+              marginBottom: "20px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}>
+              <div>
+                <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#333", marginBottom: "5px" }}>
+                  Welcome, {farmerData?.personal_info?.first_name || "Farmer"} {farmerData?.personal_info?.last_name || ""}
+                </h2>
+                <p style={{ fontSize: "13px", color: "#666" }}>
+                  Farmer ID: <strong>{farmerData?.farmer_id}</strong>
+                </p>
               </div>
               <button
-                onClick={() => navigate(`/farmers/edit/${farmerData.farmer_id}`)}
-                className="card p-4 border-l-4 border-blue-600 hover:shadow-lg transition"
+                onClick={logout}
+                style={{
+                  padding: "10px 20px",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  background: "#dc3545",
+                  color: "white",
+                  transition: "all 0.3s"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = "#c82333";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = "#dc3545";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
               >
-                <div className="text-3xl mb-2">✏️</div>
-                <h3 className="font-bold text-gray-900">Update Profile</h3>
-                <p className="text-sm text-gray-600 mt-1">Edit your information</p>
+                <i className="fa-solid fa-right-from-bracket"></i> Logout
               </button>
             </div>
 
-            {/* Profile Card */}
-            <div className="card p-8 mb-8">
-              <div className="grid md:grid-cols-3 gap-8">
+            {/* Quick Actions */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px", marginBottom: "20px" }}>
+              <div style={{
+                background: "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
+                borderRadius: "12px",
+                padding: "25px",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+                color: "white",
+                cursor: "pointer",
+                transition: "all 0.3s"
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = "translateY(-5px)";
+                e.currentTarget.style.boxShadow = "0 15px 35px rgba(0,0,0,0.15)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 10px 25px rgba(0,0,0,0.1)";
+              }}>
+                <div style={{ fontSize: "2.5rem", marginBottom: "15px" }}>📄</div>
+                <h3 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "8px" }}>ID Card</h3>
+                <p style={{ fontSize: "13px", opacity: 0.9, marginBottom: "15px" }}>View or download your digital farmer ID</p>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button
+                    onClick={handleViewIDCard}
+                    style={{
+                      padding: "8px 15px",
+                      border: "2px solid white",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      background: "rgba(255,255,255,0.2)",
+                      color: "white",
+                      transition: "all 0.3s"
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = "white";
+                      e.currentTarget.style.color = "#28a745";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.2)";
+                      e.currentTarget.style.color = "white";
+                    }}
+                  >
+                    View
+                  </button>
+                  <button
+                    onClick={handleDownloadIDCard}
+                    style={{
+                      padding: "8px 15px",
+                      border: "2px solid white",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      background: "rgba(255,255,255,0.2)",
+                      color: "white",
+                      transition: "all 0.3s"
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = "white";
+                      e.currentTarget.style.color = "#28a745";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.2)";
+                      e.currentTarget.style.color = "white";
+                    }}
+                  >
+                    Download
+                  </button>
+                </div>
+              </div>
+
+              <div 
+                onClick={() => navigate(`/farmers/edit/${farmerData.farmer_id}`)}
+                style={{
+                  background: "linear-gradient(135deg, #007bff 0%, #0056b3 100%)",
+                  borderRadius: "12px",
+                  padding: "25px",
+                  boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+                  color: "white",
+                  cursor: "pointer",
+                  transition: "all 0.3s"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = "translateY(-5px)";
+                  e.currentTarget.style.boxShadow = "0 15px 35px rgba(0,0,0,0.15)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 10px 25px rgba(0,0,0,0.1)";
+                }}
+              >
+                <div style={{ fontSize: "2.5rem", marginBottom: "15px" }}>✏️</div>
+                <h3 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "8px" }}>Update Profile</h3>
+                <p style={{ fontSize: "13px", opacity: 0.9 }}>Edit your information</p>
+              </div>
+            </div>
+
+            {/* Main Profile Card */}
+            <div style={{
+              background: "white",
+              borderRadius: "15px",
+              padding: "30px",
+              boxShadow: "0 15px 35px rgba(0,0,0,0.1)",
+              marginBottom: "20px"
+            }}>
+              <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "40px" }}>
                 {/* Photo Section */}
-                <div className="text-center">
-                  <div className="w-48 h-48 mx-auto mb-4 bg-gray-200 rounded-full overflow-hidden shadow-md flex items-center justify-center">
+                <div style={{ textAlign: "center" }}>
+                  <div style={{
+                    width: "200px",
+                    height: "200px",
+                    margin: "0 auto 20px",
+                    background: "#f0f0f0",
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}>
                     {(farmerData?.documents?.photo || farmerData?.photo_path) ? (
                       <img
                         src={farmerData?.documents?.photo || farmerData?.photo_path}
                         alt="Farmer"
-                        className="w-full h-full object-cover"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';
                           (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
                         }}
                       />
                     ) : null}
-                    <div className={`text-6xl ${(farmerData?.documents?.photo || farmerData?.photo_path) ? 'hidden' : ''}`}>👨‍🌾</div>
+                    <div style={{ fontSize: "5rem" }} className={`${(farmerData?.documents?.photo || farmerData?.photo_path) ? 'hidden' : ''}`}>👨‍🌾</div>
                   </div>
-                  <h2 className="text-xl font-bold text-gray-900">
+                  <h2 style={{ fontSize: "22px", fontWeight: "700", color: "#333", marginBottom: "10px" }}>
                     {farmerData?.personal_info?.first_name} {farmerData?.personal_info?.last_name}
                   </h2>
                   <button
                     onClick={() => navigate(`/farmers/${farmerData?.farmer_id}`)}
-                    className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-semibold"
+                    style={{
+                      padding: "10px 20px",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      background: "#007bff",
+                      color: "white",
+                      transition: "all 0.3s",
+                      marginTop: "10px"
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = "#0056b3";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = "#007bff";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
                   >
                     View Full Profile & Documents
                   </button>
                 </div>
 
-                {/* Personal Info */}
-                <div className="md:col-span-2">
-                  <h3 className="text-lg font-bold mb-4 text-gray-900 border-b-2 border-green-600 pb-2">
+                {/* Personal Info Grid */}
+                <div>
+                  <h3 style={{
+                    fontSize: "18px",
+                    fontWeight: "700",
+                    color: "#333",
+                    marginBottom: "20px",
+                    paddingBottom: "10px",
+                    borderBottom: "3px solid #28a745"
+                  }}>
                     📋 Personal Information
                   </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <InfoCard
-                      label="Phone"
-                      value={farmerData?.personal_info?.phone_primary}
-                    />
-                    <InfoCard
-                      label="Farmer ID"
-                      value={farmerData?.farmer_id}
-                    />
-                    <InfoCard
-                      label="NRC Number"
-                      value={farmerData?.personal_info?.nrc || "N/A"}
-                    />
-                    <InfoCard
-                      label="Gender"
-                      value={farmerData?.personal_info?.gender || "N/A"}
-                    />
-                    <InfoCard
-                      label="Date of Birth"
-                      value={farmerData?.personal_info?.date_of_birth || "N/A"}
-                    />
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "15px" }}>
+                    <InfoCard label="Phone" value={farmerData?.personal_info?.phone_primary} />
+                    <InfoCard label="Farmer ID" value={farmerData?.farmer_id} />
+                    <InfoCard label="NRC Number" value={farmerData?.personal_info?.nrc || "N/A"} />
+                    <InfoCard label="Gender" value={farmerData?.personal_info?.gender || "N/A"} />
+                    <InfoCard label="Date of Birth" value={farmerData?.personal_info?.date_of_birth || "N/A"} />
                     <InfoCard
                       label="Registration Date"
                       value={
@@ -242,13 +432,25 @@ export default function FarmerDashboard() {
             </div>
 
             {/* Address & Farm Info Grid */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px", marginBottom: "20px" }}>
               {/* Address Card */}
-              <div className="card p-6">
-                <h3 className="text-lg font-bold mb-4 text-gray-900 border-b-2 border-blue-600 pb-2">
+              <div style={{
+                background: "white",
+                borderRadius: "15px",
+                padding: "25px",
+                boxShadow: "0 15px 35px rgba(0,0,0,0.1)"
+              }}>
+                <h3 style={{
+                  fontSize: "18px",
+                  fontWeight: "700",
+                  color: "#333",
+                  marginBottom: "20px",
+                  paddingBottom: "10px",
+                  borderBottom: "3px solid #007bff"
+                }}>
                   📍 Address Information
                 </h3>
-                <div className="space-y-3">
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   <InfoCard label="Province" value={farmerData?.address?.province_name || "N/A"} />
                   <InfoCard label="District" value={farmerData?.address?.district_name || "N/A"} />
                   <InfoCard label="Village" value={farmerData?.address?.village || "N/A"} />
@@ -257,11 +459,23 @@ export default function FarmerDashboard() {
               </div>
 
               {/* Farm Info Card */}
-              <div className="card p-6">
-                <h3 className="text-lg font-bold mb-4 text-gray-900 border-b-2 border-green-600 pb-2">
+              <div style={{
+                background: "white",
+                borderRadius: "15px",
+                padding: "25px",
+                boxShadow: "0 15px 35px rgba(0,0,0,0.1)"
+              }}>
+                <h3 style={{
+                  fontSize: "18px",
+                  fontWeight: "700",
+                  color: "#333",
+                  marginBottom: "20px",
+                  paddingBottom: "10px",
+                  borderBottom: "3px solid #28a745"
+                }}>
                   🌾 Farm Information
                 </h3>
-                <div className="space-y-3">
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   <InfoCard
                     label="Farm Size"
                     value={`${farmerData?.farm_info?.farm_size_hectares || 0} ha`}
@@ -288,19 +502,32 @@ export default function FarmerDashboard() {
 
             {/* QR Code Section */}
             {qrCodeUrl && (
-              <div className="card p-6 mt-6 text-center">
-                <h3 className="text-lg font-bold mb-4 text-gray-900">🔐 Your QR Code</h3>
-                <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48 mx-auto mb-4" />
-                <p className="text-sm text-gray-600">Present this QR code for quick identification</p>
+              <div style={{
+                background: "white",
+                borderRadius: "15px",
+                padding: "30px",
+                boxShadow: "0 15px 35px rgba(0,0,0,0.1)",
+                textAlign: "center"
+              }}>
+                <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#333", marginBottom: "20px" }}>🔐 Your QR Code</h3>
+                <img src={qrCodeUrl} alt="QR Code" style={{ width: "200px", height: "200px", margin: "0 auto 15px", border: "2px solid #ddd", borderRadius: "10px", padding: "10px" }} />
+                <p style={{ fontSize: "13px", color: "#666" }}>Present this QR code for quick identification</p>
               </div>
             )}
           </>
         )}
       </div>
+
+      {/* Add spin animation */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
-
 
 // ============================================
 // 🧩 REUSABLE INFO CARD COMPONENT
@@ -313,9 +540,20 @@ function InfoCard({
   value?: string | number;
 }) {
   return (
-    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-      <p className="text-xs font-bold text-gray-600 uppercase tracking-wide">{label}</p>
-      <p className="text-sm font-semibold text-gray-900">{value || "N/A"}</p>
+    <div style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "12px 15px",
+      background: "#f8f9fa",
+      borderRadius: "8px"
+    }}>
+      <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+        {label}
+      </p>
+      <p style={{ fontSize: "13px", fontWeight: "600", color: "#333" }}>
+        {value || "N/A"}
+      </p>
     </div>
   );
 }

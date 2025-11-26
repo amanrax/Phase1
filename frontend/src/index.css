@@ -1,5 +1,19 @@
 @import "./styles/shared.css";
 
+/* Design System CSS Variables */
+:root {
+  --zam-green: #15803d;      /* Primary action color */
+  --zam-dark: #14532d;       /* Dark green accent */
+  --zam-copper: #c2410c;     /* Secondary/alert color (orange) */
+  --bg-main: #f8fafc;        /* Page background */
+  --bg-card: #ffffff;        /* Card/container background */
+  
+  /* Modern Gradient Variables */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-purple-blue: linear-gradient(to bottom right, #9333ea 0%, #3b82f6 100%);
+  --gradient-indigo-purple: linear-gradient(to bottom right, #6366f1 0%, #9333ea 100%);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -7,11 +21,46 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Fade In Animation */
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .flex { display: flex; }

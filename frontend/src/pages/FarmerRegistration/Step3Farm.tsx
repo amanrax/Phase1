@@ -158,16 +158,22 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
         />
       </div>
 
-      <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+      <div style={{ display: "flex", gap: "15px", marginTop: "25px" }}>
         <button
           onClick={onBack}
           style={{
-            padding: 12,
-            background: "#6B7280",
+            padding: "12px 30px",
+            background: "#6c757d",
             color: "white",
             border: "none",
-            borderRadius: 6,
+            borderRadius: "8px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.3s"
           }}
+          onMouseOver={(e) => e.currentTarget.style.background = "#5a6268"}
+          onMouseOut={(e) => e.currentTarget.style.background = "#6c757d"}
           aria-label="Go back to previous step"
         >
           ← Back
@@ -185,12 +191,18 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
             primary_income: primaryIncome,
           })}
           style={{
-            padding: 12,
-            background: "#2563EB",
+            padding: "12px 30px",
+            background: "#28a745",
             color: "white",
             border: "none",
-            borderRadius: 6,
+            borderRadius: "8px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.3s"
           }}
+          onMouseOver={(e) => e.currentTarget.style.background = "#218838"}
+          onMouseOut={(e) => e.currentTarget.style.background = "#28a745"}
           aria-label="Go to next step"
         >
           Next →

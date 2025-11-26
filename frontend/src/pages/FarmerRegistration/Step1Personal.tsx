@@ -77,24 +77,26 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
 
   return (
     <div>
-      <h3>Personal Information</h3>
+      <h3 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+        👤 Personal Information
+      </h3>
       {err && (
         <div
           role="alert"
-          style={{ background: "#fee", color: "#900", padding: 10, borderRadius: 6 }}
+          style={{ background: "#f8d7da", color: "#721c24", padding: "12px", borderRadius: "8px", marginBottom: "20px", border: "1px solid #f5c6cb", fontWeight: "600" }}
         >
-          {err}
+          ❌ {err}
         </div>
       )}
-      <div style={{ marginTop: 12 }}>
-        <label htmlFor="firstName" style={{ fontWeight: "bold" }}>
-          First name *
+      <div style={{ marginTop: "15px" }}>
+        <label htmlFor="firstName" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+          First name <span style={{ color: "#dc3545" }}>*</span>
         </label>
         <input
           id="firstName"
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
-          style={{ width: "100%", padding: 10, marginTop: 6 }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
           aria-required="true"
         />
       </div>
@@ -235,17 +237,23 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
         </select>
       </div>
 
-      <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+      <div style={{ display: "flex", gap: "15px", marginTop: "25px" }}>
         {onBack && (
           <button
             onClick={onBack}
             style={{ 
-              padding: 12, 
-              background: "#fff", 
-              color: "#374151", 
-              border: "1px solid #d1d5db", 
-              borderRadius: 6 
+              padding: "12px 30px",
+              background: "#6c757d",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "15px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.3s"
             }}
+            onMouseOver={(e) => e.currentTarget.style.background = "#5a6268"}
+            onMouseOut={(e) => e.currentTarget.style.background = "#6c757d"}
             aria-label="Go back to previous page"
           >
             ← Back
@@ -254,7 +262,19 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
         <div style={{ flex: 1 }} />
         <button
           onClick={handleNext}
-          style={{ padding: 12, background: "#16A34A", color: "white", border: "none", borderRadius: 6 }}
+          style={{ 
+            padding: "12px 30px",
+            background: "#28a745",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.3s"
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = "#218838"}
+          onMouseOut={(e) => e.currentTarget.style.background = "#28a745"}
           aria-label="Proceed to next step"
         >
           Next →
