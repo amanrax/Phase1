@@ -1,9 +1,10 @@
 # backend/app/routes/farmers_qr.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
 from fastapi.responses import FileResponse
 from app.utils.security import verify_qr_signature
-from app.database import get_db
+from app.database import get_db, AsyncIOMotorDatabase
 from app.dependencies.roles import require_role
+from app.services.idcard_service import IDCardService
 from typing import Dict
 
 import os
@@ -37,14 +38,48 @@ async def verify_qr(payload: Dict, db=Depends(get_db)):
     }
 
 
+@router.post(
+    "/{farmer_id}/generate-idcard",
+    summary="Generate farmer ID card asynchronously",
+    description="Queue ID card generation task for the farmer. Admin/Operator/Farmer allowed.",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=dict
+)
+async def generate_idcard(
+    farmer_id: str,
+    background_tasks: BackgroundTasks,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    _: dict = Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))
+):
+    """
+    Generate ID card PDF asynchronously for a farmer.
+    Farmers can generate their own cards.
+    
+    Args:
+        farmer_id: Unique farmer ID string (e.g., ZM1A2B3C4D)
+        background_tasks: FastAPI BackgroundTasks for async task queue
+        db: AsyncIOMotorDatabase dependency
+        _: Role-protected user dependency (Admin, Operator, or Farmer)
+    
+    Returns:
+        dict: Confirmation message that generation is queued
+    """
+    return await IDCardService.generate(farmer_id, background_tasks, db)
+
+
 @router.get("/{farmer_id}/download-idcard",
-            dependencies=[Depends(require_role(["ADMIN", "OPERATOR"]))])
+            dependencies=[Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))])
 async def download_idcard(farmer_id: str, db=Depends(get_db)):
+    """
+    Download generated ID card PDF for a farmer.
+    Farmers can download their own cards.
+    """
     farmer = await db.farmers.find_one({"farmer_id": farmer_id})
     if not farmer:
         raise HTTPException(status_code=404, detail="Farmer not found")
 
-    file_path = farmer.get("documents", {}).get("id_card")
+    # Check for ID card path (new field)
+    file_path = farmer.get("id_card_path")
     if not file_path or not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="ID card not generated yet")
 

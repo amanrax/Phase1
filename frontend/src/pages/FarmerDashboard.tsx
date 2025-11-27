@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
+import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
 
 export default function FarmerDashboard() {
   const { user, logout } = useAuthStore();
@@ -11,6 +12,7 @@ export default function FarmerDashboard() {
   const [farmerData, setFarmerData] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loading, setLoading] = useState(true);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+  const [showIDCardPreview, setShowIDCardPreview] = useState(false);
 
   useEffect(() => {
     loadFarmerData();
@@ -71,22 +73,12 @@ export default function FarmerDashboard() {
     }
   };
 
-  const handleViewIDCard = async () => {
-    try {
-      const farmerId = farmerData?.farmer_id;
-      if (!farmerId) {
-        alert("Farmer ID not available");
-        return;
-      }
-      await farmerService.viewIDCard(farmerId);
-    } catch (error: unknown) {
-      console.error("View ID card failed:", error);
-      const err = error as { response?: { data?: { detail?: string } } };
-      alert(
-        err.response?.data?.detail ||
-          "ID card not available yet. Please contact your operator."
-      );
+  const handleViewIDCard = () => {
+    if (!farmerData?.farmer_id) {
+      alert("Farmer ID not available");
+      return;
     }
+    setShowIDCardPreview(true);
   };
 
   if (loading) {
@@ -109,7 +101,16 @@ export default function FarmerDashboard() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", paddingBottom: "30px" }}>
+    <>
+      {/* ID Card Preview Modal */}
+      {showIDCardPreview && farmerData && (
+        <FarmerIDCardPreview
+          farmer={farmerData}
+          onClose={() => setShowIDCardPreview(false)}
+        />
+      )}
+
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", paddingBottom: "30px" }}>
       {/* Header */}
       <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
         <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
@@ -256,10 +257,37 @@ export default function FarmerDashboard() {
                 <div style={{ fontSize: "2.5rem", marginBottom: "15px" }}>📄</div>
                 <h3 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "8px" }}>ID Card</h3>
                 <p style={{ fontSize: "13px", opacity: 0.9, marginBottom: "15px" }}>View or download your digital farmer ID</p>
-                <div style={{ display: "flex", gap: "10px" }}>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => navigate("/farmer-idcard")}
+                    style={{
+                      flex: "1 1 100%",
+                      padding: "10px 15px",
+                      border: "2px solid white",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                      fontWeight: "700",
+                      cursor: "pointer",
+                      background: "white",
+                      color: "#28a745",
+                      transition: "all 0.3s",
+                      marginBottom: "8px"
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.9)";
+                      e.currentTarget.style.transform = "scale(1.02)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = "white";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    🆔 Manage My ID Card
+                  </button>
                   <button
                     onClick={handleViewIDCard}
                     style={{
+                      flex: "1",
                       padding: "8px 15px",
                       border: "2px solid white",
                       borderRadius: "6px",
@@ -284,6 +312,7 @@ export default function FarmerDashboard() {
                   <button
                     onClick={handleDownloadIDCard}
                     style={{
+                      flex: "1",
                       padding: "8px 15px",
                       border: "2px solid white",
                       borderRadius: "6px",
@@ -525,7 +554,8 @@ export default function FarmerDashboard() {
           100% { transform: rotate(360deg); }
         }
       `}</style>
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -555,5 +585,14 @@ function InfoCard({
         {value || "N/A"}
       </p>
     </div>
+  );
+}
+
+// Add ID Card Preview Modal at the end of FarmerDashboard component
+export function FarmerDashboardWithPreview() {
+  return (
+    <>
+      <FarmerDashboard />
+    </>
   );
 }

@@ -203,6 +203,10 @@ class FarmerOut(BaseModel):
     review_notes: Optional[str] = None
     reviewed_by: Optional[str] = None
     reviewed_at: Optional[datetime] = None
+    # ID Card fields
+    id_card_path: Optional[str] = Field(None, description="Path to generated ID card PDF")
+    qr_code_path: Optional[str] = Field(None, description="Path to generated QR code image")
+    id_card_generated_at: Optional[datetime] = Field(None, description="Timestamp when ID card was generated")
     
     model_config = ConfigDict(
         populate_by_name=True,

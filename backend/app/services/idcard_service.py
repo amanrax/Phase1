@@ -93,37 +93,17 @@ class IDCardService:
 
     @staticmethod
     async def generate(farmer_id: str, background_tasks: BackgroundTasks, db):
-        """Async handler to generate ID card and update DB."""
+        """Async handler to generate ID card and update DB using Celery."""
         farmer = await db.farmers.find_one({"farmer_id": farmer_id})
         if not farmer:
             raise HTTPException(status_code=404, detail="Farmer not found")
 
-        # Generate QR code and ID card PDF as background task
-        def task():
-            qr_path = IDCardService.generate_qr_code(farmer, farmer_id)
-            pdf_path = IDCardService.generate_id_card_pdf(farmer, farmer_id, qr_path)
-            # Update DB with paths and generation timestamp
-            import asyncio
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(
-                db.farmers.update_one(
-                    {"farmer_id": farmer_id},
-                    {
-                        "$set": {
-                            "qr_code_path": qr_path,
-                            "id_card_path": pdf_path,
-                            "id_card_generated_at": datetime.utcnow(),
-                        }
-                    }
-                )
-            )
-            loop.close()
-
-        background_tasks.add_task(task)
+        # Queue Celery task for ID card generation
+        from app.tasks.id_card_task import generate_id_card
+        generate_id_card.delay(farmer_id)
 
         return {
-            "message": "ID card generation started",
+            "message": "ID card generation queued",
             "farmer_id": farmer_id,
         }
 
