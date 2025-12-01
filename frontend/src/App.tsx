@@ -20,6 +20,7 @@ import FarmerDashboard from "@/pages/FarmerDashboard";
 import FarmerDetails from "@/pages/FarmerDetails";
 import FarmerIDCard from "@/pages/FarmerIDCard";
 import AdminReports from "@/pages/AdminReports";
+import AdminSettings from "@/pages/AdminSettings";
 
 function App() {
   const { loadUser, token, user } = useAuthStore();
@@ -93,6 +94,16 @@ function App() {
             <ProtectedRoute>
               <RoleRoute requiredRole="admin">
                 <AdminReports />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <ProtectedRoute>
+              <RoleRoute requiredRole="admin">
+                <AdminSettings />
               </RoleRoute>
             </ProtectedRoute>
           }

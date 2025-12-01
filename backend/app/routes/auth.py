@@ -233,12 +233,19 @@ async def register_user(
     # Hash password
     password_hash = hash_password(user_data.password)
     
-    # Create user document
+    # Create user document - handle both UserRole enum and string values
+    roles_list = []
+    for role in user_data.roles:
+        if isinstance(role, str):
+            roles_list.append(role)
+        else:
+            roles_list.append(role.value)
+    
     now = datetime.now(timezone.utc)
     user_doc = {
         "email": email,
         "password_hash": password_hash,
-        "roles": [role.value for role in user_data.roles],
+        "roles": roles_list,
         "is_active": True,
         "created_at": now,
         "updated_at": now,

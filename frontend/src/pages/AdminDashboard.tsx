@@ -230,6 +230,31 @@ export default function AdminDashboard() {
               >
                 📊 View Reports
               </button>
+
+              <button
+                onClick={() => navigate("/admin/settings")}
+                style={{
+                  padding: "10px 20px",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  background: "#7c3aed",
+                  color: "white",
+                  transition: "all 0.3s"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = "#6d28d9";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = "#7c3aed";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                ⚙️ Settings
+              </button>
               
               <button
                 onClick={logout}
