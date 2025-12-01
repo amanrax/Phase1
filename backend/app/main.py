@@ -24,6 +24,7 @@ from app.routes import (
     geo,
     operators,
     dashboard,
+    reports,
 )
 
 # Configure logging
@@ -110,6 +111,7 @@ app.include_router(farmers.router, prefix="/api", tags=["Farmers"])
 app.include_router(geo.router, prefix="/api")
 app.include_router(operators.router, prefix="/api", tags=["Operators"])
 app.include_router(dashboard.router, prefix="/api", tags=["Dashboard"])
+app.include_router(reports.router, prefix="/api", tags=["Reports"])
 app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
 app.include_router(sync.router, prefix="/api", tags=["Synchronization"])
 app.include_router(farmers_qr.router, prefix="/api", tags=["Farmers QR"])

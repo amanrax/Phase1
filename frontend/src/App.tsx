@@ -19,6 +19,7 @@ import OperatorEdit from "@/pages/OperatorEdit";
 import FarmerDashboard from "@/pages/FarmerDashboard";
 import FarmerDetails from "@/pages/FarmerDetails";
 import FarmerIDCard from "@/pages/FarmerIDCard";
+import AdminReports from "@/pages/AdminReports";
 
 function App() {
   const { loadUser, token, user } = useAuthStore();
@@ -82,6 +83,16 @@ function App() {
             <ProtectedRoute>
               <RoleRoute requiredRole="admin">
                 <OperatorEdit />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/reports"
+          element={
+            <ProtectedRoute>
+              <RoleRoute requiredRole="admin">
+                <AdminReports />
               </RoleRoute>
             </ProtectedRoute>
           }

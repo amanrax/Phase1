@@ -91,12 +91,20 @@ async def operator_performance(db=Depends(get_db)):
 
     out = []
     for r in results:
-        op = await db.operators.find_one({"operator_id": r["_id"]}, {"full_name": 1, "email": 1})
+        # created_by stores the email, so look up operator by email
+        op = await db.operators.find_one({"email": r["_id"]}, {"full_name": 1, "email": 1, "operator_id": 1})
+        
+        # If not found in operators, check if it's an admin user
+        if not op:
+            user = await db.users.find_one({"email": r["_id"]}, {"full_name": 1, "email": 1})
+            if user:
+                op = {"full_name": user.get("full_name", "Admin User"), "email": user.get("email")}
+        
         out.append(
             {
                 "operator_id": r["_id"],
-                "operator_name": op.get("full_name") if op else "Unknown",
-                "email": op.get("email") if op else None,
+                "operator_name": op.get("full_name") if op else r["_id"],  # Use email if name not found
+                "email": op.get("email") if op else r["_id"],
                 "total_farmers": r["total_farmers"],
                 "recent_farmers_30d": r["recent_farmers"],
             }
@@ -134,3 +142,64 @@ async def activity_trends(db=Depends(get_db)):
         for r in results
     ]
     return {"generated_at": datetime.utcnow(), "trends": formatted}
+
+
+@router.get("/farmers-details", dependencies=[Depends(require_role(["ADMIN"]))])
+async def farmers_details_report(db=Depends(get_db)):
+    """
+    Complete farmer details report with all personal and farm information.
+    """
+    farmers = await db.farmers.find({}, {
+        "farmer_id": 1,
+        "personal_info": 1,
+        "address": 1,
+        "farm_info": 1,
+        "registration_status": 1,
+        "created_by": 1,
+        "created_at": 1,
+        "_id": 0
+    }).sort("created_at", -1).to_list(length=None)
+    
+    # Format the data for better readability
+    formatted_farmers = []
+    for farmer in farmers:
+        personal_info = farmer.get("personal_info", {})
+        address = farmer.get("address", {})
+        farm_info = farmer.get("farm_info", {})
+        
+        # Get crops list
+        crops_list = farm_info.get("crops_grown", [])
+        if not crops_list:
+            crops_list = []
+        
+        # Format names
+        first_name = personal_info.get("first_name", "")
+        last_name = personal_info.get("last_name", "")
+        full_name = f"{first_name} {last_name}".strip()
+        
+        formatted_farmers.append({
+            "farmer_id": farmer.get("farmer_id", ""),
+            "full_name": full_name if full_name else "N/A",
+            "nrc_number": personal_info.get("nrc", ""),
+            "phone_primary": personal_info.get("phone_primary", ""),
+            "phone_secondary": personal_info.get("phone_secondary", ""),
+            "gender": personal_info.get("gender", ""),
+            "date_of_birth": personal_info.get("date_of_birth", ""),
+            "province": address.get("province_name", ""),
+            "district": address.get("district_name", ""),
+            "constituency": address.get("constituency_name", ""),
+            "ward": address.get("ward_name", ""),
+            "village": address.get("village", ""),
+            "total_land_size": farm_info.get("farm_size_hectares", 0),
+            "crops": ", ".join(crops_list) if crops_list else "None",
+            "years_farming": farm_info.get("years_farming", 0),
+            "registration_status": farmer.get("registration_status", ""),
+            "registered_by": farmer.get("created_by", ""),
+            "registration_date": farmer.get("created_at", "").strftime("%Y-%m-%d") if farmer.get("created_at") else "",
+        })
+    
+    return {
+        "generated_at": datetime.utcnow(),
+        "total_farmers": len(formatted_farmers),
+        "farmers": formatted_farmers
+    }

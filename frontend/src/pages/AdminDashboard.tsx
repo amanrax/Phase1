@@ -205,6 +205,31 @@ export default function AdminDashboard() {
               >
                 👨‍🌾 View All Farmers
               </button>
+
+              <button
+                onClick={() => navigate("/admin/reports")}
+                style={{
+                  padding: "10px 20px",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  background: "#c2410c",
+                  color: "white",
+                  transition: "all 0.3s"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = "#9a3412";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = "#c2410c";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                📊 View Reports
+              </button>
               
               <button
                 onClick={logout}
