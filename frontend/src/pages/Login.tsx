@@ -44,9 +44,9 @@ export default function Login() {
       {/* Header */}
       <div style={{ position: "absolute", top: "30px", textAlign: "center", color: "white", width: "100%" }}>
         <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
-          🌾 AgriManage Pro
+          🌾 AgriManage 
         </h1>
-        <p style={{ fontSize: "16px", opacity: 0.9 }}>Advanced Agricultural Management System</p>
+        <p style={{ fontSize: "16px", opacity: 0.9 }}> Farmer Management </p>
       </div>
 
       {/* Login Card */}
@@ -222,7 +222,7 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Demo Credentials */}
+        {/*  Credentials Format*/}
         <div style={{
           marginTop: "20px",
           padding: "15px",
@@ -231,10 +231,10 @@ export default function Login() {
           fontSize: "12px",
           color: "#666"
         }}>
-          <p style={{ fontWeight: "600", marginBottom: "8px", color: "#333" }}>Demo Credentials:</p>
-          <p style={{ marginBottom: "4px" }}>👤 Admin: admin@agrimanage.com / admin123</p>
-          <p style={{ marginBottom: "4px" }}>👨‍🌾 Operator: operator@agrimanage.com / operator123</p>
-          <p>🌾 Farmer: 123456/12/1 / 1990-01-15</p>
+          <p style={{ fontWeight: "600", marginBottom: "8px", color: "#333" }}>Credentials Format:</p>
+          <p style={{ marginBottom: "4px" }}>👤 Admin: admin@gmail.com / Password</p>
+          <p style={{ marginBottom: "4px" }}>👨‍🌾 Operator: operator@gmail.com / Password</p>
+          <p>🌾 Farmer: xxxxxx/xx/x / YYYY-MM-DD</p>
         </div>
       </div>
     </div>

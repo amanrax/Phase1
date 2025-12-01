@@ -88,3 +88,26 @@ async def download_idcard(farmer_id: str, db=Depends(get_db)):
         media_type="application/pdf",
         filename=f"{farmer_id}_card.pdf"
     )
+
+
+@router.get("/{farmer_id}/qr",
+            dependencies=[Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))])
+async def get_qr_code(farmer_id: str, db=Depends(get_db)):
+    """
+    Get QR code image for a farmer.
+    Farmers can access their own QR codes.
+    """
+    farmer = await db.farmers.find_one({"farmer_id": farmer_id})
+    if not farmer:
+        raise HTTPException(status_code=404, detail="Farmer not found")
+
+    # Check for QR code path
+    qr_path = farmer.get("qr_code_path")
+    if not qr_path or not os.path.exists(qr_path):
+        raise HTTPException(status_code=404, detail="QR code not generated yet. Please generate your ID card first.")
+
+    return FileResponse(
+        path=qr_path,
+        media_type="image/png",
+        filename=f"{farmer_id}_qr.png"
+    )

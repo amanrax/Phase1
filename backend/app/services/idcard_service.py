@@ -121,5 +121,6 @@ class IDCardService:
         return FileResponse(
             file_path,
             media_type="application/pdf",
-            filename=os.path.basename(file_path)
+            filename=os.path.basename(file_path),
+            headers={"Content-Disposition": f"inline; filename={os.path.basename(file_path)}"}
         )

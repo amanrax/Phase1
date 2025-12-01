@@ -9,6 +9,7 @@ interface FarmerIDCardPreviewProps {
       date_of_birth?: string;
       gender?: string;
       nrc?: string;
+      phone_primary?: string;
     };
     address?: {
       province_name?: string;
@@ -20,7 +21,9 @@ interface FarmerIDCardPreviewProps {
       photo?: string;
     };
     created_at?: string;
+    created_by?: string;
     qr_code_path?: string;
+    qr_code_url?: string;
   };
   onClose?: () => void;
 }
@@ -33,8 +36,10 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
     ? `${import.meta.env.VITE_API_BASE_URL}${farmer.documents.photo}`
     : null;
 
-  const qrCodeUrl = farmer.qr_code_path
-    ? `${import.meta.env.VITE_API_BASE_URL}${farmer.qr_code_path}`
+  const qrCodeUrl = farmer.qr_code_url
+    ? `${import.meta.env.VITE_API_BASE_URL}${farmer.qr_code_url}`
+    : farmer.farmer_id
+    ? `${import.meta.env.VITE_API_BASE_URL}/uploads/qr/${farmer.farmer_id}_qr.png`
     : null;
 
   return (
@@ -192,13 +197,15 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
 
                     {/* Details */}
                     <div style={{ flex: 1, color: 'white' }}>
-                      <div style={{ marginBottom: '8px' }}>
+                      <div style={{ marginBottom: '10px' }}>
                         <p style={{ fontSize: '9px', color: '#bbf7d0', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 2px 0' }}>
                           Name
                         </p>
                         <p style={{ fontSize: '16px', fontWeight: 'bold', lineHeight: 1.2, margin: 0 }}>
                           {farmer.personal_info?.first_name} {farmer.personal_info?.last_name}
                         </p>
+                        {/* Separator line under NAME */}
+                        <div style={{ width: '100%', height: '1px', background: 'rgba(187, 247, 208, 0.3)', marginTop: '4px' }}></div>
                       </div>
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '8px' }}>
@@ -243,35 +250,16 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
 
                       <div>
                         <p style={{ fontSize: '8px', color: '#bbf7d0', fontWeight: '600', margin: '0 0 2px 0' }}>
-                          DISTRICT
+                          PHONE
                         </p>
-                        <p style={{ fontSize: '11px', margin: 0 }}>
-                          {farmer.address?.district_name || "N/A"}, {farmer.address?.province_name || "N/A"}
+                        <p style={{ fontSize: '11px', margin: 0, lineHeight: '1.3' }}>
+                          {farmer.personal_info?.phone_primary || "N/A"}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Footer */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    background: 'rgba(20, 83, 45, 0.5)',
-                    backdropFilter: 'blur(4px)',
-                    padding: '8px 24px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <p style={{ color: '#bbf7d0', fontSize: '8px', margin: 0 }}>
-                      Issued: {farmer.created_at ? new Date(farmer.created_at).toLocaleDateString() : new Date().toLocaleDateString()}
-                    </p>
-                    <p style={{ color: '#bbf7d0', fontSize: '8px', fontWeight: 'bold', margin: 0 }}>
-                      ✓ VERIFIED FARMER
-                    </p>
-                  </div>
+                  {/* No footer on front card */}
                 </div>
               </div>
 
@@ -305,37 +293,37 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
                   </div>
 
                   {/* Content */}
-                  <div style={{ padding: '24px', display: 'flex', gap: '24px', alignItems: 'center', height: 'calc(100% - 40px)' }}>
+                  <div style={{ padding: '14px 20px', display: 'flex', gap: '20px', alignItems: 'flex-start', height: 'calc(100% - 40px)' }}>
                     {/* QR Code */}
                     <div style={{ flexShrink: 0 }}>
                       <div style={{
                         background: 'white',
-                        padding: '12px',
-                        borderRadius: '12px',
-                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                        padding: '10px',
+                        borderRadius: '10px',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                         border: '2px solid #16a34a'
                       }}>
                         {qrCodeUrl ? (
                           <img
                             src={qrCodeUrl}
                             alt="QR Code"
-                            style={{ width: '128px', height: '128px', display: 'block' }}
+                            style={{ width: '105px', height: '105px', display: 'block' }}
                           />
                         ) : (
                           <div style={{
-                            width: '128px',
-                            height: '128px',
+                            width: '105px',
+                            height: '105px',
                             background: '#d1d5db',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: '#6b7280',
-                            fontSize: '48px'
+                            fontSize: '40px'
                           }}>
                             📱
                           </div>
                         )}
-                        <p style={{ textAlign: 'center', fontSize: '7px', color: '#4b5563', marginTop: '4px', fontWeight: '600', margin: '4px 0 0 0' }}>
+                        <p style={{ textAlign: 'center', fontSize: '6px', color: '#4b5563', fontWeight: '600', margin: '6px 0 0 0' }}>
                           SCAN TO VERIFY
                         </p>
                       </div>
@@ -343,36 +331,35 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
 
                     {/* Information */}
                     <div style={{ flex: 1 }}>
-                      <div style={{ background: 'white', borderRadius: '8px', padding: '12px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', borderLeft: '4px solid #16a34a', marginBottom: '12px' }}>
-                        <h3 style={{ fontSize: '11px', fontWeight: 'bold', color: '#15803d', margin: '0 0 8px 0' }}>
-                          🌾 Farm Information
+                      <div style={{ background: 'white', borderRadius: '6px', padding: '12px', boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)', borderLeft: '3px solid #2563eb', marginBottom: '10px', minHeight: '80px' }}>
+                        <h3 style={{ fontSize: '11px', fontWeight: 'bold', color: '#1e40af', margin: '0 0 8px 0' }}>
+                          📍 Full Address
                         </h3>
-                        <div style={{ fontSize: '9px', color: '#374151' }}>
-                          <p style={{ margin: '4px 0' }}>
-                            <strong>Location:</strong> {farmer.address?.village || "N/A"}
+                        <div style={{ fontSize: '9px', color: '#374151', lineHeight: '1.6' }}>
+                          <p style={{ margin: '3px 0' }}>
+                            <strong>Village:</strong> {farmer.address?.village || "N/A"}
                           </p>
-                          <p style={{ margin: '4px 0' }}>
+                          <p style={{ margin: '3px 0' }}>
                             <strong>Chiefdom:</strong> {farmer.address?.chiefdom_name || "N/A"}
+                          </p>
+                          <p style={{ margin: '3px 0' }}>
+                            {farmer.address?.district_name || "N/A"}, {farmer.address?.province_name || "N/A"}
                           </p>
                         </div>
                       </div>
 
-                      <div style={{ background: 'white', borderRadius: '8px', padding: '12px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', borderLeft: '4px solid #2563eb', marginBottom: '12px' }}>
-                        <h3 style={{ fontSize: '11px', fontWeight: 'bold', color: '#1e40af', margin: '0 0 8px 0' }}>
-                          ℹ️ Important Notice
+                      <div style={{ background: '#eff6ff', borderRadius: '6px', padding: '12px', border: '1px solid #bfdbfe', minHeight: '60px' }}>
+                        <h3 style={{ fontSize: '10px', fontWeight: 'bold', color: '#1e40af', margin: '0 0 8px 0' }}>
+                          👤 Operator Details
                         </h3>
-                        <p style={{ fontSize: '8px', color: '#374151', lineHeight: 1.5, margin: 0 }}>
-                          This card is property of the Government of Zambia. If found, please return to the nearest Ministry of Agriculture office.
-                        </p>
-                      </div>
-
-                      <div style={{ background: '#dcfce7', borderRadius: '8px', padding: '8px', border: '1px solid #bbf7d0' }}>
-                        <p style={{ fontSize: '8px', textAlign: 'center', color: '#15803d', fontWeight: '600', margin: '0 0 2px 0' }}>
-                          📞 Support: +260-211-XXX-XXX
-                        </p>
-                        <p style={{ fontSize: '7px', textAlign: 'center', color: '#4b5563', margin: 0 }}>
-                          www.agriculture.gov.zm
-                        </p>
+                        <div style={{ fontSize: '9px', color: '#374151', lineHeight: '1.6' }}>
+                          <p style={{ margin: '3px 0' }}>
+                            <strong>Created by:</strong> {farmer.created_by || "N/A"}
+                          </p>
+                          <p style={{ margin: '3px 0', fontSize: '8px', color: '#6b7280' }}>
+                            Ministry of Agriculture, Zambia
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>

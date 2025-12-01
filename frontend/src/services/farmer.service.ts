@@ -164,7 +164,8 @@ export const farmerService = {
     const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
       responseType: "blob",
     });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const blob = new Blob([response.data], { type: "application/pdf" });
+    const url = window.URL.createObjectURL(blob);
     window.open(url, "_blank");
   },
 

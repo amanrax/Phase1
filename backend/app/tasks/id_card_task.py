@@ -89,11 +89,13 @@ def generate_id_card(farmer_id: str):
         c.setFont("Helvetica", 6)
         c.drawRightString(CARD_WIDTH - 5*mm, CARD_HEIGHT - 11*mm, "Farmer Registry")
         
-        # Photo placeholder or actual photo
+        # Photo placeholder or actual photo (positioned to avoid header overlap)
         photo_x = 5*mm
-        photo_y = CARD_HEIGHT - 38*mm
-        photo_w = 20*mm
+        # Ensure top of photo sits below header (header height 15mm) with a small gap
         photo_h = 24*mm
+        photo_w = 20*mm
+        photo_y = CARD_HEIGHT - (15*mm + photo_h + 4*mm)  # = ~10.98mm from bottom
+        # Recalculate if card size changes in future
         
         if photo_path and os.path.exists(photo_path):
             try:
@@ -116,74 +118,78 @@ def generate_id_card(farmer_id: str):
             c.setFont("Helvetica", 20)
             c.drawCentredString(photo_x + photo_w/2, photo_y + photo_h/2 - 3*mm, "👤")
         
-        # Farmer details (right of photo)
+        # Farmer details (right of photo) redesigned for tighter vertical spacing
         detail_x = 28*mm
-        detail_y = CARD_HEIGHT - 20*mm
-        
-        c.setFillColor(colors.HexColor('#bbf7d0'))
-        c.setFont("Helvetica-Bold", 6)
-        c.drawString(detail_x, detail_y, "NAME")
-        
-        c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 10)
+        # Start just below header with proper spacing to avoid header touch
+        detail_y = CARD_HEIGHT - 18*mm
+
         name = f"{farmer['personal_info']['first_name']} {farmer['personal_info']['last_name']}"
-        c.drawString(detail_x, detail_y - 4*mm, name[:25])  # Truncate if too long
+        dob_raw = farmer['personal_info'].get('date_of_birth', 'N/A')
+        if dob_raw != 'N/A':
+            try:
+                dob_fmt = datetime.fromisoformat(dob_raw).strftime('%Y-%m-%d')
+            except:
+                dob_fmt = dob_raw
+        else:
+            dob_fmt = 'N/A'
+        gender = farmer['personal_info'].get('gender', 'N/A').upper()
+        phone = farmer['personal_info'].get('phone_primary', 'N/A')
+        nrc_val = farmer['personal_info'].get('nrc', 'N/A')
+        village = farmer['address'].get('village', 'N/A')
+        chiefdom = farmer['address'].get('chiefdom_name', '')
+        district_name = farmer['address'].get('district_name', 'N/A')
+        province_name = farmer['address'].get('province_name', 'N/A')
+        created_by = farmer.get('created_by', 'N/A')
+        operator_display = created_by.split('@')[0] if created_by != 'N/A' else 'N/A'
+
+        # NAME
+        c.setFillColor(colors.HexColor('#bbf7d0'))
+        c.setFont("Helvetica-Bold", 5.5)
+        c.drawString(detail_x, detail_y, "NAME")
+        c.setFillColor(colors.white)
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(detail_x, detail_y - 3.5*mm, name[:28])
         
-        # Farmer ID and NRC
-        detail_y -= 10*mm
+        # Add separator line under NAME
+        c.setStrokeColor(colors.HexColor('#bbf7d0'))
+        c.setLineWidth(0.3)
+        c.setStrokeAlpha(0.3)
+        c.line(detail_x, detail_y - 5*mm, detail_x + 45*mm, detail_y - 5*mm)
+        c.setStrokeAlpha(1)
+
+        # FARMER ID / NRC
+        detail_y -= 7.5*mm
         c.setFillColor(colors.HexColor('#bbf7d0'))
         c.setFont("Helvetica-Bold", 5)
         c.drawString(detail_x, detail_y, "FARMER ID")
         c.drawString(detail_x + 25*mm, detail_y, "NRC")
-        
         c.setFillColor(colors.white)
-        c.setFont("Helvetica", 7)
+        c.setFont("Helvetica", 6.5)
         c.drawString(detail_x, detail_y - 3*mm, farmer_id)
-        c.drawString(detail_x + 25*mm, detail_y - 3*mm, farmer['personal_info'].get('nrc', 'N/A')[:12])
-        
-        # DOB and Gender
-        detail_y -= 8*mm
+        c.drawString(detail_x + 25*mm, detail_y - 3*mm, nrc_val[:14])
+
+        # DOB / GENDER
+        detail_y -= 6.5*mm
         c.setFillColor(colors.HexColor('#bbf7d0'))
         c.setFont("Helvetica-Bold", 5)
         c.drawString(detail_x, detail_y, "DOB")
         c.drawString(detail_x + 25*mm, detail_y, "GENDER")
-        
         c.setFillColor(colors.white)
-        c.setFont("Helvetica", 7)
-        dob = farmer['personal_info'].get('date_of_birth', 'N/A')
-        if dob != 'N/A':
-            try:
-                dob = datetime.fromisoformat(dob).strftime('%Y-%m-%d')
-            except:
-                pass
-        c.drawString(detail_x, detail_y - 3*mm, dob)
-        c.drawString(detail_x + 25*mm, detail_y - 3*mm, farmer['personal_info'].get('gender', 'N/A').upper())
-        
-        # District
-        detail_y -= 8*mm
+        c.setFont("Helvetica", 6.5)
+        c.drawString(detail_x, detail_y - 3*mm, dob_fmt)
+        c.drawString(detail_x + 25*mm, detail_y - 3*mm, gender)
+
+        # PHONE (replace address on front)
+        detail_y -= 6*mm
         c.setFillColor(colors.HexColor('#bbf7d0'))
         c.setFont("Helvetica-Bold", 5)
-        c.drawString(detail_x, detail_y, "DISTRICT")
-        
+        c.drawString(detail_x, detail_y, "PHONE")
         c.setFillColor(colors.white)
-        c.setFont("Helvetica", 7)
-        district = f"{farmer['address'].get('district_name', 'N/A')}, {farmer['address'].get('province_name', 'N/A')}"
-        c.drawString(detail_x, detail_y - 3*mm, district[:35])
+        c.setFont("Helvetica", 6.5)
+        c.drawString(detail_x, detail_y - 3*mm, phone[:18])
         
-        # Footer
-        c.setFillColor(colors.HexColor('#14532d'))
-        c.rect(0, 0, CARD_WIDTH, 6*mm, fill=1, stroke=0)
-        
-        c.setFillColor(colors.HexColor('#bbf7d0'))
-        c.setFont("Helvetica", 6)
-        issued_date = farmer.get('created_at', datetime.utcnow())
-        if isinstance(issued_date, str):
-            try:
-                issued_date = datetime.fromisoformat(issued_date)
-            except:
-                issued_date = datetime.utcnow()
-        c.drawString(5*mm, 2*mm, f"Issued: {issued_date.strftime('%Y-%m-%d')}")
-        c.drawRightString(CARD_WIDTH - 5*mm, 2*mm, "✓ VERIFIED FARMER")
+        # No footer on front card to prevent overlap
+        # Issued date and verification will be on back card only
         
         # ============================================
         # BACK SIDE (New Page)
@@ -218,61 +224,72 @@ def generate_id_card(farmer_id: str):
             c.drawCentredString(qr_x + qr_size/2, qr_y - 4*mm, "SCAN TO VERIFY")
             print(f"✅ QR code added to PDF")
         
-        # Farm Information Box
+        # Right column boxes - only Address and Operator (Farm Details removed)
         info_x = 38*mm
-        info_y = CARD_HEIGHT - 20*mm
         info_w = 43*mm
-        info_h = 12*mm
         
+        # Calculate available vertical space
+        header_h = 8*mm
+        bottom_bar_h = 5*mm
+        top_margin = 3*mm
+        bottom_margin = 2*mm
+        
+        # Box heights and gaps (Farm Details removed)
+        box_gap = 3*mm
+        address_h = 14*mm
+        operator_h = 10*mm
+        
+        # Calculate starting Y position from top
+        current_y = CARD_HEIGHT - header_h - top_margin
+
+        # === FULL ADDRESS BOX (expanded, from database) ===
+        current_y -= address_h
         c.setFillColor(colors.white)
-        c.rect(info_x, info_y, info_w, info_h, fill=1, stroke=0)
-        c.setStrokeColor(colors.HexColor('#16a34a'))
-        c.setLineWidth(2)
-        c.line(info_x, info_y + info_h, info_x, info_y)
-        
-        c.setFillColor(colors.HexColor('#15803d'))
-        c.setFont("Helvetica-Bold", 7)
-        c.drawString(info_x + 2*mm, info_y + info_h - 4*mm, "🌾 Farm Information")
-        
-        c.setFillColor(colors.HexColor('#374151'))
-        c.setFont("Helvetica", 6)
-        village = farmer['address'].get('village', 'N/A')
-        chiefdom = farmer['address'].get('chiefdom_name', 'N/A')
-        c.drawString(info_x + 2*mm, info_y + info_h - 8*mm, f"Location: {village[:20]}")
-        c.drawString(info_x + 2*mm, info_y + info_h - 11*mm, f"Chiefdom: {chiefdom[:20]}")
-        
-        # Important Notice Box
-        info_y -= 15*mm
-        info_h = 10*mm
-        
-        c.setFillColor(colors.white)
-        c.rect(info_x, info_y, info_w, info_h, fill=1, stroke=0)
+        c.rect(info_x, current_y, info_w, address_h, fill=1, stroke=0)
         c.setStrokeColor(colors.HexColor('#2563eb'))
         c.setLineWidth(2)
-        c.line(info_x, info_y + info_h, info_x, info_y)
+        c.line(info_x, current_y + address_h, info_x, current_y)
         
         c.setFillColor(colors.HexColor('#1e40af'))
         c.setFont("Helvetica-Bold", 7)
-        c.drawString(info_x + 2*mm, info_y + info_h - 4*mm, "ℹ️ Important Notice")
+        c.drawString(info_x + 2*mm, current_y + address_h - 4*mm, "📍 Full Address")
         
         c.setFillColor(colors.HexColor('#374151'))
+        c.setFont("Helvetica", 5.5)
+        c.drawString(info_x + 2*mm, current_y + address_h - 7*mm, f"Village: {village[:18]}")
+        c.drawString(info_x + 2*mm, current_y + address_h - 10*mm, f"Chiefdom: {chiefdom[:18]}")
+        c.drawString(info_x + 2*mm, current_y + address_h - 12.5*mm, f"{district_name[:18]}, {province_name[:14]}")
+
+        # === OPERATOR DETAILS BOX (expanded) ===
+        current_y -= (box_gap + operator_h)
+        c.setFillColor(colors.HexColor('#eff6ff'))
+        c.rect(info_x, current_y, info_w, operator_h, fill=1, stroke=0)
+        c.setStrokeColor(colors.HexColor('#bfdbfe'))
+        c.setLineWidth(1)
+        c.rect(info_x, current_y, info_w, operator_h, fill=0, stroke=1)
+        
+        c.setFillColor(colors.HexColor('#1e40af'))
+        c.setFont("Helvetica-Bold", 6.5)
+        c.drawString(info_x + 2*mm, current_y + operator_h - 3*mm, "👤 Operator Details")
+        
+        c.setFillColor(colors.HexColor('#374151'))
+        c.setFont("Helvetica", 5.5)
+        c.drawString(info_x + 2*mm, current_y + operator_h - 5.5*mm, f"Created by: {operator_display[:16]}")
+        c.setFont("Helvetica", 4.5)
+        c.setFillColor(colors.HexColor('#6b7280'))
+        c.drawString(info_x + 2*mm, current_y + 1.5*mm, "Ministry of Agriculture, Zambia")        # Bottom verification & issued date bar (moved from front side)
+        issued_date = farmer.get('created_at', datetime.utcnow())
+        if isinstance(issued_date, str):
+            try:
+                issued_date = datetime.fromisoformat(issued_date)
+            except Exception:
+                issued_date = datetime.utcnow()
+        c.setFillColor(colors.HexColor('#14532d'))
+        c.rect(0, 0, CARD_WIDTH, 5*mm, fill=1, stroke=0)
+        c.setFillColor(colors.HexColor('#bbf7d0'))
         c.setFont("Helvetica", 5)
-        notice_text = "This card is property of the Government"
-        c.drawString(info_x + 2*mm, info_y + info_h - 7*mm, notice_text)
-        c.drawString(info_x + 2*mm, info_y + info_h - 9.5*mm, "of Zambia. Return to Ministry of Agric.")
-        
-        # Support Info Box
-        info_y -= 8*mm
-        info_h = 6*mm
-        
-        c.setFillColor(colors.HexColor('#dcfce7'))
-        c.rect(info_x, info_y, info_w, info_h, fill=1, stroke=0)
-        
-        c.setFillColor(colors.HexColor('#15803d'))
-        c.setFont("Helvetica-Bold", 6)
-        c.drawCentredString(info_x + info_w/2, info_y + info_h - 3*mm, "📞 Support: +260-211-XXX-XXX")
-        c.setFont("Helvetica", 5)
-        c.drawCentredString(info_x + info_w/2, info_y + info_h - 5.5*mm, "www.agriculture.gov.zm")
+        c.drawString(5*mm, 1.6*mm, f"Issued: {issued_date.strftime('%Y-%m-%d')}")
+        c.drawRightString(CARD_WIDTH - 5*mm, 1.6*mm, "✓ VERIFIED FARMER")
         
         # Save PDF
         c.save()
@@ -292,6 +309,7 @@ def generate_id_card(farmer_id: str):
                 "$set": {
                     "id_card_path": pdf_path,
                     "qr_code_path": qr_path,
+                    "qr_code_url": f"/uploads/qr/{farmer_id}_qr.png",  # Web-accessible path
                     "id_card_generated_at": datetime.utcnow()
                 }
             }

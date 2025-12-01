@@ -20,11 +20,15 @@ export default function FarmerDashboard() {
   }, []);
 
   useEffect(() => {
-    if (farmerData?.farmer_id) {
-      const url = farmerService.getQRCode(farmerData.farmer_id);
+    if (farmerData) {
+      const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+      // Use qr_code_url if available, otherwise construct from farmer_id
+      const url = farmerData.qr_code_url 
+        ? `${baseURL}${farmerData.qr_code_url}`
+        : `${baseURL}/uploads/qr/${farmerData.farmer_id}_qr.png`;
       setQrCodeUrl(url);
     }
-  }, [farmerData?.farmer_id]);
+  }, [farmerData]);
 
   const loadFarmerData = async () => {
     try {
