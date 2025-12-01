@@ -341,6 +341,58 @@ export default function FarmerDashboard() {
                 </div>
               </div>
 
+              <div style={{
+                background: "linear-gradient(135deg, #c2410c 0%, #ea580c 100%)",
+                borderRadius: "12px",
+                padding: "25px",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+                color: "white",
+                cursor: "pointer",
+                transition: "all 0.3s"
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = "translateY(-5px)";
+                e.currentTarget.style.boxShadow = "0 15px 35px rgba(0,0,0,0.15)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 10px 25px rgba(0,0,0,0.1)";
+              }}
+              onClick={() => navigate("/farmer/supply-requests")}
+              >
+                <div style={{ fontSize: "2.5rem", marginBottom: "15px" }}>📦</div>
+                <h3 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "8px" }}>Supply Requests</h3>
+                <p style={{ fontSize: "13px", opacity: 0.9, marginBottom: "15px" }}>Request farming supplies</p>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/farmer/supply-requests");
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "10px 15px",
+                    border: "2px solid white",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    cursor: "pointer",
+                    background: "white",
+                    color: "#c2410c",
+                    transition: "all 0.3s"
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.9)";
+                    e.currentTarget.style.transform = "scale(1.02)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = "white";
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
+                >
+                  📝 Request Supplies
+                </button>
+              </div>
+
               <div 
                 onClick={() => navigate(`/farmers/edit/${farmerData.farmer_id}`)}
                 style={{

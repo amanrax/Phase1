@@ -255,6 +255,31 @@ export default function AdminDashboard() {
               >
                 ⚙️ Settings
               </button>
+
+              <button
+                onClick={() => navigate("/admin/supply-requests")}
+                style={{
+                  padding: "10px 20px",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  background: "#c2410c",
+                  color: "white",
+                  transition: "all 0.3s"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = "#9a3412";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = "#c2410c";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                📦 Supply Requests
+              </button>
               
               <button
                 onClick={logout}

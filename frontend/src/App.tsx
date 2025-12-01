@@ -21,6 +21,8 @@ import FarmerDetails from "@/pages/FarmerDetails";
 import FarmerIDCard from "@/pages/FarmerIDCard";
 import AdminReports from "@/pages/AdminReports";
 import AdminSettings from "@/pages/AdminSettings";
+import AdminSupplyRequests from "@/pages/AdminSupplyRequests";
+import FarmerSupplyRequests from "@/pages/FarmerSupplyRequests";
 
 function App() {
   const { loadUser, token, user } = useAuthStore();
@@ -108,6 +110,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/supply-requests"
+          element={
+            <ProtectedRoute>
+              <RoleRoute requiredRole="admin">
+                <AdminSupplyRequests />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
 
         {/* Operator Routes */}
         <Route
@@ -180,6 +192,16 @@ function App() {
             <ProtectedRoute>
               <RoleRoute requiredRole="farmer">
                 <FarmerIDCard />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/farmer/supply-requests"
+          element={
+            <ProtectedRoute>
+              <RoleRoute requiredRole="farmer">
+                <FarmerSupplyRequests />
               </RoleRoute>
             </ProtectedRoute>
           }
