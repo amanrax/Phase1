@@ -53,6 +53,20 @@ class PersonalInfo(BaseModel):
     ethnic_group: Optional[str] = Field(None, max_length=100, description="Ethnic group")
 
 
+# UPDATE models with all optional fields
+class PersonalInfoUpdate(BaseModel):
+    """Personal information for updates (all fields optional)"""
+    first_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    last_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    phone_primary: Optional[str] = Field(None, pattern=r"^(\+260|0)[0-9]{9}$")
+    phone_secondary: Optional[str] = Field(None, pattern=r"^(\+260|0)[0-9]{9}$")
+    email: Optional[str] = Field(None, pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$")
+    nrc: Optional[str] = Field(None, description="National Registration Card number")
+    date_of_birth: Optional[str] = Field(None, description="Date of birth (YYYY-MM-DD)")
+    gender: Optional[str] = Field(None, pattern=r"^(Male|Female|Other)$")
+    ethnic_group: Optional[str] = Field(None, max_length=100, description="Ethnic group")
+
+
 class Address(BaseModel):
     """Address information sub-document"""
     province_code: str = Field(..., max_length=10)
@@ -67,6 +81,20 @@ class Address(BaseModel):
     gps_longitude: Optional[float] = Field(None, ge=-180, le=180)
 
 
+class AddressUpdate(BaseModel):
+    """Address information for updates (all fields optional)"""
+    province_code: Optional[str] = Field(None, max_length=10)
+    province_name: Optional[str] = Field(None, max_length=100)
+    district_code: Optional[str] = Field(None, max_length=10)
+    district_name: Optional[str] = Field(None, max_length=100)
+    chiefdom_code: Optional[str] = Field(None, max_length=20)
+    chiefdom_name: Optional[str] = Field(None, max_length=100)
+    village: Optional[str] = Field(None, max_length=100)
+    street: Optional[str] = Field(None, max_length=200)
+    gps_latitude: Optional[float] = Field(None, ge=-90, le=90)
+    gps_longitude: Optional[float] = Field(None, ge=-180, le=180)
+
+
 class FarmInfo(BaseModel):
     """Farm information sub-document"""
     farm_size_hectares: float = Field(..., gt=0, description="Farm size in hectares")
@@ -76,11 +104,27 @@ class FarmInfo(BaseModel):
     years_farming: int = Field(..., ge=0, le=100)
 
 
+class FarmInfoUpdate(BaseModel):
+    """Farm information for updates (all fields optional)"""
+    farm_size_hectares: Optional[float] = Field(None, gt=0, description="Farm size in hectares")
+    crops_grown: Optional[List[str]] = Field(None, max_length=20)
+    livestock_types: Optional[List[str]] = Field(None, max_length=20)
+    has_irrigation: Optional[bool] = None
+    years_farming: Optional[int] = Field(None, ge=0, le=100)
+
+
 class HouseholdInfo(BaseModel):
     """Household information sub-document"""
     household_size: int = Field(..., ge=1, description="Number of people in household")
     number_of_dependents: int = Field(..., ge=0)
     primary_income_source: str = Field(..., max_length=100)
+
+
+class HouseholdInfoUpdate(BaseModel):
+    """Household information for updates (all fields optional)"""
+    household_size: Optional[int] = Field(None, ge=1, description="Number of people in household")
+    number_of_dependents: Optional[int] = Field(None, ge=0)
+    primary_income_source: Optional[str] = Field(None, max_length=100)
 
 
 class Documents(BaseModel):
@@ -149,10 +193,10 @@ class FarmerCreate(FarmerBase):
 
 class FarmerUpdate(BaseModel):
     """Model for updating farmer information (partial updates allowed)"""
-    personal_info: Optional[PersonalInfo] = None
-    address: Optional[Address] = None
-    farm_info: Optional[FarmInfo] = None
-    household_info: Optional[HouseholdInfo] = None
+    personal_info: Optional[PersonalInfoUpdate] = None
+    address: Optional[AddressUpdate] = None
+    farm_info: Optional[FarmInfoUpdate] = None
+    household_info: Optional[HouseholdInfoUpdate] = None
     registration_status: Optional[str] = Field(
         None, 
         pattern=r"^(registered|under_review|verified|rejected|pending_documents)$"

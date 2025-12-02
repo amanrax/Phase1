@@ -355,6 +355,15 @@ class FarmerService:
         if not update_dict:
             return FarmerOut.from_mongo(existing)
         
+        # Merge nested updates with existing data to preserve fields not being updated
+        for nested_key in ['personal_info', 'address', 'farm_info', 'household_info']:
+            if nested_key in update_dict and isinstance(update_dict[nested_key], dict):
+                # Merge with existing nested object
+                existing_nested = existing.get(nested_key, {})
+                if isinstance(existing_nested, dict):
+                    # Update only the fields provided, keep the rest
+                    update_dict[nested_key] = {**existing_nested, **update_dict[nested_key]}
+        
         # Add updated timestamp
         now = datetime.now(datetime.timezone.utc) if hasattr(datetime, 'timezone') else datetime.utcnow()
         update_dict["updated_at"] = now

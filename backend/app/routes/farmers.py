@@ -485,7 +485,7 @@ async def review_farmer(
 )
 async def update_farmer_status(
     farmer_id: str,
-    new_status: str = Query(..., regex="^(registered|under_review|verified|rejected|pending_documents)$"),
+    new_status: str = Query(..., regex="^(pending|approved|rejected)$"),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(require_operator)
 ):
@@ -496,9 +496,11 @@ async def update_farmer_status(
     
     **Permissions:** ADMIN or OPERATOR
     
+    **Status values:** pending, approved, rejected
+    
     **Example:**
     ```
-    PATCH /api/farmers/ZM1A2B3C4D/status?new_status=verified
+    PATCH /api/farmers/ZM1A2B3C4D/status?new_status=approved
     ```
     """
     farmer_service = FarmerService(db)
