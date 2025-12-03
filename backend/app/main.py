@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import RequestValidationError
 from contextlib import asynccontextmanager
 from starlette.middleware.base import BaseHTTPMiddleware
 from pathlib import Path
@@ -144,8 +145,27 @@ async def root():
     }
 
 # ============================================
-# Global Exception Handler
+# Global Exception Handlers
 # ============================================
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """
+    Custom handler for Pydantic validation errors.
+    Logs detailed validation errors and returns user-friendly response.
+    """
+    logger.error(f"Validation error on {request.method} {request.url.path}")
+    logger.error(f"Request body: {await request.body()}")
+    logger.error(f"Validation errors: {exc.errors()}")
+    
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "Validation error",
+            "errors": exc.errors(),
+            "body": exc.body if hasattr(exc, 'body') else None
+        }
+    )
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception: {exc}", exc_info=True)

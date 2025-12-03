@@ -250,35 +250,45 @@ export default function EditFarmer() {
           first_name: formData.first_name,
           last_name: formData.last_name,
           phone_primary: cleanPhone(formData.phone_primary),
-          phone_secondary: formData.phone_secondary ? cleanPhone(formData.phone_secondary) : undefined,
-          email: formData.email || undefined,
           nrc: formData.nrc,
           date_of_birth: formData.date_of_birth,
           gender: formData.gender,
-          ethnic_group: formData.ethnic_group || undefined,
         },
         address: {
           province_code: finalProvinceCode,
           province_name: finalProvinceName,
           district_code: finalDistrictCode,
           district_name: finalDistrictName,
-          chiefdom_code: finalChiefdomCode,
-          chiefdom_name: finalChiefdomName,
+          chiefdom_code: finalChiefdomCode || "",
+          chiefdom_name: finalChiefdomName || "",
           village: formData.village,
         },
-        farm_info: {
-          farm_size_hectares: formData.farm_size_hectares ? parseFloat(formData.farm_size_hectares) : undefined,
+      };
+      
+      // Add optional personal_info fields
+      if (formData.phone_secondary) payload.personal_info.phone_secondary = cleanPhone(formData.phone_secondary);
+      if (formData.email) payload.personal_info.email = formData.email;
+      if (formData.ethnic_group) payload.personal_info.ethnic_group = formData.ethnic_group;
+      
+      // Add farm_info if any field is filled
+      if (formData.farm_size_hectares || formData.crops_grown || formData.livestock_types || formData.years_farming) {
+        payload.farm_info = {
+          farm_size_hectares: formData.farm_size_hectares ? parseFloat(formData.farm_size_hectares) : 0,
           crops_grown: formData.crops_grown ? formData.crops_grown.split(",").map((c) => c.trim()).filter(Boolean) : [],
           livestock_types: formData.livestock_types ? formData.livestock_types.split(",").map((l) => l.trim()).filter(Boolean) : [],
           has_irrigation: formData.has_irrigation,
-          years_farming: formData.years_farming ? parseInt(formData.years_farming) : undefined,
-        },
-        household_info: {
-          household_size: formData.household_size ? parseInt(formData.household_size) : undefined,
-          number_of_dependents: formData.number_of_dependents ? parseInt(formData.number_of_dependents) : undefined,
-          primary_income_source: formData.primary_income_source || undefined,
-        },
-      };
+          years_farming: formData.years_farming ? parseInt(formData.years_farming) : 0,
+        };
+      }
+      
+      // Add household_info if any field is filled
+      if (formData.household_size || formData.number_of_dependents || formData.primary_income_source) {
+        payload.household_info = {
+          household_size: formData.household_size ? parseInt(formData.household_size) : 1,
+          number_of_dependents: formData.number_of_dependents ? parseInt(formData.number_of_dependents) : 0,
+          primary_income_source: formData.primary_income_source || "Farming",
+        };
+      }
 
       await farmerService.update(farmerId!, payload);
       alert("✅ Farmer updated successfully!");

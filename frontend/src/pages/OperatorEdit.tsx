@@ -72,11 +72,13 @@ export default function OperatorEdit() {
     try {
       setLoading(true);
       const op = await operatorService.getOperator(operatorId!);
+      // Backend returns assigned_districts (array), we use first element
+      const district = op.assigned_districts?.[0] || op.assigned_district || "";
       setFormData({
         full_name: op.full_name || "",
         email: op.email || "",
         phone: op.phone || "",
-        assigned_district: op.assigned_district || "",
+        assigned_district: district,
         is_active: op.is_active ?? true,
       });
     } catch (err: unknown) {

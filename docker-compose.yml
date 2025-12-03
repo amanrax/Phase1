@@ -19,7 +19,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - FRONTEND_ORIGIN=https://frightening-gravestone-jr47wg46pv6295j-5173.app.github.dev
+      - FRONTEND_ORIGIN=https://jubilant-goggles-r5q9pv5j6rjh59rq-5173.app.github.dev
     volumes:
       - ./backend:/app
       - ./uploads:/app/uploads
@@ -106,7 +106,7 @@ services:
       - farmer-backend
     environment:
       # Use HTTPS backend URL for Codespaces
-      - VITE_API_BASE_URL=https://frightening-gravestone-jr47wg46pv6295j-8000.app.github.dev
+      - VITE_API_BASE_URL=https://jubilant-goggles-r5q9pv5j6rjh59rq-8000.app.github.dev
     volumes:
       - ./frontend:/app
       - /app/node_modules

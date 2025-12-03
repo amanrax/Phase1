@@ -385,7 +385,7 @@ export default function AdminDashboard() {
                   <tbody>
                     {operators.slice(0, 5).map((op) => (
                       <tr
-                        key={op._id}
+                        key={op.operator_id || op._id}
                         style={{ borderBottom: "1px solid #dee2e6", background: "white", transition: "all 0.2s", cursor: "pointer" }}
                         onMouseOver={(e) => {
                           e.currentTarget.style.background = "#f8f9ff";
@@ -489,7 +489,7 @@ export default function AdminDashboard() {
               <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
                 {farmers.map((farmer) => (
                   <div
-                    key={farmer._id}
+                    key={farmer.farmer_id || farmer._id}
                     onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
                     style={{
                       border: "1px solid #e0e0e0",

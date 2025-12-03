@@ -27,11 +27,11 @@ class OperatorCreate(BaseModel):
 
 
 class OperatorUpdate(BaseModel):
-    full_name: Optional[str]
-    phone: Optional[str]
-    assigned_regions: Optional[List[str]]
-    assigned_districts: Optional[List[str]]
-    is_active: Optional[bool]
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    assigned_regions: Optional[List[str]] = None
+    assigned_districts: Optional[List[str]] = None
+    is_active: Optional[bool] = None
 
 
 class OperatorOut(BaseModel):
@@ -216,7 +216,15 @@ async def update_operator(operator_id: str, payload: OperatorUpdate, db=Depends(
     if not op:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operator not found")
 
-    update_data = {k: v for k, v in payload.dict().items() if v is not None}
+    # Build update dict, excluding None values and empty lists
+    update_data = {}
+    for key, value in payload.dict().items():
+        if value is not None:
+            # Skip empty lists for assigned_districts/assigned_regions
+            if isinstance(value, list) and len(value) == 0 and key in ['assigned_districts', 'assigned_regions']:
+                continue
+            update_data[key] = value
+    
     if not update_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No fields to update")
 
