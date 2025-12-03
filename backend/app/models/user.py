@@ -230,6 +230,7 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     """Login response model"""
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
     expires_in: int
     user: UserOut
@@ -238,6 +239,7 @@ class LoginResponse(BaseModel):
         json_schema_extra={
             "example": {
                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "token_type": "bearer",
                 "expires_in": 1800,
                 "user": {

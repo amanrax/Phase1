@@ -181,6 +181,7 @@ async def login(
         )
         return LoginResponse(
             access_token=access_token,
+            refresh_token=refresh_token,
             token_type="bearer",
             expires_in=get_token_expiry_seconds("access"),
             user=user_out
@@ -261,6 +262,7 @@ async def login(
         )
         return LoginResponse(
             access_token=access_token,
+            refresh_token=refresh_token,
             token_type="bearer",
             expires_in=get_token_expiry_seconds("access"),
             user=user_out
