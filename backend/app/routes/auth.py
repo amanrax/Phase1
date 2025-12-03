@@ -35,6 +35,7 @@ from app.utils.security import (
     validate_password_strength
 )
 from app.dependencies.roles import get_current_user, require_admin
+from app.services.logging_service import log_event, sanitize_body
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -54,7 +55,14 @@ async def login(
     credentials: LoginRequest,
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    print(credentials)
+    # Structured logging: login attempt
+    await log_event(
+        level="INFO",
+        module="auth",
+        action="login_attempt",
+        details=sanitize_body({"email": credentials.email}),
+        endpoint="/api/auth/login",
+    )
     """
     Login endpoint - returns JWT tokens and user information.
     
@@ -99,6 +107,15 @@ async def login(
             )
         
         if not farmer_doc.get("is_active", True):
+            await log_event(
+                level="WARNING",
+                module="auth",
+                action="login_blocked",
+                details={"reason": "farmer_inactive", "nrc": login_identifier},
+                endpoint="/api/auth/login",
+                user_id=str(farmer_doc.get("_id")),
+                role="FARMER",
+            )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Account is disabled. Contact administrator.",
@@ -106,6 +123,14 @@ async def login(
             
         # Verify password against date of birth
         if credentials.password != farmer_doc.get("personal_info", {}).get("date_of_birth"):
+            await log_event(
+                level="WARNING",
+                module="auth",
+                action="login_failed",
+                details={"reason": "dob_mismatch", "nrc": login_identifier},
+                endpoint="/api/auth/login",
+                role="FARMER",
+            )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid NRC or date of birth",
@@ -129,6 +154,15 @@ async def login(
             farmer_id=farmer_id
         )
 
+        await log_event(
+            level="INFO",
+            module="auth",
+            action="login_success",
+            details={"role": "FARMER", "farmer_id": farmer_id},
+            endpoint="/api/auth/login",
+            user_id=str(farmer_doc.get("_id")),
+            role="FARMER",
+        )
         return LoginResponse(
             access_token=access_token,
             token_type="bearer",
@@ -155,6 +189,15 @@ async def login(
             )
         
         if not user_doc.get("is_active", True):
+            await log_event(
+                level="WARNING",
+                module="auth",
+                action="login_blocked",
+                details={"reason": "user_inactive", "email": login_identifier},
+                endpoint="/api/auth/login",
+                user_id=str(user_doc.get("_id")),
+                role=",".join(user_doc.get("roles", [])) if user_doc.get("roles") else None,
+            )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Account is disabled. Contact administrator.",
@@ -172,6 +215,15 @@ async def login(
         
         user_out = UserOut.from_mongo(user_doc)
         
+        await log_event(
+            level="INFO",
+            module="auth",
+            action="login_success",
+            details={"roles": user_roles, "email": login_identifier},
+            endpoint="/api/auth/login",
+            user_id=str(user_doc.get("_id")),
+            role=",".join(user_roles) if user_roles else None,
+        )
         return LoginResponse(
             access_token=access_token,
             token_type="bearer",

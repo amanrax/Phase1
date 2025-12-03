@@ -12,6 +12,7 @@ import os
 # Import configuration and database
 from app.config import settings
 from app.database import connect_to_database, close_database_connection
+from app.middleware.logging_middleware import LoggingMiddleware
 
 # Import routers
 from app.routes import (
@@ -27,6 +28,7 @@ from app.routes import (
     dashboard,
     reports,
     supplies,
+    logs,
 )
 
 # Configure logging
@@ -96,6 +98,7 @@ cors_kwargs = dict(
 )
 
 app.add_middleware(CORSMiddleware, **cors_kwargs)
+app.add_middleware(LoggingMiddleware)
 
 # Removed EnsureCORSHeadersMiddleware as CORSMiddleware with regex should handle Codespaces
 
@@ -119,6 +122,7 @@ app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
 app.include_router(sync.router, prefix="/api", tags=["Synchronization"])
 app.include_router(farmers_qr.router, prefix="/api", tags=["Farmers QR"])
 app.include_router(health.router, prefix="/api/health", tags=["Health"])
+app.include_router(logs.router, prefix="/api", tags=["Logs"])
 
 logger.info("✅ All API routers registered")
 

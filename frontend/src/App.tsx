@@ -23,6 +23,7 @@ import AdminReports from "@/pages/AdminReports";
 import AdminSettings from "@/pages/AdminSettings";
 import AdminSupplyRequests from "@/pages/AdminSupplyRequests";
 import FarmerSupplyRequests from "@/pages/FarmerSupplyRequests";
+import LogViewer from "@/pages/LogViewer";
 
 function App() {
   const { loadUser, token, user } = useAuthStore();
@@ -116,6 +117,16 @@ function App() {
             <ProtectedRoute>
               <RoleRoute requiredRole="admin">
                 <AdminSupplyRequests />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/logs"
+          element={
+            <ProtectedRoute>
+              <RoleRoute requiredRole="admin">
+                <LogViewer />
               </RoleRoute>
             </ProtectedRoute>
           }

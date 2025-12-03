@@ -48,6 +48,7 @@ from pathlib import Path
 import time
 from datetime import datetime
 from fastapi import UploadFile, File, HTTPException, Depends
+from app.services.logging_service import log_event, sanitize_body
 
 
 router = APIRouter(prefix="/farmers", tags=["Farmers"])
@@ -117,6 +118,16 @@ async def create_farmer(
     }
     ```
     """
+    # Log attempt
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="create_attempt",
+        details=sanitize_body({"created_by": current_user.get("email")}),
+        endpoint="/api/farmers",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
     # Initialize service
     farmer_service = FarmerService(db)
     
@@ -124,6 +135,15 @@ async def create_farmer(
     created_by = current_user.get("email")
     farmer = await farmer_service.create_farmer(farmer_data, created_by=created_by)
     
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="create_success",
+        details={"farmer_id": farmer.farmer_id},
+        endpoint="/api/farmers",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
     return farmer
 
 
@@ -188,6 +208,15 @@ async def list_farmers(
     ]
     ```
     """
+    await log_event(
+        level="DEBUG",
+        module="farmers",
+        action="list_query",
+        details={"skip": skip, "limit": limit, "status": status, "district": district, "search": search},
+        endpoint="/api/farmers",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
     farmer_service = FarmerService(db)
     
     # Apply filtering for operators
@@ -215,6 +244,15 @@ async def list_farmers(
         allowed_districts=allowed_districts
     )
     
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="list_result",
+        details={"count": len(farmers)},
+        endpoint="/api/farmers",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
     return farmers
 
 
@@ -321,11 +359,29 @@ async def get_farmer(
     }
     ```
     """
+    await log_event(
+        level="DEBUG",
+        module="farmers",
+        action="get_attempt",
+        details={"farmer_id": farmer_id},
+        endpoint=f"/api/farmers/{farmer_id}",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
     farmer_service = FarmerService(db)
     
     farmer = await farmer_service.get_farmer_by_id(farmer_id)
     
     if not farmer:
+        await log_event(
+            level="WARNING",
+            module="farmers",
+            action="get_not_found",
+            details={"farmer_id": farmer_id},
+            endpoint=f"/api/farmers/{farmer_id}",
+            user_id=current_user.get("email"),
+            role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Farmer {farmer_id} not found"
@@ -337,11 +393,29 @@ async def get_farmer(
         # Check if the farmer_id in the token matches the requested farmer_id
         user_farmer_id = current_user.get("farmer_id")
         if user_farmer_id and user_farmer_id != farmer_id:
+            await log_event(
+                level="WARNING",
+                module="farmers",
+                action="get_forbidden",
+                details={"farmer_id": farmer_id},
+                endpoint=f"/api/farmers/{farmer_id}",
+                user_id=current_user.get("email"),
+                role="FARMER",
+            )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only view your own farmer profile"
             )
     
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="get_success",
+        details={"farmer_id": farmer_id},
+        endpoint=f"/api/farmers/{farmer_id}",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
     return farmer
 
 
@@ -380,6 +454,15 @@ async def update_farmer(
     }
     ```
     """
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="update_attempt",
+        details={"farmer_id": farmer_id},
+        endpoint=f"/api/farmers/{farmer_id}",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
     farmer_service = FarmerService(db)
 
     # Authorization: Farmers can only update their own profile
@@ -394,11 +477,29 @@ async def update_farmer(
     updated_farmer = await farmer_service.update_farmer(farmer_id, update_data)
     
     if not updated_farmer:
+        await log_event(
+            level="WARNING",
+            module="farmers",
+            action="update_not_found",
+            details={"farmer_id": farmer_id},
+            endpoint=f"/api/farmers/{farmer_id}",
+            user_id=current_user.get("email"),
+            role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Farmer {farmer_id} not found"
         )
     
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="update_success",
+        details={"farmer_id": farmer_id},
+        endpoint=f"/api/farmers/{farmer_id}",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
     return updated_farmer
 
 
@@ -541,16 +642,43 @@ async def delete_farmer(
     }
     ```
     """
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="delete_attempt",
+        details={"farmer_id": farmer_id},
+        endpoint=f"/api/farmers/{farmer_id}",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
     farmer_service = FarmerService(db)
     
     deleted = await farmer_service.delete_farmer(farmer_id)
     
     if not deleted:
+        await log_event(
+            level="WARNING",
+            module="farmers",
+            action="delete_not_found",
+            details={"farmer_id": farmer_id},
+            endpoint=f"/api/farmers/{farmer_id}",
+            user_id=current_user.get("email"),
+            role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Farmer {farmer_id} not found"
         )
     
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="delete_success",
+        details={"farmer_id": farmer_id},
+        endpoint=f"/api/farmers/{farmer_id}",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
     return {
         "message": f"Farmer {farmer_id} deleted successfully",
         "farmer_id": farmer_id
@@ -595,6 +723,15 @@ async def upload_farmer_photo(
     }
     ```
     """
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="photo_upload_attempt",
+        details={"farmer_id": farmer_id, "filename": file.filename},
+        endpoint=f"/api/farmers/{farmer_id}/upload-photo",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
     # Validate file type
     allowed_extensions = settings.ALLOWED_IMAGE_EXTENSIONS
     file_ext = file.filename.split('.')[-1].lower()
@@ -652,6 +789,15 @@ async def upload_farmer_photo(
         {"documents.photo": relative_path}
     )
     
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="photo_upload_success",
+        details={"farmer_id": farmer_id, "path": relative_path},
+        endpoint=f"/api/farmers/{farmer_id}/upload-photo",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
     return {
         "message": "Photo uploaded successfully",
         "farmer_id": farmer_id,
@@ -705,8 +851,22 @@ async def verify_qr_code(
     """
     from datetime import datetime, timezone
     
+    await log_event(
+        level="DEBUG",
+        module="farmers",
+        action="qr_verify_attempt",
+        details={"payload_keys": list(payload.keys())},
+        endpoint="/api/farmers/verify-qr",
+    )
     # Verify QR signature
     if not verify_qr_signature(payload):
+        await log_event(
+            level="WARNING",
+            module="farmers",
+            action="qr_verify_failed",
+            details={"reason": "invalid_signature"},
+            endpoint="/api/farmers/verify-qr",
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or tampered QR code signature"
@@ -725,6 +885,13 @@ async def verify_qr_code(
     farmer = await farmer_service.get_farmer_by_id(farmer_id)
     
     if not farmer:
+        await log_event(
+            level="WARNING",
+            module="farmers",
+            action="qr_verify_not_found",
+            details={"farmer_id": farmer_id},
+            endpoint="/api/farmers/verify-qr",
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Farmer {farmer_id} not found"
@@ -733,6 +900,13 @@ async def verify_qr_code(
     # Return verification result
     now = datetime.now(timezone.utc)
     
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="qr_verify_success",
+        details={"farmer_id": farmer.farmer_id},
+        endpoint="/api/farmers/verify-qr",
+    )
     return {
         "verified": True,
         "farmer_id": farmer.farmer_id,
