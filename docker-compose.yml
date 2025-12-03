@@ -33,15 +33,13 @@ services:
   # ===============================
   # ⚙️ CELERY WORKER
   # ===============================
-  farmer-worker:
+  celery-worker:
     build:
       context: ./backend
-    container_name: farmer-worker
+    container_name: celery-worker
     command: >
       sh -c "celery -A app.tasks.celery_app.celery_app worker --loglevel=info"
     depends_on:
-      #farmer-mongo:
-        #condition: service_healthy
       farmer-redis:
         condition: service_healthy
     env_file:

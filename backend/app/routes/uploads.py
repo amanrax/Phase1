@@ -19,8 +19,12 @@ ALLOWED_DOC_TYPES = {"image/jpeg", "image/png", "application/pdf"}
 async def save_file(file: UploadFile, dest: Path):
     """Save an upload to local filesystem."""
     dest.parent.mkdir(parents=True, exist_ok=True)
+    # Seek to beginning in case stream was partially read
+    await file.seek(0)
     with dest.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        # Read file content asynchronously
+        content = await file.read()
+        buffer.write(content)
 
 
 def validate_file_upload(file: UploadFile, allowed_types: set, max_size_mb: int):
