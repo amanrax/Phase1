@@ -4,17 +4,20 @@ Pytest configuration and fixtures for backend testing.
 import pytest
 import asyncio
 from typing import AsyncGenerator, Generator
-from motor.motor_asyncio import AsyncIOMotorClient
-from httpx import AsyncClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from httpx import AsyncClient, ASGITransport
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.config import settings
+from app.database import get_db
 from app.utils.security import create_access_token, hash_password
 
 
 # Test database name
 TEST_DB_NAME = f"{settings.MONGODB_DB_NAME}_test"
+test_client = None
+test_database = None
 
 
 @pytest.fixture(scope="session")
@@ -26,31 +29,55 @@ def event_loop() -> Generator:
 
 
 @pytest.fixture(scope="session")
-async def test_db():
-    """Create test database connection."""
+async def test_mongo_client():
+    """Create MongoDB client for tests."""
     client = AsyncIOMotorClient(settings.MONGODB_URL)
-    db = client[TEST_DB_NAME]
-    yield db
-    # Cleanup: drop test database after all tests
+    yield client
     await client.drop_database(TEST_DB_NAME)
     client.close()
 
 
 @pytest.fixture(scope="function")
-async def clean_db(test_db):
-    """Clean database before each test."""
-    # Drop all collections
-    collections = await test_db.list_collection_names()
+async def test_db(test_mongo_client):
+    """Create test database connection and clean it."""
+    db = test_mongo_client[TEST_DB_NAME]
+    # Clean all collections before test
+    collections = await db.list_collection_names()
     for collection in collections:
-        await test_db[collection].delete_many({})
-    yield test_db
+        await db[collection].delete_many({})
+    yield db
+
+
+@pytest.fixture(scope="function")
+async def clean_db(test_db):
+    """Alias for test_db for backward compatibility."""
+    return test_db
+
+
+async def override_get_db():
+    """Override database dependency for tests."""
+    client = AsyncIOMotorClient(settings.MONGODB_URL)
+    db = client[TEST_DB_NAME]
+    try:
+        yield db
+    finally:
+        pass  # Don't close here as we manage it in fixtures
 
 
 @pytest.fixture
-async def async_client() -> AsyncGenerator[AsyncClient, None]:
+async def async_client(test_db) -> AsyncGenerator[AsyncClient, None]:
     """Create async HTTP client for testing."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    # Override the database dependency
+    app.dependency_overrides[get_db] = override_get_db
+    
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test"
+    ) as client:
         yield client
+    
+    # Clear overrides after test
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -115,36 +142,42 @@ async def farmer_user(clean_db):
 
 
 @pytest.fixture
-def admin_token(admin_user):
+async def admin_token(admin_user):
     """Generate admin JWT token."""
-    return create_access_token(admin_user["email"], roles=admin_user["roles"])
+    user = await admin_user if asyncio.iscoroutine(admin_user) else admin_user
+    return create_access_token(user["email"], roles=user["roles"])
 
 
 @pytest.fixture
-def operator_token(operator_user):
+async def operator_token(operator_user):
     """Generate operator JWT token."""
-    return create_access_token(operator_user["email"], roles=operator_user["roles"])
+    user = await operator_user if asyncio.iscoroutine(operator_user) else operator_user
+    return create_access_token(user["email"], roles=user["roles"])
 
 
 @pytest.fixture
-def farmer_token(farmer_user):
+async def farmer_token(farmer_user):
     """Generate farmer JWT token."""
-    return create_access_token(farmer_user["farmer_id"], roles=["FARMER"])
+    user = await farmer_user if asyncio.iscoroutine(farmer_user) else farmer_user
+    return create_access_token(user["farmer_id"], roles=["FARMER"])
 
 
 @pytest.fixture
-def auth_headers_admin(admin_token):
+async def auth_headers_admin(admin_token):
     """Get authorization headers for admin."""
-    return {"Authorization": f"Bearer {admin_token}"}
+    token = await admin_token if asyncio.iscoroutine(admin_token) else admin_token
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.fixture
-def auth_headers_operator(operator_token):
+async def auth_headers_operator(operator_token):
     """Get authorization headers for operator."""
-    return {"Authorization": f"Bearer {operator_token}"}
+    token = await operator_token if asyncio.iscoroutine(operator_token) else operator_token
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.fixture
-def auth_headers_farmer(farmer_token):
+async def auth_headers_farmer(farmer_token):
     """Get authorization headers for farmer."""
-    return {"Authorization": f"Bearer {farmer_token}"}
+    token = await farmer_token if asyncio.iscoroutine(farmer_token) else farmer_token
+    return {"Authorization": f"Bearer {token}"}
