@@ -13,7 +13,7 @@ export interface AuthState {
   error: string | null;
   lastActivity: number;
   showTimeoutWarning: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, role?: string) => Promise<void>;
   logout: () => void;
   loadUser: () => Promise<void>;
   refreshAccessToken: () => Promise<string | null>;
@@ -37,10 +37,10 @@ const useAuthStore = create<AuthState>()(
       showTimeoutWarning: false,
 
       // ---------- FIXED LOGIN ----------
-      login: async (email: string, password: string) => {
+      login: async (email: string, password: string, role?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authService.login(email, password);
+          const response = await authService.login(email, password, role);
 
           const userRoles = response.user?.roles || [];
           // Normalize role strings to uppercase to match backend role checks

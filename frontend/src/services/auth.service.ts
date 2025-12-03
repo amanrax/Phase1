@@ -11,10 +11,11 @@ export interface LoginResponse {
 }
 
 export const authService = {
-  async login(email: string, password: string): Promise<LoginResponse> {
+  async login(email: string, password: string, role?: string): Promise<LoginResponse> {
     const { data } = await axiosClient.post<LoginResponse>("/auth/login", {
       email,
       password,
+      role,
     });
     return data;
   },

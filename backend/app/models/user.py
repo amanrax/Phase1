@@ -214,12 +214,14 @@ class LoginRequest(BaseModel):
     """Login request model"""
     email: str = Field(..., description="User email or NRC number")
     password: str = Field(..., description="User password")
+    role: Optional[str] = Field(None, description="Expected role: admin, operator, or farmer")
     
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "email": "admin@agrimanage.com",
-                "password": "admin123"
+                "password": "admin123",
+                "role": "admin"
             }
         }
     )

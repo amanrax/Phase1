@@ -136,6 +136,22 @@ async def login(
                 detail="Invalid NRC or date of birth",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+        
+        # Validate role if specified
+        if credentials.role and credentials.role.lower() != "farmer":
+            await log_event(
+                level="WARNING",
+                module="auth",
+                action="login_failed",
+                details={"reason": "role_mismatch", "nrc": login_identifier, "expected_role": credentials.role, "actual_role": "FARMER"},
+                endpoint="/api/auth/login",
+                role="FARMER",
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid credentials for {credentials.role} login",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
             
         # Create tokens for the farmer
         farmer_id = farmer_doc.get("farmer_id")
@@ -202,8 +218,27 @@ async def login(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Account is disabled. Contact administrator.",
             )
-            
+        
+        # Validate role if specified
         user_roles = user_doc.get("roles", [])
+        if credentials.role:
+            expected_role = credentials.role.upper()
+            if expected_role not in user_roles:
+                await log_event(
+                    level="WARNING",
+                    module="auth",
+                    action="login_failed",
+                    details={"reason": "role_mismatch", "email": login_identifier, "expected_role": expected_role, "actual_roles": user_roles},
+                    endpoint="/api/auth/login",
+                    user_id=str(user_doc.get("_id")),
+                    role=",".join(user_roles) if user_roles else None,
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"Invalid credentials for {credentials.role} login",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            
         access_token = create_access_token(login_identifier, roles=user_roles)
         refresh_token = create_refresh_token(login_identifier)
         

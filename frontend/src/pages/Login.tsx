@@ -18,17 +18,8 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      await login(email, password);
+      await login(email, password, userType);
       const user = useAuthStore.getState().user;
-      
-      // Validate that the selected role matches the actual user role
-      const actualRole = user?.roles[0]?.toLowerCase(); // Get primary role
-      if (actualRole !== userType) {
-        // Role mismatch - logout and show error
-        useAuthStore.getState().logout();
-        showError(`Please enter correct credentials for ${userType.charAt(0).toUpperCase() + userType.slice(1)} login.`);
-        return;
-      }
       
       showSuccess(`Welcome back, ${user?.email || 'User'}!`);
       
