@@ -1,7 +1,8 @@
 # backend/app/routes/dashboard.py
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from app.database import get_db
 from app.dependencies.roles import require_role
+from app.services.logging_service import log_event
 from datetime import datetime
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -13,9 +14,21 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
     description="Returns key dashboard statistics for admin/operator. Auth required."
 )
 async def get_dashboard_stats(
+    request: Request,
     db = Depends(get_db),
     current_user = Depends(require_role(["ADMIN", "OPERATOR"]))
 ):
+    await log_event(
+        level="INFO",
+        module="dashboard",
+        action="get_stats",
+        details={},
+        endpoint=str(request.url),
+        user_id=current_user.get("email"),
+        role=current_user.get("roles", [])[0] if current_user.get("roles") else None,
+        ip_address=request.client.host if request.client else None
+    )
+    
     total_farmers = await db.farmers.count_documents({})
     active_farmers = await db.farmers.count_documents({"registration_status": "approved"})
     pending_farmers = await db.farmers.count_documents({"registration_status": "pending"})

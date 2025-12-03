@@ -9,6 +9,7 @@ from app.dependencies.roles import require_role, require_admin, get_current_user
 from app.utils.security import hash_password
 from app.models.user import UserRole
 from bson import ObjectId # Import ObjectId
+from app.services.logging_service import log_event
 
 
 router = APIRouter(prefix="/operators", tags=["Operators"])
@@ -107,7 +108,16 @@ async def _get_operator_stats(operator_id: str, db):
     summary="Create operator",
     description="Admin only. Creates user and operator profile."
 )
-async def create_operator(payload: OperatorCreate, db=Depends(get_db)):
+async def create_operator(payload: OperatorCreate, db=Depends(get_db), current_user: dict = Depends(require_admin)):
+    await log_event(
+        level="INFO",
+        module="operators",
+        action="create_attempt",
+        details={"email": payload.email},
+        endpoint="/api/operators",
+        user_id=current_user.get("email"),
+        role="ADMIN",
+    )
     email = payload.email.lower().strip()
 
     # Check if user exists
@@ -154,6 +164,15 @@ async def create_operator(payload: OperatorCreate, db=Depends(get_db)):
         created_at=now,
         farmer_count=0,
     )
+    await log_event(
+        level="INFO",
+        module="operators",
+        action="create_success",
+        details={"operator_id": operator_id, "email": email},
+        endpoint="/api/operators",
+        user_id=current_user.get("email"),
+        role="ADMIN",
+    )
     return {"message": "Operator created", "operator": out.dict()}
 
 
@@ -169,7 +188,17 @@ async def list_operators(
     region: Optional[str] = None,
     is_active: Optional[bool] = None,
     db=Depends(get_db),
+    current_user: dict = Depends(require_admin),
 ):
+    await log_event(
+        level="DEBUG",
+        module="operators",
+        action="list_query",
+        details={"skip": skip, "limit": limit, "region": region, "is_active": is_active},
+        endpoint="/api/operators",
+        user_id=current_user.get("email"),
+        role="ADMIN",
+    )
     query = {}
     if region:
         query["assigned_regions"] = region
@@ -195,9 +224,27 @@ async def list_operators(
     summary="Get operator",
     description="Get details and stats of specific operator."
 )
-async def get_operator(operator_id: str, db=Depends(get_db)):
+async def get_operator(operator_id: str, db=Depends(get_db), current_user: dict = Depends(require_role([UserRole.ADMIN.value, UserRole.OPERATOR.value]))):
+    await log_event(
+        level="DEBUG",
+        module="operators",
+        action="get_attempt",
+        details={"operator_id": operator_id},
+        endpoint=f"/api/operators/{operator_id}",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])),
+    )
     op = await db.operators.find_one({"operator_id": operator_id})
     if not op:
+        await log_event(
+            level="WARNING",
+            module="operators",
+            action="get_not_found",
+            details={"operator_id": operator_id},
+            endpoint=f"/api/operators/{operator_id}",
+            user_id=current_user.get("email"),
+            role=",".join(current_user.get("roles", [])),
+        )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operator not found")
     op_doc = _doc_to_operator(op)
     stats = await _get_operator_stats(operator_id, db)
@@ -211,7 +258,16 @@ async def get_operator(operator_id: str, db=Depends(get_db)):
     summary="Update operator",
     description="Admin only. Update operator details or deactivate."
 )
-async def update_operator(operator_id: str, payload: OperatorUpdate, db=Depends(get_db)):
+async def update_operator(operator_id: str, payload: OperatorUpdate, db=Depends(get_db), current_user: dict = Depends(require_admin)):
+    await log_event(
+        level="INFO",
+        module="operators",
+        action="update_attempt",
+        details={"operator_id": operator_id},
+        endpoint=f"/api/operators/{operator_id}",
+        user_id=current_user.get("email"),
+        role="ADMIN",
+    )
     op = await db.operators.find_one({"operator_id": operator_id})
     if not op:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operator not found")

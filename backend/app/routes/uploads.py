@@ -1,8 +1,9 @@
 # backend/app/routes/uploads.py
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status, Request
 from pathlib import Path
 from app.database import get_db
 from app.dependencies.roles import require_role, require_operator
+from app.services.logging_service import log_event
 from typing import Optional
 import shutil
 
@@ -31,15 +32,27 @@ def validate_file_upload(file: UploadFile, allowed_types: set, max_size_mb: int)
 
 @router.post(
     "/{farmer_id}/photo",
-    dependencies=[Depends(require_operator)],
     summary="Upload farmer photo",
     description="Upload farmer passport photo"
 )
 async def upload_photo(
+    request: Request,
     farmer_id: str,
     file: UploadFile = File(...),
+    current_user: dict = Depends(require_operator),
     db=Depends(get_db)
 ):
+    await log_event(
+        level="INFO",
+        module="uploads",
+        action="upload_photo_attempt",
+        details={"farmer_id": farmer_id, "filename": file.filename, "content_type": file.content_type},
+        endpoint=str(request.url),
+        user_id=current_user.get("email"),
+        role=current_user.get("roles", [])[0] if current_user.get("roles") else None,
+        ip_address=request.client.host if request.client else None
+    )
+    
     validate_file_upload(file, ALLOWED_PHOTO_TYPES, MAX_FILE_SIZE_MB)
     filename = f"{farmer_id}_photo{Path(file.filename).suffix}"
     dest = UPLOAD_ROOT / "photos" / farmer_id / filename
@@ -47,21 +60,45 @@ async def upload_photo(
     path = f"/uploads/photos/{farmer_id}/{filename}"
     await db.farmers.update_one({"farmer_id": farmer_id},
                                 {"$set": {"documents.photo": path}})
+    
+    await log_event(
+        level="INFO",
+        module="uploads",
+        action="upload_photo_success",
+        details={"farmer_id": farmer_id, "photo_path": path},
+        endpoint=str(request.url),
+        user_id=current_user.get("email"),
+        role=current_user.get("roles", [])[0] if current_user.get("roles") else None,
+        ip_address=request.client.host if request.client else None
+    )
+    
     return {"message": "Photo uploaded", "photo_path": path}
 
 
 @router.post(
     "/{farmer_id}/document",
-    dependencies=[Depends(require_operator)],
     summary="Upload farmer document",
     description="Upload NRC, certificate, or land title document"
 )
 async def upload_document(
+    request: Request,
     farmer_id: str,
     document_type: str,
     file: UploadFile = File(...),
+    current_user: dict = Depends(require_operator),
     db=Depends(get_db)
 ):
+    await log_event(
+        level="INFO",
+        module="uploads",
+        action="upload_document_attempt",
+        details={"farmer_id": farmer_id, "document_type": document_type, "filename": file.filename},
+        endpoint=str(request.url),
+        user_id=current_user.get("email"),
+        role=current_user.get("roles", [])[0] if current_user.get("roles") else None,
+        ip_address=request.client.host if request.client else None
+    )
+    
     validate_file_upload(file, ALLOWED_DOC_TYPES, MAX_FILE_SIZE_MB)
     filename = f"{farmer_id}_{document_type}{Path(file.filename).suffix}"
     dest = UPLOAD_ROOT / "documents" / farmer_id / filename
@@ -71,4 +108,16 @@ async def upload_document(
         {"farmer_id": farmer_id},
         {"$set": {f"documents.{document_type}": path}}
     )
+    
+    await log_event(
+        level="INFO",
+        module="uploads",
+        action="upload_document_success",
+        details={"farmer_id": farmer_id, "document_type": document_type, "file_path": path},
+        endpoint=str(request.url),
+        user_id=current_user.get("email"),
+        role=current_user.get("roles", [])[0] if current_user.get("roles") else None,
+        ip_address=request.client.host if request.client else None
+    )
+    
     return {"message": f"{document_type} uploaded", "file_path": path}

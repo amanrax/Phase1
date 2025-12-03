@@ -24,6 +24,7 @@ from app.routes import (
     health,
     users,
     geo,
+    geo_custom,
     operators,
     dashboard,
     reports,
@@ -112,8 +113,9 @@ app.add_middleware(LoggingMiddleware)
 
 app.include_router(auth.router, prefix="/api", tags=["Authentication"])
 app.include_router(users.router, prefix="/api", tags=["Users"])
-app.include_router(farmers.router, prefix="/api", tags=["Farmers"])
 app.include_router(geo.router, prefix="/api")
+app.include_router(geo_custom.router, prefix="/api")
+app.include_router(operators.router, prefix="/api", tags=["Operators"])
 app.include_router(operators.router, prefix="/api", tags=["Operators"])
 app.include_router(dashboard.router, prefix="/api", tags=["Dashboard"])
 app.include_router(reports.router, prefix="/api", tags=["Reports"])

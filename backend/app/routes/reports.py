@@ -3,12 +3,13 @@ from fastapi import APIRouter, Depends
 from datetime import datetime, timedelta
 from app.database import get_db
 from app.dependencies.roles import require_role
+from app.services.logging_service import log_event
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
 
 @router.get("/dashboard", dependencies=[Depends(require_role(["ADMIN"]))])
-async def dashboard_summary(db=Depends(get_db)):
+async def dashboard_summary(db=Depends(get_db), current_user: dict = Depends(require_role(["ADMIN"]))):
     """
     High-level admin dashboard summary:
      - total farmers
@@ -16,6 +17,14 @@ async def dashboard_summary(db=Depends(get_db)):
      - active users
      - farmers registered this month
     """
+    await log_event(
+        level="INFO",
+        module="reports",
+        action="dashboard_summary",
+        endpoint="/api/reports/dashboard",
+        user_id=current_user.get("email"),
+        role="ADMIN",
+    )
     total_farmers = await db.farmers.count_documents({})
     total_operators = await db.operators.count_documents({})
     total_users = await db.users.count_documents({})
@@ -35,10 +44,18 @@ async def dashboard_summary(db=Depends(get_db)):
 
 
 @router.get("/farmers-by-region", dependencies=[Depends(require_role(["ADMIN"]))])
-async def farmers_by_region(db=Depends(get_db)):
+async def farmers_by_region(db=Depends(get_db), current_user: dict = Depends(require_role(["ADMIN"]))):
     """
     Aggregate farmer counts by province/district for admin geographic analytics.
     """
+    await log_event(
+        level="INFO",
+        module="reports",
+        action="farmers_by_region",
+        endpoint="/api/reports/farmers-by-region",
+        user_id=current_user.get("email"),
+        role="ADMIN",
+    )
     pipeline = [
         {
             "$group": {
@@ -64,10 +81,18 @@ async def farmers_by_region(db=Depends(get_db)):
 
 
 @router.get("/operator-performance", dependencies=[Depends(require_role(["ADMIN"]))])
-async def operator_performance(db=Depends(get_db)):
+async def operator_performance(db=Depends(get_db), current_user: dict = Depends(require_role(["ADMIN"]))):
     """
     Aggregate stats per operator: total farmers registered, recent registrations (30d).
     """
+    await log_event(
+        level="INFO",
+        module="reports",
+        action="operator_performance",
+        endpoint="/api/reports/operator-performance",
+        user_id=current_user.get("email"),
+        role="ADMIN",
+    )
     cutoff = datetime.utcnow() - timedelta(days=30)
     pipeline = [
         {
