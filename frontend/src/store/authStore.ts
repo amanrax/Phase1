@@ -20,6 +20,11 @@ export interface AuthState {
   setToken: (token: string) => void;
   updateActivity: () => void;
   setShowTimeoutWarning: (show: boolean) => void;
+  extendSession: () => void;
+}
+
+const useAuthStore = create<AuthState>()(
+  persist(
     (set, get) => ({
       user: null,
       token: null,
@@ -58,11 +63,6 @@ export interface AuthState {
             isLoading: false,
             error: null,
             lastActivity: Date.now(),
-          });
-        } catch (error: any) {oles,
-            role: primaryRole,
-            isLoading: false,
-            error: null,
           });
         } catch (error: any) {
           let message = "Login failed. Please try again.";

@@ -55,8 +55,14 @@ export default function AdminDashboard() {
       const farmersData = await farmerService.getFarmers(5, 0);
       const operatorsData = await operatorService.getOperators(10, 0);
       
-      const farmersList = farmersData.results || farmersData || [];
-      const operatorsList = operatorsData.results || operatorsData.operators || operatorsData || [];
+      // Farmers endpoint returns array directly
+      const farmersList = Array.isArray(farmersData) ? farmersData : (farmersData.results || []);
+      
+      // Operators endpoint returns {count, results}
+      const operatorsList = operatorsData.results || operatorsData.operators || [];
+      
+      console.log('Farmers loaded:', farmersList.length);
+      console.log('Operators loaded:', operatorsList.length);
       
       setFarmers(farmersList);
       setOperators(operatorsList);
