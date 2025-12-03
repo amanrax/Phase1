@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import farmerService from '../services/farmer.service';
 import geoService from '../services/geo.service';
+import { useNotification } from '@/components/Notification';
 
 interface FarmerData {
   farmer_id?: string;
@@ -50,6 +51,7 @@ interface GeoOption {
 const FarmerEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { showSuccess, showError, showWarning } = useNotification();
   const [formData, setFormData] = useState<FarmerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -59,6 +61,14 @@ const FarmerEdit: React.FC = () => {
   const [provinces, setProvinces] = useState<GeoOption[]>([]);
   const [districts, setDistricts] = useState<GeoOption[]>([]);
   const [chiefdoms, setChiefdoms] = useState<GeoOption[]>([]);
+  
+  // Custom input fields
+  const [customProvince, setCustomProvince] = useState('');
+  const [customDistrict, setCustomDistrict] = useState('');
+  const [customChiefdom, setCustomChiefdom] = useState('');
+  const [showCustomProvince, setShowCustomProvince] = useState(false);
+  const [showCustomDistrict, setShowCustomDistrict] = useState(false);
+  const [showCustomChiefdom, setShowCustomChiefdom] = useState(false);
 
   // Load farmer data and all geo data
   useEffect(() => {
@@ -99,6 +109,30 @@ const FarmerEdit: React.FC = () => {
   }, [id]);
 
   const handleProvinceChange = async (provinceCode: string) => {
+    if (provinceCode === 'OTHER') {
+      setShowCustomProvince(true);
+      setShowCustomDistrict(false);
+      setShowCustomChiefdom(false);
+      setFormData(prev => prev ? {
+        ...prev,
+        address: {
+          ...prev.address,
+          province_code: '',
+          province_name: '',
+          district_code: '',
+          district_name: '',
+          chiefdom_code: '',
+          chiefdom_name: ''
+        }
+      } : null);
+      setDistricts([]);
+      setChiefdoms([]);
+      return;
+    }
+    
+    setShowCustomProvince(false);
+    setCustomProvince('');
+    
     const selectedProvince = provinces.find(p => p.code === provinceCode);
     if (!selectedProvince) return;
     
@@ -126,6 +160,70 @@ const FarmerEdit: React.FC = () => {
   };
 
   const handleDistrictChange = async (districtCode: string) => {
+    if (districtCode === 'OTHER') {
+      setShowCustomDistrict(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      // Handle custom province creation
+      if (showCustomProvince && customProvince.trim()) {
+        const newProvince = await geoService.createCustomProvince(customProvince.trim());
+        formData.address.province_code = newProvince.code;
+        formData.address.province_name = newProvince.name;
+        showSuccess(`Custom province "${newProvince.name}" created successfully!`);
+        
+        // Reload provinces to include the new one
+        const allProvinces = await geoService.provinces();
+        setProvinces(allProvinces);
+      }
+      
+      // Handle custom district creation
+      if (showCustomDistrict && customDistrict.trim() && formData.address.province_code) {
+        const newDistrict = await geoService.createCustomDistrict(
+          formData.address.province_code,
+          customDistrict.trim()
+        );
+        formData.address.district_code = newDistrict.code;
+        formData.address.district_name = newDistrict.name;
+        showSuccess(`Custom district "${newDistrict.name}" created successfully!`);
+        
+        // Reload districts to include the new one
+        const allDistricts = await geoService.districts(formData.address.province_code);
+        setDistricts(allDistricts);
+      }
+      
+      // Handle custom chiefdom creation
+      if (showCustomChiefdom && customChiefdom.trim() && formData.address.district_code) {
+        const newChiefdom = await geoService.createCustomChiefdom(
+          formData.address.district_code,
+          customChiefdom.trim()
+        );
+        formData.address.chiefdom_code = newChiefdom.code;
+        formData.address.chiefdom_name = newChiefdom.name;
+        showSuccess(`Custom chiefdom "${newChiefdom.name}" created successfully!`);
+        
+        // Reload chiefdoms to include the new one
+        const allChiefdoms = await geoService.chiefdoms(formData.address.district_code);
+        setChiefdoms(allChiefdoms);
+      }
+      
+      await farmerService.update(id!, formData);
+      showSuccess('Farmer updated successfully!');
+      navigate(`/farmers/${id}`);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.detail || 'Failed to update farmer';
+      setError(errorMsg);
+      showError(errorMsg);
+    } finally {
+      setSubmitting(false);
+    }
+  };setCustomDistrict('');
+    
     const selectedDistrict = districts.find(d => d.code === districtCode);
     if (!selectedDistrict) return;
     
@@ -150,6 +248,22 @@ const FarmerEdit: React.FC = () => {
   };
 
   const handleChiefdomChange = (chiefdomCode: string) => {
+    if (chiefdomCode === 'OTHER') {
+      setShowCustomChiefdom(true);
+      setFormData(prev => prev ? {
+        ...prev,
+        address: {
+          ...prev.address,
+          chiefdom_code: '',
+          chiefdom_name: ''
+        }
+      } : null);
+      return;
+    }
+    
+    setShowCustomChiefdom(false);
+    setCustomChiefdom('');
+    
     const selectedChiefdom = chiefdoms.find(c => c.code === chiefdomCode);
     
     setFormData(prev => prev ? {
@@ -170,6 +284,45 @@ const FarmerEdit: React.FC = () => {
     setError(null);
 
     try {
+      // Handle custom province creation
+      if (showCustomProvince && customProvince.trim()) {
+        const newProvince = await geoService.createCustomProvince(customProvince.trim());
+        formData.address.province_code = newProvince.code;
+        formData.address.province_name = newProvince.name;
+        
+        // Reload provinces to include the new one
+        const allProvinces = await geoService.provinces();
+        setProvinces(allProvinces);
+      }
+      
+      // Handle custom district creation
+      if (showCustomDistrict && customDistrict.trim() && formData.address.province_code) {
+        const newDistrict = await geoService.createCustomDistrict(
+          formData.address.province_code,
+          customDistrict.trim()
+        );
+        formData.address.district_code = newDistrict.code;
+        formData.address.district_name = newDistrict.name;
+        
+        // Reload districts to include the new one
+        const allDistricts = await geoService.districts(formData.address.province_code);
+        setDistricts(allDistricts);
+      }
+      
+      // Handle custom chiefdom creation
+      if (showCustomChiefdom && customChiefdom.trim() && formData.address.district_code) {
+        const newChiefdom = await geoService.createCustomChiefdom(
+          formData.address.district_code,
+          customChiefdom.trim()
+        );
+        formData.address.chiefdom_code = newChiefdom.code;
+        formData.address.chiefdom_name = newChiefdom.name;
+        
+        // Reload chiefdoms to include the new one
+        const allChiefdoms = await geoService.chiefdoms(formData.address.district_code);
+        setChiefdoms(allChiefdoms);
+      }
+      
       await farmerService.update(id!, formData);
       alert('Farmer updated successfully!');
       navigate(`/farmers/${id}`);
@@ -358,10 +511,10 @@ const FarmerEdit: React.FC = () => {
             <div>
               <label className="text-xs font-bold text-gray-600 uppercase">Province *</label>
               <select
-                value={formData.address.province_code}
+                value={showCustomProvince ? 'OTHER' : formData.address.province_code}
                 onChange={(e) => handleProvinceChange(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
-                required
+                required={!showCustomProvince}
               >
                 <option value="">Select Province</option>
                 {provinces.map((province) => (
@@ -369,17 +522,28 @@ const FarmerEdit: React.FC = () => {
                     {province.name}
                   </option>
                 ))}
+                <option value="OTHER">Others - Specify</option>
               </select>
+              {showCustomProvince && (
+                <input
+                  type="text"
+                  value={customProvince}
+                  onChange={(e) => setCustomProvince(e.target.value)}
+                  placeholder="Enter province name"
+                  className="w-full p-3 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-green-500 outline-none"
+                  required
+                />
+              )}
             </div>
 
             <div>
               <label className="text-xs font-bold text-gray-600 uppercase">District *</label>
               <select
-                value={formData.address.district_code}
+                value={showCustomDistrict ? 'OTHER' : formData.address.district_code}
                 onChange={(e) => handleDistrictChange(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
-                required
-                disabled={!formData.address.province_code}
+                required={!showCustomDistrict}
+                disabled={showCustomProvince || (!formData.address.province_code && !customProvince)}
               >
                 <option value="">Select District</option>
                 {districts.map((district) => (
@@ -387,16 +551,27 @@ const FarmerEdit: React.FC = () => {
                     {district.name}
                   </option>
                 ))}
+                <option value="OTHER">Others - Specify</option>
               </select>
+              {showCustomDistrict && (
+                <input
+                  type="text"
+                  value={customDistrict}
+                  onChange={(e) => setCustomDistrict(e.target.value)}
+                  placeholder="Enter district name"
+                  className="w-full p-3 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-green-500 outline-none"
+                  required
+                />
+              )}
             </div>
 
             <div>
               <label className="text-xs font-bold text-gray-600 uppercase">Chiefdom</label>
               <select
-                value={formData.address.chiefdom_code || ''}
+                value={showCustomChiefdom ? 'OTHER' : (formData.address.chiefdom_code || '')}
                 onChange={(e) => handleChiefdomChange(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
-                disabled={!formData.address.district_code}
+                disabled={showCustomDistrict || (!formData.address.district_code && !customDistrict)}
               >
                 <option value="">Select Chiefdom (Optional)</option>
                 {chiefdoms.map((chiefdom) => (
@@ -404,7 +579,17 @@ const FarmerEdit: React.FC = () => {
                     {chiefdom.name}
                   </option>
                 ))}
+                <option value="OTHER">Others - Specify</option>
               </select>
+              {showCustomChiefdom && (
+                <input
+                  type="text"
+                  value={customChiefdom}
+                  onChange={(e) => setCustomChiefdom(e.target.value)}
+                  placeholder="Enter chiefdom name"
+                  className="w-full p-3 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-green-500 outline-none"
+                />
+              )}
             </div>
 
             <div>

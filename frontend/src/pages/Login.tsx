@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
+import { useNotification } from "@/components/Notification";
 
 const roles = ["admin", "operator", "farmer"];
 
@@ -12,12 +13,16 @@ export default function Login() {
 
   const navigate = useNavigate();
   const { login, isLoading, error } = useAuthStore();
+  const { showSuccess, showError } = useNotification();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       await login(email, password);
       const user = useAuthStore.getState().user;
+      
+      showSuccess(`Welcome back, ${user?.email || 'User'}!`);
+      
       if (user?.roles.includes("ADMIN")) {
         navigate('/admin-dashboard');
       } else if (user?.roles.includes("OPERATOR")) {
@@ -27,8 +32,9 @@ export default function Login() {
       } else {
         navigate('/dashboard');
       }
-    } catch {
-      console.error("Login failed");
+    } catch (err: any) {
+      console.error("Login failed", err);
+      showError(err.response?.data?.detail || 'Invalid credentials. Please try again.');
     }
   };
   

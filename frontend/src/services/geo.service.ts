@@ -32,6 +32,37 @@ const geoService = {
       name: c.chiefdom_name,
     }));
   },
+
+  // Custom geo creation endpoints
+  async createCustomProvince(name: string) {
+    const { data } = await axiosClient.post("/geo/custom/provinces", { name });
+    return {
+      code: data.province_code,
+      name: data.province_name,
+    };
+  },
+
+  async createCustomDistrict(province_code: string, name: string) {
+    const { data } = await axiosClient.post("/geo/custom/districts", {
+      province_code,
+      name,
+    });
+    return {
+      code: data.district_code,
+      name: data.district_name,
+    };
+  },
+
+  async createCustomChiefdom(district_code: string, name: string) {
+    const { data } = await axiosClient.post("/geo/custom/chiefdoms", {
+      district_code,
+      name,
+    });
+    return {
+      code: data.chiefdom_code,
+      name: data.chiefdom_name,
+    };
+  },
 };
 
 export default geoService;
