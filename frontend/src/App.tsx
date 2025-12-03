@@ -5,6 +5,7 @@ import useAuthStore from "@/store/authStore";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RoleRoute } from "@/components/RoleRoute";
 import { NotificationProvider } from "@/components/Notification";
+import SessionTimeout from "@/components/SessionTimeout";
 
 // Pages
 import Login from "@/pages/Login";
@@ -44,12 +45,13 @@ function App() {
     if (role === "farmer") return "/farmer-dashboard";
     return "/login";
   };
-
   return (
     <NotificationProvider>
       <BrowserRouter>
+        <SessionTimeout />
         <Routes>
           {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
           <Route path="/login" element={<Login />} />
 
         {/* Admin Routes */}

@@ -42,7 +42,7 @@ const axiosClient = axios.create({
 });
 
 // ----------------------------------------
-// Add token to headers
+// Add token to headers and track activity
 // ----------------------------------------
 axiosClient.interceptors.request.use(
   (config) => {
@@ -51,6 +51,9 @@ axiosClient.interceptors.request.use(
     if (token) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
+      
+      // Update activity timestamp on each request
+      useAuthStore.getState().updateActivity();
     }
 
     return config;

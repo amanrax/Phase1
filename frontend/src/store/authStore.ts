@@ -11,15 +11,15 @@ export interface AuthState {
   role: string | null;
   isLoading: boolean;
   error: string | null;
+  lastActivity: number;
+  showTimeoutWarning: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   loadUser: () => Promise<void>;
   refreshAccessToken: () => Promise<string | null>;
   setToken: (token: string) => void;
-}
-
-const useAuthStore = create<AuthState>()(
-  persist(
+  updateActivity: () => void;
+  setShowTimeoutWarning: (show: boolean) => void;
     (set, get) => ({
       user: null,
       token: null,
@@ -28,6 +28,8 @@ const useAuthStore = create<AuthState>()(
       role: null,
       isLoading: false,
       error: null,
+      lastActivity: Date.now(),
+      showTimeoutWarning: false,
 
       // ---------- FIXED LOGIN ----------
       login: async (email: string, password: string) => {
@@ -52,6 +54,12 @@ const useAuthStore = create<AuthState>()(
             token: response.access_token,
             refreshToken: response.refresh_token || null,
             roles: normalizedRoles,
+            role: primaryRole,
+            isLoading: false,
+            error: null,
+            lastActivity: Date.now(),
+          });
+        } catch (error: any) {oles,
             role: primaryRole,
             isLoading: false,
             error: null,
@@ -137,6 +145,12 @@ const useAuthStore = create<AuthState>()(
       },
 
       setToken: (token: string) => set({ token }),
+      
+      updateActivity: () => set({ lastActivity: Date.now(), showTimeoutWarning: false }),
+      
+      setShowTimeoutWarning: (show: boolean) => set({ showTimeoutWarning: show }),
+      
+      extendSession: () => set({ lastActivity: Date.now(), showTimeoutWarning: false }),
     }),
     {
       name: "auth-storage",
