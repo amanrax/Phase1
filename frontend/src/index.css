@@ -1,5 +1,9 @@
 @import "./styles/shared.css";
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Design System CSS Variables */
 :root {
   --zam-green: #15803d;      /* Primary action color */

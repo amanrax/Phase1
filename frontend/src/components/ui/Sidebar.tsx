@@ -16,9 +16,10 @@ interface NavGroup {
 
 interface SidebarProps {
   navGroups: NavGroup[];
+  onClose?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ navGroups }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ navGroups, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
@@ -26,6 +27,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ navGroups }) => {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleNavClick = (path: string) => {
+    navigate(path);
+    onClose?.();
   };
 
   const isActive = (path: string) => {
@@ -39,9 +45,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ navGroups }) => {
   });
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-gray-900 to-gray-800 flex flex-col shadow-2xl">
+    <div className="w-64 h-screen bg-gradient-to-b from-gray-900 to-gray-800 flex flex-col shadow-2xl">
       {/* Logo Area */}
-      <div className="bg-gradient-to-r from-purple-700 to-blue-600 h-16 flex items-center justify-center border-b border-purple-800 shadow-lg">
+      <div className="bg-gradient-to-r from-purple-700 to-blue-600 h-16 flex items-center justify-center border-b border-purple-800 shadow-lg flex-shrink-0">
         <div className="text-center">
           <i className="fa-solid fa-wheat-awn text-white text-2xl drop-shadow-lg"></i>
           <h1 className="text-white font-bold text-lg mt-1 drop-shadow-lg">ZIAMIS Pro</h1>
@@ -59,18 +65,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ navGroups }) => {
                 </div>
               )}
               {group.items.map((item) => (
-                <div
+                <button
                   key={item.path}
-                  onClick={() => navigate(item.path)}
-                  className={`flex items-center px-4 py-3 text-gray-300 hover:bg-gradient-to-r hover:from-purple-800 hover:to-blue-700 hover:text-white transition-all duration-300 cursor-pointer border-l-4 ${
+                  onClick={() => handleNavClick(item.path)}
+                  className={`w-full flex items-center px-4 py-3 text-gray-300 hover:bg-gradient-to-r hover:from-purple-800 hover:to-blue-700 hover:text-white transition-all duration-300 cursor-pointer border-l-4 font-medium text-sm ${
                     isActive(item.path)
                       ? 'bg-gradient-to-r from-purple-700 to-blue-600 text-white border-blue-400 shadow-lg'
                       : 'border-transparent'
                   }`}
                 >
-                  <i className={`${item.icon} w-5 text-center`}></i>
-                  <span className="ml-3 font-medium">{item.label}</span>
-                </div>
+                  <i className={`${item.icon} w-5 text-center flex-shrink-0`}></i>
+                  <span className="ml-3">{item.label}</span>
+                </button>
               ))}
             </div>
           ))}
@@ -78,14 +84,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ navGroups }) => {
       </div>
 
       {/* User Info & Logout */}
-      <div className="border-t border-gray-700 p-4 bg-gray-900">
+      <div className="border-t border-gray-700 p-4 bg-gray-900 flex-shrink-0">
         <div className="flex items-center mb-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-500 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-500 rounded-full flex items-center justify-center text-white font-bold shadow-md flex-shrink-0">
             {user?.full_name?.charAt(0) || 'U'}
           </div>
-          <div className="ml-3 flex-1">
-            <p className="text-white text-sm font-medium">{user?.full_name || 'User'}</p>
-            <p className="text-gray-400 text-xs">{user?.role || 'Role'}</p>
+          <div className="ml-3 flex-1 min-w-0">
+            <p className="text-white text-sm font-medium truncate">{user?.full_name || 'User'}</p>
+            <p className="text-gray-400 text-xs truncate">{user?.role || 'Role'}</p>
           </div>
         </div>
         <button

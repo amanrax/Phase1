@@ -1,0 +1,25 @@
+<svg width="384" height="384" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="384" height="384" fill="#15803d" rx="48"/>
+  
+  <!-- Wheat icon (simplified) -->
+  <g transform="translate(192, 192)">
+    <!-- Stem -->
+    <line x1="0" y1="96" x2="0" y2="-96" 
+          stroke="white" stroke-width="19" stroke-linecap="round"/>
+    
+    <!-- Leaves -->
+    <circle cx="-48" cy="0" r="38" fill="#fbbf24"/>
+    <circle cx="48" cy="-32" r="38" fill="#fbbf24"/>
+    <circle cx="-38" cy="-64" r="34" fill="#fbbf24"/>
+    <circle cx="42" cy="-76" r="34" fill="#fbbf24"/>
+  </g>
+  
+  <!-- Text badge -->
+  <text x="384/2" y="288" 
+        font-family="Arial, sans-serif" 
+        font-size="48" 
+        font-weight="bold"
+        fill="white" 
+        text-anchor="middle">CEM</text>
+</svg>

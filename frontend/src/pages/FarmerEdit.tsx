@@ -51,7 +51,7 @@ interface GeoOption {
 const FarmerEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { showSuccess, showError, showWarning } = useNotification();
+  const { showSuccess, showError } = useNotification();
   const [formData, setFormData] = useState<FarmerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -162,67 +162,23 @@ const FarmerEdit: React.FC = () => {
   const handleDistrictChange = async (districtCode: string) => {
     if (districtCode === 'OTHER') {
       setShowCustomDistrict(true);
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData) return;
-
-    setSubmitting(true);
-    setError(null);
-
-    try {
-      // Handle custom province creation
-      if (showCustomProvince && customProvince.trim()) {
-        const newProvince = await geoService.createCustomProvince(customProvince.trim());
-        formData.address.province_code = newProvince.code;
-        formData.address.province_name = newProvince.name;
-        showSuccess(`Custom province "${newProvince.name}" created successfully!`);
-        
-        // Reload provinces to include the new one
-        const allProvinces = await geoService.provinces();
-        setProvinces(allProvinces);
-      }
-      
-      // Handle custom district creation
-      if (showCustomDistrict && customDistrict.trim() && formData.address.province_code) {
-        const newDistrict = await geoService.createCustomDistrict(
-          formData.address.province_code,
-          customDistrict.trim()
-        );
-        formData.address.district_code = newDistrict.code;
-        formData.address.district_name = newDistrict.name;
-        showSuccess(`Custom district "${newDistrict.name}" created successfully!`);
-        
-        // Reload districts to include the new one
-        const allDistricts = await geoService.districts(formData.address.province_code);
-        setDistricts(allDistricts);
-      }
-      
-      // Handle custom chiefdom creation
-      if (showCustomChiefdom && customChiefdom.trim() && formData.address.district_code) {
-        const newChiefdom = await geoService.createCustomChiefdom(
-          formData.address.district_code,
-          customChiefdom.trim()
-        );
-        formData.address.chiefdom_code = newChiefdom.code;
-        formData.address.chiefdom_name = newChiefdom.name;
-        showSuccess(`Custom chiefdom "${newChiefdom.name}" created successfully!`);
-        
-        // Reload chiefdoms to include the new one
-        const allChiefdoms = await geoService.chiefdoms(formData.address.district_code);
-        setChiefdoms(allChiefdoms);
-      }
-      
-      await farmerService.update(id!, formData);
-      showSuccess('Farmer updated successfully!');
-      navigate(`/farmers/${id}`);
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.detail || 'Failed to update farmer';
-      setError(errorMsg);
-      showError(errorMsg);
-    } finally {
-      setSubmitting(false);
+      setShowCustomChiefdom(false);
+      setFormData(prev => prev ? {
+        ...prev,
+        address: {
+          ...prev.address,
+          district_code: '',
+          district_name: '',
+          chiefdom_code: '',
+          chiefdom_name: ''
+        }
+      } : null);
+      setChiefdoms([]);
+      return;
     }
-  };setCustomDistrict('');
+    
+    setShowCustomDistrict(false);
+    setCustomDistrict('');
     
     const selectedDistrict = districts.find(d => d.code === districtCode);
     if (!selectedDistrict) return;

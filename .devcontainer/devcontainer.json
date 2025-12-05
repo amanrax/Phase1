@@ -1,11 +1,10 @@
 {
   "name": "ZIAMIS Farmer System",
-  "dockerComposeFile": "../docker-compose.yml",
-  "service": "farmer-backend",
-  "workspaceFolder": "/workspaces/Phase1",
-  
-  "forwardPorts": [5173, 8000],
-  
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [5173, 8000, 27017, 6379],
   "portsAttributes": {
     "5173": {
       "label": "Frontend",
@@ -14,21 +13,28 @@
     },
     "8000": {
       "label": "Backend API",
-      "onAutoForward": "notify", 
+      "onAutoForward": "notify",
       "visibility": "public"
+    },
+    "27017": {
+      "label": "MongoDB",
+      "onAutoForward": "ignore"
+    },
+    "6379": {
+      "label": "Redis",
+      "onAutoForward": "ignore"
     }
   },
-  
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
         "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode"
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker"
       ]
     }
   },
-  
-  "postCreateCommand": "echo '✅ Codespace ready! Ports 5173 and 8000 are set to public visibility.'"
+  "postCreateCommand": "docker compose version && echo '✅ Codespace ready with Docker support!'"
 }

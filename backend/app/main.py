@@ -85,12 +85,16 @@ if frontend_origin_env and frontend_origin_env not in allowed_origins:
     # Add the explicit frontend origin provided via environment
     allowed_origins.append(frontend_origin_env)
 
-# Allow GitHub Codespaces subdomains matching either port 5173/8000/3000
-allow_origin_regex = r"^https:\/\/[\-a-z0-9]+-(?:5173|8000|3000)\.app\.github\.dev$"
+# Allow GitHub Codespaces subdomains matching port 5173, 8000, or 3000
+# Regex pattern: https://[any-alphanumeric-and-hyphens]-[port].app.github.dev
+allow_origin_regex = r"^https:\/\/[a-z0-9\-]+-(?:5173|8000|3000)\.app\.github\.dev$"
+
+logger.info(f"✅ CORS Allowed Origins (static): {allowed_origins}")
+logger.info(f"✅ CORS Allowed Origins (regex pattern): {allow_origin_regex}")
 
 cors_kwargs = dict(
-    allow_origins=allowed_origins, # Now contains explicit origins + frontend_origin_env
-    allow_origin_regex=allow_origin_regex, # Also consider regex for dynamic Codespaces origins
+    allow_origins=allowed_origins,
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=settings.CORS_ALLOW_METHODS,
     allow_headers=settings.CORS_ALLOW_HEADERS,
@@ -100,6 +104,8 @@ cors_kwargs = dict(
 
 app.add_middleware(CORSMiddleware, **cors_kwargs)
 app.add_middleware(LoggingMiddleware)
+
+logger.info("🔄 CORS middleware configured and applied")
 
 # Removed EnsureCORSHeadersMiddleware as CORSMiddleware with regex should handle Codespaces
 
