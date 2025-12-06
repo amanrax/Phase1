@@ -3,19 +3,19 @@ import { useNavigate } from "react-router-dom";
 import axios from "@/utils/axios";
 
 interface Report {
-  farmers_total: number;
-  operators_total: number;
-  new_this_month: number;
-  active_status: number;
-  pending_verification: number;
+  farmers_total?: number;
+  operators_total?: number;
+  new_this_month?: number;
+  active_status?: number;
+  pending_verification?: number;
 }
 
 interface FarmerData {
   farmer_id: string;
-  full_name: string;
-  district: string;
-  registered_on: string;
-  status: string;
+  full_name?: string;
+  district?: string;
+  registered_on?: string;
+  status?: string;
 }
 
 export default function AdminReports() {
@@ -24,7 +24,7 @@ export default function AdminReports() {
   const [farmers, setFarmers] = useState<FarmerData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"overview" | "farmers" | "operators">("overview");
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   useEffect(() => {
     loadReports();
@@ -34,97 +34,145 @@ export default function AdminReports() {
     try {
       setLoading(true);
       const response = await axios.get("/reports/dashboard");
-      setReport(response.data);
+      setReport(response.data || {});
       
       // Load farmer data
       const farmersResponse = await axios.get("/farmers?limit=100");
-      setFarmers(farmersResponse.data.results || farmersResponse.data || []);
+      const farmersList = farmersResponse.data.results || farmersResponse.data || [];
+      setFarmers(Array.isArray(farmersList) ? farmersList : []);
     } catch (err: any) {
+      console.error("Reports error:", err);
       setError(err.response?.data?.detail || "Failed to load reports");
     } finally {
       setLoading(false);
     }
   };
 
-  const exportReport = () => {
-    const csv = generateCSV();
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `report-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-  };
-
-  const exportExcel = () => {
-    let excel = "Farmer ID\tName\tDistrict\tStatus\tRegistered\n";
+  const generateCSV = () => {
+    let csv = "Farmer ID,Name,District,Status,Registered\n";
     farmers.forEach(f => {
-      excel += `${f.farmer_id}\t${f.full_name}\t${f.district}\t${f.status}\t${f.registered_on}\n`;
+      csv += `"${f.farmer_id}","${f.full_name || ""}","${f.district || ""}","${f.status || ""}","${f.registered_on || ""}"\n`;
     });
-    const blob = new Blob([excel], { type: "application/vnd.ms-excel" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `report-${new Date().toISOString().split('T')[0]}.xls`;
-    a.click();
+    return csv;
   };
 
-  const exportPDF = () => {
-    const content = `
+  const exportReport = (type: "csv" | "excel" | "pdf") => {
+    if (type === "csv") {
+      const csv = generateCSV();
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `report-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    } else if (type === "excel") {
+      let excel = "Farmer ID\tName\tDistrict\tStatus\tRegistered\n";
+      farmers.forEach(f => {
+        excel += `${f.farmer_id}\t${f.full_name || ""}\t${f.district || ""}\t${f.status || ""}\t${f.registered_on || ""}\n`;
+      });
+      const blob = new Blob([excel], { type: "application/vnd.ms-excel" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `report-${new Date().toISOString().split('T')[0]}.xls`;
+      link.click();
+    } else if (type === "pdf") {
+      const content = `
 ZIAMIS Pro - Farmer Report
 Generated: ${new Date().toLocaleDateString()}
 
 System Summary:
-- Total Farmers: ${report?.farmers_total}
-- Total Operators: ${report?.operators_total}
-- Active Users: ${report?.active_status}
-- Pending Verification: ${report?.pending_verification}
+- Total Farmers: ${report?.farmers_total || 0}
+- Total Operators: ${report?.operators_total || 0}
+- Active Users: ${report?.active_status || 0}
+- Pending Verification: ${report?.pending_verification || 0}
+- New This Month: ${report?.new_this_month || 0}
 
 Farmer Details:
-${farmers.map(f => `${f.farmer_id} | ${f.full_name} | ${f.district} | ${f.status}`).join('\n')}
-    `.trim();
-    const blob = new Blob([content], { type: "application/pdf" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `report-${new Date().toISOString().split('T')[0]}.pdf`;
-    a.click();
+${farmers.map(f => `${f.farmer_id} | ${f.full_name || ""} | ${f.district || ""} | ${f.status || ""}`).join('\n')}
+      `.trim();
+      const blob = new Blob([content], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `report-${new Date().toISOString().split('T')[0]}.txt`;
+      link.click();
+    }
+    setShowExportMenu(false);
   };
 
   const printReport = () => {
     const printWindow = window.open('', '', 'height=600,width=800');
     if (printWindow) {
       printWindow.document.write(`
+<!DOCTYPE html>
 <html>
 <head>
-  <title>ZIAMIS Pro - Farmer Report</title>
+  <meta charset="UTF-8">
+  <title>Chiefdom Management Model - Farmer Report</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { color: #15803d; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background-color: #f0f0f0; font-weight: bold; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 30px; color: #333; }
+    h1 { color: #15803d; border-bottom: 3px solid #15803d; padding-bottom: 10px; }
+    h2 { color: #14532d; margin-top: 30px; }
+    .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
+    .metric { background: #f0f9ff; padding: 15px; border-left: 4px solid #15803d; }
+    .metric-label { font-size: 12px; font-weight: bold; color: #666; text-transform: uppercase; }
+    .metric-value { font-size: 28px; font-weight: bold; color: #15803d; margin-top: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th { background-color: #15803d; color: white; padding: 12px; text-align: left; font-size: 12px; }
+    td { border-bottom: 1px solid #ddd; padding: 10px; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #999; }
   </style>
 </head>
 <body>
-  <h1>ZIAMIS Pro - Farmer Report</h1>
-  <p>Generated: ${new Date().toLocaleDateString()}</p>
+  <h1>Chiefdom Management Model - Farmer Report</h1>
+  <p style="color: #999;">Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+  
   <h2>System Summary</h2>
-  <ul>
-    <li>Total Farmers: ${report?.farmers_total}</li>
-    <li>Total Operators: ${report?.operators_total}</li>
-    <li>Active Users: ${report?.active_status}</li>
-    <li>Pending Verification: ${report?.pending_verification}</li>
-  </ul>
-  <h2>Farmer Details</h2>
+  <div class="summary">
+    <div class="metric">
+      <div class="metric-label">Total Farmers</div>
+      <div class="metric-value">${report?.farmers_total || 0}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Total Operators</div>
+      <div class="metric-value">${report?.operators_total || 0}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Active Users</div>
+      <div class="metric-value">${report?.active_status || 0}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Pending Verification</div>
+      <div class="metric-value">${report?.pending_verification || 0}</div>
+    </div>
+  </div>
+
+  <h2>Farmer Details (${farmers.length} records)</h2>
   <table>
     <thead>
-      <tr><th>Farmer ID</th><th>Name</th><th>District</th><th>Status</th><th>Registered</th></tr>
+      <tr>
+        <th>Farmer ID</th>
+        <th>Name</th>
+        <th>District</th>
+        <th>Status</th>
+        <th>Registered</th>
+      </tr>
     </thead>
     <tbody>
-      ${farmers.map(f => `<tr><td>${f.farmer_id}</td><td>${f.full_name}</td><td>${f.district}</td><td>${f.status}</td><td>${new Date(f.registered_on).toLocaleDateString()}</td></tr>`).join('')}
+      ${farmers.map(f => `
+        <tr>
+          <td><strong>${f.farmer_id}</strong></td>
+          <td>${f.full_name || "-"}</td>
+          <td>${f.district || "-"}</td>
+          <td><strong>${f.status || "-"}</strong></td>
+          <td>${f.registered_on ? new Date(f.registered_on).toLocaleDateString() : "-"}</td>
+        </tr>
+      `).join('')}
     </tbody>
   </table>
+  
+  <div class="footer">
+    <p><strong>Chiefdom Management Model</strong> | Ministry of Agriculture</p>
+  </div>
 </body>
 </html>
       `);
@@ -142,159 +190,96 @@ ${farmers.map(f => `${f.farmer_id} | ${f.full_name} | ${f.district} | ${f.status
             <button onClick={() => navigate("/admin-dashboard")} className="text-green-700 hover:text-green-800 font-bold text-sm">
               ← BACK
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">📊 Reports</h1>
+            <h1 className="text-2xl font-bold text-gray-800">📊 Reports & Analytics</h1>
           </div>
-          <button
-            onClick={exportReport}
-            className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-3 rounded-lg transition text-sm"
-            title="Export as CSV"
-          >
-            📊 CSV
-          </button>
-          <button
-            onClick={exportExcel}
-            className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-3 rounded-lg transition text-sm"
-            title="Export as Excel"
-          >
-            📈 EXCEL
-          </button>
-          <button
-            onClick={exportPDF}
-            className="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-3 rounded-lg transition text-sm"
-            title="Export as PDF"
-          >
-            📄 PDF
-          </button>
-          <button
-            onClick={printReport}
-            className="bg-orange-700 hover:bg-orange-800 text-white font-bold py-2 px-3 rounded-lg transition text-sm"
-            title="Print Report"
-          >
-            🖨️ PRINT
-          </button>
+
+          {/* Compact Export Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-3 rounded-lg transition text-sm flex items-center gap-1"
+            >
+              📥 Export
+            </button>
+            {showExportMenu && (
+              <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+                <button
+                  onClick={() => exportReport("csv")}
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 border-b border-gray-200"
+                >
+                  📄 CSV
+                </button>
+                <button
+                  onClick={() => exportReport("excel")}
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 border-b border-gray-200"
+                >
+                  📊 Excel
+                </button>
+                <button
+                  onClick={() => exportReport("pdf")}
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 border-b border-gray-200"
+                >
+                  📋 PDF
+                </button>
+                <button
+                  onClick={printReport}
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                >
+                  🖨️ Print
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {error && (
-          <div className="mb-6 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500">
-            <strong>Error:</strong> {error}
+          <div className="mb-6 bg-orange-50 text-orange-700 px-4 py-3 rounded-lg text-sm border-l-4 border-orange-500">
+            ⚠️ {error}
+            <button onClick={() => setError(null)} className="ml-auto block text-xs hover:underline">Dismiss</button>
           </div>
         )}
 
+        {/* Loading State */}
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600"></div>
-            <p className="text-gray-600 mt-4">Loading reports...</p>
+            <p className="text-gray-600 mt-4">Loading dashboard...</p>
           </div>
         ) : (
           <>
-            {/* Metrics Cards */}
-            {report && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-                <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-green-600">
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Farmers</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">{report.farmers_total}</h3>
-                </div>
-                <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-blue-600">
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Operators</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">{report.operators_total}</h3>
-                </div>
-                <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-orange-500">
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">New This Month</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">{report.new_this_month}</h3>
-                </div>
-                <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-purple-600">
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Active</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">{report.active_status}</h3>
-                </div>
-                <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-yellow-500">
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Pending</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">{report.pending_verification}</h3>
-                </div>
+            {/* Dashboard Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-600 hover:shadow-md transition">
+                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Farmers</p>
+                <h3 className="text-3xl font-bold text-gray-800 mt-2">{report?.farmers_total || 0}</h3>
               </div>
-            )}
-
-            {/* Tabs */}
-            <div className="mb-6 bg-white rounded-lg shadow-sm p-2 flex gap-2">
-              {[
-                { value: "overview", label: "📊 Overview" },
-                { value: "farmers", label: "👨‍🌾 Farmers" },
-                { value: "operators", label: "📋 Operators" }
-              ].map(t => (
-                <button
-                  key={t.value}
-                  onClick={() => setTab(t.value as any)}
-                  className={`flex-1 px-4 py-2 rounded-lg font-bold text-sm transition ${
-                    tab === t.value ? "bg-green-700 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
+              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-600 hover:shadow-md transition">
+                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Operators</p>
+                <h3 className="text-3xl font-bold text-gray-800 mt-2">{report?.operators_total || 0}</h3>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-600 hover:shadow-md transition">
+                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">New This Month</p>
+                <h3 className="text-3xl font-bold text-gray-800 mt-2">{report?.new_this_month || 0}</h3>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-600 hover:shadow-md transition">
+                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Active Status</p>
+                <h3 className="text-3xl font-bold text-gray-800 mt-2">{report?.active_status || 0}</h3>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-600 hover:shadow-md transition">
+                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Pending Verification</p>
+                <h3 className="text-3xl font-bold text-gray-800 mt-2">{report?.pending_verification || 0}</h3>
+              </div>
             </div>
 
-            {/* Content */}
-            {tab === "overview" && report && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-xl p-6 shadow-sm">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-green-700">
-                    System Summary
-                  </h2>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Total Farmers:</span>
-                      <span className="font-bold text-gray-800">{report.farmers_total}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Total Operators:</span>
-                      <span className="font-bold text-gray-800">{report.operators_total}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">New This Month:</span>
-                      <span className="font-bold text-orange-600">{report.new_this_month}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Active Users:</span>
-                      <span className="font-bold text-green-600">{report.active_status}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Pending Verification:</span>
-                      <span className="font-bold text-yellow-600">{report.pending_verification}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl p-6 shadow-sm">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-blue-600">
-                    Quick Actions
-                  </h2>
-                  <div className="space-y-3">
-                    <button
-                      onClick={exportReport}
-                      className="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2"
-                    >
-                      <span>⬇️</span> Export Report
-                    </button>
-                    <button
-                      onClick={() => navigate("/admin-dashboard")}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2"
-                    >
-                      <span>📊</span> Dashboard
-                    </button>
-                    <button
-                      onClick={() => navigate("/admin/supply-requests")}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2"
-                    >
-                      <span>📦</span> Supply Requests
-                    </button>
-                  </div>
-                </div>
+            {/* Farmer Details Table */}
+            {farmers.length === 0 ? (
+              <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+                <p className="text-gray-600 text-lg">No farmer data available</p>
               </div>
-            )}
-
-            {tab === "farmers" && (
+            ) : (
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-sm text-gray-600">
@@ -304,23 +289,25 @@ ${farmers.map(f => `${f.farmer_id} | ${f.full_name} | ${f.district} | ${f.status
                         <th className="px-6 py-3">Name</th>
                         <th className="px-6 py-3">District</th>
                         <th className="px-6 py-3">Status</th>
-                        <th className="px-6 py-3">Date</th>
+                        <th className="px-6 py-3">Registered</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {farmers.map(f => (
-                        <tr key={f.farmer_id} className="hover:bg-green-50 transition">
-                          <td className="px-6 py-4 font-mono font-bold">{f.farmer_id}</td>
-                          <td className="px-6 py-4 font-bold">{f.full_name}</td>
-                          <td className="px-6 py-4">{f.district}</td>
+                      {farmers.map((f, idx) => (
+                        <tr key={idx} className="hover:bg-green-50 transition">
+                          <td className="px-6 py-4 font-mono font-bold text-xs">{f.farmer_id}</td>
+                          <td className="px-6 py-4 font-bold">{f.full_name || "-"}</td>
+                          <td className="px-6 py-4 text-sm">{f.district || "-"}</td>
                           <td className="px-6 py-4">
-                            <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                              f.status === "active" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                            <span className={`px-2 py-1 text-xs font-bold rounded-full ${
+                              f.status === "registered" ? "bg-green-100 text-green-800" :
+                              f.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                              "bg-red-100 text-red-800"
                             }`}>
-                              {f.status}
+                              {f.status || "unknown"}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-xs">{new Date(f.registered_on).toLocaleDateString()}</td>
+                          <td className="px-6 py-4 text-sm">{f.registered_on ? new Date(f.registered_on).toLocaleDateString() : "-"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -329,28 +316,29 @@ ${farmers.map(f => `${f.farmer_id} | ${f.full_name} | ${f.district} | ${f.status
 
                 {/* Mobile View */}
                 <div className="md:hidden divide-y divide-gray-200">
-                  {farmers.map(f => (
-                    <div key={f.farmer_id} className="p-4 hover:bg-green-50 transition">
+                  {farmers.map((f, idx) => (
+                    <div key={idx} className="p-4">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold text-gray-800">{f.full_name}</h3>
+                        <h3 className="font-bold text-gray-800 text-sm">{f.full_name || "Unknown"}</h3>
                         <span className={`px-2 py-1 text-xs font-bold rounded-full ${
-                          f.status === "active" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                          f.status === "registered" ? "bg-green-100 text-green-800" :
+                          f.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                          "bg-red-100 text-red-800"
                         }`}>
-                          {f.status}
+                          {f.status || "unknown"}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-600"><strong>ID:</strong> {f.farmer_id}</p>
-                      <p className="text-xs text-gray-600"><strong>District:</strong> {f.district}</p>
-                      <p className="text-xs text-gray-600"><strong>Registered:</strong> {new Date(f.registered_on).toLocaleDateString()}</p>
+                      <p className="text-xs text-gray-600 mb-1"><strong>ID:</strong> {f.farmer_id}</p>
+                      <p className="text-xs text-gray-600 mb-1"><strong>District:</strong> {f.district || "-"}</p>
+                      <p className="text-xs text-gray-600"><strong>Registered:</strong> {f.registered_on ? new Date(f.registered_on).toLocaleDateString() : "-"}</p>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
 
-            {tab === "operators" && (
-              <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-                <p className="text-gray-600">📋 Operator statistics coming soon...</p>
+                {/* Pagination info */}
+                <div className="p-4 border-t border-gray-200 bg-gray-50 text-xs text-gray-500">
+                  Showing {farmers.length} record{farmers.length !== 1 ? "s" : ""}
+                </div>
               </div>
             )}
           </>
