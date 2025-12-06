@@ -13,9 +13,15 @@ interface Report {
 interface FarmerData {
   farmer_id: string;
   full_name?: string;
+  first_name?: string;
+  last_name?: string;
   district?: string;
+  district_name?: string;
   registered_on?: string;
+  created_at?: string;
   status?: string;
+  registration_status?: string;
+  is_active?: boolean;
 }
 
 export default function AdminReports() {
@@ -29,6 +35,27 @@ export default function AdminReports() {
   useEffect(() => {
     loadReports();
   }, []);
+
+  const getFarmerName = (farmer: FarmerData) => {
+    if (farmer.full_name?.trim()) return farmer.full_name;
+    const first = farmer.first_name?.trim() || "";
+    const last = farmer.last_name?.trim() || "";
+    if (first || last) return `${first} ${last}`.trim();
+    return "-";
+  };
+
+  const getFarmerDistrict = (farmer: FarmerData) => {
+    return farmer.district_name || farmer.district || "-";
+  };
+
+  const getFarmerStatus = (farmer: FarmerData) => {
+    return farmer.registration_status || farmer.status || "unknown";
+  };
+
+  const getFarmerDate = (farmer: FarmerData) => {
+    const date = farmer.created_at || farmer.registered_on;
+    return date ? new Date(date).toLocaleDateString() : "-";
+  };
 
   const loadReports = async () => {
     try {
@@ -60,7 +87,7 @@ export default function AdminReports() {
   const generateCSV = () => {
     let csv = "Farmer ID,Name,District,Status,Registered\n";
     farmers.forEach(f => {
-      csv += `"${f.farmer_id}","${f.full_name || ""}","${f.district || ""}","${f.status || ""}","${f.registered_on || ""}"\n`;
+      csv += `"${f.farmer_id}","${getFarmerName(f)}","${getFarmerDistrict(f)}","${getFarmerStatus(f)}","${getFarmerDate(f)}"\n`;
     });
     return csv;
   };
@@ -76,7 +103,7 @@ export default function AdminReports() {
     } else if (type === "excel") {
       let excel = "Farmer ID\tName\tDistrict\tStatus\tRegistered\n";
       farmers.forEach(f => {
-        excel += `${f.farmer_id}\t${f.full_name || ""}\t${f.district || ""}\t${f.status || ""}\t${f.registered_on || ""}\n`;
+        excel += `${f.farmer_id}\t${getFarmerName(f)}\t${getFarmerDistrict(f)}\t${getFarmerStatus(f)}\t${getFarmerDate(f)}\n`;
       });
       const blob = new Blob([excel], { type: "application/vnd.ms-excel" });
       const link = document.createElement("a");
@@ -96,7 +123,7 @@ System Summary:
 - New This Month: ${report?.new_this_month || 0}
 
 Farmer Details:
-${farmers.map(f => `${f.farmer_id} | ${f.full_name || ""} | ${f.district || ""} | ${f.status || ""}`).join('\n')}
+${farmers.map(f => `${f.farmer_id} | ${getFarmerName(f)} | ${getFarmerDistrict(f)} | ${getFarmerStatus(f)}`).join('\n')}
       `.trim();
       const blob = new Blob([content], { type: "text/plain" });
       const link = document.createElement("a");
@@ -170,10 +197,10 @@ ${farmers.map(f => `${f.farmer_id} | ${f.full_name || ""} | ${f.district || ""} 
       ${farmers.map(f => `
         <tr>
           <td><strong>${f.farmer_id}</strong></td>
-          <td>${f.full_name || "-"}</td>
-          <td>${f.district || "-"}</td>
-          <td><strong>${f.status || "-"}</strong></td>
-          <td>${f.registered_on ? new Date(f.registered_on).toLocaleDateString() : "-"}</td>
+          <td>${getFarmerName(f)}</td>
+          <td>${getFarmerDistrict(f)}</td>
+          <td><strong>${getFarmerStatus(f)}</strong></td>
+          <td>${getFarmerDate(f)}</td>
         </tr>
       `).join('')}
     </tbody>
@@ -305,18 +332,18 @@ ${farmers.map(f => `${f.farmer_id} | ${f.full_name || ""} | ${f.district || ""} 
                       {farmers.map((f, idx) => (
                         <tr key={idx} className="hover:bg-green-50 transition">
                           <td className="px-6 py-4 font-mono font-bold text-xs">{f.farmer_id}</td>
-                          <td className="px-6 py-4 font-bold">{f.full_name || "-"}</td>
-                          <td className="px-6 py-4 text-sm">{f.district || "-"}</td>
+                          <td className="px-6 py-4 font-bold">{getFarmerName(f)}</td>
+                          <td className="px-6 py-4 text-sm">{getFarmerDistrict(f)}</td>
                           <td className="px-6 py-4">
                             <span className={`px-2 py-1 text-xs font-bold rounded-full ${
-                              f.status === "registered" ? "bg-green-100 text-green-800" :
-                              f.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                              getFarmerStatus(f) === "registered" || getFarmerStatus(f) === "verified" ? "bg-green-100 text-green-800" :
+                              getFarmerStatus(f) === "pending" ? "bg-yellow-100 text-yellow-800" :
                               "bg-red-100 text-red-800"
                             }`}>
-                              {f.status || "unknown"}
+                              {getFarmerStatus(f)}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-sm">{f.registered_on ? new Date(f.registered_on).toLocaleDateString() : "-"}</td>
+                          <td className="px-6 py-4 text-sm">{getFarmerDate(f)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -328,18 +355,18 @@ ${farmers.map(f => `${f.farmer_id} | ${f.full_name || ""} | ${f.district || ""} 
                   {farmers.map((f, idx) => (
                     <div key={idx} className="p-4">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold text-gray-800 text-sm">{f.full_name || "Unknown"}</h3>
+                        <h3 className="font-bold text-gray-800 text-sm">{getFarmerName(f)}</h3>
                         <span className={`px-2 py-1 text-xs font-bold rounded-full ${
-                          f.status === "registered" ? "bg-green-100 text-green-800" :
-                          f.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                          getFarmerStatus(f) === "registered" || getFarmerStatus(f) === "verified" ? "bg-green-100 text-green-800" :
+                          getFarmerStatus(f) === "pending" ? "bg-yellow-100 text-yellow-800" :
                           "bg-red-100 text-red-800"
                         }`}>
-                          {f.status || "unknown"}
+                          {getFarmerStatus(f)}
                         </span>
                       </div>
                       <p className="text-xs text-gray-600 mb-1"><strong>ID:</strong> {f.farmer_id}</p>
-                      <p className="text-xs text-gray-600 mb-1"><strong>District:</strong> {f.district || "-"}</p>
-                      <p className="text-xs text-gray-600"><strong>Registered:</strong> {f.registered_on ? new Date(f.registered_on).toLocaleDateString() : "-"}</p>
+                      <p className="text-xs text-gray-600 mb-1"><strong>District:</strong> {getFarmerDistrict(f)}</p>
+                      <p className="text-xs text-gray-600"><strong>Registered:</strong> {getFarmerDate(f)}</p>
                     </div>
                   ))}
                 </div>
