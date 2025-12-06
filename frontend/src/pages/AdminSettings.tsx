@@ -83,9 +83,10 @@ export default function AdminSettings() {
       return;
     }
     try {
-      await axios.post("/auth/create-admin", {
+      await axios.post("/auth/register", {
         email: newAdminEmail,
-        password: newAdminPassword
+        password: newAdminPassword,
+        roles: ["ADMIN"]
       });
       setSuccess("Admin created successfully");
       setNewAdminEmail("");
