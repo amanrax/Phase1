@@ -186,7 +186,7 @@ export default function OperatorManagement() {
         payload.assigned_district = editFormData.assigned_district;
       }
 
-      await operatorService.update(selectedOperator._id, payload);
+      await operatorService.update(selectedOperator.operator_id, payload);
       setSuccess("✅ Operator updated successfully!");
       setShowEditModal(false);
       setSelectedOperator(null);
@@ -488,8 +488,8 @@ export default function OperatorManagement() {
                             ✏️ Edit
                           </button>
                           <button
-                            onClick={() => handleToggleActive(operator._id, operator.is_active ?? true)}
-                            disabled={updatingId === operator._id}
+                            onClick={() => handleToggleActive(operator.operator_id, operator.is_active ?? true)}
+                            disabled={updatingId === operator.operator_id}
                             className={`px-3 py-1 text-xs font-semibold rounded transition ${
                               operator.is_active
                                 ? "bg-red-50 hover:bg-red-100 text-red-700 disabled:opacity-50"
@@ -497,7 +497,7 @@ export default function OperatorManagement() {
                             }`}
                             title={operator.is_active ? "Deactivate" : "Activate"}
                           >
-                            {updatingId === operator._id ? "..." : (operator.is_active ? "🔴 Deactivate" : "🟢 Activate")}
+                            {updatingId === operator.operator_id ? "..." : (operator.is_active ? "🔴 Deactivate" : "🟢 Activate")}
                           </button>
                         </div>
                       </td>
@@ -556,15 +556,15 @@ export default function OperatorManagement() {
                       ✏️ Edit
                     </button>
                     <button
-                      onClick={() => handleToggleActive(operator._id, operator.is_active ?? true)}
-                      disabled={updatingId === operator._id}
+                      onClick={() => handleToggleActive(operator.operator_id, operator.is_active ?? true)}
+                      disabled={updatingId === operator.operator_id}
                       className={`flex-1 px-3 py-2 text-xs font-semibold rounded transition ${
                         operator.is_active
                           ? "bg-red-50 hover:bg-red-100 text-red-700 disabled:opacity-50"
                           : "bg-green-50 hover:bg-green-100 text-green-700 disabled:opacity-50"
                       }`}
                     >
-                      {updatingId === operator._id ? "..." : (operator.is_active ? "🔴" : "🟢")}
+                      {updatingId === operator.operator_id ? "..." : (operator.is_active ? "🔴" : "🟢")}
                     </button>
                   </div>
                 </div>
