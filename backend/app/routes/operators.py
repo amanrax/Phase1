@@ -219,6 +219,41 @@ async def list_operators(
 
 
 @router.get(
+    "/me",
+    summary="Get current operator's profile",
+    description="Returns the current operator's profile including assigned districts",
+    dependencies=[Depends(require_operator)]
+)
+async def get_current_operator(
+    db=Depends(get_db),
+    current_user: dict = Depends(require_operator)
+):
+    """Get current operator's profile with district assignment"""
+    # current_user contains the email from JWT
+    operator_email = current_user.get("email")
+    
+    # Find operator record by email
+    operator = await db.operators.find_one({"email": operator_email})
+    
+    if not operator:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operator profile not found")
+    
+    # Return operator info including assigned_districts (as list)
+    assigned_districts = operator.get("assigned_districts", [])
+    # If districts is a list, return the first one; otherwise return the single district
+    primary_district = assigned_districts[0] if isinstance(assigned_districts, list) and len(assigned_districts) > 0 else None
+    
+    return {
+        "operator_id": operator.get("operator_id"),
+        "name": operator.get("full_name") or operator.get("name"),
+        "assigned_district": primary_district,  # Primary district for filtering
+        "assigned_districts": assigned_districts,  # All districts
+        "phone": operator.get("phone"),
+        "email": operator_email
+    }
+
+
+@router.get(
     "/{operator_id}",
     dependencies=[Depends(require_role([UserRole.ADMIN.value, UserRole.OPERATOR.value]))],
     summary="Get operator",
@@ -370,39 +405,4 @@ async def operator_statistics(operator_id: str, db=Depends(get_db)):
 
     stats = await _get_operator_stats(operator_id, db)
     return {"operator_id": operator_id, "operator_name": op.get("full_name"), **stats}
-
-
-@router.get(
-    "/me",
-    summary="Get current operator's profile",
-    description="Returns the current operator's profile including assigned districts",
-    dependencies=[Depends(require_operator)]
-)
-async def get_current_operator(
-    db=Depends(get_db),
-    current_user: dict = Depends(require_operator)
-):
-    """Get current operator's profile with district assignment"""
-    # current_user contains the email from JWT
-    operator_email = current_user.get("email")
-    
-    # Find operator record by email
-    operator = await db.operators.find_one({"email": operator_email})
-    
-    if not operator:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operator profile not found")
-    
-    # Return operator info including assigned_districts (as list)
-    assigned_districts = operator.get("assigned_districts", [])
-    # If districts is a list, return the first one; otherwise return the single district
-    primary_district = assigned_districts[0] if isinstance(assigned_districts, list) and len(assigned_districts) > 0 else None
-    
-    return {
-        "operator_id": operator.get("operator_id"),
-        "name": operator.get("full_name") or operator.get("name"),
-        "assigned_district": primary_district,  # Primary district for filtering
-        "assigned_districts": assigned_districts,  # All districts
-        "phone": operator.get("phone"),
-        "email": operator_email
-    }
 

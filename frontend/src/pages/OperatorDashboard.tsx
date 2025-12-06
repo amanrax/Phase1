@@ -42,7 +42,7 @@ export default function OperatorDashboard() {
   const loadOperatorInfo = async () => {
     try {
       // Get operator's assigned district from their profile
-      const response = await axios.get("/api/operators/me");
+      const response = await axios.get("/operators/me");
       loadFarmers(response.data.assigned_district);
     } catch (error) {
       console.error("Failed to load operator info:", error);
@@ -54,7 +54,7 @@ export default function OperatorDashboard() {
   const loadFarmers = async (district?: string) => {
     setLoading(true);
     try {
-      let url = "/api/farmers?limit=100&skip=0";
+      let url = "/farmers?limit=100&skip=0";
       // Filter by operator's district if available
       if (district) {
         url += `&district=${encodeURIComponent(district)}`;
