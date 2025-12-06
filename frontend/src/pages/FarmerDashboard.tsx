@@ -87,18 +87,24 @@ export default function FarmerDashboard() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", color: "white" }}>
-          <div style={{
-            border: "4px solid rgba(255,255,255,0.3)",
-            borderTop: "4px solid white",
-            borderRadius: "50%",
-            width: "64px",
-            height: "64px",
-            animation: "spin 1s linear infinite",
-            margin: "0 auto 20px"
-          }}></div>
-          <p style={{ fontSize: "20px" }}>Loading your profile...</p>
+      <div 
+        className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center p-4"
+        style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+      >
+        <div className="text-center text-white" style={{ textAlign: "center", color: "white" }}>
+          <div 
+            className="border-4 border-white/30 border-t-white rounded-full w-16 h-16 animate-spin mx-auto mb-5"
+            style={{
+              border: "4px solid rgba(255,255,255,0.3)",
+              borderTop: "4px solid white",
+              borderRadius: "50%",
+              width: "64px",
+              height: "64px",
+              animation: "spin 1s linear infinite",
+              margin: "0 auto 20px"
+            }}
+          ></div>
+          <p className="text-lg sm:text-xl" style={{ fontSize: "20px" }}>Loading your profile...</p>
         </div>
       </div>
     );
@@ -114,34 +120,55 @@ export default function FarmerDashboard() {
         />
       )}
 
-      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", paddingBottom: "30px" }}>
+      <div 
+        className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-800 pb-8"
+        style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", paddingBottom: "30px" }}
+      >
       {/* Header */}
-      <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
-        <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
+      <div 
+        className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4"
+        style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}
+      >
+        <h1 
+          className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg"
+          style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}
+        >
           🌾 AgriManage Pro
         </h1>
-        <p style={{ fontSize: "16px", opacity: 0.9 }}>My Farmer Profile</p>
+        <p className="text-sm sm:text-base opacity-90" style={{ fontSize: "16px", opacity: 0.9 }}>My Farmer Profile</p>
       </div>
 
       {/* Main Content Container */}
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px" }}>
+      <div 
+        className="max-w-6xl mx-auto px-4 sm:px-6"
+        style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px" }}
+      >
         {!farmerData ? (
           // Error State
-          <div style={{
-            background: "white",
-            borderRadius: "15px",
-            padding: "40px",
-            boxShadow: "0 15px 35px rgba(0,0,0,0.1)",
-            textAlign: "center"
-          }}>
-            <div style={{ fontSize: "4rem", marginBottom: "20px" }}>⚠️</div>
-            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#333", marginBottom: "15px" }}>
+          <div 
+            className="bg-white rounded-2xl p-6 sm:p-10 shadow-2xl text-center"
+            style={{
+              background: "white",
+              borderRadius: "15px",
+              padding: "40px",
+              boxShadow: "0 15px 35px rgba(0,0,0,0.1)",
+              textAlign: "center"
+            }}
+          >
+            <div className="text-6xl mb-5" style={{ fontSize: "4rem", marginBottom: "20px" }}>⚠️</div>
+            <h2 
+              className="text-xl sm:text-2xl font-bold text-gray-800 mb-4"
+              style={{ fontSize: "24px", fontWeight: "700", color: "#333", marginBottom: "15px" }}
+            >
               Unable to load farmer profile
             </h2>
-            <p style={{ fontSize: "14px", color: "#666", marginBottom: "30px" }}>
+            <p 
+              className="text-sm text-gray-600 mb-8"
+              style={{ fontSize: "14px", color: "#666", marginBottom: "30px" }}
+            >
               Your farmer profile could not be found. Please contact your operator or administrator to link your account.
             </p>
-            <div style={{ display: "flex", gap: "15px", justifyContent: "center" }}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center" style={{ display: "flex", gap: "15px", justifyContent: "center" }}>
               <button
                 onClick={loadFarmerData}
                 style={{
@@ -195,21 +222,27 @@ export default function FarmerDashboard() {
         ) : (
           <>
             {/* Top Action Bar */}
-            <div style={{
-              background: "white",
-              borderRadius: "12px",
-              padding: "20px 30px",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-              marginBottom: "20px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center"
-            }}>
+            <div 
+              className="bg-white rounded-xl p-4 sm:p-6 shadow-xl mb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+              style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "20px 30px",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+                marginBottom: "20px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}
+            >
               <div>
-                <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#333", marginBottom: "5px" }}>
+                <h2 
+                  className="text-lg sm:text-xl font-bold text-gray-800 mb-1"
+                  style={{ fontSize: "20px", fontWeight: "700", color: "#333", marginBottom: "5px" }}
+                >
                   Welcome, {farmerData?.personal_info?.first_name || "Farmer"} {farmerData?.personal_info?.last_name || ""}
                 </h2>
-                <p style={{ fontSize: "13px", color: "#666" }}>
+                <p className="text-xs sm:text-sm text-gray-600" style={{ fontSize: "13px", color: "#666" }}>
                   Farmer ID: <strong>{farmerData?.farmer_id}</strong>
                 </p>
               </div>
@@ -240,8 +273,13 @@ export default function FarmerDashboard() {
             </div>
 
             {/* Quick Actions */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px", marginBottom: "20px" }}>
-              <div style={{
+            <div 
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-5"
+              style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px", marginBottom: "20px" }}
+            >
+              <div 
+                className="bg-gradient-to-br from-green-600 to-teal-500 rounded-xl p-5 sm:p-6 shadow-lg text-white cursor-pointer transition-all hover:scale-105 hover:shadow-2xl"
+                style={{
                 background: "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
                 borderRadius: "12px",
                 padding: "25px",
@@ -341,7 +379,9 @@ export default function FarmerDashboard() {
                 </div>
               </div>
 
-              <div style={{
+              <div 
+                className="bg-gradient-to-br from-orange-700 to-orange-600 rounded-xl p-5 sm:p-6 shadow-lg text-white cursor-pointer transition-all hover:scale-105 hover:shadow-2xl"
+                style={{
                 background: "linear-gradient(135deg, #c2410c 0%, #ea580c 100%)",
                 borderRadius: "12px",
                 padding: "25px",
@@ -395,6 +435,7 @@ export default function FarmerDashboard() {
 
               <div 
                 onClick={() => navigate(`/farmers/edit/${farmerData.farmer_id}`)}
+                className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-5 sm:p-6 shadow-lg text-white cursor-pointer transition-all hover:scale-105 hover:shadow-2xl"
                 style={{
                   background: "linear-gradient(135deg, #007bff 0%, #0056b3 100%)",
                   borderRadius: "12px",
@@ -420,14 +461,20 @@ export default function FarmerDashboard() {
             </div>
 
             {/* Main Profile Card */}
-            <div style={{
+            <div 
+              className="bg-white rounded-2xl p-5 sm:p-8 shadow-2xl mb-5"
+              style={{
               background: "white",
               borderRadius: "15px",
               padding: "30px",
               boxShadow: "0 15px 35px rgba(0,0,0,0.1)",
               marginBottom: "20px"
-            }}>
-              <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "40px" }}>
+            }}
+            >
+              <div 
+                className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 sm:gap-10"
+                style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "40px" }}
+              >
                 {/* Photo Section */}
                 <div style={{ textAlign: "center" }}>
                   <div style={{
@@ -487,17 +534,23 @@ export default function FarmerDashboard() {
 
                 {/* Personal Info Grid */}
                 <div>
-                  <h3 style={{
+                  <h3 
+                    className="text-base sm:text-lg font-bold text-gray-800 mb-5 pb-3 border-b-4 border-green-600"
+                    style={{
                     fontSize: "18px",
                     fontWeight: "700",
                     color: "#333",
                     marginBottom: "20px",
                     paddingBottom: "10px",
                     borderBottom: "3px solid #28a745"
-                  }}>
+                  }}
+                  >
                     📋 Personal Information
                   </h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "15px" }}>
+                  <div 
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
+                    style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "15px" }}
+                  >
                     <InfoCard label="Phone" value={farmerData?.personal_info?.phone_primary} />
                     <InfoCard label="Farmer ID" value={farmerData?.farmer_id} />
                     <InfoCard label="NRC Number" value={farmerData?.personal_info?.nrc || "N/A"} />
@@ -517,22 +570,31 @@ export default function FarmerDashboard() {
             </div>
 
             {/* Address & Farm Info Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px", marginBottom: "20px" }}>
+            <div 
+              className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-5"
+              style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px", marginBottom: "20px" }}
+            >
               {/* Address Card */}
-              <div style={{
+              <div 
+                className="bg-white rounded-2xl p-5 sm:p-6 shadow-2xl"
+                style={{
                 background: "white",
                 borderRadius: "15px",
                 padding: "25px",
                 boxShadow: "0 15px 35px rgba(0,0,0,0.1)"
-              }}>
-                <h3 style={{
+              }}
+              >
+                <h3 
+                  className="text-base sm:text-lg font-bold text-gray-800 mb-5 pb-3 border-b-4 border-blue-600"
+                  style={{
                   fontSize: "18px",
                   fontWeight: "700",
                   color: "#333",
                   marginBottom: "20px",
                   paddingBottom: "10px",
                   borderBottom: "3px solid #007bff"
-                }}>
+                }}
+                >
                   📍 Address Information
                 </h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -544,20 +606,26 @@ export default function FarmerDashboard() {
               </div>
 
               {/* Farm Info Card */}
-              <div style={{
+              <div 
+                className="bg-white rounded-2xl p-5 sm:p-6 shadow-2xl"
+                style={{
                 background: "white",
                 borderRadius: "15px",
                 padding: "25px",
                 boxShadow: "0 15px 35px rgba(0,0,0,0.1)"
-              }}>
-                <h3 style={{
+              }}
+              >
+                <h3 
+                  className="text-base sm:text-lg font-bold text-gray-800 mb-5 pb-3 border-b-4 border-green-600"
+                  style={{
                   fontSize: "18px",
                   fontWeight: "700",
                   color: "#333",
                   marginBottom: "20px",
                   paddingBottom: "10px",
                   borderBottom: "3px solid #28a745"
-                }}>
+                }}
+                >
                   🌾 Farm Information
                 </h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -587,16 +655,19 @@ export default function FarmerDashboard() {
 
             {/* QR Code Section */}
             {qrCodeUrl && (
-              <div style={{
+              <div 
+                className="bg-white rounded-2xl p-5 sm:p-8 shadow-2xl text-center"
+                style={{
                 background: "white",
                 borderRadius: "15px",
                 padding: "30px",
                 boxShadow: "0 15px 35px rgba(0,0,0,0.1)",
                 textAlign: "center"
-              }}>
-                <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#333", marginBottom: "20px" }}>🔐 Your QR Code</h3>
-                <img src={qrCodeUrl} alt="QR Code" style={{ width: "200px", height: "200px", margin: "0 auto 15px", border: "2px solid #ddd", borderRadius: "10px", padding: "10px" }} />
-                <p style={{ fontSize: "13px", color: "#666" }}>Present this QR code for quick identification</p>
+              }}
+              >
+                <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-5" style={{ fontSize: "18px", fontWeight: "700", color: "#333", marginBottom: "20px" }}>🔐 Your QR Code</h3>
+                <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48 mx-auto mb-4 border-2 border-gray-300 rounded-lg p-3" style={{ width: "200px", height: "200px", margin: "0 auto 15px", border: "2px solid #ddd", borderRadius: "10px", padding: "10px" }} />
+                <p className="text-xs sm:text-sm text-gray-600" style={{ fontSize: "13px", color: "#666" }}>Present this QR code for quick identification</p>
               </div>
             )}
           </>

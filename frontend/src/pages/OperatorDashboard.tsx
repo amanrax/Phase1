@@ -65,88 +65,121 @@ export default function OperatorDashboard() {
   });
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+    <div 
+      className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-800 pb-8"
+      style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}
+    >
       {/* Header */}
-      <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
-        <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
+      <div 
+        className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4"
+        style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}
+      >
+        <h1 
+          className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg"
+          style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}
+        >
           🌾 AgriManage Pro
         </h1>
-        <p style={{ fontSize: "16px", opacity: 0.9 }}>Advanced Agricultural Management System</p>
+        <p className="text-sm sm:text-base opacity-90" style={{ fontSize: "16px", opacity: 0.9 }}>Advanced Agricultural Management System</p>
       </div>
 
       {/* Main Container */}
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px 20px 20px" }}>
+      <div 
+        className="max-w-6xl mx-auto px-4 sm:px-6 pb-5"
+        style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px 20px 20px" }}
+      >
         {/* Stats Grid */}
-        <div style={{ 
+        <div 
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-5"
+          style={{ 
           display: "grid", 
           gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
           gap: "20px", 
           marginBottom: "20px" 
-        }}>
-          <div style={{
+        }}
+        >
+          <div 
+            className="bg-gradient-to-br from-purple-600 to-purple-800 text-white p-5 sm:p-6 rounded-xl text-center transition-all hover:scale-105"
+            style={{
             background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
             color: "white",
             padding: "25px",
             borderRadius: "12px",
             textAlign: "center"
-          }}>
+          }}
+          >
             <div style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "5px" }}>{farmers.length}</div>
             <div style={{ opacity: 0.9, fontSize: "14px" }}>👨‍🌾 My Farmers</div>
           </div>
 
-          <div style={{
+          <div 
+            className="bg-gradient-to-br from-purple-600 to-purple-800 text-white p-5 sm:p-6 rounded-xl text-center transition-all hover:scale-105"
+            style={{
             background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
             color: "white",
             padding: "25px",
             borderRadius: "12px",
             textAlign: "center"
-          }}>
+          }}
+          >
             <div style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "5px" }}>3</div>
             <div style={{ opacity: 0.9, fontSize: "14px" }}>📅 This Month</div>
           </div>
 
-          <div style={{
+          <div 
+            className="bg-gradient-to-br from-purple-600 to-purple-800 text-white p-5 sm:p-6 rounded-xl text-center transition-all hover:scale-105"
+            style={{
             background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
             color: "white",
             padding: "25px",
             borderRadius: "12px",
             textAlign: "center"
-          }}>
+          }}
+          >
             <div style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "5px" }}>8</div>
             <div style={{ opacity: 0.9, fontSize: "14px" }}>📄 Pending Docs</div>
           </div>
 
-          <div style={{
+          <div 
+            className="bg-gradient-to-br from-purple-600 to-purple-800 text-white p-5 sm:p-6 rounded-xl text-center transition-all hover:scale-105"
+            style={{
             background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
             color: "white",
             padding: "25px",
             borderRadius: "12px",
             textAlign: "center"
-          }}>
+          }}
+          >
             <div style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "5px" }}>45.2</div>
             <div style={{ opacity: 0.9, fontSize: "14px" }}>🌾 Total Land (ha)</div>
           </div>
         </div>
 
         {/* Main Content Card */}
-        <div style={{
+        <div 
+          className="bg-white rounded-2xl p-5 sm:p-8 shadow-2xl border border-white/20"
+          style={{
           background: "white",
           borderRadius: "15px",
           padding: "30px",
           boxShadow: "0 15px 35px rgba(0,0,0,0.1)",
           border: "1px solid rgba(255,255,255,0.2)"
-        }}>
+        }}
+        >
           {/* Dashboard Nav */}
-          <div style={{
+          <div 
+            className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4"
+            style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             marginBottom: "30px",
             flexWrap: "wrap",
             gap: "15px"
-          }}>
-            <h2 style={{ fontSize: "24px", fontWeight: "600", color: "#333", margin: 0 }}>📋 Operator Dashboard</h2>
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+          }}
+          >
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 m-0" style={{ fontSize: "24px", fontWeight: "600", color: "#333", margin: 0 }}>📋 Operator Dashboard</h2>
+            <div className="flex flex-wrap gap-2 sm:gap-3 items-center w-full md:w-auto" style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
               {/* View Toggle */}
               <div style={{ display: "flex", gap: "5px", background: "#f8f9fa", borderRadius: "8px", padding: "4px" }}>
                 <button
@@ -244,6 +277,7 @@ export default function OperatorDashboard() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="🔍 Search farmers..."
+                className="p-3 border-2 border-gray-300 rounded-lg text-base w-full md:w-80 transition-all focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                 style={{
                   padding: "12px 15px",
                   border: "2px solid #e0e0e0",
