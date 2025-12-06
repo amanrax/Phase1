@@ -49,7 +49,10 @@ export default function FarmersList() {
     setLoading(true);
     setError("");
     try {
+      if (import.meta.env.DEV) console.log("Fetching farmers...");
       const data = await farmerService.getFarmers(1000, 0);
+      if (import.meta.env.DEV) console.log("Farmers response:", data);
+      
       // Handle different response structures
       let farmerList: Farmer[] = [];
       if (Array.isArray(data)) {
@@ -62,10 +65,12 @@ export default function FarmersList() {
         // If it's an object but not array-like, try to extract farmers
         farmerList = [];
       }
+      if (import.meta.env.DEV) console.log("Processed farmer list:", farmerList);
       setAllFarmers(farmerList);
     } catch (err: any) {
-      if (import.meta.env.DEV) console.error("Fetch farmers error:", err);
-      setError(err.response?.data?.detail || "Failed to load farmers");
+      console.error("Fetch farmers error:", err);
+      const errorMsg = err.response?.data?.detail || err.message || "Failed to load farmers";
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
