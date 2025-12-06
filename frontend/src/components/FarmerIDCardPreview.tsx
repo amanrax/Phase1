@@ -53,7 +53,8 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 50,
-        padding: '16px'
+        padding: '16px',
+        overflow: 'auto'
       }}
     >
       <div 
@@ -61,10 +62,12 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
           background: 'white',
           borderRadius: '16px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          maxWidth: '1000px',
+          maxWidth: '95vw',
           width: '100%',
-          padding: '32px',
-          position: 'relative'
+          padding: '24px',
+          position: 'relative',
+          maxHeight: '90vh',
+          overflowY: 'auto'
         }}
       >
         {/* Close Button */}
@@ -91,10 +94,10 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '30px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>
+          <h2 style={{ fontSize: 'clamp(20px, 5vw, 30px)', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>
             🆔 Farmer ID Card Preview
           </h2>
-          <p style={{ color: '#6b7280' }}>
+          <p style={{ color: '#6b7280', fontSize: 'clamp(14px, 4vw, 16px)' }}>
             {farmer.personal_info?.first_name} {farmer.personal_info?.last_name}
           </p>
         </div>

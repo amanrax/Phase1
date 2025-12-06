@@ -549,7 +549,7 @@ export default function FarmerDashboard() {
                   </h3>
                   <div 
                     className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
-                    style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "15px" }}
+                    style={{ display: "grid", gridTemplateColumns: "1fr", gap: "15px" }}
                   >
                     <InfoCard label="Phone" value={farmerData?.personal_info?.phone_primary} />
                     <InfoCard label="Farmer ID" value={farmerData?.farmer_id} />
@@ -572,7 +572,7 @@ export default function FarmerDashboard() {
             {/* Address & Farm Info Grid */}
             <div 
               className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-5"
-              style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px", marginBottom: "20px" }}
+              style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px", marginBottom: "20px" }}
             >
               {/* Address Card */}
               <div 
