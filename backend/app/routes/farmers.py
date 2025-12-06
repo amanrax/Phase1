@@ -128,6 +128,31 @@ async def create_farmer(
         user_id=current_user.get("email"),
         role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
     )
+    
+    # For operators, validate that farmer is in their assigned district
+    if current_user.get("roles") and "OPERATOR" in current_user.get("roles", []) and "ADMIN" not in current_user.get("roles", []):
+        user_email = current_user.get("email")
+        operator_doc = await db.operators.find_one({"email": user_email})
+        if operator_doc:
+            assigned_districts = operator_doc.get("assigned_districts", [])
+            farmer_district = farmer_data.address.district_name if farmer_data.address else None
+            
+            # If operator has assigned districts, farmer must be in one of them
+            if assigned_districts and farmer_district not in assigned_districts:
+                await log_event(
+                    level="WARNING",
+                    module="farmers",
+                    action="create_rejected",
+                    details={"reason": "farmer_outside_operator_district", "farmer_district": farmer_district, "operator_districts": assigned_districts},
+                    endpoint="/api/farmers",
+                    user_id=current_user.get("email"),
+                    role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Farmer must be registered in your assigned district(s): {', '.join(assigned_districts)}"
+                )
+    
     # Initialize service
     farmer_service = FarmerService(db)
     
@@ -223,13 +248,13 @@ async def list_farmers(
     allowed_districts = None
     created_by_filter = None
     if current_user.get("roles") and "OPERATOR" in current_user.get("roles", []) and "ADMIN" not in current_user.get("roles", []):
-        # Operator: restrict to assigned districts only (geographic scope)
+        # Operator: show farmers in their assigned districts OR created by them
         user_email = current_user.get("email")
         operator_doc = await db.operators.find_one({"email": user_email})
         if operator_doc:
             allowed_districts = operator_doc.get("assigned_districts", [])
-            # If no districts assigned, operator sees nothing (secure default)
-            # We don't fall back to created_by filtering
+            created_by_filter = user_email  # Also show farmers created by this operator
+            # If no districts assigned, still show farmers they created (fallback)
     # Admin sees all farmers (both None)
     
     farmers = await farmer_service.list_farmers(
