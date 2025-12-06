@@ -153,17 +153,22 @@ export default function FarmersList() {
   };
 
   const getFarmerName = (farmer: Farmer) => {
-    // Try different name formats
+    // Try full_name first
     if (farmer.full_name && typeof farmer.full_name === 'string' && farmer.full_name.trim()) {
       return farmer.full_name;
     }
-    // Try top-level first_name and last_name
+    // Try top-level first_name and last_name (NEW API format)
+    const topFirst = (farmer as any).first_name?.trim() || "";
+    const topLast = (farmer as any).last_name?.trim() || "";
+    if (topFirst || topLast) {
+      return `${topFirst} ${topLast}`.trim();
+    }
+    // Try nested personal_info (OLD API format)
     if (farmer.personal_info?.first_name || farmer.personal_info?.last_name) {
       const first = farmer.personal_info?.first_name?.trim() || "";
       const last = farmer.personal_info?.last_name?.trim() || "";
       return `${first} ${last}`.trim();
     }
-    // Fallback - should not reach here with new API
     return "Unnamed";
   };
 
