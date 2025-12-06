@@ -47,7 +47,18 @@ export default function FarmersList() {
     setError("");
     try {
       const data = await farmerService.getFarmers(1000, 0);
-      const farmerList = Array.isArray(data) ? data : (data.results || data || []);
+      // Handle different response structures
+      let farmerList: Farmer[] = [];
+      if (Array.isArray(data)) {
+        farmerList = data;
+      } else if (data?.results && Array.isArray(data.results)) {
+        farmerList = data.results;
+      } else if (data?.farmers && Array.isArray(data.farmers)) {
+        farmerList = data.farmers;
+      } else if (data && typeof data === 'object') {
+        // If it's an object but not array-like, try to extract farmers
+        farmerList = [];
+      }
       setAllFarmers(farmerList);
     } catch (err: any) {
       if (import.meta.env.DEV) console.error("Fetch farmers error:", err);

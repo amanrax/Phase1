@@ -34,12 +34,21 @@ export default function AdminReports() {
     try {
       setLoading(true);
       const response = await axios.get("/reports/dashboard");
-      setReport(response.data || {});
+      // Handle both direct data and nested report structure
+      const reportData = response.data?.report || response.data || {};
+      setReport(reportData);
       
       // Load farmer data
       const farmersResponse = await axios.get("/farmers?limit=100");
-      const farmersList = farmersResponse.data.results || farmersResponse.data || [];
-      setFarmers(Array.isArray(farmersList) ? farmersList : []);
+      let farmersList: FarmerData[] = [];
+      if (Array.isArray(farmersResponse.data)) {
+        farmersList = farmersResponse.data;
+      } else if (farmersResponse.data?.results && Array.isArray(farmersResponse.data.results)) {
+        farmersList = farmersResponse.data.results;
+      } else if (farmersResponse.data?.farmers && Array.isArray(farmersResponse.data.farmers)) {
+        farmersList = farmersResponse.data.farmers;
+      }
+      setFarmers(farmersList);
     } catch (err: any) {
       console.error("Reports error:", err);
       setError(err.response?.data?.detail || "Failed to load reports");

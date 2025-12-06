@@ -42,7 +42,16 @@ export default function AdminSupplyRequests() {
     try {
       setLoading(true);
       const response = await axios.get("/supplies/all");
-      setAllRequests(response.data.requests || []);
+      // Handle different response structures
+      let requestList: SupplyRequest[] = [];
+      if (Array.isArray(response.data)) {
+        requestList = response.data;
+      } else if (response.data?.requests && Array.isArray(response.data.requests)) {
+        requestList = response.data.requests;
+      } else if (response.data?.results && Array.isArray(response.data.results)) {
+        requestList = response.data.results;
+      }
+      setAllRequests(requestList);
     } catch (error: any) {
       setError(error.response?.data?.detail || "Failed to load supply requests");
     } finally {
