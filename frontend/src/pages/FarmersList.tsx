@@ -36,21 +36,27 @@ export default function FarmersList() {
   const [reviewStatus, setReviewStatus] = useState("");
   const [remarks, setRemarks] = useState("");
   const [updating, setUpdating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize] = useState(20);
+  const [totalFarmers, setTotalFarmers] = useState(0);
 
   useEffect(() => {
-    fetchAllFarmers();
+    loadFarmers(0);
   }, []);
 
   useEffect(() => {
     applyFilter();
   }, [filter, allFarmers]);
 
-  const fetchAllFarmers = async () => {
+  const loadFarmers = async (page = 0) => {
     setLoading(true);
     setError("");
     try {
-      if (import.meta.env.DEV) console.log("Fetching farmers...");
-      const data = await farmerService.getFarmers(1000, 0);
+      const skip = page * pageSize;
+      if (import.meta.env.DEV) console.log(`Fetching farmers... skip=${skip}, limit=${pageSize}`);
+      
+      // Backend limit max is 100, so use that instead of 1000
+      const data = await farmerService.getFarmers(pageSize, skip);
       if (import.meta.env.DEV) console.log("Farmers response:", data);
       
       // Handle different response structures
@@ -62,13 +68,56 @@ export default function FarmersList() {
       } else if (data?.farmers && Array.isArray(data.farmers)) {
         farmerList = data.farmers;
       } else if (data && typeof data === 'object') {
-        // If it's an object but not array-like, try to extract farmers
         farmerList = [];
       }
       if (import.meta.env.DEV) console.log("Processed farmer list:", farmerList);
+      
       setAllFarmers(farmerList);
+      setTotalFarmers(farmerList.length);
+      setCurrentPage(page);
     } catch (err: any) {
       console.error("Fetch farmers error:", err);
+      const errorMsg = err.response?.data?.detail || err.message || "Failed to load farmers";
+      setError(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllFarmers = async () => {
+    // For filtering, we need to get all farmers - do this by fetching multiple pages
+    setLoading(true);
+    setError("");
+    try {
+      if (import.meta.env.DEV) console.log("Fetching all farmers for filtering...");
+      // Fetch up to 5 pages (100 farmers max per page = 500 total)
+      let allFarmersData: Farmer[] = [];
+      for (let page = 0; page < 5; page++) {
+        const skip = page * 100;
+        try {
+          const data = await farmerService.getFarmers(100, skip);
+          let pageData: Farmer[] = [];
+          
+          if (Array.isArray(data)) {
+            pageData = data;
+          } else if (data?.results && Array.isArray(data.results)) {
+            pageData = data.results;
+          } else if (data?.farmers && Array.isArray(data.farmers)) {
+            pageData = data.farmers;
+          }
+          
+          if (pageData.length === 0) break; // No more data
+          allFarmersData = [...allFarmersData, ...pageData];
+        } catch (err) {
+          if (page === 0) throw err; // Re-throw if first page fails
+          break; // Stop fetching on error
+        }
+      }
+      
+      setAllFarmers(allFarmersData);
+      setTotalFarmers(allFarmersData.length);
+    } catch (err: any) {
+      console.error("Fetch all farmers error:", err);
       const errorMsg = err.response?.data?.detail || err.message || "Failed to load farmers";
       setError(errorMsg);
     } finally {
@@ -311,10 +360,27 @@ export default function FarmersList() {
           </>
         )}
 
-        {/* Total Count */}
+        {/* Pagination */}
         {!loading && filteredFarmers.length > 0 && (
-          <div className="mt-6 text-center text-sm text-gray-600">
-            Showing {filteredFarmers.length} farmer{filteredFarmers.length !== 1 ? "s" : ""}
+          <div className="mt-6 bg-white rounded-lg shadow-sm p-4 flex justify-between items-center text-xs text-gray-600">
+            <span>Showing {filteredFarmers.length} farmer{filteredFarmers.length !== 1 ? "s" : ""} (Total: {totalFarmers})</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => loadFarmers(currentPage - 1)}
+                disabled={currentPage === 0}
+                className="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ← Previous
+              </button>
+              <span className="px-3 py-1">Page {currentPage + 1}</span>
+              <button
+                onClick={() => loadFarmers(currentPage + 1)}
+                disabled={filteredFarmers.length < pageSize}
+                className="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next →
+              </button>
+            </div>
           </div>
         )}
       </div>
