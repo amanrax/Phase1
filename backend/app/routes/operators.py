@@ -375,7 +375,7 @@ async def operator_statistics(operator_id: str, db=Depends(get_db)):
 @router.get(
     "/me",
     summary="Get current operator's profile",
-    description="Returns the current operator's profile including assigned district",
+    description="Returns the current operator's profile including assigned districts",
     dependencies=[Depends(require_operator)]
 )
 async def get_current_operator(
@@ -383,27 +383,25 @@ async def get_current_operator(
     current_user: dict = Depends(require_operator)
 ):
     """Get current operator's profile with district assignment"""
-    # current_user is the JWT subject (email)
+    # current_user contains the email from JWT
     operator_email = current_user.get("email")
     
-    # Find operator by their user email
-    op = await db.operators.find_one({})  # Will need to refine this
-    # First, let's find the user to get their operator_id
-    user = await db.users.find_one({"email": operator_email})
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
-    
-    # Find operator record - could be linked via user or stored separately
-    operator = await db.operators.find_one({"_id": user.get("operator_id")}) or \
-               await db.operators.find_one({"user_id": str(user.get("_id"))})
+    # Find operator record by email
+    operator = await db.operators.find_one({"email": operator_email})
     
     if not operator:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operator profile not found")
     
+    # Return operator info including assigned_districts (as list)
+    assigned_districts = operator.get("assigned_districts", [])
+    # If districts is a list, return the first one; otherwise return the single district
+    primary_district = assigned_districts[0] if isinstance(assigned_districts, list) and len(assigned_districts) > 0 else None
+    
     return {
         "operator_id": operator.get("operator_id"),
-        "name": operator.get("name"),
-        "assigned_district": operator.get("assigned_district"),
+        "name": operator.get("full_name") or operator.get("name"),
+        "assigned_district": primary_district,  # Primary district for filtering
+        "assigned_districts": assigned_districts,  # All districts
         "phone": operator.get("phone"),
         "email": operator_email
     }
