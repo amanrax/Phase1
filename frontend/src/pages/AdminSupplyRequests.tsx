@@ -128,6 +128,15 @@ export default function AdminSupplyRequests() {
     }
   };
 
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency?.toLowerCase()) {
+      case "high": return "bg-red-100 text-red-800";
+      case "medium": return "bg-orange-100 text-orange-800";
+      case "low": return "bg-green-100 text-green-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
   const pendingCount = allRequests.filter(r => r.status === "pending").length;
 
   return (
