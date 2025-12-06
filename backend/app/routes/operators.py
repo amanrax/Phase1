@@ -5,7 +5,7 @@ from typing import List, Optional, Dict, Any
 from uuid import uuid4
 from datetime import datetime, timezone
 from app.database import get_db
-from app.dependencies.roles import require_role, require_admin, get_current_user
+from app.dependencies.roles import require_role, require_admin, get_current_user, require_operator
 from app.utils.security import hash_password
 from app.models.user import UserRole
 from bson import ObjectId # Import ObjectId
@@ -370,3 +370,41 @@ async def operator_statistics(operator_id: str, db=Depends(get_db)):
 
     stats = await _get_operator_stats(operator_id, db)
     return {"operator_id": operator_id, "operator_name": op.get("full_name"), **stats}
+
+
+@router.get(
+    "/me",
+    summary="Get current operator's profile",
+    description="Returns the current operator's profile including assigned district",
+    dependencies=[Depends(require_operator)]
+)
+async def get_current_operator(
+    db=Depends(get_db),
+    current_user: dict = Depends(require_operator)
+):
+    """Get current operator's profile with district assignment"""
+    # current_user is the JWT subject (email)
+    operator_email = current_user.get("email")
+    
+    # Find operator by their user email
+    op = await db.operators.find_one({})  # Will need to refine this
+    # First, let's find the user to get their operator_id
+    user = await db.users.find_one({"email": operator_email})
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    
+    # Find operator record - could be linked via user or stored separately
+    operator = await db.operators.find_one({"_id": user.get("operator_id")}) or \
+               await db.operators.find_one({"user_id": str(user.get("_id"))})
+    
+    if not operator:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operator profile not found")
+    
+    return {
+        "operator_id": operator.get("operator_id"),
+        "name": operator.get("name"),
+        "assigned_district": operator.get("assigned_district"),
+        "phone": operator.get("phone"),
+        "email": operator_email
+    }
+

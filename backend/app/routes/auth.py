@@ -41,6 +41,38 @@ from app.services.logging_service import log_event, sanitize_body
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+# ==============================
+# Helper Functions
+# ==============================
+def normalize_date(date_str: str) -> str:
+    """
+    Normalize date to YYYY-MM-DD format.
+    Accepts: YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY, YYYY/MM/DD
+    Returns: YYYY-MM-DD
+    """
+    if not date_str or not isinstance(date_str, str):
+        return date_str
+    
+    date_str = date_str.strip()
+    
+    # Try to parse different formats
+    formats = [
+        "%Y-%m-%d",  # YYYY-MM-DD
+        "%d-%m-%Y",  # DD-MM-YYYY
+        "%d/%m/%Y",  # DD/MM/YYYY
+        "%Y/%m/%d",  # YYYY/MM/DD
+    ]
+    
+    for fmt in formats:
+        try:
+            parsed_date = datetime.strptime(date_str, fmt)
+            return parsed_date.strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    
+    # If no format matched, return as-is
+    return date_str
+
 
 # ==============================
 # Authentication Endpoints
@@ -122,7 +154,11 @@ async def login(
             )
             
         # Verify password against date of birth
-        if credentials.password != farmer_doc.get("personal_info", {}).get("date_of_birth"):
+        stored_dob = farmer_doc.get("personal_info", {}).get("date_of_birth")
+        entered_dob = normalize_date(credentials.password)
+        stored_dob_normalized = normalize_date(stored_dob)
+        
+        if entered_dob != stored_dob_normalized:
             await log_event(
                 level="WARNING",
                 module="auth",

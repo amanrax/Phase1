@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
+import axios from "@/utils/axios";
 
 interface Farmer {
   _id: string;
@@ -26,7 +27,7 @@ interface Farmer {
 }
 
 export default function OperatorDashboard() {
-  const { user, logout } = useAuthStore();
+  const { logout } = useAuthStore();
   const navigate = useNavigate();
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,14 +35,31 @@ export default function OperatorDashboard() {
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
 
   useEffect(() => {
-    loadFarmers();
+    loadOperatorInfo();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadFarmers = async () => {
+  const loadOperatorInfo = async () => {
+    try {
+      // Get operator's assigned district from their profile
+      const response = await axios.get("/api/operators/me");
+      loadFarmers(response.data.assigned_district);
+    } catch (error) {
+      console.error("Failed to load operator info:", error);
+      // Fallback: load all farmers if operator info fails
+      loadFarmers();
+    }
+  };
+
+  const loadFarmers = async (district?: string) => {
     setLoading(true);
     try {
-      const data = await farmerService.getFarmers(100, 0);
+      let url = "/api/farmers?limit=100&skip=0";
+      // Filter by operator's district if available
+      if (district) {
+        url += `&district=${encodeURIComponent(district)}`;
+      }
+      const data = await farmerService.getFarmers(100, 0, { district });
       const farmersList = Array.isArray(data) ? data : (data.results || data.farmers || []);
       setFarmers(farmersList);
     } catch (error) {
