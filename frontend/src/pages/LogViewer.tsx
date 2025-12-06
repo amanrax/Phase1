@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fetchLogs, fetchLogStats, exportCsv, LogItem } from '../services/logs.service';
 
 const levels = ['DEBUG','INFO','WARNING','ERROR','CRITICAL'] as const;
 
 export const LogViewer: React.FC = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState<LogItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -52,7 +54,17 @@ export const LogViewer: React.FC = () => {
   return (
     <div className="fade-in p-4 sm:p-6 lg:p-8">
       <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm">
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">System Logs</h1>
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate("/admin-dashboard")} 
+              className="text-green-700 hover:text-green-800 font-bold text-sm"
+            >
+              ← BACK
+            </button>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">📋 System Logs</h1>
+          </div>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div>
             <label className="text-xs font-bold text-gray-600 uppercase">Level</label>

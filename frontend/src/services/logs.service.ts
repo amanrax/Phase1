@@ -26,12 +26,12 @@ export interface LogQuery {
 }
 
 export async function fetchLogs(params: LogQuery) {
-  const { data } = await axios.get('/logs', { params });
+  const { data } = await axios.get('/logs/', { params });
   return data as { items: LogItem[]; total: number; page: number; page_size: number };
 }
 
 export async function fetchLogStats() {
-  const { data } = await axios.get('/logs/stats');
+  const { data } = await axios.get('/logs/stats', { params: {} });
   return data as { stats: Array<{ _id: { level: string; module: string }; count: number }> };
 }
 

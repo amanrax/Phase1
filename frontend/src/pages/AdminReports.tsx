@@ -1,8 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "@/utils/axios";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 interface Report {
+  timestamp?: string;
+  metrics?: {
+    farmers_total?: number;
+    operators_total?: number;
+    users_total?: number;
+    farmers_registered_this_month?: number;
+  };
+  // Also support flat structure for backwards compatibility
   farmers_total?: number;
   operators_total?: number;
   new_this_month?: number;
@@ -61,8 +72,8 @@ export default function AdminReports() {
     try {
       setLoading(true);
       const response = await axios.get("/reports/dashboard");
-      // Handle both direct data and nested report structure
-      const reportData = response.data?.report || response.data || {};
+      // API returns {timestamp, metrics: {...}}
+      const reportData = response.data || {};
       setReport(reportData);
       
       // Load farmer data
@@ -98,38 +109,118 @@ export default function AdminReports() {
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `report-${new Date().toISOString().split('T')[0]}.csv`;
+      link.download = `farmers-report-${new Date().toISOString().split('T')[0]}.csv`;
       link.click();
     } else if (type === "excel") {
-      let excel = "Farmer ID\tName\tDistrict\tStatus\tRegistered\n";
-      farmers.forEach(f => {
-        excel += `${f.farmer_id}\t${getFarmerName(f)}\t${getFarmerDistrict(f)}\t${getFarmerStatus(f)}\t${getFarmerDate(f)}\n`;
-      });
-      const blob = new Blob([excel], { type: "application/vnd.ms-excel" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `report-${new Date().toISOString().split('T')[0]}.xls`;
-      link.click();
+      // Create workbook with summary and details
+      const wb = XLSX.utils.book_new();
+      
+      // Summary sheet
+      const summaryData = [
+        ["Chiefdom Management Model - Farmer Report"],
+        ["Generated", new Date().toLocaleDateString()],
+        [],
+        ["Metric", "Value"],
+        ["Total Farmers", report?.metrics?.farmers_total || report?.farmers_total || 0],
+        ["Total Operators", report?.metrics?.operators_total || report?.operators_total || 0],
+        ["Total Users", report?.metrics?.users_total || report?.active_status || 0],
+        ["New This Month", report?.metrics?.farmers_registered_this_month || report?.new_this_month || 0],
+        ["Pending Verification", report?.pending_verification || 0]
+      ];
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+      XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
+      
+      // Farmers details sheet
+      const farmersData = [
+        ["Farmer ID", "Name", "District", "Status", "Registered"],
+        ...farmers.map(f => [
+          f.farmer_id,
+          getFarmerName(f),
+          getFarmerDistrict(f),
+          getFarmerStatus(f),
+          getFarmerDate(f)
+        ])
+      ];
+      const farmersSheet = XLSX.utils.aoa_to_sheet(farmersData);
+      XLSX.utils.book_append_sheet(wb, farmersSheet, "Farmers");
+      
+      // Download
+      XLSX.writeFile(wb, `farmers-report-${new Date().toISOString().split('T')[0]}.xlsx`);
     } else if (type === "pdf") {
-      const content = `
-Chiefdom Management Model - Farmer Report
-Generated: ${new Date().toLocaleDateString()}
-
-System Summary:
-- Total Farmers: ${report?.farmers_total || 0}
-- Total Operators: ${report?.operators_total || 0}
-- Active Users: ${report?.active_status || 0}
-- Pending Verification: ${report?.pending_verification || 0}
-- New This Month: ${report?.new_this_month || 0}
-
-Farmer Details:
-${farmers.map(f => `${f.farmer_id} | ${getFarmerName(f)} | ${getFarmerDistrict(f)} | ${getFarmerStatus(f)}`).join('\n')}
-      `.trim();
-      const blob = new Blob([content], { type: "text/plain" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `report-${new Date().toISOString().split('T')[0]}.txt`;
-      link.click();
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(18);
+      doc.setTextColor(21, 128, 61); // green-700
+      doc.text("Chiefdom Management Model", 14, 20);
+      
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Farmer Report", 14, 28);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 14, 35);
+      
+      // Summary metrics
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text("System Summary", 14, 45);
+      
+      const metrics = [
+        ["Metric", "Value"],
+        ["Total Farmers", String(report?.metrics?.farmers_total || report?.farmers_total || 0)],
+        ["Total Operators", String(report?.metrics?.operators_total || report?.operators_total || 0)],
+        ["Total Users", String(report?.metrics?.users_total || report?.active_status || 0)],
+        ["New This Month", String(report?.metrics?.farmers_registered_this_month || report?.new_this_month || 0)],
+        ["Pending Verification", String(report?.pending_verification || 0)]
+      ];
+      
+      autoTable(doc, {
+        startY: 50,
+        head: [metrics[0]],
+        body: metrics.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: [21, 128, 61] }
+      });
+      
+      // Farmers table
+      doc.setFontSize(12);
+      const finalY = (doc as any).lastAutoTable?.finalY || 100;
+      doc.text(`Farmer Details (${farmers.length} records)`, 14, finalY + 10);
+      
+      const farmersData = farmers.map(f => [
+        f.farmer_id,
+        getFarmerName(f),
+        getFarmerDistrict(f),
+        getFarmerStatus(f),
+        getFarmerDate(f)
+      ]);
+      
+      autoTable(doc, {
+        startY: finalY + 15,
+        head: [["Farmer ID", "Name", "District", "Status", "Registered"]],
+        body: farmersData,
+        theme: 'striped',
+        headStyles: { fillColor: [21, 128, 61] },
+        styles: { fontSize: 8 }
+      });
+      
+      // Footer
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Page ${i} of ${pageCount} | Ministry of Agriculture`,
+          doc.internal.pageSize.getWidth() / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: "center" }
+        );
+      }
+      
+      doc.save(`farmers-report-${new Date().toISOString().split('T')[0]}.pdf`);
     }
     setShowExportMenu(false);
   };
@@ -166,15 +257,19 @@ ${farmers.map(f => `${f.farmer_id} | ${getFarmerName(f)} | ${getFarmerDistrict(f
   <div class="summary">
     <div class="metric">
       <div class="metric-label">Total Farmers</div>
-      <div class="metric-value">${report?.farmers_total || 0}</div>
+      <div class="metric-value">${report?.metrics?.farmers_total || report?.farmers_total || 0}</div>
     </div>
     <div class="metric">
       <div class="metric-label">Total Operators</div>
-      <div class="metric-value">${report?.operators_total || 0}</div>
+      <div class="metric-value">${report?.metrics?.operators_total || report?.operators_total || 0}</div>
     </div>
     <div class="metric">
-      <div class="metric-label">Active Users</div>
-      <div class="metric-value">${report?.active_status || 0}</div>
+      <div class="metric-label">Total Users</div>
+      <div class="metric-value">${report?.metrics?.users_total || report?.active_status || 0}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">New This Month</div>
+      <div class="metric-value">${report?.metrics?.farmers_registered_this_month || report?.new_this_month || 0}</div>
     </div>
     <div class="metric">
       <div class="metric-label">Pending Verification</div>
@@ -290,23 +385,33 @@ ${farmers.map(f => `${f.farmer_id} | ${getFarmerName(f)} | ${getFarmerDistrict(f
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
               <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-600 hover:shadow-md transition">
                 <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Farmers</p>
-                <h3 className="text-3xl font-bold text-gray-800 mt-2">{report?.farmers_total || 0}</h3>
+                <h3 className="text-3xl font-bold text-gray-800 mt-2">
+                  {report?.metrics?.farmers_total || report?.farmers_total || 0}
+                </h3>
               </div>
               <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-600 hover:shadow-md transition">
                 <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Operators</p>
-                <h3 className="text-3xl font-bold text-gray-800 mt-2">{report?.operators_total || 0}</h3>
+                <h3 className="text-3xl font-bold text-gray-800 mt-2">
+                  {report?.metrics?.operators_total || report?.operators_total || 0}
+                </h3>
               </div>
               <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-600 hover:shadow-md transition">
                 <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">New This Month</p>
-                <h3 className="text-3xl font-bold text-gray-800 mt-2">{report?.new_this_month || 0}</h3>
+                <h3 className="text-3xl font-bold text-gray-800 mt-2">
+                  {report?.metrics?.farmers_registered_this_month || report?.new_this_month || 0}
+                </h3>
               </div>
               <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-600 hover:shadow-md transition">
-                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Active Status</p>
-                <h3 className="text-3xl font-bold text-gray-800 mt-2">{report?.active_status || 0}</h3>
+                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Users</p>
+                <h3 className="text-3xl font-bold text-gray-800 mt-2">
+                  {report?.metrics?.users_total || report?.active_status || 0}
+                </h3>
               </div>
               <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-600 hover:shadow-md transition">
                 <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Pending Verification</p>
-                <h3 className="text-3xl font-bold text-gray-800 mt-2">{report?.pending_verification || 0}</h3>
+                <h3 className="text-3xl font-bold text-gray-800 mt-2">
+                  {report?.pending_verification || 0}
+                </h3>
               </div>
             </div>
 

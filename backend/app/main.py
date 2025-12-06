@@ -130,7 +130,7 @@ app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
 app.include_router(sync.router, prefix="/api", tags=["Synchronization"])
 app.include_router(farmers_qr.router, prefix="/api", tags=["Farmers QR"])
 app.include_router(health.router, prefix="/api/health", tags=["Health"])
-app.include_router(logs.router, prefix="/api", tags=["Logs"])
+app.include_router(logs.router, prefix="/api/logs", tags=["Logs"])
 
 logger.info("✅ All API routers registered")
 

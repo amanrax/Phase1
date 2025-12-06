@@ -8,7 +8,7 @@ from app.database import get_db
 from app.services.logging_service import LOG_COLLECTION
 from app.dependencies.roles import require_admin
 
-router = APIRouter(prefix="/logs")
+router = APIRouter()
 
 
 @router.get("/", summary="List logs (paginated)")

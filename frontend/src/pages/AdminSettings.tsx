@@ -42,7 +42,14 @@ export default function AdminSettings() {
     try {
       setLoading(true);
       const response = await axios.get("/users/");
-      setUsers(Array.isArray(response.data) ? response.data : response.data.results || []);
+      // API returns {users: [...]}
+      if (response.data.users && Array.isArray(response.data.users)) {
+        setUsers(response.data.users);
+      } else if (Array.isArray(response.data)) {
+        setUsers(response.data);
+      } else {
+        setUsers([]);
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || "Failed to load users");
     } finally {
@@ -53,14 +60,18 @@ export default function AdminSettings() {
   const loadStats = async () => {
     try {
       const response = await axios.get("/reports/dashboard");
-      if (response.data) {
-        setStats({
-          total_users: response.data.total_users || 0,
-          total_admins: response.data.total_admins || 0,
-          total_operators: response.data.total_operators || 0,
-          total_farmers: response.data.total_farmers || 0
-        });
-      }
+      // API returns {timestamp, metrics: {farmers_total, operators_total, users_total}}
+      const metrics = response.data?.metrics || response.data || {};
+      
+      // Calculate admin count from users list
+      const adminCount = users.filter(u => u.role.toUpperCase() === 'ADMIN').length;
+      
+      setStats({
+        total_users: metrics.users_total || 0,
+        total_admins: adminCount,
+        total_operators: metrics.operators_total || 0,
+        total_farmers: metrics.farmers_total || 0
+      });
     } catch (err) {
       console.error("Failed to load stats", err);
     }
@@ -90,12 +101,26 @@ export default function AdminSettings() {
   const deactivateUser = async (email: string) => {
     if (!confirm(`Deactivate ${email}?`)) return;
     try {
-      await axios.post(`/users/${email}/deactivate`);
+      await axios.patch(`/users/${email}/status`, { is_active: false });
       setSuccess("User deactivated");
       loadUsers();
+      loadStats(); // Refresh stats after user update
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       setError(err.response?.data?.detail || "Failed to deactivate user");
+    }
+  };
+
+  const activateUser = async (email: string) => {
+    if (!confirm(`Activate ${email}?`)) return;
+    try {
+      await axios.patch(`/users/${email}/status`, { is_active: true });
+      setSuccess("User activated");
+      loadUsers();
+      loadStats(); // Refresh stats after user update
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Failed to activate user");
     }
   };
 
@@ -249,12 +274,21 @@ export default function AdminSettings() {
                             </td>
                             <td className="px-6 py-4 text-xs">{new Date(user.created_at).toLocaleDateString()}</td>
                             <td className="px-6 py-4 text-xs space-x-2">
-                              <button
-                                onClick={() => deactivateUser(user.email)}
-                                className="text-orange-600 hover:text-orange-700 font-bold"
-                              >
-                                Deactivate
-                              </button>
+                              {user.is_active ? (
+                                <button
+                                  onClick={() => deactivateUser(user.email)}
+                                  className="text-orange-600 hover:text-orange-700 font-bold"
+                                >
+                                  Deactivate
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => activateUser(user.email)}
+                                  className="text-green-600 hover:text-green-700 font-bold"
+                                >
+                                  Activate
+                                </button>
+                              )}
                               <button
                                 onClick={() => deleteUser(user.email)}
                                 className="text-red-600 hover:text-red-700 font-bold"
@@ -283,12 +317,21 @@ export default function AdminSettings() {
                         <p className="text-xs text-gray-600 mb-2"><strong>Role:</strong> {user.role.toUpperCase()}</p>
                         <p className="text-xs text-gray-600 mb-3"><strong>Created:</strong> {new Date(user.created_at).toLocaleDateString()}</p>
                         <div className="flex gap-2 text-xs">
-                          <button
-                            onClick={() => deactivateUser(user.email)}
-                            className="flex-1 bg-orange-100 text-orange-700 hover:bg-orange-200 font-bold py-1 px-2 rounded"
-                          >
-                            Deactivate
-                          </button>
+                          {user.is_active ? (
+                            <button
+                              onClick={() => deactivateUser(user.email)}
+                              className="flex-1 bg-orange-100 text-orange-700 hover:bg-orange-200 font-bold py-1 px-2 rounded"
+                            >
+                              Deactivate
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => activateUser(user.email)}
+                              className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-bold py-1 px-2 rounded"
+                            >
+                              Activate
+                            </button>
+                          )}
                           <button
                             onClick={() => deleteUser(user.email)}
                             className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 font-bold py-1 px-2 rounded"
