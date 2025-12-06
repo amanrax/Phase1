@@ -240,8 +240,8 @@ class FarmerService:
         # NRC exact (hashed) match takes precedence if farmer_id_exact not provided
         elif nrc:
             query["nrc_hash"] = hmac_hash(nrc, salt="nrc")
-        elif search:
-            # Text search across multiple fields
+        elif search and "$or" not in query:
+            # Text search across multiple fields (only if $or not already in query)
             query["$or"] = [
                 {"farmer_id": {"$regex": search, "$options": "i"}},
                 {"personal_info.first_name": {"$regex": search, "$options": "i"}},
