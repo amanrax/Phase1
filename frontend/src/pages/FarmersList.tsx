@@ -1,4 +1,3 @@
-// src/pages/FarmersList.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { farmerService } from "@/services/farmer.service";
@@ -11,658 +10,215 @@ interface Farmer {
     last_name?: string;
     phone_primary?: string;
   };
+  full_name?: string;
+  phone?: string;
   address?: {
     village?: string;
     district_name?: string;
   };
+  district?: string;
   registration_status?: string;
   created_at?: string;
   is_active: boolean;
-  review_notes?: string;
-}
-
-interface ReviewModalProps {
-  farmer: Farmer | null;
-  onClose: () => void;
-  onSubmit: (status: string, notes: string) => void;
-}
-
-function ReviewModal({ farmer, onClose, onSubmit }: ReviewModalProps) {
-  const [status, setStatus] = useState(farmer?.registration_status || "registered");
-  const [notes, setNotes] = useState(farmer?.review_notes || "");
-
-  if (!farmer) return null;
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.6)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          backgroundColor: "white",
-          padding: "30px",
-          borderRadius: "15px",
-          maxWidth: "500px",
-          width: "90%",
-          boxShadow: "0 15px 35px rgba(0,0,0,0.2)",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 style={{ marginTop: 0, color: "#333", fontSize: "22px", fontWeight: "700" }}>📋 Review Farmer</h2>
-        <p style={{ color: "#666", marginBottom: "20px", fontSize: "14px" }}>
-          <strong>{farmer.personal_info?.first_name} {farmer.personal_info?.last_name}</strong>
-          <br />
-          Farmer ID: {farmer.farmer_id}
-        </p>
-
-        <div style={{ marginBottom: "20px" }}>
-          <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#333", fontSize: "13px" }}>
-            Registration Status
-          </label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "12px",
-              border: "2px solid #e0e0e0",
-              borderRadius: "8px",
-              fontSize: "14px",
-            }}
-          >
-            <option value="registered">Registered (Initial)</option>
-            <option value="under_review">Under Review</option>
-            <option value="verified">Verified ✓</option>
-            <option value="rejected">Rejected ✗</option>
-            <option value="pending_documents">Pending Documents</option>
-          </select>
-        </div>
-
-        <div style={{ marginBottom: "20px" }}>
-          <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#333", fontSize: "13px" }}>
-            Review Notes (Optional)
-          </label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add review notes or reason for status change..."
-            rows={4}
-            style={{
-              width: "100%",
-              padding: "12px",
-              border: "2px solid #e0e0e0",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontFamily: "inherit",
-              resize: "vertical",
-            }}
-          />
-        </div>
-
-        <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-          <button
-            onClick={onClose}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: "#6c757d",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontWeight: "600",
-              fontSize: "14px",
-              transition: "all 0.3s"
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = "#545b62";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = "#6c757d";
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSubmit(status, notes)}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: "#007bff",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontWeight: "600",
-              fontSize: "14px",
-              transition: "all 0.3s"
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = "#0056b3";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = "#007bff";
-            }}
-          >
-            Save Review
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function FarmersList() {
   const navigate = useNavigate();
-
   const [farmers, setFarmers] = useState<Farmer[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
-  const [reviewModalFarmer, setReviewModalFarmer] = useState<Farmer | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [filter, setFilter] = useState<"all" | "active" | "pending" | "inactive">("all");
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { color: string; bg: string; label: string }> = {
-      registered: { color: "#6c757d", bg: "#f8f9fa", label: "Registered" },
-      under_review: { color: "#ffc107", bg: "#fff3cd", label: "Under Review" },
-      verified: { color: "#28a745", bg: "#d4edda", label: "Verified ✓" },
-      rejected: { color: "#dc3545", bg: "#f8d7da", label: "Rejected ✗" },
-      pending_documents: { color: "#9333ea", bg: "#f3e8ff", label: "Pending Docs" },
-    };
-
-    const config = statusConfig[status] || statusConfig.registered;
-
-    return (
-      <span
-        style={{
-          padding: "6px 12px",
-          borderRadius: "20px",
-          color: config.color,
-          backgroundColor: config.bg,
-          fontWeight: "600",
-          fontSize: "12px",
-          display: "inline-block"
-        }}
-      >
-        {config.label}
-      </span>
-    );
-  };
-
-  const handleReviewSubmit = async (farmerId: string, status: string, notes: string) => {
-    try {
-      const params = new URLSearchParams({ new_status: status });
-      if (notes) params.append("review_notes", notes);
-      
-      await farmerService.review(farmerId, params.toString());
-      setReviewModalFarmer(null);
-      await fetchFarmers();
-    } catch (err: unknown) {
-      console.error("Review error:", err);
-      const error = err as { response?: { data?: { detail?: string } } };
-      setError(error.response?.data?.detail || "Failed to update farmer review");
-    }
-  };
-
-  const handleToggleStatus = async (farmerId: string, currentStatus: boolean) => {
-    try {
-      await farmerService.update(farmerId, { is_active: !currentStatus });
-      await fetchFarmers();
-    } catch (err: unknown) {
-      console.error("Toggle status error:", err);
-      const error = err as { response?: { data?: { detail?: string } } };
-      setError(error.response?.data?.detail || "Failed to update farmer status");
-    }
-  };
+  useEffect(() => {
+    fetchFarmers();
+  }, [filter]);
 
   const fetchFarmers = async () => {
     setLoading(true);
     setError("");
     try {
       const data = await farmerService.getFarmers(100, 0);
+      let farmerList = Array.isArray(data) ? data : (data.results || data || []);
       
-      let farmerList = [];
-      if (data.results && Array.isArray(data.results)) {
-        farmerList = data.results;
-      } else if (data.farmers && Array.isArray(data.farmers)) {
-        farmerList = data.farmers;
-      } else if (Array.isArray(data)) {
-        farmerList = data;
+      // Apply filter
+      if (filter === "active") {
+        farmerList = farmerList.filter((f: any) => f.is_active && f.registration_status === "registered");
+      } else if (filter === "pending") {
+        farmerList = farmerList.filter((f: any) => f.registration_status === "pending");
+      } else if (filter === "inactive") {
+        farmerList = farmerList.filter((f: any) => !f.is_active);
       }
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mappedFarmers = farmerList.map((f: any) => ({
-        _id: f._id || f.id,
-        farmer_id: f.farmer_id,
-        personal_info: f.personal_info || {
-          first_name: f.first_name,
-          last_name: f.last_name,
-          phone_primary: f.phone_primary,
-        },
-        address: f.address || {},
-        registration_status: f.registration_status,
-        created_at: f.created_at,
-        is_active: f.is_active !== undefined ? f.is_active : true,
-      }));
-      
-      setFarmers(mappedFarmers);
-    } catch (err: unknown) {
-      if (import.meta.env.DEV) {
-        console.error("Fetch error:", err);
-      }
-      const error = err as { response?: { data?: { detail?: string } } };
-      setError(error.response?.data?.detail || "Failed to load farmers");
+      setFarmers(farmerList);
+    } catch (err: any) {
+      if (import.meta.env.DEV) console.error("Fetch farmers error:", err);
+      setError(err.response?.data?.detail || "Failed to load farmers");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (farmerId: string, farmerName: string) => {
-    if (!confirm(`Are you sure you want to delete ${farmerName}?`)) {
-      return;
-    }
-
-    try {
-      await farmerService.delete(farmerId);
-      await fetchFarmers();
-    } catch (err: unknown) {
-      console.error(err);
-      const error = err as { response?: { data?: { detail?: string } } };
-      alert(error.response?.data?.detail || "Failed to delete farmer");
-    }
+  const getFarmerName = (farmer: Farmer) => {
+    return farmer.full_name || `${farmer.personal_info?.first_name} ${farmer.personal_info?.last_name}`.trim() || "Unknown";
   };
 
-  useEffect(() => {
-    fetchFarmers();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const getFarmerPhone = (farmer: Farmer) => {
+    return farmer.phone || farmer.personal_info?.phone_primary || "-";
+  };
 
-  const filteredFarmers = farmers.filter(f => {
-    const query = searchQuery.toLowerCase();
-    return (
-      f.personal_info?.first_name?.toLowerCase().includes(query) ||
-      f.personal_info?.last_name?.toLowerCase().includes(query) ||
-      f.personal_info?.phone_primary?.includes(query) ||
-      f.farmer_id.toLowerCase().includes(query)
-    );
-  });
+  const getFarmerDistrict = (farmer: Farmer) => {
+    return farmer.district || farmer.address?.district_name || "Unknown";
+  };
+
+  const getStatusColor = (status: string, isActive: boolean) => {
+    if (!isActive) return "bg-gray-100 text-gray-800";
+    if (status === "registered") return "bg-green-100 text-green-800";
+    if (status === "pending") return "bg-yellow-100 text-yellow-800";
+    return "bg-red-100 text-red-800";
+  };
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", paddingBottom: "30px" }}>
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
-        <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
-          🌾 AgriManage Pro
-        </h1>
-        <p style={{ fontSize: "16px", opacity: 0.9 }}>All Farmers Management</p>
-      </div>
-
-      {/* Main Content */}
-      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 20px" }}>
-        {/* Action Bar */}
-        <div style={{
-          background: "white",
-          borderRadius: "12px",
-          padding: "20px 30px",
-          boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-          marginBottom: "20px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "20px"
-        }}>
-          <button
-            onClick={() => navigate("/")}
-            style={{
-              padding: "10px 20px",
-              border: "2px solid #007bff",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "600",
-              cursor: "pointer",
-              background: "white",
-              color: "#007bff",
-              transition: "all 0.3s"
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = "#007bff";
-              e.currentTarget.style.color = "white";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = "white";
-              e.currentTarget.style.color = "#007bff";
-            }}
-          >
-            ← Back
-          </button>
-
-          {/* Search */}
-          <input
-            type="text"
-            placeholder="🔍 Search farmers by name, phone, or ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              flex: 1,
-              padding: "12px 20px",
-              border: "2px solid #e0e0e0",
-              borderRadius: "25px",
-              fontSize: "14px",
-              outline: "none"
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = "#007bff";
-              e.currentTarget.style.boxShadow = "0 0 0 3px rgba(0,123,255,0.1)";
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = "#e0e0e0";
-              e.currentTarget.style.boxShadow = "none";
-            }}
-          />
-
-          <button
-            onClick={() => navigate("/farmers/create")}
-            style={{
-              padding: "10px 20px",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "600",
-              cursor: "pointer",
-              background: "#28a745",
-              color: "white",
-              transition: "all 0.3s",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px"
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = "#218838";
-              e.currentTarget.style.transform = "translateY(-2px)";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = "#28a745";
-              e.currentTarget.style.transform = "translateY(0)";
-            }}
-          >
-            <span>➕</span> Add New Farmer
-          </button>
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate("/")} 
+              className="text-green-700 hover:text-green-800 font-bold text-sm"
+            >
+              ← BACK
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">👨‍🌾 All Farmers</h1>
+          </div>
         </div>
+      </header>
 
-        {/* Error Message */}
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {error && (
-          <div style={{
-            background: "#f8d7da",
-            color: "#721c24",
-            padding: "15px 20px",
-            marginBottom: "20px",
-            borderRadius: "10px",
-            border: "1px solid #f5c6cb",
-            fontSize: "14px"
-          }}>
-            ⚠️ {error}
+          <div className="mb-6 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500">
+            {error}
+            <button onClick={() => setError("")} className="ml-auto block text-xs hover:underline">Dismiss</button>
           </div>
         )}
 
-        {/* Table Container */}
-        <div style={{
-          background: "white",
-          borderRadius: "15px",
-          boxShadow: "0 15px 35px rgba(0,0,0,0.1)",
-          overflow: "hidden"
-        }}>
-          {loading ? (
-            <div style={{ padding: "60px", textAlign: "center" }}>
-              <div style={{
-                border: "4px solid #f3f3f3",
-                borderTop: "4px solid #007bff",
-                borderRadius: "50%",
-                width: "50px",
-                height: "50px",
-                animation: "spin 1s linear infinite",
-                margin: "0 auto 20px"
-              }}></div>
-              <p style={{ color: "#666", fontSize: "16px" }}>Loading farmers...</p>
-            </div>
-          ) : filteredFarmers.length === 0 ? (
-            <div style={{ padding: "60px", textAlign: "center" }}>
-              <div style={{ fontSize: "4rem", marginBottom: "20px" }}>👨‍🌾</div>
-              <p style={{ color: "#666", fontSize: "18px", fontWeight: "600" }}>
-                {searchQuery ? `No farmers found matching "${searchQuery}"` : "No farmers registered yet"}
-              </p>
-            </div>
-          ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead style={{ background: "#f8f9fa" }}>
+        {/* Filter Tabs */}
+        <div className="mb-6 bg-white rounded-lg shadow-sm p-2 flex gap-2 overflow-x-auto">
+          {["all", "active", "pending", "inactive"].map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f as any)}
+              className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition ${
+                filter === f ? "bg-green-700 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {f.charAt(0).toUpperCase() + f.slice(1)} {f !== "all" && `(${farmers.length})`}
+            </button>
+          ))}
+        </div>
+
+        {/* Loading State */}
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600"></div>
+            <p className="text-gray-600 mt-4">Loading farmers...</p>
+          </div>
+        ) : farmers.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+            <p className="text-gray-600 text-lg">No farmers found</p>
+            <p className="text-gray-500 text-sm">Try changing the filter</p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden">
+              <table className="w-full text-left text-sm text-gray-600">
+                <thead className="bg-gray-100 text-gray-700 font-bold uppercase text-xs">
                   <tr>
-                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>#</th>
-                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Farmer ID</th>
-                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>First Name</th>
-                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Last Name</th>
-                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Phone</th>
-                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Status</th>
-                    <th style={{ padding: "15px 20px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Active</th>
-                    <th style={{ padding: "15px 20px", textAlign: "center", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Actions</th>
+                    <th className="px-6 py-3">Farmer ID</th>
+                    <th className="px-6 py-3">Name</th>
+                    <th className="px-6 py-3">Phone</th>
+                    <th className="px-6 py-3">District</th>
+                    <th className="px-6 py-3">Status</th>
+                    <th className="px-6 py-3">Date</th>
+                    <th className="px-6 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {filteredFarmers.map((f, i) => (
-                    <tr
-                      key={f.farmer_id || i}
-                      style={{ borderBottom: "1px solid #f0f0f0", transition: "all 0.2s" }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = "#f8f9ff";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = "white";
-                      }}
-                    >
-                      <td style={{ padding: "15px 20px", fontSize: "14px", color: "#666" }}>{i + 1}</td>
-                      <td style={{ padding: "15px 20px", fontSize: "13px", fontWeight: "600", color: "#333", fontFamily: "monospace" }}>
-                        {f.farmer_id}
-                      </td>
-                      <td style={{ padding: "15px 20px", fontSize: "14px", fontWeight: "600", color: "#333" }}>
-                        {f.personal_info?.first_name || "-"}
-                      </td>
-                      <td style={{ padding: "15px 20px", fontSize: "14px", color: "#666" }}>
-                        {f.personal_info?.last_name || "-"}
-                      </td>
-                      <td style={{ padding: "15px 20px", fontSize: "14px", color: "#666" }}>
-                        {f.personal_info?.phone_primary || "-"}
-                      </td>
-                      <td style={{ padding: "15px 20px" }}>
-                        {getStatusBadge(f.registration_status || "registered")}
-                      </td>
-                      <td style={{ padding: "15px 20px" }}>
-                        <span style={{
-                          padding: "6px 12px",
-                          borderRadius: "20px",
-                          color: f.is_active ? "#28a745" : "#dc3545",
-                          backgroundColor: f.is_active ? "#d4edda" : "#f8d7da",
-                          fontWeight: "600",
-                          fontSize: "12px",
-                          display: "inline-block"
-                        }}>
-                          {f.is_active ? "✓ Active" : "✗ Inactive"}
+                <tbody className="divide-y divide-gray-200">
+                  {farmers.map(farmer => (
+                    <tr key={farmer._id} className="hover:bg-green-50 transition">
+                      <td className="px-6 py-4 font-mono font-bold text-xs">{farmer.farmer_id}</td>
+                      <td className="px-6 py-4 font-bold">{getFarmerName(farmer)}</td>
+                      <td className="px-6 py-4 text-xs">{getFarmerPhone(farmer)}</td>
+                      <td className="px-6 py-4 text-sm">{getFarmerDistrict(farmer)}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusColor(farmer.registration_status || "", farmer.is_active)}`}>
+                          {farmer.is_active ? (farmer.registration_status === "registered" ? "✓ Registered" : "⏳ Pending") : "✗ Inactive"}
                         </span>
                       </td>
-                      <td style={{ padding: "15px 20px" }}>
-                        <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
-                          <button
-                            onClick={() => setReviewModalFarmer(f)}
-                            title="Review"
-                            style={{
-                              padding: "6px 12px",
-                              background: "#007bff",
-                              color: "white",
-                              border: "none",
-                              borderRadius: "6px",
-                              cursor: "pointer",
-                              fontSize: "12px",
-                              fontWeight: "600",
-                              transition: "all 0.2s"
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = "#0056b3";
-                              e.currentTarget.style.transform = "translateY(-2px)";
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = "#007bff";
-                              e.currentTarget.style.transform = "translateY(0)";
-                            }}
-                          >
-                            📋
-                          </button>
-                          <button
-                            onClick={() => handleToggleStatus(f.farmer_id, f.is_active)}
-                            title={f.is_active ? "Deactivate" : "Activate"}
-                            style={{
-                              padding: "6px 12px",
-                              background: f.is_active ? "#dc3545" : "#28a745",
-                              color: "white",
-                              border: "none",
-                              borderRadius: "6px",
-                              cursor: "pointer",
-                              fontSize: "12px",
-                              fontWeight: "600",
-                              transition: "all 0.2s"
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.opacity = "0.8";
-                              e.currentTarget.style.transform = "translateY(-2px)";
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.opacity = "1";
-                              e.currentTarget.style.transform = "translateY(0)";
-                            }}
-                          >
-                            {f.is_active ? "🔴" : "🟢"}
-                          </button>
-                          <button
-                            onClick={() => navigate(`/farmers/${f.farmer_id}`)}
-                            title="View Details"
-                            style={{
-                              padding: "6px 12px",
-                              background: "#28a745",
-                              color: "white",
-                              border: "none",
-                              borderRadius: "6px",
-                              cursor: "pointer",
-                              fontSize: "12px",
-                              transition: "all 0.2s"
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = "#218838";
-                              e.currentTarget.style.transform = "translateY(-2px)";
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = "#28a745";
-                              e.currentTarget.style.transform = "translateY(0)";
-                            }}
-                          >
-                            👁️
-                          </button>
-                          <button
-                            onClick={() => navigate(`/farmers/edit/${f.farmer_id}`)}
-                            title="Edit"
-                            style={{
-                              padding: "6px 12px",
-                              background: "#ffc107",
-                              color: "#333",
-                              border: "none",
-                              borderRadius: "6px",
-                              cursor: "pointer",
-                              fontSize: "12px",
-                              transition: "all 0.2s"
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = "#e0a800";
-                              e.currentTarget.style.transform = "translateY(-2px)";
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = "#ffc107";
-                              e.currentTarget.style.transform = "translateY(0)";
-                            }}
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={() => handleDelete(
-                              f.farmer_id,
-                              `${f.personal_info?.first_name || ""} ${f.personal_info?.last_name || ""}`.trim() || "Unknown"
-                            )}
-                            title="Delete"
-                            style={{
-                              padding: "6px 12px",
-                              background: "#dc3545",
-                              color: "white",
-                              border: "none",
-                              borderRadius: "6px",
-                              cursor: "pointer",
-                              fontSize: "12px",
-                              transition: "all 0.2s"
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = "#c82333";
-                              e.currentTarget.style.transform = "translateY(-2px)";
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = "#dc3545";
-                              e.currentTarget.style.transform = "translateY(0)";
-                            }}
-                          >
-                            🗑️
-                          </button>
-                        </div>
+                      <td className="px-6 py-4 text-xs">{farmer.created_at ? new Date(farmer.created_at).toLocaleDateString() : "-"}</td>
+                      <td className="px-6 py-4 text-xs space-x-2">
+                        <button
+                          onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
+                          className="text-green-600 hover:text-green-700 font-bold"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => navigate(`/farmers/${farmer.farmer_id}/edit`)}
+                          className="text-blue-600 hover:text-blue-700 font-bold"
+                        >
+                          Edit
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
 
-        {/* Results Count */}
-        {!loading && filteredFarmers.length > 0 && (
-          <div style={{
-            textAlign: "center",
-            color: "white",
-            marginTop: "20px",
-            fontSize: "14px",
-            opacity: 0.9
-          }}>
-            Showing {filteredFarmers.length} of {farmers.length} farmers
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4">
+              {farmers.map(farmer => (
+                <div key={farmer._id} className="bg-white rounded-xl shadow-sm p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-bold text-gray-800 text-sm">{getFarmerName(farmer)}</h3>
+                    <span className={`px-2 py-1 text-xs font-bold rounded-full ${getStatusColor(farmer.registration_status || "", farmer.is_active)}`}>
+                      {farmer.is_active ? (farmer.registration_status === "registered" ? "Registered" : "Pending") : "Inactive"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-1"><strong>ID:</strong> {farmer.farmer_id}</p>
+                  <p className="text-xs text-gray-600 mb-1"><strong>Phone:</strong> {getFarmerPhone(farmer)}</p>
+                  <p className="text-xs text-gray-600 mb-1"><strong>District:</strong> {getFarmerDistrict(farmer)}</p>
+                  <p className="text-xs text-gray-600 mb-3"><strong>Registered:</strong> {farmer.created_at ? new Date(farmer.created_at).toLocaleDateString() : "-"}</p>
+                  <div className="flex gap-2 text-xs">
+                    <button
+                      onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
+                      className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-bold py-2 rounded transition"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => navigate(`/farmers/${farmer.farmer_id}/edit`)}
+                      className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 font-bold py-2 rounded transition"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Total Count */}
+        {!loading && farmers.length > 0 && (
+          <div className="mt-6 text-center text-sm text-gray-600">
+            Showing {farmers.length} farmer{farmers.length !== 1 ? "s" : ""}
           </div>
         )}
       </div>
-
-      {reviewModalFarmer && (
-        <ReviewModal
-          farmer={reviewModalFarmer}
-          onClose={() => setReviewModalFarmer(null)}
-          onSubmit={(status, notes) => handleReviewSubmit(reviewModalFarmer.farmer_id, status, notes)}
-        />
-      )}
-
-      {/* Add spin animation */}
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

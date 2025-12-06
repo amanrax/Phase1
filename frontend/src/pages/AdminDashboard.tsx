@@ -139,6 +139,13 @@ export default function AdminDashboard() {
               </button>
 
               <button
+                onClick={() => navigate("/admin/supply-requests")}
+                className="px-2 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
+              >
+                📦 Supplies
+              </button>
+
+              <button
                 onClick={() => navigate("/admin/settings")}
                 className="px-2 sm:px-4 py-2 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
               >

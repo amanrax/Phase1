@@ -18,9 +18,18 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("Form submitted with:", { email, password, userType, isPasswordEmpty: !password, isEmailEmpty: !email });
+    
+    if (!email || !password) {
+      showError("Please fill in all fields");
+      return;
+    }
+    
     try {
+      console.log("Calling login with:", { email, password, userType });
       await login(email, password, userType);
       const user = useAuthStore.getState().user;
+      console.log("Login successful, user:", user);
       
       showSuccess(`Welcome back, ${user?.email || 'User'}!`);
       
@@ -38,7 +47,9 @@ export default function Login() {
       }, 1500);
     } catch (err: any) {
       console.error("Login failed", err);
-      showError(err.response?.data?.detail || 'Invalid credentials. Please try again.');
+      const errorMsg = err.response?.data?.detail || err.message || 'Invalid credentials. Please try again.';
+      console.error("Error message:", errorMsg);
+      showError(errorMsg);
     }
   };
   
