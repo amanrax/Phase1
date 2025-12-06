@@ -24,32 +24,31 @@ interface Farmer {
 
 export default function FarmersList() {
   const navigate = useNavigate();
-  const [farmers, setFarmers] = useState<Farmer[]>([]);
+  const [allFarmers, setAllFarmers] = useState<Farmer[]>([]);
+  const [filteredFarmers, setFilteredFarmers] = useState<Farmer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "pending" | "inactive">("all");
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
+  const [reviewStatus, setReviewStatus] = useState("");
+  const [remarks, setRemarks] = useState("");
 
   useEffect(() => {
-    fetchFarmers();
-  }, [filter]);
+    fetchAllFarmers();
+  }, []);
 
-  const fetchFarmers = async () => {
+  useEffect(() => {
+    applyFilter();
+  }, [filter, allFarmers]);
+
+  const fetchAllFarmers = async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await farmerService.getFarmers(100, 0);
-      let farmerList = Array.isArray(data) ? data : (data.results || data || []);
-      
-      // Apply filter
-      if (filter === "active") {
-        farmerList = farmerList.filter((f: any) => f.is_active && f.registration_status === "registered");
-      } else if (filter === "pending") {
-        farmerList = farmerList.filter((f: any) => f.registration_status === "pending");
-      } else if (filter === "inactive") {
-        farmerList = farmerList.filter((f: any) => !f.is_active);
-      }
-      
-      setFarmers(farmerList);
+      const data = await farmerService.getFarmers(1000, 0);
+      const farmerList = Array.isArray(data) ? data : (data.results || data || []);
+      setAllFarmers(farmerList);
     } catch (err: any) {
       if (import.meta.env.DEV) console.error("Fetch farmers error:", err);
       setError(err.response?.data?.detail || "Failed to load farmers");
@@ -58,8 +57,35 @@ export default function FarmersList() {
     }
   };
 
+  const applyFilter = () => {
+    let filtered = allFarmers;
+    
+    if (filter === "active") {
+      filtered = filtered.filter((f: any) => f.is_active && f.registration_status === "registered");
+    } else if (filter === "pending") {
+      filtered = filtered.filter((f: any) => f.registration_status === "pending");
+    } else if (filter === "inactive") {
+      filtered = filtered.filter((f: any) => !f.is_active);
+    }
+    
+    setFilteredFarmers(filtered);
+  };
+
+  const getFilterCount = (filterType: string) => {
+    if (filterType === "all") return allFarmers.length;
+    if (filterType === "active") return allFarmers.filter((f: any) => f.is_active && f.registration_status === "registered").length;
+    if (filterType === "pending") return allFarmers.filter((f: any) => f.registration_status === "pending").length;
+    if (filterType === "inactive") return allFarmers.filter((f: any) => !f.is_active).length;
+    return 0;
+  };
+
   const getFarmerName = (farmer: Farmer) => {
-    return farmer.full_name || `${farmer.personal_info?.first_name} ${farmer.personal_info?.last_name}`.trim() || "Unknown";
+    if (farmer.full_name) return farmer.full_name;
+    if (farmer.personal_info?.first_name && farmer.personal_info?.last_name) {
+      return `${farmer.personal_info.first_name} ${farmer.personal_info.last_name}`;
+    }
+    if (farmer.personal_info?.first_name) return farmer.personal_info.first_name;
+    return "Unknown";
   };
 
   const getFarmerPhone = (farmer: Farmer) => {
@@ -75,6 +101,25 @@ export default function FarmersList() {
     if (status === "registered") return "bg-green-100 text-green-800";
     if (status === "pending") return "bg-yellow-100 text-yellow-800";
     return "bg-red-100 text-red-800";
+  };
+
+  const handleReviewClick = (farmer: Farmer) => {
+    setSelectedFarmer(farmer);
+    setReviewStatus(farmer.registration_status || "");
+    setRemarks("");
+    setShowReviewModal(true);
+  };
+
+  const handleStatusUpdate = async () => {
+    if (!selectedFarmer) return;
+    try {
+      // TODO: Call API to update farmer status
+      console.log(`Updating farmer ${selectedFarmer.farmer_id} to ${reviewStatus} with remarks: ${remarks}`);
+      setShowReviewModal(false);
+      fetchAllFarmers();
+    } catch (err) {
+      console.error("Failed to update farmer status:", err);
+    }
   };
 
   return (
@@ -113,7 +158,7 @@ export default function FarmersList() {
                 filter === f ? "bg-green-700 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
-              {f.charAt(0).toUpperCase() + f.slice(1)} {f !== "all" && `(${farmers.length})`}
+              {f.charAt(0).toUpperCase() + f.slice(1)} ({getFilterCount(f)})
             </button>
           ))}
         </div>
@@ -124,7 +169,7 @@ export default function FarmersList() {
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600"></div>
             <p className="text-gray-600 mt-4">Loading farmers...</p>
           </div>
-        ) : farmers.length === 0 ? (
+        ) : filteredFarmers.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
             <p className="text-gray-600 text-lg">No farmers found</p>
             <p className="text-gray-500 text-sm">Try changing the filter</p>
@@ -146,7 +191,7 @@ export default function FarmersList() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {farmers.map(farmer => (
+                  {filteredFarmers.map(farmer => (
                     <tr key={farmer._id} className="hover:bg-green-50 transition">
                       <td className="px-6 py-4 font-mono font-bold text-xs">{farmer.farmer_id}</td>
                       <td className="px-6 py-4 font-bold">{getFarmerName(farmer)}</td>
@@ -166,10 +211,10 @@ export default function FarmersList() {
                           View
                         </button>
                         <button
-                          onClick={() => navigate(`/farmers/${farmer.farmer_id}/edit`)}
-                          className="text-blue-600 hover:text-blue-700 font-bold"
+                          onClick={() => handleReviewClick(farmer)}
+                          className="text-orange-600 hover:text-orange-700 font-bold"
                         >
-                          Edit
+                          Review
                         </button>
                       </td>
                     </tr>
@@ -180,7 +225,7 @@ export default function FarmersList() {
 
             {/* Mobile Cards */}
             <div className="md:hidden space-y-4">
-              {farmers.map(farmer => (
+              {filteredFarmers.map(farmer => (
                 <div key={farmer._id} className="bg-white rounded-xl shadow-sm p-4">
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="font-bold text-gray-800 text-sm">{getFarmerName(farmer)}</h3>
@@ -195,15 +240,15 @@ export default function FarmersList() {
                   <div className="flex gap-2 text-xs">
                     <button
                       onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
-                      className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-bold py-2 rounded transition"
+                      className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-bold py-1 rounded transition"
                     >
                       View
                     </button>
                     <button
-                      onClick={() => navigate(`/farmers/${farmer.farmer_id}/edit`)}
-                      className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 font-bold py-2 rounded transition"
+                      onClick={() => handleReviewClick(farmer)}
+                      className="flex-1 bg-orange-100 text-orange-700 hover:bg-orange-200 font-bold py-1 rounded transition"
                     >
-                      Edit
+                      Review
                     </button>
                   </div>
                 </div>
@@ -213,12 +258,76 @@ export default function FarmersList() {
         )}
 
         {/* Total Count */}
-        {!loading && farmers.length > 0 && (
+        {!loading && filteredFarmers.length > 0 && (
           <div className="mt-6 text-center text-sm text-gray-600">
-            Showing {farmers.length} farmer{farmers.length !== 1 ? "s" : ""}
+            Showing {filteredFarmers.length} farmer{filteredFarmers.length !== 1 ? "s" : ""}
           </div>
         )}
       </div>
+
+      {/* Review Status Modal */}
+      {showReviewModal && selectedFarmer && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="border-b border-gray-200 p-6 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-800">Review Farmer Status</h2>
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Farmer</p>
+                <p className="font-bold text-gray-800">{getFarmerName(selectedFarmer)}</p>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-600 uppercase">Status <span className="text-red-500">*</span></label>
+                <select
+                  value={reviewStatus}
+                  onChange={(e) => setReviewStatus(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                >
+                  <option value="">-- Select Status --</option>
+                  <option value="pending">Pending Review</option>
+                  <option value="registered">Registered (Approved)</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="under_verification">Under Verification</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-600 uppercase">Remarks</label>
+                <textarea
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="Add any notes or comments..."
+                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm h-24 resize-none"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleStatusUpdate}
+                  className="flex-1 bg-green-700 hover:bg-green-800 text-white font-bold py-2 rounded-lg transition"
+                >
+                  Update Status
+                </button>
+                <button
+                  onClick={() => setShowReviewModal(false)}
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,30 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { operatorService } from "@/services/operator.service";
 import geoService from "@/services/geo.service";
 
-const getErrorMessage = (err: unknown): string => {
-  if (typeof err === "object" && err !== null) {
-    const error = err as Record<string, unknown>;
-    if (error.response && typeof error.response === "object") {
-      const response = error.response as Record<string, unknown>;
-      if (response.data && typeof response.data === "object") {
-        const data = response.data as Record<string, unknown>;
-        if (data.detail) {
-          if (Array.isArray(data.detail)) {
-            return data.detail.map((e: {loc: string[]; msg: string}) => 
-              `${e.loc.join('.')}: ${e.msg}`
-            ).join(', ');
-          }
-          if (typeof data.detail === "string") return data.detail;
-        }
-      }
-    }
-    if (error.message && typeof error.message === "string") {
-      return error.message;
-    }
-  }
-  return "An error occurred";
-};
-
 interface Operator {
   _id: string;
   operator_id: string;
@@ -44,7 +20,7 @@ export default function OperatorManagement() {
   const navigate = useNavigate();
   const [operators, setOperators] = useState<Operator[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -86,23 +62,18 @@ export default function OperatorManagement() {
   const handleProvinceChange = async (provinceCode: string) => {
     setSelectedProvince(provinceCode);
     setFormData(prev => ({ ...prev, assigned_district: "" }));
-    if (provinceCode) {
-      await loadDistricts(provinceCode);
-    } else {
-      setDistricts([]);
-    }
+    if (provinceCode) await loadDistricts(provinceCode);
+    else setDistricts([]);
   };
 
   const loadOperators = async () => {
     setLoading(true);
     try {
       const data = await operatorService.getOperators(100, 0);
-      const operatorList = (data.results || data.operators || data || []).map(
-        (op: Operator) => ({
-          ...op,
-          status: op.is_active ? "active" : "inactive",
-        })
-      );
+      const operatorList = (data.results || data.operators || data || []).map((op: Operator) => ({
+        ...op,
+        status: op.is_active ? "active" : "inactive",
+      }));
       setOperators(operatorList);
     } catch (err) {
       console.error("Failed to load operators:", err);
@@ -139,7 +110,7 @@ export default function OperatorManagement() {
 
       await operatorService.create(payload);
       setSuccess("✅ Operator created successfully!");
-      setShowCreateForm(false);
+      setShowCreateModal(false);
       setFormData({
         first_name: "",
         last_name: "",
@@ -152,8 +123,8 @@ export default function OperatorManagement() {
       setSelectedProvince("");
       loadOperators();
       setTimeout(() => setSuccess(""), 3000);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err));
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Failed to create operator");
     }
   };
 
@@ -163,16 +134,13 @@ export default function OperatorManagement() {
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => navigate("/admin-dashboard")} 
-              className="text-green-700 hover:text-green-800 font-bold text-sm"
-            >
+            <button onClick={() => navigate("/admin-dashboard")} className="text-green-700 hover:text-green-800 font-bold text-sm">
               ← BACK
             </button>
             <h1 className="text-2xl font-bold text-gray-800">👨‍💼 Operator Management</h1>
           </div>
           <button
-            onClick={() => setShowCreateForm(!showCreateForm)}
+            onClick={() => setShowCreateModal(true)}
             className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg transition"
           >
             + Create Operator
@@ -182,138 +150,161 @@ export default function OperatorManagement() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {error && (
+        {error && !showCreateModal && (
           <div className="mb-6 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500">
             {error}
             <button onClick={() => setError("")} className="ml-auto block text-xs hover:underline">Dismiss</button>
           </div>
         )}
-        
+
         {success && (
           <div className="mb-6 bg-green-50 text-green-700 px-4 py-3 rounded-lg text-sm border-l-4 border-green-600">
-            {success}
+            ✓ {success}
           </div>
         )}
 
-        {/* Create Form */}
-        {showCreateForm && (
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">➕ Create New Operator</h2>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase">First Name</label>
-                  <input
-                    type="text"
-                    value={formData.first_name}
-                    onChange={(e) => setFormData({...formData, first_name: e.target.value})}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase">Last Name</label>
-                  <input
-                    type="text"
-                    value={formData.last_name}
-                    onChange={(e) => setFormData({...formData, last_name: e.target.value})}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase">Email</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase">Phone</label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase">Province</label>
-                  <select
-                    value={selectedProvince}
-                    onChange={(e) => handleProvinceChange(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                  >
-                    <option value="">-- Select Province --</option>
-                    {provinces.map(p => (
-                      <option key={p.code} value={p.code}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase">District</label>
-                  <select
-                    value={formData.assigned_district}
-                    onChange={(e) => setFormData({...formData, assigned_district: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                    disabled={!selectedProvince}
-                  >
-                    <option value="">-- Select District --</option>
-                    {districts.map(d => (
-                      <option key={d.code} value={d.code}>{d.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase">Password</label>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase">Confirm Password</label>
-                  <input
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2">
+        {/* Modal Overlay */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-96 overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-800">➕ Create New Operator</h2>
                 <button
-                  type="submit"
-                  className="flex-1 bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg transition"
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
                 >
-                  Create Operator
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateForm(false)}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition"
-                >
-                  Cancel
+                  ✕
                 </button>
               </div>
-            </form>
+
+              {error && (
+                <div className="mx-6 mt-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleCreate} className="p-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">First Name <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g., John"
+                      value={formData.first_name}
+                      onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                      required
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">Last Name <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Doe"
+                      value={formData.last_name}
+                      onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                      required
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">Email <span className="text-red-500">*</span></label>
+                    <input
+                      type="email"
+                      placeholder="e.g., john@example.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      required
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">Phone</label>
+                    <input
+                      type="tel"
+                      placeholder="e.g., +260 971 234567"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">Province</label>
+                    <select
+                      value={selectedProvince}
+                      onChange={(e) => handleProvinceChange(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                    >
+                      <option value="">-- Select Province --</option>
+                      {provinces.map(p => (
+                        <option key={p.code} value={p.code}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">District</label>
+                    <select
+                      value={formData.assigned_district}
+                      onChange={(e) => setFormData({...formData, assigned_district: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                      disabled={!selectedProvince}
+                    >
+                      <option value="">-- Select District --</option>
+                      {districts.map(d => (
+                        <option key={d.code} value={d.code}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">Password <span className="text-red-500">*</span></label>
+                    <input
+                      type="password"
+                      placeholder="Min 8 characters"
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      required
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">Confirm Password <span className="text-red-500">*</span></label>
+                    <input
+                      type="password"
+                      placeholder="Re-enter password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                      required
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-4 border-t border-gray-200">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg transition"
+                  >
+                    Create Operator
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 
@@ -330,7 +321,6 @@ export default function OperatorManagement() {
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-sm text-gray-600">
                 <thead className="bg-gray-100 text-gray-700 font-bold uppercase text-xs">
@@ -377,7 +367,6 @@ export default function OperatorManagement() {
               </table>
             </div>
 
-            {/* Mobile Cards */}
             <div className="md:hidden divide-y divide-gray-200">
               {operators.map(op => (
                 <div key={op._id} className="p-4">
