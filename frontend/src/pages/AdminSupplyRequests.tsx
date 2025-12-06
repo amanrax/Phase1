@@ -19,7 +19,8 @@ interface SupplyRequest {
 
 export default function AdminSupplyRequests() {
   const navigate = useNavigate();
-  const [requests, setRequests] = useState<SupplyRequest[]>([]);
+  const [allRequests, setAllRequests] = useState<SupplyRequest[]>([]);
+  const [filteredRequests, setFilteredRequests] = useState<SupplyRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
@@ -31,14 +32,17 @@ export default function AdminSupplyRequests() {
 
   useEffect(() => {
     loadRequests();
-  }, [filter]);
+  }, []);
+
+  useEffect(() => {
+    applyFilter();
+  }, [filter, allRequests]);
 
   const loadRequests = async () => {
     try {
       setLoading(true);
-      const url = filter === "all" ? "/supplies/all" : `/supplies/all?status=${filter}`;
-      const response = await axios.get(url);
-      setRequests(response.data.requests || []);
+      const response = await axios.get("/supplies/all");
+      setAllRequests(response.data.requests || []);
     } catch (error: any) {
       setError(error.response?.data?.detail || "Failed to load supply requests");
     } finally {
@@ -46,18 +50,17 @@ export default function AdminSupplyRequests() {
     }
   };
 
-  const openUpdateModal = (request: SupplyRequest) => {
-    setSelectedRequest(request);
-    setNewStatus(request.status);
-    setAdminNotes(request.admin_notes || "");
-    setShowModal(true);
+  const applyFilter = () => {
+    if (filter === "all") {
+      setFilteredRequests(allRequests);
+    } else {
+      setFilteredRequests(allRequests.filter(r => r.status === filter));
+    }
   };
 
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedRequest(null);
-    setAdminNotes("");
-    setNewStatus("");
+  const getFilterCount = (status: string) => {
+    if (status === "all") return allRequests.length;
+    return allRequests.filter(r => r.status === status).length;
   };
 
   const updateRequest = async () => {
@@ -92,13 +95,18 @@ export default function AdminSupplyRequests() {
     }
   };
 
-  const getUrgencyColor = (urgency: string) => {
-    switch (urgency) {
-      case "high": return "bg-red-100 text-red-800 border-red-300";
-      case "medium": return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case "low": return "bg-green-100 text-green-800 border-green-300";
-      default: return "bg-gray-100 text-gray-800 border-gray-300";
-    }
+  const openUpdateModal = (request: SupplyRequest) => {
+    setSelectedRequest(request);
+    setNewStatus(request.status);
+    setAdminNotes(request.admin_notes || "");
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedRequest(null);
+    setAdminNotes("");
+    setNewStatus("");
   };
 
   const getStatusColor = (status: string) => {
@@ -111,7 +119,7 @@ export default function AdminSupplyRequests() {
     }
   };
 
-  const pendingCount = requests.filter(r => r.status === "pending").length;
+  const pendingCount = allRequests.filter(r => r.status === "pending").length;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -150,11 +158,11 @@ export default function AdminSupplyRequests() {
         {/* Filter Tabs */}
         <div className="mb-6 bg-white rounded-lg shadow-sm p-2 flex flex-wrap gap-2 lg:gap-1">
           {[
-            { value: "all", label: "All", count: requests.length },
-            { value: "pending", label: "Pending", count: requests.filter(r => r.status === "pending").length },
-            { value: "approved", label: "Approved", count: requests.filter(r => r.status === "approved").length },
-            { value: "fulfilled", label: "Fulfilled", count: requests.filter(r => r.status === "fulfilled").length },
-            { value: "rejected", label: "Rejected", count: requests.filter(r => r.status === "rejected").length }
+            { value: "all", label: "All" },
+            { value: "pending", label: "Pending" },
+            { value: "approved", label: "Approved" },
+            { value: "fulfilled", label: "Fulfilled" },
+            { value: "rejected", label: "Rejected" }
           ].map(tab => (
             <button
               key={tab.value}
@@ -163,7 +171,7 @@ export default function AdminSupplyRequests() {
                 filter === tab.value ? "bg-green-700 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
-              {tab.label} {tab.count > 0 && `(${tab.count})`}
+              {tab.label} ({getFilterCount(tab.value)})
             </button>
           ))}
         </div>
@@ -175,7 +183,7 @@ export default function AdminSupplyRequests() {
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600"></div>
               <p className="text-gray-600 mt-4">Loading requests...</p>
             </div>
-          ) : requests.length === 0 ? (
+          ) : filteredRequests.length === 0 ? (
             <div className="p-12 text-center">
               <p className="text-gray-600 text-lg">📭 No supply requests found</p>
             </div>
@@ -194,7 +202,7 @@ export default function AdminSupplyRequests() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {requests.map((request) => (
+                  {filteredRequests.map((request) => (
                     <tr key={request.id} className="hover:bg-green-50 transition">
                       <td className="px-6 py-4 font-bold">{request.farmer_name || request.farmer_email}</td>
                       <td className="px-6 py-4 text-xs">{request.items.slice(0, 2).join(", ")}{request.items.length > 2 ? "..." : ""}</td>
@@ -232,9 +240,9 @@ export default function AdminSupplyRequests() {
           )}
 
           {/* Mobile Card View */}
-          {!loading && requests.length > 0 && (
+          {!loading && filteredRequests.length > 0 && (
             <div className="md:hidden divide-y divide-gray-200">
-              {requests.map((request) => (
+              {filteredRequests.map((request) => (
                 <div key={request.id} className="p-4 hover:bg-green-50 transition">
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="font-bold text-gray-800">{request.farmer_name || request.farmer_email}</h3>
