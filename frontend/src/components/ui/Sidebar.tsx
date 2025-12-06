@@ -50,7 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ navGroups, onClose }) => {
       <div className="bg-gradient-to-r from-purple-700 to-blue-600 h-16 flex items-center justify-center border-b border-purple-800 shadow-lg flex-shrink-0">
         <div className="text-center">
           <i className="fa-solid fa-wheat-awn text-white text-2xl drop-shadow-lg"></i>
-          <h1 className="text-white font-bold text-lg mt-1 drop-shadow-lg">ZIAMIS Pro</h1>
+          <h1 className="text-white font-bold text-lg mt-1 drop-shadow-lg">CMM</h1>
         </div>
       </div>
 

@@ -83,7 +83,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4">
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 drop-shadow-lg">
-          🌾 AgriManage Pro
+          🌾 Chiefdom Management Model
         </h1>
         <p className="text-xs sm:text-sm md:text-base opacity-90">Advanced Agricultural Management System - Admin Dashboard</p>
       </div>

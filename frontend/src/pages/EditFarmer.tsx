@@ -316,7 +316,7 @@ export default function EditFarmer() {
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
       <div style={{ textAlign: "center", color: "white", paddingTop: "20px", paddingBottom: "20px" }}>
         <h1 style={{ fontSize: "clamp(1.5rem, 5vw, 2.8rem)", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
-          🌾 AgriManage Pro
+          🌾 Chiefdom Management Model
         </h1>
         <p style={{ fontSize: "clamp(14px, 3vw, 18px)", opacity: 0.9 }}>Edit Farmer</p>
       </div>

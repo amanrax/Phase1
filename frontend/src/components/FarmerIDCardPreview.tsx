@@ -152,7 +152,7 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ color: 'white', fontSize: '18px', fontWeight: 'bold', margin: 0 }}>ZIAMIS</p>
+                      <p style={{ color: 'white', fontSize: '18px', fontWeight: 'bold', margin: 0 }}>CHIEFDOM</p>
                       <p style={{ color: '#bbf7d0', fontSize: '8px', margin: 0 }}>
                         Farmer Registry
                       </p>

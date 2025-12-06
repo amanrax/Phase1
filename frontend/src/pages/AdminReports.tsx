@@ -76,7 +76,7 @@ export default function AdminReports() {
       link.click();
     } else if (type === "pdf") {
       const content = `
-ZIAMIS Pro - Farmer Report
+Chiefdom Management Model - Farmer Report
 Generated: ${new Date().toLocaleDateString()}
 
 System Summary:

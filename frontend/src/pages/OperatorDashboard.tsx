@@ -96,7 +96,7 @@ export default function OperatorDashboard() {
           className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg"
           style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}
         >
-          🌾 AgriManage Pro
+          🌾 Chiefdom Management Model
         </h1>
         <p className="text-sm sm:text-base opacity-90" style={{ fontSize: "16px", opacity: 0.9 }}>Advanced Agricultural Management System</p>
       </div>

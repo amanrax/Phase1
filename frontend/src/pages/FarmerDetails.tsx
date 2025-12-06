@@ -276,7 +276,7 @@ export default function FarmerDetails() {
       {/* Header */}
       <div className="text-center text-white py-6 sm:py-8" style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
         <h1 className="text-3xl sm:text-4xl font-bold drop-shadow-lg" style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
-          🌾 AgriManage Pro
+          🌾 Chiefdom Management Model
         </h1>
       </div>
 
