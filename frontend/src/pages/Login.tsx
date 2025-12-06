@@ -104,39 +104,47 @@ export default function Login() {
             border: "1px solid rgba(255,255,255,0.2)",
           }}
         >
-          {/* Role Tabs */}
-          <div className="flex mb-[30px] bg-[#f8f9fa] rounded-[10px] overflow-hidden">
-            {roles.map((role, idx) => (
-              <button
-                key={role}
-                type="button"
-                onClick={() => setUserType(role)}
-                className={`flex-1 py-[15px] border-none bg-transparent cursor-pointer text-[14px] font-bold tracking-wide transition-all duration-300 flex items-center justify-center gap-2 ${
-                  userType === role
-                    ? "bg-[#007bff] text-white"
-                    : "text-gray-700 hover:bg-[rgba(0,123,255,0.1)]"
-                } ${idx < roles.length - 1 ? 'border-r border-[#e0e0e0]' : ''}`}
-                style={{
-                  flex: 1,
-                  padding: "15px",
-                  border: "none",
-                  background: userType === role ? "#007bff" : "transparent",
-                  color: userType === role ? "white" : "#555",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  transition: "all 0.3s",
-                  borderRight: idx < roles.length - 1 ? "1px solid #e0e0e0" : "none",
-                }}
-              >
-                <span className="text-lg">{role === "admin" ? "👨‍💼" : role === "operator" ? "📋" : "👨‍🌾"}</span>
-                <span className="hidden sm:inline">{role.charAt(0).toUpperCase() + role.slice(1)}</span>
-              </button>
-            ))}
+          {/* Role Tabs with Labels */}
+          <div className="flex flex-col items-center mb-[30px]">
+            <div className="flex w-full mb-[20px] bg-[#f8f9fa] rounded-[10px] overflow-hidden">
+              {roles.map((role, idx) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => setUserType(role)}
+                  className={`flex-1 py-[15px] border-none bg-transparent cursor-pointer text-[14px] font-bold tracking-wide transition-all duration-300 flex items-center justify-center gap-2 ${
+                    userType === role
+                      ? "bg-[#007bff] text-white"
+                      : "text-gray-700 hover:bg-[rgba(0,123,255,0.1)]"
+                  } ${idx < roles.length - 1 ? 'border-r border-[#e0e0e0]' : ''}`}
+                  style={{
+                    flex: 1,
+                    padding: "15px",
+                    border: "none",
+                    background: userType === role ? "#007bff" : "transparent",
+                    color: userType === role ? "white" : "#555",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    transition: "all 0.3s",
+                    borderRight: idx < roles.length - 1 ? "1px solid #e0e0e0" : "none",
+                  }}
+                >
+                  <span className="text-lg">{role === "admin" ? "👨‍💼" : role === "operator" ? "📋" : "👨‍🌾"}</span>
+                  <span className="hidden sm:inline">{role.charAt(0).toUpperCase() + role.slice(1)}</span>
+                </button>
+              ))}
+            </div>
+            {/* Labels under buttons */}
+            <div className="flex w-full justify-between text-xs text-gray-600 px-2">
+              <span className="flex-1 text-center">Admin</span>
+              <span className="flex-1 text-center">Operator</span>
+              <span className="flex-1 text-center">Farmer</span>
+            </div>
           </div>
 
           {/* Form */}
