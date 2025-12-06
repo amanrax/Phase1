@@ -26,8 +26,15 @@ export default function Login() {
     }
     
     try {
-      console.log("Calling login with:", { email, password, userType });
-      await login(email, password, userType);
+      // Convert date format for farmers: YYYY-MM-DD (from date input) -> DD-MM-YYYY (backend expects)
+      let passwordToSend = password;
+      if (userType === "farmer" && password.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = password.split('-');
+        passwordToSend = `${day}-${month}-${year}`;
+      }
+      
+      console.log("Calling login with:", { email, password: passwordToSend, userType });
+      await login(email, passwordToSend, userType);
       const user = useAuthStore.getState().user;
       console.log("Login successful, user:", user);
       
@@ -57,7 +64,7 @@ export default function Login() {
   const usernameLabel = isFarmer ? "🆔 NRC Number" : userType === "admin" ? "🔐 Admin Email" : "📧 Email Address";
   const usernamePlaceholder = isFarmer ? "e.g., 123456/12/1" : userType === "admin" ? "admin@example.com" : "operator@example.com";
   const passwordLabel = isFarmer ? "🎂 Date of Birth" : "🔑 Password";
-  const passwordPlaceholder = isFarmer ? "YYYY-MM-DD" : "Enter your password";
+  const passwordPlaceholder = isFarmer ? "DD-MM-YYYY (or YYYY-MM-DD)" : "Enter your password";
   const usernameInputType = isFarmer ? "text" : "email";
   const passwordInputType = isFarmer ? "date" : "password";
 
