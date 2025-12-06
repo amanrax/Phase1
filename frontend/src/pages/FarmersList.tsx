@@ -28,11 +28,14 @@ export default function FarmersList() {
   const [filteredFarmers, setFilteredFarmers] = useState<Farmer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "pending" | "inactive">("all");
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
   const [reviewStatus, setReviewStatus] = useState("");
   const [remarks, setRemarks] = useState("");
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     fetchAllFarmers();
@@ -91,20 +94,20 @@ export default function FarmersList() {
   };
 
   const getFarmerName = (farmer: Farmer) => {
-    if (farmer.full_name) return farmer.full_name;
+    if (farmer.full_name && typeof farmer.full_name === 'string' && farmer.full_name.trim()) return farmer.full_name;
     if (farmer.personal_info?.first_name && farmer.personal_info?.last_name) {
-      return `${farmer.personal_info.first_name} ${farmer.personal_info.last_name}`;
+      return `${farmer.personal_info.first_name} ${farmer.personal_info.last_name}`.trim();
     }
-    if (farmer.personal_info?.first_name) return farmer.personal_info.first_name;
-    return "Unknown";
+    if (farmer.personal_info?.first_name) return farmer.personal_info.first_name.trim();
+    return farmer.personal_info?.last_name?.trim() || "Unnamed";
   };
 
   const getFarmerPhone = (farmer: Farmer) => {
-    return farmer.phone || farmer.personal_info?.phone_primary || "-";
+    return (farmer.phone && farmer.phone.trim()) || (farmer.personal_info?.phone_primary && farmer.personal_info?.phone_primary.trim()) || "-";
   };
 
   const getFarmerDistrict = (farmer: Farmer) => {
-    return farmer.district || farmer.address?.district_name || "Unknown";
+    return (farmer.district && farmer.district.trim()) || (farmer.address?.district_name && farmer.address?.district_name.trim()) || "Unknown";
   };
 
   const getStatusColor = (status: string, isActive: boolean) => {
@@ -121,15 +124,31 @@ export default function FarmersList() {
     setShowReviewModal(true);
   };
 
+  const openViewModal = (farmer: Farmer) => {
+    setSelectedFarmer(farmer);
+    setShowViewModal(true);
+  };
+
   const handleStatusUpdate = async () => {
-    if (!selectedFarmer) return;
+    if (!selectedFarmer || !reviewStatus) {
+      setError("Please select a status");
+      return;
+    }
+    setError("");
+    setUpdating(true);
     try {
-      // TODO: Call API to update farmer status
-      console.log(`Updating farmer ${selectedFarmer.farmer_id} to ${reviewStatus} with remarks: ${remarks}`);
+      // Use the review endpoint with query parameters
+      const queryParams = `new_status=${reviewStatus}&review_notes=${encodeURIComponent(remarks)}`;
+      await farmerService.review(selectedFarmer.farmer_id, queryParams);
+      setSuccess("✅ Farmer status updated successfully!");
       setShowReviewModal(false);
+      setSelectedFarmer(null);
       fetchAllFarmers();
-    } catch (err) {
-      console.error("Failed to update farmer status:", err);
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Failed to update farmer status");
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -154,8 +173,15 @@ export default function FarmersList() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {error && (
           <div className="mb-6 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500">
-            {error}
+            <span>{error}</span>
+            <p className="text-gray-500 text-xs mt-2">If this is a validation error, check your input or try refreshing. If the problem persists, contact support.</p>
             <button onClick={() => setError("")} className="ml-auto block text-xs hover:underline">Dismiss</button>
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-6 bg-green-50 text-green-700 px-4 py-3 rounded-lg text-sm border-l-4 border-green-600">
+            {success}
           </div>
         )}
 
@@ -214,18 +240,24 @@ export default function FarmersList() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-xs">{farmer.created_at ? new Date(farmer.created_at).toLocaleDateString() : "-"}</td>
-                      <td className="px-6 py-4 text-xs space-x-2">
+                      <td className="px-6 py-4 text-xs space-x-2 flex gap-1">
+                        <button
+                          onClick={() => openViewModal(farmer)}
+                          className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded transition"
+                        >
+                          👁️ View
+                        </button>
                         <button
                           onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
-                          className="text-green-600 hover:text-green-700 font-bold"
+                          className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold rounded transition"
                         >
-                          View
+                          ✏️ Edit
                         </button>
                         <button
                           onClick={() => handleReviewClick(farmer)}
-                          className="text-orange-600 hover:text-orange-700 font-bold"
+                          className="px-3 py-1 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-semibold rounded transition"
                         >
-                          Review
+                          📋 Review
                         </button>
                       </td>
                     </tr>
@@ -250,16 +282,22 @@ export default function FarmersList() {
                   <p className="text-xs text-gray-600 mb-3"><strong>Registered:</strong> {farmer.created_at ? new Date(farmer.created_at).toLocaleDateString() : "-"}</p>
                   <div className="flex gap-2 text-xs">
                     <button
+                      onClick={() => openViewModal(farmer)}
+                      className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 font-bold py-1 rounded transition"
+                    >
+                      👁️ View
+                    </button>
+                    <button
                       onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
                       className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-bold py-1 rounded transition"
                     >
-                      View
+                      ✏️ Edit
                     </button>
                     <button
                       onClick={() => handleReviewClick(farmer)}
                       className="flex-1 bg-orange-100 text-orange-700 hover:bg-orange-200 font-bold py-1 rounded transition"
                     >
-                      Review
+                      📋 Review
                     </button>
                   </div>
                 </div>
@@ -276,14 +314,14 @@ export default function FarmersList() {
         )}
       </div>
 
-      {/* Review Status Modal */}
-      {showReviewModal && selectedFarmer && (
+      {/* View Modal */}
+      {showViewModal && selectedFarmer && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="border-b border-gray-200 p-6 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-800">Review Farmer Status</h2>
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="border-b border-gray-200 p-6 flex justify-between items-center sticky top-0 bg-white">
+              <h2 className="text-xl font-bold text-gray-800">👁️ Farmer Details</h2>
               <button
-                onClick={() => setShowReviewModal(false)}
+                onClick={() => setShowViewModal(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl"
               >
                 ✕
@@ -292,8 +330,89 @@ export default function FarmersList() {
 
             <div className="p-6 space-y-4">
               <div>
+                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Farmer ID</p>
+                <p className="font-bold text-gray-800">{selectedFarmer.farmer_id}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Full Name</p>
+                <p className="font-bold text-gray-800">{getFarmerName(selectedFarmer)}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Phone</p>
+                <p className="text-gray-800">{getFarmerPhone(selectedFarmer)}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-gray-600 uppercase mb-1">District</p>
+                <p className="text-gray-800">{getFarmerDistrict(selectedFarmer)}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Village</p>
+                <p className="text-gray-800">{selectedFarmer.address?.village || "N/A"}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Status</p>
+                <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusColor(selectedFarmer.registration_status || "", selectedFarmer.is_active)}`}>
+                  {selectedFarmer.is_active ? (selectedFarmer.registration_status === "registered" ? "✓ Registered" : "⏳ Pending") : "✗ Inactive"}
+                </span>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Registered Date</p>
+                <p className="text-gray-800">{selectedFarmer.created_at ? new Date(selectedFarmer.created_at).toLocaleDateString() : "N/A"}</p>
+              </div>
+
+              <div className="flex gap-2 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowViewModal(false);
+                    navigate(`/farmers/${selectedFarmer.farmer_id}`);
+                  }}
+                  className="flex-1 bg-green-700 hover:bg-green-800 text-white font-bold py-2 rounded-lg transition"
+                >
+                  ✏️ Edit
+                </button>
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 rounded-lg transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Status Modal */}
+      {showReviewModal && selectedFarmer && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="border-b border-gray-200 p-6 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-800">📋 Review Farmer Status</h2>
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            {error && (
+              <div className="mx-6 mt-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500">
+                {error}
+              </div>
+            )}
+
+            <div className="p-6 space-y-4">
+              <div>
                 <p className="text-xs font-bold text-gray-600 uppercase mb-1">Farmer</p>
                 <p className="font-bold text-gray-800">{getFarmerName(selectedFarmer)}</p>
+                <p className="text-xs text-gray-600">{selectedFarmer.farmer_id}</p>
               </div>
 
               <div>
@@ -304,10 +423,10 @@ export default function FarmersList() {
                   className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
                 >
                   <option value="">-- Select Status --</option>
-                  <option value="pending">Pending Review</option>
-                  <option value="registered">Registered (Approved)</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="under_verification">Under Verification</option>
+                  <option value="pending">⏳ Pending Review</option>
+                  <option value="registered">✓ Registered (Approved)</option>
+                  <option value="rejected">✗ Rejected</option>
+                  <option value="under_verification">🔍 Under Verification</option>
                 </select>
               </div>
 
@@ -324,9 +443,10 @@ export default function FarmersList() {
               <div className="flex gap-2 pt-4 border-t border-gray-200">
                 <button
                   onClick={handleStatusUpdate}
-                  className="flex-1 bg-green-700 hover:bg-green-800 text-white font-bold py-2 rounded-lg transition"
+                  disabled={updating || !reviewStatus}
+                  className="flex-1 bg-green-700 hover:bg-green-800 text-white font-bold py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Update Status
+                  {updating ? "Updating..." : "✓ Update Status"}
                 </button>
                 <button
                   onClick={() => setShowReviewModal(false)}
