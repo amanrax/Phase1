@@ -43,7 +43,10 @@ export default function FarmerSupplyRequests() {
     try {
       setLoading(true);
       const response = await axios.get("/supplies/my-requests");
-      setRequests(Array.isArray(response.data) ? response.data : response.data.results || []);
+      const data = response.data;
+      // Backend returns { requests: [...], total: n }
+      const list = Array.isArray(data) ? data : data.requests || data.results || [];
+      setRequests(list);
     } catch (err: any) {
       setError(err.response?.data?.detail || "Failed to load requests");
     } finally {

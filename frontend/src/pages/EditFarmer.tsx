@@ -237,6 +237,14 @@ export default function EditFarmer() {
     try {
       const cleanPhone = (phone: string) => phone.replace(/[\s\-()]/g, "");
       
+      const normalizeGender = (g: string) => {
+        const val = g?.toLowerCase();
+        if (val === "male") return "Male";
+        if (val === "female") return "Female";
+        if (val === "other") return "Other";
+        return "";
+      };
+
       const finalProvinceCode = showCustomProvince ? "OTHER" : formData.province_code;
       const finalProvinceName = showCustomProvince ? customProvince : formData.province_name;
       const finalDistrictCode = showCustomDistrict ? "OTHER" : formData.district_code;
@@ -250,9 +258,9 @@ export default function EditFarmer() {
           first_name: formData.first_name,
           last_name: formData.last_name,
           phone_primary: cleanPhone(formData.phone_primary),
-          nrc: formData.nrc,
+          nrc: formData.nrc.trim(),
           date_of_birth: formData.date_of_birth,
-          gender: formData.gender,
+          gender: normalizeGender(formData.gender),
         },
         address: {
           province_code: finalProvinceCode,

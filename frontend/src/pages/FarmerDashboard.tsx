@@ -473,7 +473,6 @@ export default function FarmerDashboard() {
             >
               <div 
                 className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 sm:gap-10"
-                style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "40px" }}
               >
                 {/* Photo Section */}
                 <div style={{ textAlign: "center" }}>
@@ -549,7 +548,6 @@ export default function FarmerDashboard() {
                   </h3>
                   <div 
                     className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
-                    style={{ display: "grid", gridTemplateColumns: "1fr", gap: "15px" }}
                   >
                     <InfoCard label="Phone" value={farmerData?.personal_info?.phone_primary} />
                     <InfoCard label="Farmer ID" value={farmerData?.farmer_id} />
@@ -572,7 +570,6 @@ export default function FarmerDashboard() {
             {/* Address & Farm Info Grid */}
             <div 
               className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-5"
-              style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px", marginBottom: "20px" }}
             >
               {/* Address Card */}
               <div 
@@ -601,7 +598,10 @@ export default function FarmerDashboard() {
                   <InfoCard label="Province" value={farmerData?.address?.province_name || "N/A"} />
                   <InfoCard label="District" value={farmerData?.address?.district_name || "N/A"} />
                   <InfoCard label="Village" value={farmerData?.address?.village || "N/A"} />
-                  <InfoCard label="Chiefdom" value={farmerData?.address?.chiefdom_name || "N/A"} />
+                  <InfoCard
+                    label="Chiefdom"
+                    value={farmerData?.address?.chiefdom_name || "Not provided"}
+                  />
                 </div>
               </div>
 
