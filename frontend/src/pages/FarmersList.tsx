@@ -12,11 +12,16 @@ interface Farmer {
   };
   full_name?: string;
   phone?: string;
+  phone_primary?: string;
+  first_name?: string;
+  last_name?: string;
   address?: {
     village?: string;
     district_name?: string;
   };
   district?: string;
+  district_name?: string;
+  village?: string;
   registration_status?: string;
   created_at?: string;
   is_active: boolean;
@@ -148,20 +153,40 @@ export default function FarmersList() {
   };
 
   const getFarmerName = (farmer: Farmer) => {
-    if (farmer.full_name && typeof farmer.full_name === 'string' && farmer.full_name.trim()) return farmer.full_name;
-    if (farmer.personal_info?.first_name && farmer.personal_info?.last_name) {
-      return `${farmer.personal_info.first_name} ${farmer.personal_info.last_name}`.trim();
+    // Try different name formats
+    if (farmer.full_name && typeof farmer.full_name === 'string' && farmer.full_name.trim()) {
+      return farmer.full_name;
     }
-    if (farmer.personal_info?.first_name) return farmer.personal_info.first_name.trim();
-    return farmer.personal_info?.last_name?.trim() || "Unnamed";
+    // Try top-level first_name and last_name
+    if (farmer.personal_info?.first_name || farmer.personal_info?.last_name) {
+      const first = farmer.personal_info?.first_name?.trim() || "";
+      const last = farmer.personal_info?.last_name?.trim() || "";
+      return `${first} ${last}`.trim();
+    }
+    // Fallback - should not reach here with new API
+    return "Unnamed";
   };
 
   const getFarmerPhone = (farmer: Farmer) => {
-    return (farmer.phone && farmer.phone.trim()) || (farmer.personal_info?.phone_primary && farmer.personal_info?.phone_primary.trim()) || "-";
+    // Check different phone field locations
+    if (farmer.phone && farmer.phone.trim()) return farmer.phone;
+    if ((farmer as any).phone_primary && (farmer as any).phone_primary.trim()) return (farmer as any).phone_primary;
+    if (farmer.personal_info?.phone_primary && farmer.personal_info?.phone_primary.trim()) {
+      return farmer.personal_info.phone_primary;
+    }
+    return "-";
   };
 
   const getFarmerDistrict = (farmer: Farmer) => {
-    return (farmer.district && farmer.district.trim()) || (farmer.address?.district_name && farmer.address?.district_name.trim()) || "Unknown";
+    // Check different district field locations
+    if ((farmer as any).district_name && (farmer as any).district_name.trim()) {
+      return (farmer as any).district_name;
+    }
+    if (farmer.district && farmer.district.trim()) return farmer.district;
+    if (farmer.address?.district_name && farmer.address?.district_name.trim()) {
+      return farmer.address.district_name;
+    }
+    return "Unknown";
   };
 
   const getStatusColor = (status: string, isActive: boolean) => {
@@ -422,7 +447,7 @@ export default function FarmersList() {
 
               <div>
                 <p className="text-xs font-bold text-gray-600 uppercase mb-1">Village</p>
-                <p className="text-gray-800">{selectedFarmer.address?.village || "N/A"}</p>
+                <p className="text-gray-800">{(selectedFarmer as any).village || selectedFarmer.address?.village || "N/A"}</p>
               </div>
 
               <div>
