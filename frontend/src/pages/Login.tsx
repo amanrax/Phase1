@@ -29,13 +29,8 @@ export default function Login() {
       ? '/farmer-dashboard'
       : '/dashboard';
     
-    // Use window.location for Capacitor to ensure proper page load
-    const isCapacitor = !!(window as any).Capacitor;
-    if (isCapacitor) {
-      window.location.replace(targetRoute);
-    } else {
-      navigate(targetRoute, { replace: true });
-    }
+    // Always use React Router navigate (works for both web and Capacitor)
+    navigate(targetRoute, { replace: true });
     
     // Return loading state while redirect happens
     return (
@@ -75,6 +70,9 @@ export default function Login() {
       console.log("Calling login with:", { email, password: passwordToSend, userType });
       await login(email, passwordToSend, userType);
       
+      // Wait a moment for zustand persist to save to localStorage
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const user = useAuthStore.getState().user;
       const token = useAuthStore.getState().token;
       console.log("[Login] Login successful!");
@@ -82,9 +80,6 @@ export default function Login() {
       console.log("[Login] Token present:", !!token);
       console.log("[Login] localStorage token:", !!localStorage.getItem("token"));
       console.log("[Login] User roles:", user?.roles);
-      
-      // Set navigating state to prevent form from showing
-      setIsNavigating(true);
       
       // Determine target route
       let targetRoute = '/dashboard';
@@ -101,22 +96,15 @@ export default function Login() {
       // Show success message
       showSuccess(`Welcome back, ${user?.email || 'User'}!`);
       
-      // For Capacitor/mobile apps, use location.replace to force a full page load
-      // This ensures the auth state is properly loaded from localStorage
-      const isCapacitor = !!(window as any).Capacitor;
-      console.log("[Login] Is Capacitor:", isCapacitor);
+      // Set navigating state to show loading screen
+      setIsNavigating(true);
       
-      if (isCapacitor) {
-        console.log("[Login] Using window.location.replace for Capacitor");
-        // Small delay to ensure state is persisted and user sees success message
-        setTimeout(() => {
-          console.log("[Login] Executing window.location.replace to:", targetRoute);
-          window.location.replace(targetRoute);
-        }, 500);
-      } else {
-        console.log("[Login] Using React Router navigate for web");
+      // Use React Router navigate for both web and mobile
+      // Small delay to ensure success message shows and state is saved
+      setTimeout(() => {
+        console.log("[Login] Executing navigation to:", targetRoute);
         navigate(targetRoute, { replace: true });
-      }
+      }, 500);
     } catch (err: any) {
       console.error("Login failed", err);
       const errorMsg = err.response?.data?.detail || err.message || 'Invalid credentials. Please try again.';
