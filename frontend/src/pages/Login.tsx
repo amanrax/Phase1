@@ -40,18 +40,29 @@ export default function Login() {
       
       showSuccess(`Welcome back, ${user?.email || 'User'}!`);
       
-      // Wait a moment then navigate
-      setTimeout(() => {
-        if (user?.roles.includes("ADMIN")) {
-          navigate('/admin-dashboard');
-        } else if (user?.roles.includes("OPERATOR")) {
-          navigate('/operator-dashboard');
-        } else if (user?.roles.includes("FARMER")) {
-          navigate('/farmer-dashboard');
-        } else {
-          navigate('/dashboard');
-        }
-      }, 1500);
+      // Determine target route
+      let targetRoute = '/dashboard';
+      if (user?.roles.includes("ADMIN")) {
+        targetRoute = '/admin-dashboard';
+      } else if (user?.roles.includes("OPERATOR")) {
+        targetRoute = '/operator-dashboard';
+      } else if (user?.roles.includes("FARMER")) {
+        targetRoute = '/farmer-dashboard';
+      }
+      
+      console.log("Navigating to:", targetRoute);
+      
+      // Check if running in Capacitor
+      const isCapacitor = !!(window as any).Capacitor;
+      
+      if (isCapacitor) {
+        // For Capacitor apps, use window.location for reliable navigation
+        console.log("Capacitor detected, using window.location");
+        window.location.href = targetRoute;
+      } else {
+        // For web, use React Router navigate
+        navigate(targetRoute, { replace: true });
+      }
     } catch (err: any) {
       console.error("Login failed", err);
       const errorMsg = err.response?.data?.detail || err.message || 'Invalid credentials. Please try again.';
