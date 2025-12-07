@@ -14,23 +14,38 @@ export default function Login() {
   const [isNavigating, setIsNavigating] = useState(false);
 
   const navigate = useNavigate();
-  const { login, isLoading, error, token } = useAuthStore();
+  const { login, isLoading, error, token, user } = useAuthStore();
   const { showSuccess, showError } = useNotification();
 
-  // If already logged in, redirect immediately
-  if (token && !isNavigating) {
-    const user = useAuthStore.getState().user;
-    if (user?.roles.includes("ADMIN")) {
-      navigate('/admin-dashboard', { replace: true });
-    } else if (user?.roles.includes("OPERATOR")) {
-      navigate('/operator-dashboard', { replace: true });
-    } else if (user?.roles.includes("FARMER")) {
-      navigate('/farmer-dashboard', { replace: true });
+  // If already logged in with valid token, redirect immediately
+  // This prevents the login page from showing when user is authenticated
+  if (token && user && !isLoading && !isNavigating) {
+    console.log("Already logged in, redirecting...", { user, token: "present" });
+    const targetRoute = user.roles?.includes("ADMIN") 
+      ? '/admin-dashboard'
+      : user.roles?.includes("OPERATOR")
+      ? '/operator-dashboard'
+      : user.roles?.includes("FARMER")
+      ? '/farmer-dashboard'
+      : '/dashboard';
+    
+    // Use window.location for Capacitor to ensure proper page load
+    const isCapacitor = !!(window as any).Capacitor;
+    if (isCapacitor) {
+      window.location.replace(targetRoute);
+    } else {
+      navigate(targetRoute, { replace: true });
     }
-    return null;
+    
+    // Return loading state while redirect happens
+    return (
+      <div className="min-h-screen bg-[linear-gradient(135deg,_#667eea_0%,_#764ba2_100%)] flex items-center justify-center">
+        <div className="text-white text-xl">Loading dashboard...</div>
+      </div>
+    );
   }
 
-  // If navigating, show loading state
+  // If navigating after successful login, show loading state
   if (isNavigating) {
     return (
       <div className="min-h-screen bg-[linear-gradient(135deg,_#667eea_0%,_#764ba2_100%)] flex items-center justify-center">
@@ -56,13 +71,17 @@ export default function Login() {
         passwordToSend = `${day}-${month}-${year}`;
       }
       
+      console.log("[Login] Starting login process...");
       console.log("Calling login with:", { email, password: passwordToSend, userType });
       await login(email, passwordToSend, userType);
       
       const user = useAuthStore.getState().user;
       const token = useAuthStore.getState().token;
-      console.log("Login successful, user:", user, "token:", token ? "present" : "missing");
-      console.log("localStorage token:", localStorage.getItem("token") ? "present" : "missing");
+      console.log("[Login] Login successful!");
+      console.log("[Login] User:", JSON.stringify(user));
+      console.log("[Login] Token present:", !!token);
+      console.log("[Login] localStorage token:", !!localStorage.getItem("token"));
+      console.log("[Login] User roles:", user?.roles);
       
       // Set navigating state to prevent form from showing
       setIsNavigating(true);
@@ -77,7 +96,7 @@ export default function Login() {
         targetRoute = '/farmer-dashboard';
       }
       
-      console.log("Navigating to:", targetRoute);
+      console.log("[Login] Target route:", targetRoute);
       
       // Show success message
       showSuccess(`Welcome back, ${user?.email || 'User'}!`);
@@ -85,14 +104,17 @@ export default function Login() {
       // For Capacitor/mobile apps, use location.replace to force a full page load
       // This ensures the auth state is properly loaded from localStorage
       const isCapacitor = !!(window as any).Capacitor;
+      console.log("[Login] Is Capacitor:", isCapacitor);
+      
       if (isCapacitor) {
-        console.log("Capacitor detected - using location.replace");
-        // Small delay to ensure state is persisted
+        console.log("[Login] Using window.location.replace for Capacitor");
+        // Small delay to ensure state is persisted and user sees success message
         setTimeout(() => {
+          console.log("[Login] Executing window.location.replace to:", targetRoute);
           window.location.replace(targetRoute);
-        }, 300);
+        }, 500);
       } else {
-        console.log("Web mode - using navigate");
+        console.log("[Login] Using React Router navigate for web");
         navigate(targetRoute, { replace: true });
       }
     } catch (err: any) {
