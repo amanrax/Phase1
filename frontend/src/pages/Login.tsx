@@ -1,5 +1,5 @@
 // src/pages/Login.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { useNotification } from "@/components/Notification";
@@ -17,28 +17,22 @@ export default function Login() {
   const { login, isLoading, error, token, user } = useAuthStore();
   const { showSuccess, showError } = useNotification();
 
-  // If already logged in with valid token, redirect immediately
-  // This prevents the login page from showing when user is authenticated
-  if (token && user && !isLoading && !isNavigating) {
-    console.log("Already logged in, redirecting...", { user, token: "present" });
-    const targetRoute = user.roles?.includes("ADMIN") 
-      ? '/admin-dashboard'
-      : user.roles?.includes("OPERATOR")
-      ? '/operator-dashboard'
-      : user.roles?.includes("FARMER")
-      ? '/farmer-dashboard'
-      : '/dashboard';
-    
-    // Always use React Router navigate (works for both web and Capacitor)
-    navigate(targetRoute, { replace: true });
-    
-    // Return loading state while redirect happens
-    return (
-      <div className="min-h-screen bg-[linear-gradient(135deg,_#667eea_0%,_#764ba2_100%)] flex items-center justify-center">
-        <div className="text-white text-xl">Loading dashboard...</div>
-      </div>
-    );
-  }
+  // Check if already logged in and redirect (only once on mount)
+  useEffect(() => {
+    if (token && user && !isLoading) {
+      console.log("[Login] Already logged in, redirecting...", { user: user.email, roles: user.roles });
+      const targetRoute = user.roles?.includes("ADMIN") 
+        ? '/admin-dashboard'
+        : user.roles?.includes("OPERATOR")
+        ? '/operator-dashboard'
+        : user.roles?.includes("FARMER")
+        ? '/farmer-dashboard'
+        : '/dashboard';
+      
+      console.log("[Login] Target route:", targetRoute);
+      navigate(targetRoute, { replace: true });
+    }
+  }, [token, user, isLoading, navigate]);
 
   // If navigating after successful login, show loading state
   if (isNavigating) {
