@@ -77,6 +77,11 @@ allowed_origins = [
     "http://127.0.0.1:5173",
     "http://127.0.0.1:8000",
     "http://127.0.0.1:3000",
+    # Capacitor mobile app origins
+    "capacitor://localhost",
+    "https://localhost",
+    "ionic://localhost",
+    "http://localhost",
 ]
 
 # Allow overriding frontend origin via env (useful in Codespaces)
@@ -86,8 +91,13 @@ if frontend_origin_env and frontend_origin_env not in allowed_origins:
     allowed_origins.append(frontend_origin_env)
 
 # Allow GitHub Codespaces subdomains matching port 5173, 8000, or 3000
-# Regex pattern: https://[any-alphanumeric-and-hyphens]-[port].app.github.dev
-allow_origin_regex = r"^https:\/\/[a-z0-9\-]+-(?:5173|8000|3000)\.app\.github\.dev$"
+# Also allow ngrok domains for mobile testing
+# Patterns:
+# - https://[any-alphanumeric-and-hyphens]-[port].app.github.dev (Codespaces)
+# - https://[anything].ngrok-free.app (ngrok)
+# - https://[anything].ngrok.io (ngrok legacy)
+# - https://[anything].ngrok-free.dev (ngrok)
+allow_origin_regex = r"^https:\/\/([a-z0-9\-]+-(?:5173|8000|3000)\.app\.github\.dev|[a-z0-9\-]+\.ngrok-free\.(app|dev)|[a-z0-9\-]+\.ngrok\.io)$"
 
 logger.info(f"✅ CORS Allowed Origins (static): {allowed_origins}")
 logger.info(f"✅ CORS Allowed Origins (regex pattern): {allow_origin_regex}")
