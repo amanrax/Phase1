@@ -35,10 +35,11 @@ export default function Login() {
       
       console.log("Calling login with:", { email, password: passwordToSend, userType });
       await login(email, passwordToSend, userType);
-      const user = useAuthStore.getState().user;
-      console.log("Login successful, user:", user);
       
-      showSuccess(`Welcome back, ${user?.email || 'User'}!`);
+      const user = useAuthStore.getState().user;
+      const token = useAuthStore.getState().token;
+      console.log("Login successful, user:", user, "token:", token ? "present" : "missing");
+      console.log("localStorage token:", localStorage.getItem("token") ? "present" : "missing");
       
       // Determine target route
       let targetRoute = '/dashboard';
@@ -52,17 +53,11 @@ export default function Login() {
       
       console.log("Navigating to:", targetRoute);
       
-      // Check if running in Capacitor
-      const isCapacitor = !!(window as any).Capacitor;
+      // Always use navigate with replace - works in both web and mobile
+      navigate(targetRoute, { replace: true });
       
-      if (isCapacitor) {
-        // For Capacitor apps, use window.location for reliable navigation
-        console.log("Capacitor detected, using window.location");
-        window.location.href = targetRoute;
-      } else {
-        // For web, use React Router navigate
-        navigate(targetRoute, { replace: true });
-      }
+      // Show success after navigation starts
+      showSuccess(`Welcome back, ${user?.email || 'User'}!`);
     } catch (err: any) {
       console.error("Login failed", err);
       const errorMsg = err.response?.data?.detail || err.message || 'Invalid credentials. Please try again.';
