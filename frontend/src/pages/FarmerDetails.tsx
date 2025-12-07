@@ -40,6 +40,8 @@ interface Farmer {
     district?: string;
     district_name?: string;
     village?: string;
+    ward_name?: string;
+    camp_name?: string;
     chiefdom?: string;
     chiefdom_name?: string;
   };
@@ -76,6 +78,9 @@ interface Farmer {
   reviewed_by?: string;
   reviewed_at?: string;
   is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
 }
 
 export default function FarmerDetails() {
@@ -557,7 +562,62 @@ export default function FarmerDetails() {
                 <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Village</p>
                 <p className="text-gray-800" style={{ color: "#333" }}>{farmer.address?.village || "N/A"}</p>
               </div>
+              {farmer.address?.ward_name && (
+                <div>
+                  <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Ward</p>
+                  <p className="text-gray-800" style={{ color: "#333" }}>{farmer.address.ward_name}</p>
+                </div>
+              )}
+              {farmer.address?.camp_name && (
+                <div>
+                  <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Camp</p>
+                  <p className="text-gray-800" style={{ color: "#333" }}>{farmer.address.camp_name}</p>
+                </div>
+              )}
             </div>
+
+            {/* Metadata Section */}
+            {(farmer.created_at || farmer.created_by) && (
+              <div className="mt-6 pt-6 border-t border-gray-200" style={{ marginTop: "20px", paddingTop: "20px", borderTop: "1px solid #e0e0e0" }}>
+                <h3 className="text-sm font-bold text-gray-700 uppercase mb-3" style={{ fontSize: "12px", fontWeight: "700", color: "#666", marginBottom: "10px" }}>📋 Registration Info</h3>
+                <div className="grid grid-cols-1 gap-3 text-xs" style={{ display: "grid", gap: "10px", fontSize: "12px" }}>
+                  {farmer.created_at && (
+                    <div>
+                      <p className="text-gray-600 font-semibold" style={{ color: "#666", fontWeight: "600" }}>Registered On</p>
+                      <p className="text-gray-800" style={{ color: "#333" }}>
+                        {new Date(farmer.created_at).toLocaleString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  )}
+                  {farmer.created_by && (
+                    <div>
+                      <p className="text-gray-600 font-semibold" style={{ color: "#666", fontWeight: "600" }}>Registered By</p>
+                      <p className="text-gray-800" style={{ color: "#333" }}>{farmer.created_by}</p>
+                    </div>
+                  )}
+                  {farmer.updated_at && (
+                    <div>
+                      <p className="text-gray-600 font-semibold" style={{ color: "#666", fontWeight: "600" }}>Last Updated</p>
+                      <p className="text-gray-800" style={{ color: "#333" }}>
+                        {new Date(farmer.updated_at).toLocaleString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Farm Info Card */}

@@ -6,12 +6,17 @@ import geoService from "@/services/geo.service";
 interface Operator {
   _id: string;
   operator_id: string;
+  user_id?: string;
   full_name: string;
   email: string;
   phone?: string;
   is_active?: boolean;
   assigned_district?: string;
   assigned_districts?: string[];
+  assigned_regions?: string[];
+  created_at?: string;
+  updated_at?: string;
+  farmer_count?: number;
 }
 
 interface Province { code: string; name: string }
@@ -99,6 +104,17 @@ export default function OperatorManagement() {
     }
   };
 
+  // Helper function to get district display name
+  const getDistrictDisplayName = (districtValue: string | undefined): string => {
+    if (!districtValue) return "N/A";
+    // If it looks like a code (e.g., CP01), show with label
+    if (/^[A-Z]{2}\d{2}$/.test(districtValue)) {
+      return `${districtValue} (Code)`;
+    }
+    // Otherwise it's already a name
+    return districtValue;
+  };
+
   const loadOperators = async (page = 0) => {
     setLoading(true);
     try {
@@ -141,12 +157,31 @@ export default function OperatorManagement() {
     setShowViewModal(true);
   };
 
-  const openEditModal = (operator: Operator) => {
+  const openEditModal = async (operator: Operator) => {
     setSelectedOperator(operator);
+    
+    // Get the current district value (could be code or name)
+    const currentDistrict = operator.assigned_district || operator.assigned_districts?.[0] || "";
+    
+    // If it looks like a district code (e.g., LK02, CP01), we need to fetch and convert it to a name
+    let districtValue = currentDistrict;
+    if (currentDistrict && /^[A-Z]{2}\d{2}$/.test(currentDistrict)) {
+      // It's a code - fetch all districts to find the name
+      try {
+        const allDistricts = await geoService.districts();
+        const matchingDistrict = allDistricts.find(d => d.code === currentDistrict);
+        if (matchingDistrict) {
+          districtValue = matchingDistrict.name;
+        }
+      } catch (err) {
+        console.error("Failed to convert district code to name:", err);
+      }
+    }
+    
     setEditFormData({
       full_name: operator.full_name || "",
       phone: operator.phone || "",
-      assigned_district: operator.assigned_district || operator.assigned_districts?.[0] || "",
+      assigned_district: districtValue,
       is_active: operator.is_active ?? true,
     });
     setEditSelectedProvince("");
@@ -154,6 +189,7 @@ export default function OperatorManagement() {
     setShowEditModal(true);
     setShowViewModal(false);
   };
+
 
   const handleToggleActive = async (operatorId: string, currentStatus: boolean) => {
     setUpdatingId(operatorId);
@@ -176,6 +212,7 @@ export default function OperatorManagement() {
     if (!selectedOperator) return;
 
     try {
+      const provinceName = provinces.find(p => p.code === editSelectedProvince)?.name;
       const payload: any = {
         full_name: editFormData.full_name,
         phone: editFormData.phone,
@@ -183,7 +220,10 @@ export default function OperatorManagement() {
       };
 
       if (editFormData.assigned_district) {
-        payload.assigned_district = editFormData.assigned_district;
+        payload.assigned_districts = [editFormData.assigned_district];
+      }
+      if (provinceName) {
+        payload.assigned_regions = [provinceName];
       }
 
       await operatorService.update(selectedOperator.operator_id, payload);
@@ -212,6 +252,7 @@ export default function OperatorManagement() {
     }
 
     try {
+      const provinceName = provinces.find(p => p.code === selectedProvince)?.name;
       const payload = {
         first_name: formData.first_name,
         last_name: formData.last_name,
@@ -219,7 +260,8 @@ export default function OperatorManagement() {
         phone: formData.phone.replace(/[\s\-()]/g, ""),
         password: formData.password,
         role: "OPERATOR",
-        assigned_district: formData.assigned_district || undefined,
+        assigned_districts: formData.assigned_district ? [formData.assigned_district] : [],
+        assigned_regions: provinceName ? [provinceName] : [],
       };
 
       await operatorService.create(payload);
@@ -371,7 +413,7 @@ export default function OperatorManagement() {
                     >
                       <option value="">-- Select District --</option>
                       {districts.map(d => (
-                        <option key={d.code} value={d.code}>{d.name}</option>
+                        <option key={d.code} value={d.name}>{d.name} ({d.code})</option>
                       ))}
                     </select>
                   </div>
@@ -461,7 +503,7 @@ export default function OperatorManagement() {
                       <td className="px-6 py-4">{operator.full_name || "Unknown"}</td>
                       <td className="px-6 py-4">{operator.email || "N/A"}</td>
                       <td className="px-6 py-4">{operator.phone || "N/A"}</td>
-                      <td className="px-6 py-4">{operator.assigned_district || operator.assigned_districts?.[0] || "N/A"}</td>
+                      <td className="px-6 py-4">{getDistrictDisplayName(operator.assigned_district || operator.assigned_districts?.[0])}</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
                           operator.is_active 
@@ -539,7 +581,7 @@ export default function OperatorManagement() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-gray-600 uppercase">District</p>
-                      <p className="text-gray-700">{operator.assigned_district || operator.assigned_districts?.[0] || "N/A"}</p>
+                      <p className="text-gray-700">{getDistrictDisplayName(operator.assigned_district || operator.assigned_districts?.[0])}</p>
                     </div>
                   </div>
                   <div className="flex gap-2 pt-3 border-t border-gray-200">
@@ -597,7 +639,7 @@ export default function OperatorManagement() {
         {/* View Modal */}
         {showViewModal && selectedOperator && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-gray-800">👁️ Operator Details</h2>
                 <button
@@ -607,47 +649,153 @@ export default function OperatorManagement() {
                   ✕
                 </button>
               </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <p className="text-xs font-bold text-gray-600 uppercase mb-1">Operator ID</p>
-                  <p className="text-gray-800 font-semibold">{selectedOperator.operator_id || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-600 uppercase mb-1">Full Name</p>
-                  <p className="text-gray-800">{selectedOperator.full_name || "Unknown"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-600 uppercase mb-1">Email</p>
-                  <p className="text-gray-800">{selectedOperator.email || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-600 uppercase mb-1">Phone</p>
-                  <p className="text-gray-800">{selectedOperator.phone || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-600 uppercase mb-1">Assigned District</p>
-                  <p className="text-gray-800">{selectedOperator.assigned_district || selectedOperator.assigned_districts?.[0] || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-600 uppercase mb-1">Status</p>
-                  <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+              <div className="p-6 space-y-6">
+                {/* Header with Status Badge */}
+                <div className="flex justify-between items-start pb-4 border-b border-gray-200">
+                  <div>
+                    <p className="text-xs font-bold text-gray-600 uppercase mb-1">Operator ID</p>
+                    <p className="text-2xl font-bold text-gray-800">{selectedOperator.operator_id || "N/A"}</p>
+                  </div>
+                  <span className={`px-4 py-2 text-sm font-semibold rounded-full ${
                     selectedOperator.is_active 
                       ? "bg-green-100 text-green-800" 
                       : "bg-red-100 text-red-800"
                   }`}>
-                    {selectedOperator.is_active ? "Active" : "Inactive"}
+                    {selectedOperator.is_active ? "🟢 Active" : "🔴 Inactive"}
                   </span>
                 </div>
+
+                {/* Personal Information */}
+                <div>
+                  <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <span>👤</span> Personal Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-bold text-gray-600 uppercase mb-1">Full Name</p>
+                      <p className="text-gray-800">{selectedOperator.full_name || "Unknown"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-600 uppercase mb-1">Email</p>
+                      <p className="text-gray-800 break-all">{selectedOperator.email || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-600 uppercase mb-1">Phone</p>
+                      <p className="text-gray-800">{selectedOperator.phone || "N/A"}</p>
+                    </div>
+                    {selectedOperator.user_id && (
+                      <div>
+                        <p className="text-xs font-bold text-gray-600 uppercase mb-1">User ID</p>
+                        <p className="text-gray-600 text-xs font-mono">{selectedOperator.user_id}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Assignment Information */}
+                <div className="pt-4 border-t border-gray-200">
+                  <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <span>📍</span> Assignment Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-bold text-gray-600 uppercase mb-1">Assigned Districts</p>
+                      {selectedOperator.assigned_districts && selectedOperator.assigned_districts.length > 0 ? (
+                        <div className="space-y-1">
+                          {selectedOperator.assigned_districts.map((district, idx) => (
+                            <span key={idx} className="inline-block bg-blue-50 text-blue-800 px-2 py-1 rounded text-sm mr-1 mb-1">
+                              {getDistrictDisplayName(district)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm">No districts assigned</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-600 uppercase mb-1">Assigned Regions</p>
+                      {selectedOperator.assigned_regions && selectedOperator.assigned_regions.length > 0 ? (
+                        <div className="space-y-1">
+                          {selectedOperator.assigned_regions.map((region, idx) => (
+                            <span key={idx} className="inline-block bg-purple-50 text-purple-800 px-2 py-1 rounded text-sm mr-1 mb-1">
+                              {region}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm">No regions assigned</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Statistics */}
+                <div className="pt-4 border-t border-gray-200">
+                  <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <span>📊</span> Statistics
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-600">
+                      <p className="text-xs font-bold text-gray-600 uppercase mb-1">Registered Farmers</p>
+                      <p className="text-2xl font-bold text-gray-800">{selectedOperator.farmer_count ?? 0}</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-xs font-bold text-gray-600 uppercase mb-1">Account Status</p>
+                      <p className="text-sm text-gray-700 mt-2">
+                        {selectedOperator.is_active ? "✅ Can login and register farmers" : "⛔ Account disabled"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Timestamps */}
+                <div className="pt-4 border-t border-gray-200">
+                  <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <span>🕒</span> Timestamps
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedOperator.created_at && (
+                      <div>
+                        <p className="text-xs font-bold text-gray-600 uppercase mb-1">Created At</p>
+                        <p className="text-gray-800 text-sm">
+                          {new Date(selectedOperator.created_at).toLocaleString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    )}
+                    {selectedOperator.updated_at && (
+                      <div>
+                        <p className="text-xs font-bold text-gray-600 uppercase mb-1">Last Updated</p>
+                        <p className="text-gray-800 text-sm">
+                          {new Date(selectedOperator.updated_at).toLocaleString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
                 <div className="pt-4 border-t border-gray-200 flex gap-2">
                   <button
                     onClick={() => openEditModal(selectedOperator)}
-                    className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition"
+                    className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg"
                   >
-                    ✏️ Edit
+                    ✏️ Edit Operator
                   </button>
                   <button
                     onClick={() => setShowViewModal(false)}
-                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition"
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-4 rounded-lg transition"
                   >
                     Close
                   </button>
@@ -721,11 +869,14 @@ export default function OperatorManagement() {
                     value={editFormData.assigned_district}
                     onChange={(e) => setEditFormData({...editFormData, assigned_district: e.target.value})}
                     className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                    disabled={!editSelectedProvince && editDistricts.length === 0}
+                    disabled={!editSelectedProvince && editDistricts.length === 0 && !editFormData.assigned_district}
                   >
                     <option value="">-- Select District --</option>
+                    {editFormData.assigned_district && !editDistricts.some(d => d.name === editFormData.assigned_district) && (
+                      <option value={editFormData.assigned_district}>{editFormData.assigned_district}</option>
+                    )}
                     {editDistricts.map(d => (
-                      <option key={d.code} value={d.code}>{d.name}</option>
+                      <option key={d.code} value={d.name}>{d.name} ({d.code})</option>
                     ))}
                   </select>
                 </div>
