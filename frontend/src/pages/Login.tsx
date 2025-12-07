@@ -11,10 +11,33 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [userType, setUserType] = useState("admin");
   const [hoveredButton, setHoveredButton] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const navigate = useNavigate();
-  const { login, isLoading, error } = useAuthStore();
+  const { login, isLoading, error, token } = useAuthStore();
   const { showSuccess, showError } = useNotification();
+
+  // If already logged in, redirect immediately
+  if (token && !isNavigating) {
+    const user = useAuthStore.getState().user;
+    if (user?.roles.includes("ADMIN")) {
+      navigate('/admin-dashboard', { replace: true });
+    } else if (user?.roles.includes("OPERATOR")) {
+      navigate('/operator-dashboard', { replace: true });
+    } else if (user?.roles.includes("FARMER")) {
+      navigate('/farmer-dashboard', { replace: true });
+    }
+    return null;
+  }
+
+  // If navigating, show loading state
+  if (isNavigating) {
+    return (
+      <div className="min-h-screen bg-[linear-gradient(135deg,_#667eea_0%,_#764ba2_100%)] flex items-center justify-center">
+        <div className="text-white text-xl">Redirecting to dashboard...</div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -41,6 +64,9 @@ export default function Login() {
       console.log("Login successful, user:", user, "token:", token ? "present" : "missing");
       console.log("localStorage token:", localStorage.getItem("token") ? "present" : "missing");
       
+      // Set navigating state to prevent form from showing
+      setIsNavigating(true);
+      
       // Determine target route
       let targetRoute = '/dashboard';
       if (user?.roles.includes("ADMIN")) {
@@ -53,11 +79,22 @@ export default function Login() {
       
       console.log("Navigating to:", targetRoute);
       
-      // Always use navigate with replace - works in both web and mobile
-      navigate(targetRoute, { replace: true });
-      
-      // Show success after navigation starts
+      // Show success message
       showSuccess(`Welcome back, ${user?.email || 'User'}!`);
+      
+      // For Capacitor/mobile apps, use location.replace to force a full page load
+      // This ensures the auth state is properly loaded from localStorage
+      const isCapacitor = !!(window as any).Capacitor;
+      if (isCapacitor) {
+        console.log("Capacitor detected - using location.replace");
+        // Small delay to ensure state is persisted
+        setTimeout(() => {
+          window.location.replace(targetRoute);
+        }, 300);
+      } else {
+        console.log("Web mode - using navigate");
+        navigate(targetRoute, { replace: true });
+      }
     } catch (err: any) {
       console.error("Login failed", err);
       const errorMsg = err.response?.data?.detail || err.message || 'Invalid credentials. Please try again.';
