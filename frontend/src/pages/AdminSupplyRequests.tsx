@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "@/utils/axios";
+import { useNotification } from "@/contexts/NotificationContext";
 
 interface SupplyRequest {
   id: string;
@@ -19,12 +20,11 @@ interface SupplyRequest {
 
 export default function AdminSupplyRequests() {
   const navigate = useNavigate();
+  const { success: showSuccess, error: showError } = useNotification();
   const [allRequests, setAllRequests] = useState<SupplyRequest[]>([]);
   const [filteredRequests, setFilteredRequests] = useState<SupplyRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<string>("all");
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<SupplyRequest | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
@@ -52,8 +52,11 @@ export default function AdminSupplyRequests() {
         requestList = response.data.results;
       }
       setAllRequests(requestList);
+      // Clear any loading errors
     } catch (error: any) {
-      setError(error.response?.data?.detail || "Failed to load supply requests");
+      const errorMsg = error.response?.data?.detail || error.response?.data?.message || "Failed to load supply requests";
+      showError(errorMsg, 5000);
+      console.error("Error loading requests:", error);
     } finally {
       setLoading(false);
     }
@@ -74,17 +77,25 @@ export default function AdminSupplyRequests() {
 
   const updateRequest = async () => {
     if (!selectedRequest) return;
+    
+    if (!newStatus) {
+      showError("Please select a status", 4000);
+      return;
+    }
+
     try {
       setLoading(true);
       await axios.patch(`/supplies/${selectedRequest.id}`, {
         status: newStatus,
         admin_notes: adminNotes
       });
-      setSuccess("Supply request updated successfully!");
+      showSuccess(`Request status updated to ${newStatus}`, 4000);
       closeModal();
-      loadRequests();
+      await loadRequests();
     } catch (error: any) {
-      setError(error.response?.data?.detail || "Failed to update supply request");
+      const errorMsg = error.response?.data?.detail || error.response?.data?.message || "Failed to update request";
+      showError(errorMsg, 5000);
+      console.error("Error updating request:", error);
     } finally {
       setLoading(false);
     }
@@ -95,10 +106,12 @@ export default function AdminSupplyRequests() {
     try {
       setLoading(true);
       await axios.delete(`/supplies/${id}`);
-      setSuccess("Supply request deleted successfully!");
-      loadRequests();
+      showSuccess("Request deleted successfully", 4000);
+      await loadRequests();
     } catch (error: any) {
-      setError(error.response?.data?.detail || "Failed to delete supply request");
+      const errorMsg = error.response?.data?.detail || error.response?.data?.message || "Failed to delete request";
+      showError(errorMsg, 5000);
+      console.error("Error deleting request:", error);
     } finally {
       setLoading(false);
     }
@@ -148,7 +161,7 @@ export default function AdminSupplyRequests() {
             <button onClick={() => navigate("/admin-dashboard")} className="text-green-700 hover:text-green-800 font-bold text-sm">
               ← BACK
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">📦 Supply Requests</h1>
+            <h1 className="text-2xl font-bold text-gray-800">📦 Requests</h1>
           </div>
           {pendingCount > 0 && (
             <span className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">{pendingCount} Pending</span>
@@ -158,21 +171,6 @@ export default function AdminSupplyRequests() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Alerts */}
-        {error && (
-          <div className="mb-6 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500 flex justify-between items-center">
-            <span><strong>Error:</strong> {error}</span>
-            <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800 text-lg font-bold">×</button>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-6 bg-green-50 text-green-700 px-4 py-3 rounded-lg text-sm border-l-4 border-green-500 flex justify-between items-center">
-            <span><strong>Success:</strong> {success}</span>
-            <button onClick={() => setSuccess(null)} className="text-green-600 hover:text-green-800 text-lg font-bold">×</button>
-          </div>
-        )}
-
         {/* Filter Tabs */}
         <div className="mb-6 bg-white rounded-lg shadow-sm p-2 flex flex-wrap gap-2 lg:gap-1">
           {[

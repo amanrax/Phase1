@@ -4,7 +4,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RoleRoute } from "@/components/RoleRoute";
-import { NotificationProvider } from "@/components/Notification";
+import { NotificationProvider } from "@/contexts/NotificationContext";
+import ToastContainer from "@/components/ToastContainer";
 import SessionTimeout from "@/components/SessionTimeout";
 
 // Pages
@@ -49,6 +50,7 @@ function App() {
     <NotificationProvider>
       <BrowserRouter>
         <SessionTimeout />
+        <ToastContainer />
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />

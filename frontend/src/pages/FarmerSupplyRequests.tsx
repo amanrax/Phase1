@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "@/utils/axios";
 import useAuthStore from "@/store/authStore";
+import { useNotification } from "@/contexts/NotificationContext";
 
 interface SupplyRequest {
   id: string;
@@ -21,11 +22,10 @@ const URGENCY_LEVELS = ["low", "medium", "high"];
 export default function FarmerSupplyRequests() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { success: showSuccess, error: showError } = useNotification();
   
   const [requests, setRequests] = useState<SupplyRequest[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "fulfilled" | "rejected">("all");
   
   // New request form state
@@ -48,7 +48,9 @@ export default function FarmerSupplyRequests() {
       const list = Array.isArray(data) ? data : data.requests || data.results || [];
       setRequests(list);
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to load requests");
+      const errorMsg = err.response?.data?.detail || err.response?.data?.message || "Failed to load requests";
+      showError(errorMsg, 5000);
+      console.error("Error loading requests:", err);
     } finally {
       setLoading(false);
     }
@@ -56,7 +58,7 @@ export default function FarmerSupplyRequests() {
 
   const createRequest = async () => {
     if (!selectedItems.length || !quantity) {
-      setError("Please select items and quantity");
+      showError("Please select items and quantity", 4000);
       return;
     }
     try {
@@ -66,16 +68,17 @@ export default function FarmerSupplyRequests() {
         urgency,
         notes
       });
-      setSuccess("Request submitted successfully");
+      showSuccess("Request submitted successfully", 4000);
       setSelectedItems([]);
       setQuantity("");
       setUrgency("medium");
       setNotes("");
       setShowForm(false);
-      loadRequests();
-      setTimeout(() => setSuccess(null), 3000);
+      await loadRequests();
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to create request");
+      const errorMsg = err.response?.data?.detail || err.response?.data?.message || "Failed to create request";
+      showError(errorMsg, 5000);
+      console.error("Error creating request:", err);
     }
   };
 
@@ -83,11 +86,12 @@ export default function FarmerSupplyRequests() {
     if (!confirm("Delete this request?")) return;
     try {
       await axios.delete(`/supplies/${id}`);
-      setSuccess("Request deleted");
-      loadRequests();
-      setTimeout(() => setSuccess(null), 3000);
+      showSuccess("Request deleted successfully", 4000);
+      await loadRequests();
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to delete request");
+      const errorMsg = err.response?.data?.detail || err.response?.data?.message || "Failed to delete request";
+      showError(errorMsg, 5000);
+      console.error("Error deleting request:", err);
     }
   };
 
@@ -118,7 +122,7 @@ export default function FarmerSupplyRequests() {
             <button onClick={() => navigate("/farmer-dashboard")} className="text-green-700 hover:text-green-800 font-bold text-sm">
               ← BACK
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">📦 Supply Requests</h1>
+            <h1 className="text-2xl font-bold text-gray-800">📦 My Requests</h1>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
@@ -131,19 +135,6 @@ export default function FarmerSupplyRequests() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {error && (
-          <div className="mb-6 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500">
-            {error}
-            <button onClick={() => setError(null)} className="ml-auto block text-xs hover:underline">Dismiss</button>
-          </div>
-        )}
-        
-        {success && (
-          <div className="mb-6 bg-green-50 text-green-700 px-4 py-3 rounded-lg text-sm border-l-4 border-green-600">
-            ✓ {success}
-          </div>
-        )}
-
         {/* New Request Form */}
         {showForm && (
           <div className="bg-white rounded-xl shadow-sm p-6 mb-6">

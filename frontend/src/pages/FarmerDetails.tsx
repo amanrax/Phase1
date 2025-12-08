@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { farmerService } from "@/services/farmer.service";
 import useAuthStore from "@/store/authStore";
+import { useNotification } from "@/contexts/NotificationContext";
 
 const getErrorMessage = (err: unknown): string => {
   if (typeof err === "object" && err !== null) {
@@ -87,6 +88,7 @@ export default function FarmerDetails() {
   const { farmerId } = useParams<{ farmerId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { success: showSuccess, error: showError } = useNotification();
 
   const getBackPath = () => {
     if (user?.roles?.includes("FARMER")) {
@@ -98,7 +100,8 @@ export default function FarmerDetails() {
   const [farmer, setFarmer] = useState<Farmer | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+
+  const { success: showSuccess, error: showError } = useNotification();
 
   useEffect(() => {
     if (farmerId) {
@@ -110,11 +113,11 @@ export default function FarmerDetails() {
   const loadFarmerData = async () => {
     try {
       setLoading(true);
-      setError(null);
       const data = await farmerService.getFarmer(farmerId!);
       setFarmer(data);
     } catch (err: unknown) {
-      setError(getErrorMessage(err) || "Failed to load farmer details");
+      const errorMsg = getErrorMessage(err) || "Failed to load farmer details";
+      showError(errorMsg, 5000);
     } finally {
       setLoading(false);
     }
@@ -126,11 +129,11 @@ export default function FarmerDetails() {
     try {
       setUploading("photo");
       await farmerService.uploadPhoto(farmerId!, file);
-      alert("✅ Photo uploaded successfully!");
+      showSuccess("✓ Photo uploaded successfully!", 4000);
       e.target.value = "";
       await loadFarmerData();
     } catch (err: unknown) {
-      alert(getErrorMessage(err) || "Failed to upload photo");
+      showError(getErrorMessage(err) || "Failed to upload photo", 5000);
     } finally {
       setUploading(null);
     }
@@ -145,7 +148,7 @@ export default function FarmerDetails() {
     
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
-      alert(`❌ File too large! Maximum size is 10MB.\nYour file: ${(file.size / (1024*1024)).toFixed(2)}MB`);
+      showError(`File too large! Maximum size is 10MB. Your file: ${(file.size / (1024*1024)).toFixed(2)}MB`, 5000);
       e.target.value = "";
       return;
     }
@@ -153,11 +156,11 @@ export default function FarmerDetails() {
     try {
       setUploading(docType);
       await farmerService.uploadDocument(farmerId!, docType, file);
-      alert(`✅ ${docType.replace("_", " ")} uploaded successfully!`);
+      showSuccess(`✓ ${docType.replace("_", " ")} uploaded successfully!`, 4000);
       e.target.value = "";
       await loadFarmerData();
     } catch (err: unknown) {
-      alert(`❌ Upload failed: ${getErrorMessage(err)}`);
+      showError(`Upload failed: ${getErrorMessage(err)}`, 5000);
       e.target.value = "";
     } finally {
       setUploading(null);
@@ -167,19 +170,19 @@ export default function FarmerDetails() {
   const handleGenerateIDCard = async () => {
     try {
       const response = await farmerService.generateIDCard(farmerId!);
-      alert(response.message || "🎉 ID card generation started!");
+      showSuccess(response.message || "✓ ID card generation started!", 4000);
       setTimeout(() => handleDownloadIDCard(), 5000);
     } catch (err: unknown) {
-      alert(getErrorMessage(err) || "Failed to generate ID card");
+      showError(getErrorMessage(err) || "Failed to generate ID card", 5000);
     }
   };
 
   const handleDownloadIDCard = async () => {
     try {
       await farmerService.downloadIDCard(farmerId!);
-      alert("✅ ID card downloaded!");
+      showSuccess("✓ ID card downloaded!", 4000);
     } catch (err: unknown) {
-      alert(getErrorMessage(err) || "ID card not ready yet.");
+      showError(getErrorMessage(err) || "ID card not ready yet.", 5000);
     }
   };
 
@@ -187,10 +190,10 @@ export default function FarmerDetails() {
     if (!confirm("Delete this photo?")) return;
     try {
       await farmerService.deletePhoto(farmerId!);
-      alert("✅ Photo deleted");
+      showSuccess("✓ Photo deleted", 4000);
       await loadFarmerData();
     } catch (err: unknown) {
-      alert(getErrorMessage(err) || "Failed to delete photo");
+      showError(getErrorMessage(err) || "Failed to delete photo", 5000);
     }
   };
 
@@ -198,10 +201,10 @@ export default function FarmerDetails() {
     if (!confirm(`Delete ${docType}?`)) return;
     try {
       await farmerService.deleteDocument(farmerId!, docType);
-      alert("✅ Document deleted");
+      showSuccess("✓ Document deleted", 4000);
       await loadFarmerData();
     } catch (err: unknown) {
-      alert(getErrorMessage(err) || "Failed to delete document");
+      showError(getErrorMessage(err) || "Failed to delete document", 5000);
     }
   };
 
@@ -224,15 +227,15 @@ export default function FarmerDetails() {
     );
   }
 
-  if (error || !farmer) {
+  if (!farmer) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 flex items-center justify-center" style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="text-center text-white" style={{ textAlign: "center", color: "white" }}>
           <div className="text-6xl sm:text-8xl mb-5" style={{ fontSize: "80px", marginBottom: "20px" }}>❌</div>
-          <p className="text-xl sm:text-3xl mb-5" style={{ fontSize: "24px", marginBottom: "20px" }}>{error || "Farmer not found"}</p>
+          <p className="text-xl sm:text-3xl mb-5" style={{ fontSize: "24px", marginBottom: "20px" }}>Farmer not found</p>
           <button
             onClick={() => navigate(getBackPath())}
-            className="px-6 sm:px-8 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:shadow-lg transition-all text-base sm:text-lg"
+            className="px-6 sm:px-8 py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:shadow-lg transition-all text-base sm:text-lg"
             style={{
               padding: "12px 30px",
               background: "white",

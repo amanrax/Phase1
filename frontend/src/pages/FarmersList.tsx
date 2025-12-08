@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { farmerService } from "@/services/farmer.service";
+import { useNotification } from "@/contexts/NotificationContext";
 
 interface Farmer {
   _id: string;
@@ -29,11 +30,10 @@ interface Farmer {
 
 export default function FarmersList() {
   const navigate = useNavigate();
+  const { success: showSuccess, error: showError } = useNotification();
   const [allFarmers, setAllFarmers] = useState<Farmer[]>([]);
   const [filteredFarmers, setFilteredFarmers] = useState<Farmer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "pending" | "inactive">("all");
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
@@ -57,7 +57,6 @@ export default function FarmersList() {
 
   const loadFarmers = async (page = 0) => {
     setLoading(true);
-    setError("");
     try {
       const skip = page * pageSize;
       if (import.meta.env.DEV) console.log(`Fetching farmers... skip=${skip}, limit=${pageSize}`);
@@ -85,7 +84,7 @@ export default function FarmersList() {
     } catch (err: any) {
       console.error("Fetch farmers error:", err);
       const errorMsg = err.response?.data?.detail || err.message || "Failed to load farmers";
-      setError(errorMsg);
+      showError(errorMsg, 5000);
     } finally {
       setLoading(false);
     }
@@ -94,7 +93,6 @@ export default function FarmersList() {
   const fetchAllFarmers = async () => {
     // For filtering, we need to get all farmers - do this by fetching multiple pages
     setLoading(true);
-    setError("");
     try {
       if (import.meta.env.DEV) console.log("Fetching all farmers for filtering...");
       // Fetch up to 5 pages (100 farmers max per page = 500 total)
@@ -126,7 +124,7 @@ export default function FarmersList() {
     } catch (err: any) {
       console.error("Fetch all farmers error:", err);
       const errorMsg = err.response?.data?.detail || err.message || "Failed to load farmers";
-      setError(errorMsg);
+      showError(errorMsg, 5000);
     } finally {
       setLoading(false);
     }
@@ -298,14 +296,12 @@ export default function FarmersList() {
   const handleDeactivateFarmer = async (farmer: Farmer) => {
     if (!confirm(`Deactivate ${farmer.first_name} ${farmer.last_name}?`)) return;
     setActioningFarmerId(farmer.farmer_id);
-    setError("");
     try {
       await farmerService.deactivateFarmer(farmer.farmer_id);
-      setSuccess(`✓ Farmer ${farmer.first_name} deactivated`);
+      showSuccess(`✓ Farmer ${farmer.first_name} deactivated`, 4000);
       fetchAllFarmers();
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to deactivate farmer");
+      showError(err.response?.data?.detail || "Failed to deactivate farmer", 5000);
     } finally {
       setActioningFarmerId(null);
     }
@@ -314,14 +310,12 @@ export default function FarmersList() {
   const handleActivateFarmer = async (farmer: Farmer) => {
     if (!confirm(`Activate ${farmer.first_name} ${farmer.last_name}?`)) return;
     setActioningFarmerId(farmer.farmer_id);
-    setError("");
     try {
       await farmerService.activateFarmer(farmer.farmer_id);
-      setSuccess(`✓ Farmer ${farmer.first_name} activated`);
+      showSuccess(`✓ Farmer ${farmer.first_name} activated`, 4000);
       fetchAllFarmers();
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to activate farmer");
+      showError(err.response?.data?.detail || "Failed to activate farmer", 5000);
     } finally {
       setActioningFarmerId(null);
     }
@@ -329,22 +323,20 @@ export default function FarmersList() {
 
   const handleStatusUpdate = async () => {
     if (!selectedFarmer || !reviewStatus) {
-      setError("Please select a status");
+      showError("Please select a status", 4000);
       return;
     }
-    setError("");
     setUpdating(true);
     try {
       // Use the review endpoint with query parameters
       const queryParams = `new_status=${reviewStatus}&review_notes=${encodeURIComponent(remarks)}`;
       await farmerService.review(selectedFarmer.farmer_id, queryParams);
-      setSuccess("✅ Farmer status updated successfully!");
+      showSuccess("✓ Farmer status updated successfully!", 4000);
       setShowReviewModal(false);
       setSelectedFarmer(null);
       fetchAllFarmers();
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to update farmer status");
+      showError(err.response?.data?.detail || "Failed to update farmer status", 5000);
     } finally {
       setUpdating(false);
     }
@@ -369,20 +361,6 @@ export default function FarmersList() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {error && (
-          <div className="mb-6 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500">
-            <span>{error}</span>
-            <p className="text-gray-500 text-xs mt-2">If this is a validation error, check your input or try refreshing. If the problem persists, contact support.</p>
-            <button onClick={() => setError("")} className="ml-auto block text-xs hover:underline">Dismiss</button>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-6 bg-green-50 text-green-700 px-4 py-3 rounded-lg text-sm border-l-4 border-green-600">
-            {success}
-          </div>
-        )}
-
         {/* Filter Tabs */}
         <div className="mb-6 bg-white rounded-lg shadow-sm p-2 flex gap-2 overflow-x-auto">
           {["all", "active", "pending", "inactive"].map(f => (

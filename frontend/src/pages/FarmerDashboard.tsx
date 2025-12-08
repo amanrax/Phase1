@@ -1,13 +1,15 @@
-// src/pages/Dashboard.tsx (Farmer Dashboard)
+// src/Dashboard.tsx (Farmer Dashboard)
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
+import { useNotification } from "@/contexts/NotificationContext";
 
 export default function FarmerDashboard() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const { success: showSuccess, error: showError, info: showInfo } = useNotification();
 
   const [farmerData, setFarmerData] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loading, setLoading] = useState(true);
@@ -40,6 +42,7 @@ export default function FarmerDashboard() {
         console.error("No farmer_id in JWT token - authentication issue");
         console.log("User data:", { email: user?.email, roles: user?.roles, farmer_id: user?.farmer_id });
         setFarmerData(null);
+        showError("Unable to load farmer profile - authentication issue", 5000);
         setLoading(false);
         return;
       }
@@ -50,8 +53,10 @@ export default function FarmerDashboard() {
       setFarmerData(fullData);
       setLoading(false);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to load farmer data:", error);
+      const errorMsg = error.response?.data?.detail || "Failed to load farmer profile";
+      showError(errorMsg, 5000);
       setFarmerData(null);
     } finally {
       setLoading(false);
@@ -62,27 +67,25 @@ export default function FarmerDashboard() {
     try {
       const farmerId = farmerData?.farmer_id;
       if (!farmerId) {
-        alert("Farmer ID not available");
+        showError("Farmer ID not available", 4000);
         return;
       }
       await farmerService.downloadIDCard(farmerId);
-      alert("✅ ID Card downloaded!");
-    } catch (error: unknown) {
+      showSuccess("✓ ID Card downloaded!", 4000);
+    } catch (error: any) {
       console.error("Download failed:", error);
-      const err = error as { response?: { data?: { detail?: string } } };
-      alert(
-        err.response?.data?.detail ||
-          "ID card not available yet. Please contact your operator."
-      );
+      const errorMsg = error.response?.data?.detail || "ID card not available yet. Please contact your operator.";
+      showError(errorMsg, 5000);
     }
   };
 
   const handleViewIDCard = () => {
     if (!farmerData?.farmer_id) {
-      alert("Farmer ID not available");
+      showError("Farmer ID not available", 4000);
       return;
     }
     setShowIDCardPreview(true);
+    showInfo("Displaying your ID Card", 3000);
   };
 
   if (loading) {

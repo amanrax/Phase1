@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import axios from "@/utils/axios";
+import { useNotification } from "@/contexts/NotificationContext";
 
 interface Farmer {
   _id: string;
@@ -29,6 +30,7 @@ interface Farmer {
 export default function OperatorDashboard() {
   const { logout } = useAuthStore();
   const navigate = useNavigate();
+  const { error: showError, info: showInfo } = useNotification();
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,8 +46,10 @@ export default function OperatorDashboard() {
       // Get operator's assigned district from their profile
       const response = await axios.get("/operators/me");
       loadFarmers(response.data.assigned_district);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to load operator info:", error);
+      const errorMsg = error.response?.data?.detail || "Failed to load operator information";
+      showError(errorMsg, 4000);
       // Fallback: load all farmers if operator info fails
       loadFarmers();
     }
@@ -62,8 +66,10 @@ export default function OperatorDashboard() {
       const data = await farmerService.getFarmers(100, 0, { district });
       const farmersList = Array.isArray(data) ? data : (data.results || data.farmers || []);
       setFarmers(farmersList);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to load farmers:", error);
+      const errorMsg = error.response?.data?.detail || "Failed to load farmers";
+      showError(errorMsg, 4000);
     } finally {
       setLoading(false);
     }
