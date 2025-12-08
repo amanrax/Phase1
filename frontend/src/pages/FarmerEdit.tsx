@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import farmerService from '../services/farmer.service';
 import geoService from '../services/geo.service';
-import { useNotification } from '@/components/Notification';
+import { useNotification } from '@/contexts/NotificationContext';
 
 interface FarmerData {
   farmer_id?: string;
@@ -51,7 +51,7 @@ interface GeoOption {
 const FarmerEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { showSuccess, showError } = useNotification();
+  const { success: showSuccess, error: showError } = useNotification();
   const [formData, setFormData] = useState<FarmerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

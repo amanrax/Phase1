@@ -101,8 +101,6 @@ export default function FarmerDetails() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
 
-  const { success: showSuccess, error: showError } = useNotification();
-
   useEffect(() => {
     if (farmerId) {
       loadFarmerData();

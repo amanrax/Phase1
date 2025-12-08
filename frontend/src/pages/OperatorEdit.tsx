@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { operatorService } from "@/services/operator.service";
 import geoService from "@/services/geo.service";
-import { useNotification } from "@/components/Notification";
+import { useNotification } from '@/contexts/NotificationContext';
 
 const getErrorMessage = (err: unknown): string => {
   if (typeof err === "object" && err !== null) {
@@ -49,7 +49,7 @@ export default function OperatorEdit() {
   const [showCustomProvince, setShowCustomProvince] = useState(false);
   const [showCustomDistrict, setShowCustomDistrict] = useState(false);
   
-  const { showSuccess, showError } = useNotification();
+  const { success: showSuccess, error: showError } = useNotification();
 
   useEffect(() => {
     loadProvinces();

@@ -601,12 +601,6 @@ export default function FarmersList() {
               </button>
             </div>
 
-            {error && (
-              <div className="mx-6 mt-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500">
-                {error}
-              </div>
-            )}
-
             <div className="p-6 space-y-4">
               <div>
                 <p className="text-xs font-bold text-gray-600 uppercase mb-1">Farmer</p>

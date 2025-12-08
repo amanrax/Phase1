@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
-import { useNotification } from "@/components/Notification";
+import { useNotification } from "@/contexts/NotificationContext";
 
 const roles = ["admin", "operator", "farmer"];
 
@@ -15,7 +15,7 @@ export default function Login() {
 
   const navigate = useNavigate();
   const { login, isLoading, error, token, user } = useAuthStore();
-  const { showSuccess, showError } = useNotification();
+  const { success: showSuccess, error: showError } = useNotification();
 
   // Check if already logged in and redirect (only once on mount)
   useEffect(() => {
