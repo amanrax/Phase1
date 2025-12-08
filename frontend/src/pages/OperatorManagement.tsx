@@ -42,9 +42,13 @@ export default function OperatorManagement() {
     assigned_district: "",
   });
   const [editFormData, setEditFormData] = useState({
-    full_name: "",
+    first_name: "",
+    last_name: "",
+    email: "",
     phone: "",
     assigned_district: "",
+    password: "",
+    confirmPassword: "",
     is_active: true,
   });
   const [error, setError] = useState("");
@@ -57,6 +61,8 @@ export default function OperatorManagement() {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize] = useState(10);
   const [totalOperators, setTotalOperators] = useState(0);
+  const [searchBy, setSearchBy] = useState<"name" | "operator_id">("name");
+  const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
     loadOperators(0);
@@ -152,6 +158,17 @@ export default function OperatorManagement() {
     }
   };
 
+  // Filter operators based on search
+  const filteredOperators = operators.filter((op: Operator) => {
+    if (!searchValue.trim()) return true;
+    const searchLower = searchValue.toLowerCase().trim();
+    if (searchBy === "name") {
+      return op.full_name.toLowerCase().includes(searchLower);
+    } else if (searchBy === "operator_id") {
+      return op.operator_id.toLowerCase().includes(searchLower);
+    }
+    return false;
+  });
   const openViewModal = (operator: Operator) => {
     setSelectedOperator(operator);
     setShowViewModal(true);
@@ -160,16 +177,19 @@ export default function OperatorManagement() {
   const openEditModal = async (operator: Operator) => {
     setSelectedOperator(operator);
     
-    // Get the current district value (could be code or name)
+    // Get the current district and region values
     const currentDistrict = operator.assigned_district || operator.assigned_districts?.[0] || "";
+    const currentRegion = operator.assigned_regions?.[0] || "";
     
     // If it looks like a district code (e.g., LK02, CP01), we need to fetch and convert it to a name
     let districtValue = currentDistrict;
+    let provinceCode = "";
+    
     if (currentDistrict && /^[A-Z]{2}\d{2}$/.test(currentDistrict)) {
-      // It's a code - fetch all districts to find the name
+      // It's a code - fetch all districts to find the name and province
       try {
         const allDistricts = await geoService.districts();
-        const matchingDistrict = allDistricts.find(d => d.code === currentDistrict);
+        const matchingDistrict = allDistricts.find((d: District) => d.code === currentDistrict);
         if (matchingDistrict) {
           districtValue = matchingDistrict.name;
         }
@@ -178,14 +198,41 @@ export default function OperatorManagement() {
       }
     }
     
+    // Find the province code from the region name
+    if (currentRegion) {
+      const matchingProvince = provinces.find((p: Province) => p.name === currentRegion);
+      if (matchingProvince) {
+        provinceCode = matchingProvince.code;
+      }
+    }
+    
+    // If we have a province, load its districts
+    let districtsForProvince: District[] = [];
+    if (provinceCode) {
+      try {
+        districtsForProvince = await loadDistricts(provinceCode);
+      } catch (err) {
+        console.error("Failed to load districts for province:", err);
+      }
+    }
+    
+    // Split full_name into first and last name
+    const nameParts = (operator.full_name || "").split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+    
     setEditFormData({
-      full_name: operator.full_name || "",
+      first_name: firstName,
+      last_name: lastName,
+      email: operator.email || "",
       phone: operator.phone || "",
       assigned_district: districtValue,
+      password: "",
+      confirmPassword: "",
       is_active: operator.is_active ?? true,
     });
-    setEditSelectedProvince("");
-    setEditDistricts([]);
+    setEditSelectedProvince(provinceCode);
+    setEditDistricts(districtsForProvince);
     setShowEditModal(true);
     setShowViewModal(false);
   };
@@ -211,13 +258,32 @@ export default function OperatorManagement() {
 
     if (!selectedOperator) return;
 
+    // Validate password if provided
+    if (editFormData.password || editFormData.confirmPassword) {
+      if (editFormData.password !== editFormData.confirmPassword) {
+        setError("Passwords do not match");
+        return;
+      }
+      if (editFormData.password.length < 8) {
+        setError("Password must be at least 8 characters");
+        return;
+      }
+    }
+
     try {
       const provinceName = provinces.find(p => p.code === editSelectedProvince)?.name;
+      const full_name = `${editFormData.first_name} ${editFormData.last_name}`.trim();
       const payload: any = {
-        full_name: editFormData.full_name,
+        full_name: full_name,
+        email: editFormData.email,
         phone: editFormData.phone,
         is_active: editFormData.is_active,
       };
+      
+      // Only include password if it's been filled in
+      if (editFormData.password) {
+        payload.password = editFormData.password;
+      }
 
       if (editFormData.assigned_district) {
         payload.assigned_districts = [editFormData.assigned_district];
@@ -318,6 +384,42 @@ export default function OperatorManagement() {
             ✓ {success}
           </div>
         )}
+
+        {/* Search Filter */}
+        <div className="mb-6 bg-white rounded-lg shadow-sm p-4 flex gap-3 items-end flex-wrap">
+          <div className="flex-1 min-w-64">
+            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Search By</label>
+            <select
+              value={searchBy}
+              onChange={(e) => setSearchBy(e.target.value as any)}
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 text-sm"
+            >
+              <option value="name">Name</option>
+              <option value="operator_id">Operator ID</option>
+            </select>
+          </div>
+
+          <div className="flex-1 min-w-64">
+            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Search Value</label>
+            <input
+              type="text"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder={`Search by ${searchBy === "name" ? "name" : "operator ID"}...`}
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 text-sm"
+            />
+          </div>
+
+          <button
+            onClick={() => {
+              setSearchValue("");
+              setSearchBy("name");
+            }}
+            className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 text-xs font-semibold rounded-lg transition"
+          >
+            Clear Search
+          </button>
+        </div>
 
         {/* Modal Overlay - overlays operator list, does not hide it */}
         {showCreateModal && (
@@ -497,7 +599,7 @@ export default function OperatorManagement() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {operators.map((operator) => (
+                  {filteredOperators.map((operator) => (
                     <tr key={operator._id} className="hover:bg-green-50 transition">
                       <td className="px-6 py-4 font-semibold text-gray-800">{operator.operator_id || "N/A"}</td>
                       <td className="px-6 py-4">{operator.full_name || "Unknown"}</td>
@@ -529,18 +631,25 @@ export default function OperatorManagement() {
                           >
                             ✏️ Edit
                           </button>
-                          <button
-                            onClick={() => handleToggleActive(operator.operator_id, operator.is_active ?? true)}
-                            disabled={updatingId === operator.operator_id}
-                            className={`px-3 py-1 text-xs font-semibold rounded transition ${
-                              operator.is_active
-                                ? "bg-red-50 hover:bg-red-100 text-red-700 disabled:opacity-50"
-                                : "bg-green-50 hover:bg-green-100 text-green-700 disabled:opacity-50"
-                            }`}
-                            title={operator.is_active ? "Deactivate" : "Activate"}
-                          >
-                            {updatingId === operator.operator_id ? "..." : (operator.is_active ? "🔴 Deactivate" : "🟢 Activate")}
-                          </button>
+                          {operator.is_active ? (
+                            <button
+                              onClick={() => handleToggleActive(operator.operator_id, operator.is_active ?? true)}
+                              disabled={updatingId === operator.operator_id}
+                              className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded transition disabled:opacity-50"
+                              title="Deactivate"
+                            >
+                              {updatingId === operator.operator_id ? "..." : "🔴 Deactivate"}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleToggleActive(operator.operator_id, operator.is_active ?? true)}
+                              disabled={updatingId === operator.operator_id}
+                              className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold rounded transition disabled:opacity-50"
+                              title="Activate"
+                            >
+                              {updatingId === operator.operator_id ? "..." : "🟢 Activate"}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -551,7 +660,7 @@ export default function OperatorManagement() {
 
             {/* Mobile Card View */}
             <div className="md:hidden divide-y divide-gray-200">
-              {operators.map((operator) => (
+              {filteredOperators.map((operator) => (
                 <div key={operator._id} className="p-4 hover:bg-green-50 transition space-y-3">
                   <div className="flex justify-between items-start">
                     <div>
@@ -600,13 +709,12 @@ export default function OperatorManagement() {
                     <button
                       onClick={() => handleToggleActive(operator.operator_id, operator.is_active ?? true)}
                       disabled={updatingId === operator.operator_id}
-                      className={`flex-1 px-3 py-2 text-xs font-semibold rounded transition ${
-                        operator.is_active
-                          ? "bg-red-50 hover:bg-red-100 text-red-700 disabled:opacity-50"
-                          : "bg-green-50 hover:bg-green-100 text-green-700 disabled:opacity-50"
-                      }`}
+                      className={operator.is_active 
+                        ? "flex-1 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded transition disabled:opacity-50"
+                        : "flex-1 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold rounded transition disabled:opacity-50"
+                      }
                     >
-                      {updatingId === operator.operator_id ? "..." : (operator.is_active ? "🔴" : "🟢")}
+                      {updatingId === operator.operator_id ? "..." : (operator.is_active ? "🔴 Deactivate" : "🟢 Activate")}
                     </button>
                   </div>
                 </div>
@@ -615,7 +723,7 @@ export default function OperatorManagement() {
 
             {/* Pagination */}
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center text-xs text-gray-600">
-              <span>Showing {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, totalOperators)} of {totalOperators}</span>
+              <span>Showing {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, filteredOperators.length)} of {filteredOperators.length} (Total: {totalOperators})</span>
               <div className="flex gap-2">
                 <button
                   onClick={() => loadOperators(currentPage - 1)}
@@ -826,59 +934,113 @@ export default function OperatorManagement() {
               )}
 
               <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase">Full Name <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    placeholder="e.g., John Doe"
-                    value={editFormData.full_name}
-                    onChange={(e) => setEditFormData({...editFormData, full_name: e.target.value})}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">First Name <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g., John"
+                      value={editFormData.first_name}
+                      onChange={(e) => setEditFormData({...editFormData, first_name: e.target.value})}
+                      required
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">Last Name <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Doe"
+                      value={editFormData.last_name}
+                      onChange={(e) => setEditFormData({...editFormData, last_name: e.target.value})}
+                      required
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase">Phone</label>
-                  <input
-                    type="tel"
-                    placeholder="e.g., +260 971 234567"
-                    value={editFormData.phone}
-                    onChange={(e) => setEditFormData({...editFormData, phone: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">Email <span className="text-red-500">*</span></label>
+                    <input
+                      type="email"
+                      placeholder="e.g., john@example.com"
+                      value={editFormData.email}
+                      onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                      required
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">Phone</label>
+                    <input
+                      type="tel"
+                      placeholder="e.g., +260 971 234567"
+                      value={editFormData.phone}
+                      onChange={(e) => setEditFormData({...editFormData, phone: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase">Province</label>
-                  <select
-                    value={editSelectedProvince}
-                    onChange={(e) => handleEditProvinceChange(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                  >
-                    <option value="">-- Select Province --</option>
-                    {provinces.map(p => (
-                      <option key={p.code} value={p.code}>{p.name}</option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">Province</label>
+                    <select
+                      value={editSelectedProvince}
+                      onChange={(e) => handleEditProvinceChange(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                    >
+                      <option value="">-- Select Province --</option>
+                      {provinces.map(p => (
+                        <option key={p.code} value={p.code}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase">District</label>
+                    <select
+                      value={editFormData.assigned_district}
+                      onChange={(e) => setEditFormData({...editFormData, assigned_district: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                      disabled={!editSelectedProvince && editDistricts.length === 0 && !editFormData.assigned_district}
+                    >
+                      <option value="">-- Select District --</option>
+                      {editFormData.assigned_district && !editDistricts.some(d => d.name === editFormData.assigned_district) && (
+                        <option value={editFormData.assigned_district}>{editFormData.assigned_district}</option>
+                      )}
+                      {editDistricts.map(d => (
+                        <option key={d.code} value={d.name}>{d.name} ({d.code})</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase">District</label>
-                  <select
-                    value={editFormData.assigned_district}
-                    onChange={(e) => setEditFormData({...editFormData, assigned_district: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                    disabled={!editSelectedProvince && editDistricts.length === 0 && !editFormData.assigned_district}
-                  >
-                    <option value="">-- Select District --</option>
-                    {editFormData.assigned_district && !editDistricts.some(d => d.name === editFormData.assigned_district) && (
-                      <option value={editFormData.assigned_district}>{editFormData.assigned_district}</option>
-                    )}
-                    {editDistricts.map(d => (
-                      <option key={d.code} value={d.name}>{d.name} ({d.code})</option>
-                    ))}
-                  </select>
+                <div className="border-t border-gray-200 pt-4">
+                  <p className="text-xs font-bold text-gray-600 uppercase mb-2">Change Password (Optional)</p>
+                  <p className="text-xs text-gray-500 mb-3">Leave blank to keep current password</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-gray-600 uppercase">New Password</label>
+                      <input
+                        type="password"
+                        placeholder="Min 8 characters (optional)"
+                        value={editFormData.password}
+                        onChange={(e) => setEditFormData({...editFormData, password: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-600 uppercase">Confirm New Password</label>
+                      <input
+                        type="password"
+                        placeholder="Re-enter password (optional)"
+                        value={editFormData.confirmPassword}
+                        onChange={(e) => setEditFormData({...editFormData, confirmPassword: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="border-t border-gray-200 pt-4">

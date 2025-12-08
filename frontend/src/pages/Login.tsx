@@ -64,9 +64,6 @@ export default function Login() {
       console.log("Calling login with:", { email, password: passwordToSend, userType });
       await login(email, passwordToSend, userType);
       
-      // Wait a moment for zustand persist to save to localStorage
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
       const user = useAuthStore.getState().user;
       const token = useAuthStore.getState().token;
       console.log("[Login] Login successful!");
@@ -94,11 +91,8 @@ export default function Login() {
       setIsNavigating(true);
       
       // Use React Router navigate for both web and mobile
-      // Small delay to ensure success message shows and state is saved
-      setTimeout(() => {
-        console.log("[Login] Executing navigation to:", targetRoute);
-        navigate(targetRoute, { replace: true });
-      }, 500);
+      console.log("[Login] Executing navigation to:", targetRoute);
+      navigate(targetRoute, { replace: true });
     } catch (err: any) {
       console.error("Login failed", err);
       const errorMsg = err.response?.data?.detail || err.message || 'Invalid credentials. Please try again.';

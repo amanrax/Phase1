@@ -11,7 +11,7 @@ import os
 
 # Import configuration and database
 from app.config import settings
-from app.database import connect_to_database, close_database_connection
+from app.database import connect_to_database, close_database_connection, seed_initial_data
 from app.middleware.logging_middleware import LoggingMiddleware
 
 # Import routers
@@ -30,6 +30,7 @@ from app.routes import (
     reports,
     supplies,
     logs,
+    ethnic_groups,
 )
 
 # Configure logging
@@ -46,6 +47,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     logger.info("🚀 Starting Zambian Farmer System API...")
     await connect_to_database()
+    await seed_initial_data()
     logger.info("✅ Application startup complete")
     yield
     logger.info("🧹 Shutting down application...")
@@ -139,6 +141,7 @@ app.include_router(supplies.router, prefix="/api", tags=["Supply Requests"])
 app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
 app.include_router(sync.router, prefix="/api", tags=["Synchronization"])
 app.include_router(farmers_qr.router, prefix="/api", tags=["Farmers QR"])
+app.include_router(ethnic_groups.router, prefix="/api", tags=["Ethnic Groups"])
 app.include_router(health.router, prefix="/api/health", tags=["Health"])
 app.include_router(logs.router, prefix="/api/logs", tags=["Logs"])
 

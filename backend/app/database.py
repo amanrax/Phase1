@@ -139,3 +139,24 @@ async def get_db() -> AsyncIOMotorDatabase:
             return farmers
     """
     return get_database()
+
+
+# Alias for consistency with TypeScript naming conventions
+get_db_motor = get_db
+
+
+async def seed_initial_data() -> None:
+    """
+    Seed initial data into MongoDB collections.
+    Called after database connection is established.
+    """
+    try:
+        db = get_database()
+        
+        # Seed ethnic groups
+        from app.services.ethnic_group_service import EthnicGroupService
+        ethnic_group_service = EthnicGroupService(db)
+        await ethnic_group_service.seed_default_ethnic_groups()
+        
+    except Exception as e:
+        logger.error(f"❌ Error seeding initial data: {e}")

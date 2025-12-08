@@ -1,5 +1,5 @@
 // src/pages/AdminDashboard.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
@@ -31,6 +31,23 @@ interface Stats {
   pendingVerifications: number;
 }
 
+// Cache for dashboard data with 2 minute TTL
+const dashboardCache = {
+  data: null as any,
+  timestamp: 0,
+  TTL: 2 * 60 * 1000, // 2 minutes
+  isValid() {
+    return this.data && (Date.now() - this.timestamp) < this.TTL;
+  },
+  set(data: any) {
+    this.data = data;
+    this.timestamp = Date.now();
+  },
+  get() {
+    return this.isValid() ? this.data : null;
+  }
+};
+
 export default function AdminDashboard() {
   const { logout } = useAuthStore();
   const navigate = useNavigate();
@@ -43,17 +60,38 @@ export default function AdminDashboard() {
     totalOperators: 0,
     pendingVerifications: 0,
   });
+  const loadingRef = useRef(false); // Prevent duplicate loads
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
+    // Check if already loading
+    if (loadingRef.current) {
+      console.log('Data already loading, skipping...');
+      return;
+    }
+
+    // Check cache first
+    const cachedData = dashboardCache.get();
+    if (cachedData) {
+      console.log('Loading from cache...');
+      setFarmers(cachedData.farmers);
+      setOperators(cachedData.operators);
+      setStats(cachedData.stats);
+      return;
+    }
+
+    loadingRef.current = true;
     setLoading(true);
     try {
-      const statsData = await dashboardService.getStats();
-      const farmersData = await farmerService.getFarmers(5, 0);
-      const operatorsData = await operatorService.getOperators(10, 0);
+      // Load data in parallel for faster response
+      const [statsData, farmersData, operatorsData] = await Promise.all([
+        dashboardService.getStats(),
+        farmerService.getFarmers(5, 0),
+        operatorService.getOperators(10, 0)
+      ]);
       
       // Farmers endpoint returns array directly
       const farmersList = Array.isArray(farmersData) ? farmersData : (farmersData.results || []);
@@ -64,17 +102,27 @@ export default function AdminDashboard() {
       console.log('Farmers loaded:', farmersList.length);
       console.log('Operators loaded:', operatorsList.length);
       
-      setFarmers(farmersList);
-      setOperators(operatorsList);
-      setStats({
+      const statsObject = {
         totalFarmers: statsData.farmers?.total || 0,
         totalOperators: statsData.operators || 0,
         pendingVerifications: statsData.farmers?.pending || 0,
+      };
+
+      // Cache the results
+      dashboardCache.set({
+        farmers: farmersList,
+        operators: operatorsList,
+        stats: statsObject
       });
+      
+      setFarmers(farmersList);
+      setOperators(operatorsList);
+      setStats(statsObject);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
   };
 
@@ -82,7 +130,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
       {/* Header */}
       <div className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 drop-shadow-lg">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold drop-shadow-lg mb-2">
           🌾 Chiefdom Management Model
         </h1>
         <p className="text-xs sm:text-sm md:text-base opacity-90">Advanced Agricultural Management System - Admin Dashboard</p>
@@ -172,12 +220,26 @@ export default function AdminDashboard() {
           <div className="mb-8 sm:mb-12">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-900">👨‍💼 System Operators</h3>
-              <button
-                onClick={() => navigate("/operators/manage")}
-                className="px-3 sm:px-4 py-1 sm:py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
-              >
-                ➕ Add Operator
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    dashboardCache.data = null;
+                    loadData();
+                  }}
+                  disabled={loading}
+                  className="px-3 py-1.5 bg-green-700 hover:bg-green-800 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  title="Refresh dashboard data"
+                >
+                  <i className={`fa-solid fa-rotate-right ${loading ? 'animate-spin' : ''}`}></i>
+                  Refresh
+                </button>
+                <button
+                  onClick={() => navigate("/operators/manage")}
+                  className="px-3 sm:px-4 py-1 sm:py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
+                >
+                  ➕ Add Operator
+                </button>
+              </div>
             </div>
 
             {loading ? (
@@ -198,27 +260,28 @@ export default function AdminDashboard() {
                 </button>
               </div>
             ) : (
-              <div className="overflow-x-auto bg-gray-50 rounded-lg border border-gray-200">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-gray-100 border-b border-gray-200">
-                    <tr>
-                      <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase">Name</th>
-                      <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase">Email</th>
-                      <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase">Phone</th>
-                      <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase">District</th>
-                      <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase text-center">Status</th>
-                    </tr>
-                  </thead>
+              <div className="bg-gray-50 rounded-lg border border-gray-200">
+                <div className="overflow-hidden">
+                  <table className="w-full text-left text-sm table-fixed">
+                    <thead className="bg-gray-100 border-b border-gray-200">
+                      <tr>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase truncate" style={{width: '20%'}}>Name</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase truncate" style={{width: '25%'}}>Email</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase truncate hidden md:table-cell" style={{width: '15%'}}>Phone</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase truncate hidden lg:table-cell" style={{width: '20%'}}>District</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase text-center truncate" style={{width: '20%'}}>Status</th>
+                      </tr>
+                    </thead>
                   <tbody className="divide-y divide-gray-200">
                     {operators.slice(0, 5).map((op) => (
                       <tr
                         key={op.operator_id || op._id}
                         className="bg-white hover:bg-gray-50 transition-colors cursor-pointer"
                       >
-                        <td className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-900">{op.full_name}</td>
-                        <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 text-xs sm:text-sm">{op.email}</td>
-                        <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 text-xs sm:text-sm">{op.phone || "-"}</td>
-                        <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 text-xs sm:text-sm">{op.assigned_district || "All Districts"}</td>
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-900 truncate" title={op.full_name}>{op.full_name}</td>
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 text-xs sm:text-sm truncate" title={op.email}>{op.email}</td>
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 text-xs sm:text-sm truncate hidden md:table-cell" title={op.phone || "-"}>{op.phone || "-"}</td>
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 text-xs sm:text-sm truncate hidden lg:table-cell" title={op.assigned_district || "All Districts"}>{op.assigned_district || "All Districts"}</td>
                         <td className="px-3 sm:px-4 py-2 sm:py-3 text-center">
                           <span className={`inline-block px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${
                             op.is_active !== false 
@@ -232,6 +295,7 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+                </div>
                 {operators.length > 5 && (
                   <div className="text-center py-3 sm:py-4 bg-white border-t border-gray-200">
                     <button

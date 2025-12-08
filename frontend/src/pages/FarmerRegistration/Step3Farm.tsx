@@ -30,16 +30,16 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
 
   return (
     <div>
-      <h3>Farm details (optional)</h3>
+      <h3 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "#333" }}>Farm details (optional)</h3>
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="farmSize" style={{ fontWeight: "bold" }}>
+        <label htmlFor="farmSize" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
           Farm size (hectares)
         </label>
         <input
           id="farmSize"
           value={size}
           onChange={(e) => setSize(e.target.value)}
-          style={{ width: "100%", padding: 10, marginTop: 6 }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
           placeholder="e.g. 1.5"
           type="number"
           min="0"
@@ -52,14 +52,14 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="mainCrops" style={{ fontWeight: "bold" }}>
+        <label htmlFor="mainCrops" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
           Main crops (comma separated)
         </label>
         <input
           id="mainCrops"
           value={crops}
           onChange={(e) => setCrops(e.target.value)}
-          style={{ width: "100%", padding: 10, marginTop: 6 }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
           placeholder="maize, groundnuts, cassava"
           aria-describedby="mainCropsDesc"
         />
@@ -69,14 +69,14 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="livestock" style={{ fontWeight: "bold" }}>
+        <label htmlFor="livestock" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
           Livestock (comma separated)
         </label>
         <input
           id="livestock"
           value={livestock}
           onChange={(e) => setLivestock(e.target.value)}
-          style={{ width: "100%", padding: 10, marginTop: 6 }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
           placeholder="cattle, goats, chickens"
         />
         <small style={{ color: "#666" }}>
@@ -85,14 +85,14 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="yearsFarming" style={{ fontWeight: "bold" }}>
+        <label htmlFor="yearsFarming" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
           Years of Farming Experience
         </label>
         <input
           id="yearsFarming"
           value={yearsFarming}
           onChange={(e) => setYearsFarming(e.target.value)}
-          style={{ width: "100%", padding: 10, marginTop: 6 }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
           placeholder="e.g. 5"
           type="number"
           min="0"
@@ -113,17 +113,17 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
         </label>
       </div>
 
-      <h4 style={{ marginTop: 20 }}>Household Information (optional)</h4>
+      <h4 style={{ marginTop: 20, fontSize: "16px", fontWeight: "600", color: "#333" }}>Household Information (optional)</h4>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="householdSize" style={{ fontWeight: "bold" }}>
+        <label htmlFor="householdSize" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
           Household Size
         </label>
         <input
           id="householdSize"
           value={householdSize}
           onChange={(e) => setHouseholdSize(e.target.value)}
-          style={{ width: "100%", padding: 10, marginTop: 6 }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
           placeholder="Number of people in household"
           type="number"
           min="1"
@@ -131,14 +131,14 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="dependents" style={{ fontWeight: "bold" }}>
+        <label htmlFor="dependents" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
           Number of Dependents
         </label>
         <input
           id="dependents"
           value={dependents}
           onChange={(e) => setDependents(e.target.value)}
-          style={{ width: "100%", padding: 10, marginTop: 6 }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
           placeholder="Number of dependents"
           type="number"
           min="0"
@@ -146,14 +146,14 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="primaryIncome" style={{ fontWeight: "bold" }}>
+        <label htmlFor="primaryIncome" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
           Primary Income Source
         </label>
         <input
           id="primaryIncome"
           value={primaryIncome}
           onChange={(e) => setPrimaryIncome(e.target.value)}
-          style={{ width: "100%", padding: 10, marginTop: 6 }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
           placeholder="e.g. farming, business"
         />
       </div>

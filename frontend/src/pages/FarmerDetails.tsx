@@ -277,25 +277,26 @@ export default function FarmerDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600" style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500" style={{ minHeight: "100vh" }}>
       {/* Header */}
-      <div className="text-center text-white py-6 sm:py-8" style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
-        <h1 className="text-3xl sm:text-4xl font-bold drop-shadow-lg" style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
+      <div className="text-center text-white py-6 sm:py-8 px-4" style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold drop-shadow-lg mb-2" style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
           🌾 Chiefdom Management Model
         </h1>
+        <p className="text-sm sm:text-base opacity-90" style={{ fontSize: "16px", opacity: 0.9 }}>Farmer Profile & Documents</p>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-6" style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 20px 20px 20px" }}>
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pb-6" style={{ maxWidth: "1200px", margin: "0 auto", paddingBottom: "30px" }}>
         {/* Top Actions */}
-        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 flex-wrap" style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3" style={{ marginBottom: "20px" }}>
           <button
             onClick={() => navigate(getBackPath())}
-            className="px-4 py-2 bg-white text-purple-600 rounded-lg font-semibold text-sm sm:text-base hover:shadow-md transition-all"
+            className="px-4 py-2 bg-white hover:bg-gray-50 active:scale-95 text-indigo-600 rounded-lg font-semibold text-sm transition-all shadow-md"
             style={{
               padding: "10px 20px",
               background: "white",
-              color: "#667eea",
+              color: "#5b21b6",
               border: "none",
               borderRadius: "8px",
               fontSize: "14px",
@@ -318,10 +319,10 @@ export default function FarmerDetails() {
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <button
               onClick={handleGenerateIDCard}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold text-sm sm:text-base transition-all hover:shadow-md"
+              className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-sm sm:text-base transition-all hover:shadow-md"
               style={{
                 padding: "10px 20px",
-                background: "#9333ea",
+                background: "#047857",
                 color: "white",
                 border: "none",
                 borderRadius: "8px",
@@ -331,11 +332,11 @@ export default function FarmerDetails() {
                 transition: "all 0.3s"
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.background = "#7e22ce";
+                e.currentTarget.style.background = "#065f46";
                 e.currentTarget.style.transform = "translateY(-2px)";
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.background = "#9333ea";
+                e.currentTarget.style.background = "#047857";
                 e.currentTarget.style.transform = "translateY(0)";
               }}
             >
@@ -344,10 +345,10 @@ export default function FarmerDetails() {
 
             <button
               onClick={handleDownloadIDCard}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm sm:text-base transition-all hover:shadow-md"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm sm:text-base transition-all hover:shadow-md"
               style={{
                 padding: "10px 20px",
-                background: "#28a745",
+                background: "#2563eb",
                 color: "white",
                 border: "none",
                 borderRadius: "8px",
@@ -357,11 +358,11 @@ export default function FarmerDetails() {
                 transition: "all 0.3s"
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.background = "#218838";
+                e.currentTarget.style.background = "#1d4ed8";
                 e.currentTarget.style.transform = "translateY(-2px)";
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.background = "#28a745";
+                e.currentTarget.style.background = "#2563eb";
                 e.currentTarget.style.transform = "translateY(0)";
               }}
             >
@@ -370,10 +371,10 @@ export default function FarmerDetails() {
 
             <button
               onClick={() => navigate(`/farmers/edit/${farmerId}`)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm sm:text-base transition-all hover:shadow-md"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-sm sm:text-base transition-all hover:shadow-md"
               style={{
                 padding: "10px 20px",
-                background: "#007bff",
+                background: "#4f46e5",
                 color: "white",
                 border: "none",
                 borderRadius: "8px",
@@ -383,11 +384,11 @@ export default function FarmerDetails() {
                 transition: "all 0.3s"
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.background = "#0056b3";
+                e.currentTarget.style.background = "#4338ca";
                 e.currentTarget.style.transform = "translateY(-2px)";
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.background = "#007bff";
+                e.currentTarget.style.background = "#4f46e5";
                 e.currentTarget.style.transform = "translateY(0)";
               }}
             >
@@ -399,8 +400,8 @@ export default function FarmerDetails() {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "20px" }}>
           {/* Photo Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow" style={{ background: "white", padding: "30px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "22px", fontWeight: "700", marginBottom: "20px", color: "#333" }}>📸 Farmer Photo</h2>
+          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-purple-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #a855f7" }}>
+            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#1f2937" }}>📸 Farmer Photo</h2>
 
             <div className="mb-6" style={{ marginBottom: "20px" }}>
               {farmer.photo_path || farmer.documents?.photo ? (
@@ -463,20 +464,20 @@ export default function FarmerDetails() {
               style={{
                 display: "block",
                 textAlign: "center",
-                padding: "14px",
+                padding: "12px",
                 borderRadius: "8px",
-                fontSize: "15px",
+                fontSize: "14px",
                 fontWeight: "600",
                 cursor: uploading === "photo" ? "not-allowed" : "pointer",
-                background: uploading === "photo" ? "#6c757d" : "#007bff",
+                background: uploading === "photo" ? "#6b7280" : "#2563eb",
                 color: "white",
                 transition: "all 0.3s"
               }}
               onMouseOver={(e) => {
-                if (uploading !== "photo") e.currentTarget.style.background = "#0056b3";
+                if (uploading !== "photo") e.currentTarget.style.background = "#1d4ed8";
               }}
               onMouseOut={(e) => {
-                if (uploading !== "photo") e.currentTarget.style.background = "#007bff";
+                if (uploading !== "photo") e.currentTarget.style.background = "#2563eb";
               }}
             >
               {uploading === "photo" ? "⏳ Uploading..." : "📸 Upload / Replace Photo"}
@@ -484,11 +485,11 @@ export default function FarmerDetails() {
           </div>
 
           {/* Personal Info Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow sm:col-span-2 lg:col-span-1" style={{ background: "white", padding: "30px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "22px", fontWeight: "700", marginBottom: "20px", color: "#333" }}>👤 Personal Information</h2>
+          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all sm:col-span-2 lg:col-span-1 border-l-4 border-blue-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #3b82f6" }}>
+            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#1f2937" }}>👤 Personal Information</h2>
 
-            <div className="mb-6 pb-6 border-b border-gray-200" style={{ marginBottom: "20px", paddingBottom: "20px", borderBottom: "1px solid #e0e0e0" }}>
-              <h3 className="text-xl sm:text-2xl font-bold text-purple-600 mb-3" style={{ fontSize: "20px", fontWeight: "700", color: "#667eea", marginBottom: "10px" }}>
+            <div className="mb-6 pb-6 border-b border-gray-200" style={{ marginBottom: "20px", paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
+              <h3 className="text-xl sm:text-2xl font-bold text-indigo-600 mb-3" style={{ fontSize: "18px", fontWeight: "700", color: "#4f46e5", marginBottom: "10px" }}>
                 {farmer.personal_info?.first_name} {farmer.personal_info?.last_name}
               </h3>
               <p className="text-xs sm:text-sm text-gray-600 font-mono mb-3" style={{ color: "#666", fontSize: "14px", fontFamily: "monospace", marginBottom: "10px" }}>
@@ -529,7 +530,7 @@ export default function FarmerDetails() {
             </div>
 
             {farmer.review_notes && (
-              <div className="mt-6 p-4 bg-gray-100 rounded-lg border-l-4 border-purple-600" style={{ marginTop: "20px", padding: "15px", background: "#f8f9fa", borderRadius: "8px", borderLeft: "4px solid #667eea" }}>
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg border-l-4 border-indigo-500" style={{ marginTop: "20px", padding: "15px", background: "#f9fafb", borderRadius: "8px", borderLeft: "4px solid #6366f1" }}>
                 <p className="font-semibold text-gray-800 mb-2" style={{ fontWeight: "600", color: "#333", marginBottom: "8px" }}>📝 Review Notes</p>
                 <p className="text-gray-600 text-sm leading-relaxed" style={{ color: "#666", fontSize: "14px", lineHeight: "1.6" }}>{farmer.review_notes}</p>
                 {farmer.reviewed_by && (
@@ -543,8 +544,8 @@ export default function FarmerDetails() {
           </div>
 
           {/* Address Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow" style={{ background: "white", padding: "30px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "22px", fontWeight: "700", marginBottom: "20px", color: "#333" }}>📍 Address</h2>
+          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-green-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #22c55e" }}>
+            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#1f2937" }}>📍 Address</h2>
             <div className="grid gap-4 text-sm" style={{ display: "grid", gap: "15px", fontSize: "14px" }}>
               <div>
                 <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Province</p>
@@ -621,8 +622,8 @@ export default function FarmerDetails() {
           </div>
 
           {/* Farm Info Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow" style={{ background: "white", padding: "30px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "22px", fontWeight: "700", marginBottom: "20px", color: "#333" }}>🚜 Farm Information</h2>
+          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-emerald-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #10b981" }}>
+            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#1f2937" }}>🚜 Farm Information</h2>
             <div className="grid gap-4 text-sm" style={{ display: "grid", gap: "15px", fontSize: "14px" }}>
               <div>
                 <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Farm Size</p>
@@ -659,8 +660,8 @@ export default function FarmerDetails() {
           </div>
 
           {/* Household Info Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow" style={{ background: "white", padding: "30px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "22px", fontWeight: "700", marginBottom: "20px", color: "#333" }}>🏠 Household Information</h2>
+          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-orange-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #f97316" }}>
+            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#1f2937" }}>🏠 Household Information</h2>
             <div className="grid gap-4 text-sm" style={{ display: "grid", gap: "15px", fontSize: "14px" }}>
               <div>
                 <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Household Size</p>
@@ -680,8 +681,8 @@ export default function FarmerDetails() {
           </div>
 
           {/* Documents Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow lg:col-span-3" style={{ background: "white", padding: "30px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", gridColumn: "1 / -1" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "22px", fontWeight: "700", marginBottom: "20px", color: "#333" }}>📄 Documents</h2>
+          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all lg:col-span-3 border-l-4 border-red-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", gridColumn: "1 / -1", borderLeft: "4px solid #ef4444" }}>
+            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#1f2937" }}>📄 Documents</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px" }}>
               {/* NRC Card */}

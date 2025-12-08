@@ -278,23 +278,26 @@ export default function AdminSettings() {
                               {user.is_active ? (
                                 <button
                                   onClick={() => deactivateUser(user.email)}
-                                  className="text-orange-600 hover:text-orange-700 font-bold"
+                                  className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded transition"
+                                  title="Deactivate"
                                 >
-                                  Deactivate
+                                  🔴 Deactivate
                                 </button>
                               ) : (
                                 <button
                                   onClick={() => activateUser(user.email)}
-                                  className="text-green-600 hover:text-green-700 font-bold"
+                                  className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold rounded transition"
+                                  title="Activate"
                                 >
-                                  Activate
+                                  🟢 Activate
                                 </button>
                               )}
                               <button
                                 onClick={() => deleteUser(user.email)}
-                                className="text-red-600 hover:text-red-700 font-bold"
+                                className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded transition"
+                                title="Delete"
                               >
-                                Delete
+                                🗑️ Delete
                               </button>
                             </td>
                           </tr>
@@ -321,23 +324,26 @@ export default function AdminSettings() {
                           {user.is_active ? (
                             <button
                               onClick={() => deactivateUser(user.email)}
-                              className="flex-1 bg-orange-100 text-orange-700 hover:bg-orange-200 font-bold py-1 px-2 rounded"
+                              className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 font-bold py-1 px-2 rounded transition"
+                              title="Deactivate"
                             >
-                              Deactivate
+                              🔴 Deactivate
                             </button>
                           ) : (
                             <button
                               onClick={() => activateUser(user.email)}
-                              className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-bold py-1 px-2 rounded"
+                              className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-bold py-1 px-2 rounded transition"
+                              title="Activate"
                             >
-                              Activate
+                              🟢 Activate
                             </button>
                           )}
                           <button
                             onClick={() => deleteUser(user.email)}
-                            className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 font-bold py-1 px-2 rounded"
+                            className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 font-bold py-1 px-2 rounded transition"
+                            title="Delete"
                           >
-                            Delete
+                            🗑️ Delete
                           </button>
                         </div>
                       </div>

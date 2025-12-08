@@ -213,7 +213,7 @@ export default function AdminReports() {
         doc.setFontSize(8);
         doc.setTextColor(150, 150, 150);
         doc.text(
-          `Page ${i} of ${pageCount} | Ministry of Agriculture`,
+          `Page ${i} of ${pageCount} | Chiefdom Empowerment Model (CEM)`,
           doc.internal.pageSize.getWidth() / 2,
           doc.internal.pageSize.getHeight() - 10,
           { align: "center" }
@@ -302,7 +302,7 @@ export default function AdminReports() {
   </table>
   
   <div class="footer">
-    <p><strong>Chiefdom Management Model</strong> | Ministry of Agriculture</p>
+    <p><strong>Chiefdom Management Model</strong> | Chiefdom Empowerment Model (CEM)</p>
   </div>
 </body>
 </html>

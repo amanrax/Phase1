@@ -83,11 +83,11 @@ def generate_id_card(farmer_id: str):
         c.setFont("Helvetica", 7)
         c.drawString(5*mm, CARD_HEIGHT - 11*mm, "Ministry of Agriculture")
         
-        # ZIAMIS logo text (right side)
+        # Brand text (right side)
         c.setFont("Helvetica-Bold", 12)
-        c.drawRightString(CARD_WIDTH - 5*mm, CARD_HEIGHT - 7*mm, "ZIAMIS")
+        c.drawRightString(CARD_WIDTH - 5*mm, CARD_HEIGHT - 7*mm, "Chiefdom Model")
         c.setFont("Helvetica", 6)
-        c.drawRightString(CARD_WIDTH - 5*mm, CARD_HEIGHT - 11*mm, "Farmer Registry")
+        c.drawRightString(CARD_WIDTH - 5*mm, CARD_HEIGHT - 11*mm, "Farmer ID Card")
         
         # Photo placeholder or actual photo (positioned to avoid header overlap)
         photo_x = 5*mm

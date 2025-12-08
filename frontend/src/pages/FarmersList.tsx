@@ -36,7 +36,6 @@ export default function FarmersList() {
   const [success, setSuccess] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "pending" | "inactive">("all");
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
   const [reviewStatus, setReviewStatus] = useState("");
   const [remarks, setRemarks] = useState("");
@@ -44,6 +43,9 @@ export default function FarmersList() {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize] = useState(20);
   const [totalFarmers, setTotalFarmers] = useState(0);
+  const [actioningFarmerId, setActioningFarmerId] = useState<string | null>(null);
+  const [searchBy, setSearchBy] = useState<"name" | "farmer_id" | "nrc">("name");
+  const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
     loadFarmers(0);
@@ -51,7 +53,7 @@ export default function FarmersList() {
 
   useEffect(() => {
     applyFilter();
-  }, [filter, allFarmers]);
+  }, [filter, allFarmers, searchBy, searchValue]);
 
   const loadFarmers = async (page = 0) => {
     setLoading(true);
@@ -133,22 +135,107 @@ export default function FarmersList() {
   const applyFilter = () => {
     let filtered = allFarmers;
     
-    if (filter === "active") {
-      filtered = filtered.filter((f: any) => f.is_active && f.registration_status === "registered");
-    } else if (filter === "pending") {
-      filtered = filtered.filter((f: any) => f.registration_status === "pending");
-    } else if (filter === "inactive") {
-      filtered = filtered.filter((f: any) => !f.is_active);
+    // Debug: log all farmers status
+    if (import.meta.env.DEV) {
+      console.log("=== Filter Debug ===");
+      console.log(`Total farmers: ${allFarmers.length}`);
+      // Count each status
+      const statusCounts: Record<string, number> = {};
+      const activeCounts: Record<string, number> = {};
+      allFarmers.forEach((f: any) => {
+        const status = f.registration_status || "undefined";
+        const active = f.is_active ? "active" : "inactive";
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+        activeCounts[active] = (activeCounts[active] || 0) + 1;
+      });
+      console.log("Status breakdown:", statusCounts);
+      console.log("Active breakdown:", activeCounts);
+      if (allFarmers.length > 0) {
+        console.log("First 3 farmers:");
+        allFarmers.slice(0, 3).forEach((f: any) => {
+          console.log(`  ${f.farmer_id}: is_active=${f.is_active}, status='${f.registration_status}'`);
+        });
+      }
     }
     
+    if (filter === "active") {
+      // Active means is_active is true AND has a status indicating active farmer (registered, approved, or verified)
+      const beforeCount = filtered.length;
+      filtered = filtered.filter((f: any) => {
+        const isActiveBool = f.is_active === true;
+        const statusLower = f.registration_status?.toLowerCase?.() || "";
+        const isApproved = statusLower === "registered" || statusLower === "approved" || statusLower === "verified";
+        return isActiveBool && isApproved;
+      });
+      if (import.meta.env.DEV) {
+        console.log(`[Active filter] ${beforeCount} → ${filtered.length} farmers`);
+        console.log("  Criteria: is_active=true AND (status='registered' OR 'approved' OR 'verified')");
+      }
+    } else if (filter === "pending") {
+      // Pending means registration_status indicates pending/under review
+      const beforeCount = filtered.length;
+      filtered = filtered.filter((f: any) => {
+        const statusLower = f.registration_status?.toLowerCase?.() || "";
+        return statusLower === "pending" || statusLower === "submitted" || statusLower === "under_review";
+      });
+      if (import.meta.env.DEV) {
+        console.log(`[Pending filter] ${beforeCount} → ${filtered.length} farmers`);
+        console.log("  Criteria: status='pending' OR 'submitted' OR 'under_review'");
+      }
+    } else if (filter === "inactive") {
+      // Inactive means is_active is false OR rejected
+      const beforeCount = filtered.length;
+      filtered = filtered.filter((f: any) => {
+        const isInactive = f.is_active === false;
+        const statusLower = f.registration_status?.toLowerCase?.() || "";
+        const isRejected = statusLower === "rejected";
+        return isInactive || isRejected;
+      });
+      if (import.meta.env.DEV) {
+        console.log(`[Inactive filter] ${beforeCount} → ${filtered.length} farmers`);
+        console.log("  Criteria: is_active=false OR status='rejected'");
+      }
+    }
+    
+    
+    // Apply search filter
+    if (searchValue.trim()) {
+      filtered = filtered.filter((farmer: Farmer) => {
+        const searchLower = searchValue.toLowerCase().trim();
+        if (searchBy === "name") {
+          const name = getFarmerName(farmer).toLowerCase();
+          return name.includes(searchLower);
+        } else if (searchBy === "farmer_id") {
+          return farmer.farmer_id.toLowerCase().includes(searchLower);
+        } else if (searchBy === "nrc") {
+          const nrc = (farmer as any).nrc || (farmer as any).national_id || "";
+          return nrc.toString().toLowerCase().includes(searchLower);
+        }
+        return false;
+      });
+    }
+
     setFilteredFarmers(filtered);
   };
 
   const getFilterCount = (filterType: string) => {
     if (filterType === "all") return allFarmers.length;
-    if (filterType === "active") return allFarmers.filter((f: any) => f.is_active && f.registration_status === "registered").length;
-    if (filterType === "pending") return allFarmers.filter((f: any) => f.registration_status === "pending").length;
-    if (filterType === "inactive") return allFarmers.filter((f: any) => !f.is_active).length;
+    if (filterType === "active") return allFarmers.filter((f: any) => {
+      const isActiveBool = f.is_active === true;
+      const statusLower = f.registration_status?.toLowerCase?.() || "";
+      const isApproved = statusLower === "registered" || statusLower === "approved" || statusLower === "verified";
+      return isActiveBool && isApproved;
+    }).length;
+    if (filterType === "pending") return allFarmers.filter((f: any) => {
+      const statusLower = f.registration_status?.toLowerCase?.() || "";
+      return statusLower === "pending" || statusLower === "submitted" || statusLower === "under_review";
+    }).length;
+    if (filterType === "inactive") return allFarmers.filter((f: any) => {
+      const isInactive = f.is_active === false;
+      const statusLower = f.registration_status?.toLowerCase?.() || "";
+      const isRejected = statusLower === "rejected";
+      return isInactive || isRejected;
+    }).length;
     return 0;
   };
 
@@ -208,9 +295,36 @@ export default function FarmersList() {
     setShowReviewModal(true);
   };
 
-  const openViewModal = (farmer: Farmer) => {
-    setSelectedFarmer(farmer);
-    setShowViewModal(true);
+  const handleDeactivateFarmer = async (farmer: Farmer) => {
+    if (!confirm(`Deactivate ${farmer.first_name} ${farmer.last_name}?`)) return;
+    setActioningFarmerId(farmer.farmer_id);
+    setError("");
+    try {
+      await farmerService.deactivateFarmer(farmer.farmer_id);
+      setSuccess(`✓ Farmer ${farmer.first_name} deactivated`);
+      fetchAllFarmers();
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Failed to deactivate farmer");
+    } finally {
+      setActioningFarmerId(null);
+    }
+  };
+
+  const handleActivateFarmer = async (farmer: Farmer) => {
+    if (!confirm(`Activate ${farmer.first_name} ${farmer.last_name}?`)) return;
+    setActioningFarmerId(farmer.farmer_id);
+    setError("");
+    try {
+      await farmerService.activateFarmer(farmer.farmer_id);
+      setSuccess(`✓ Farmer ${farmer.first_name} activated`);
+      fetchAllFarmers();
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Failed to activate farmer");
+    } finally {
+      setActioningFarmerId(null);
+    }
   };
 
   const handleStatusUpdate = async () => {
@@ -274,7 +388,12 @@ export default function FarmersList() {
           {["all", "active", "pending", "inactive"].map(f => (
             <button
               key={f}
-              onClick={() => setFilter(f as any)}
+              onClick={async () => {
+                if (allFarmers.length === 0) {
+                  await fetchAllFarmers();
+                }
+                setFilter(f as any);
+              }}
               className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition ${
                 filter === f ? "bg-green-700 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
@@ -282,6 +401,43 @@ export default function FarmersList() {
               {f.charAt(0).toUpperCase() + f.slice(1)} ({getFilterCount(f)})
             </button>
           ))}
+        </div>
+
+        {/* Search Filter */}
+        <div className="mb-6 bg-white rounded-lg shadow-sm p-4 flex gap-3 items-end flex-wrap">
+          <div className="flex-1 min-w-64">
+            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Search By</label>
+            <select
+              value={searchBy}
+              onChange={(e) => setSearchBy(e.target.value as any)}
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 text-sm"
+            >
+              <option value="name">Name</option>
+              <option value="farmer_id">Farmer ID</option>
+              <option value="nrc">NRC</option>
+            </select>
+          </div>
+          
+          <div className="flex-1 min-w-64">
+            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Search Value</label>
+            <input
+              type="text"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder={`Search by ${searchBy === "name" ? "farmer name" : searchBy === "farmer_id" ? "farmer ID" : "NRC"}...`}
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 text-sm"
+            />
+          </div>
+
+          <button
+            onClick={() => {
+              setSearchValue("");
+              setSearchBy("name");
+            }}
+            className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 text-xs font-semibold rounded-lg transition"
+          >
+            Clear Search
+          </button>
         </div>
 
         {/* Loading State */}
@@ -324,15 +480,15 @@ export default function FarmersList() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-xs">{farmer.created_at ? new Date(farmer.created_at).toLocaleDateString() : "-"}</td>
-                      <td className="px-6 py-4 text-xs space-x-2 flex gap-1">
+                      <td className="px-6 py-4 text-xs space-x-2 flex gap-1 flex-wrap">
                         <button
-                          onClick={() => openViewModal(farmer)}
+                          onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
                           className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded transition"
                         >
                           👁️ View
                         </button>
                         <button
-                          onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
+                          onClick={() => navigate(`/farmers/edit/${farmer.farmer_id}`)}
                           className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold rounded transition"
                         >
                           ✏️ Edit
@@ -343,6 +499,25 @@ export default function FarmersList() {
                         >
                           📋 Review
                         </button>
+                        {farmer.is_active ? (
+                          <button
+                            onClick={() => handleDeactivateFarmer(farmer)}
+                            disabled={actioningFarmerId === farmer.farmer_id}
+                            className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded transition disabled:opacity-50"
+                            title="Deactivate"
+                          >
+                            {actioningFarmerId === farmer.farmer_id ? "..." : "🔴 Deactivate"}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleActivateFarmer(farmer)}
+                            disabled={actioningFarmerId === farmer.farmer_id}
+                            className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold rounded transition disabled:opacity-50"
+                            title="Activate"
+                          >
+                            {actioningFarmerId === farmer.farmer_id ? "..." : "🟢 Activate"}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -364,15 +539,15 @@ export default function FarmersList() {
                   <p className="text-xs text-gray-600 mb-1"><strong>Phone:</strong> {getFarmerPhone(farmer)}</p>
                   <p className="text-xs text-gray-600 mb-1"><strong>District:</strong> {getFarmerDistrict(farmer)}</p>
                   <p className="text-xs text-gray-600 mb-3"><strong>Registered:</strong> {farmer.created_at ? new Date(farmer.created_at).toLocaleDateString() : "-"}</p>
-                  <div className="flex gap-2 text-xs">
+                  <div className="flex gap-2 text-xs flex-wrap">
                     <button
-                      onClick={() => openViewModal(farmer)}
+                      onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
                       className="flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 font-bold py-1 rounded transition"
                     >
                       👁️ View
                     </button>
                     <button
-                      onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
+                      onClick={() => navigate(`/farmers/edit/${farmer.farmer_id}`)}
                       className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-bold py-1 rounded transition"
                     >
                       ✏️ Edit
@@ -383,6 +558,25 @@ export default function FarmersList() {
                     >
                       📋 Review
                     </button>
+                    {farmer.is_active ? (
+                      <button
+                        onClick={() => handleDeactivateFarmer(farmer)}
+                        disabled={actioningFarmerId === farmer.farmer_id}
+                        className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 font-bold py-1 rounded transition disabled:opacity-50"
+                        title="Deactivate"
+                      >
+                        {actioningFarmerId === farmer.farmer_id ? "..." : "🔴 Deactivate"}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleActivateFarmer(farmer)}
+                        disabled={actioningFarmerId === farmer.farmer_id}
+                        className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-bold py-1 rounded transition disabled:opacity-50"
+                        title="Activate"
+                      >
+                        {actioningFarmerId === farmer.farmer_id ? "..." : "🟢 Activate"}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -414,80 +608,6 @@ export default function FarmersList() {
           </div>
         )}
       </div>
-
-      {/* View Modal */}
-      {showViewModal && selectedFarmer && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="border-b border-gray-200 p-6 flex justify-between items-center sticky top-0 bg-white">
-              <h2 className="text-xl font-bold text-gray-800">👁️ Farmer Details</h2>
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div>
-                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Farmer ID</p>
-                <p className="font-bold text-gray-800">{selectedFarmer.farmer_id}</p>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Full Name</p>
-                <p className="font-bold text-gray-800">{getFarmerName(selectedFarmer)}</p>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Phone</p>
-                <p className="text-gray-800">{getFarmerPhone(selectedFarmer)}</p>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold text-gray-600 uppercase mb-1">District</p>
-                <p className="text-gray-800">{getFarmerDistrict(selectedFarmer)}</p>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Village</p>
-                <p className="text-gray-800">{(selectedFarmer as any).village || selectedFarmer.address?.village || "N/A"}</p>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Status</p>
-                <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusColor(selectedFarmer.registration_status || "", selectedFarmer.is_active)}`}>
-                  {selectedFarmer.is_active ? (selectedFarmer.registration_status === "registered" ? "✓ Registered" : "⏳ Pending") : "✗ Inactive"}
-                </span>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Registered Date</p>
-                <p className="text-gray-800">{selectedFarmer.created_at ? new Date(selectedFarmer.created_at).toLocaleDateString() : "N/A"}</p>
-              </div>
-
-              <div className="flex gap-2 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => {
-                    setShowViewModal(false);
-                    navigate(`/farmers/${selectedFarmer.farmer_id}`);
-                  }}
-                  className="flex-1 bg-green-700 hover:bg-green-800 text-white font-bold py-2 rounded-lg transition"
-                >
-                  ✏️ Edit
-                </button>
-                <button
-                  onClick={() => setShowViewModal(false)}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 rounded-lg transition"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Review Status Modal */}
       {showReviewModal && selectedFarmer && (

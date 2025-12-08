@@ -150,7 +150,7 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
                           Republic of Zambia
                         </p>
                         <p style={{ color: '#bbf7d0', fontSize: '9px', fontWeight: '600', margin: 0 }}>
-                          Ministry of Agriculture
+                          Chiefdom Empowerment Model (CEM)
                         </p>
                       </div>
                     </div>
@@ -360,7 +360,7 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
                             <strong>Created by:</strong> {farmer.created_by || "N/A"}
                           </p>
                           <p style={{ margin: '3px 0', fontSize: '8px', color: '#6b7280' }}>
-                            Ministry of Agriculture, Zambia
+                            Chiefdom Empowerment Model (CEM)
                           </p>
                         </div>
                       </div>
