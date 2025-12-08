@@ -127,89 +127,119 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute top-40 right-20 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-20 left-40 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
       {/* Header */}
-      <div className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold drop-shadow-lg mb-2">
+      <div className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4 relative z-10">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2" style={{ textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)' }}>
           🌾 Chiefdom Management Model
         </h1>
-        <p className="text-xs sm:text-sm md:text-base opacity-90">Advanced Agricultural Management System - Admin Dashboard</p>
+        <p className="text-xs sm:text-sm md:text-base opacity-90" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>Advanced Agricultural Management System - Admin Dashboard</p>
       </div>
 
       {/* Main Container */}
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pb-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pb-6 relative z-10">
         {/* Stats Grid - Mobile responsive */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
           {/* Operators Card */}
-          <div className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer">
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{stats.totalOperators}</div>
+          <div className="backdrop-blur-xl bg-gradient-to-br from-indigo-600/90 to-purple-600/90 text-white p-4 sm:p-6 rounded-2xl border border-white/20 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-4px] cursor-pointer" 
+               style={{ 
+                 boxShadow: '0_15px_30px_rgba(99,102,241,0.4),_0_5px_15px_rgba(99,102,241,0.3),_inset_0_1px_0_rgba(255,255,255,0.2)',
+                 transformStyle: 'preserve-3d'
+               }}>
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{stats.totalOperators}</div>
             <div className="opacity-90 text-xs sm:text-sm md:text-base">👨‍💼 Total Operators</div>
           </div>
 
           {/* Farmers Card */}
-          <div className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer">
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{stats.totalFarmers}</div>
+          <div className="backdrop-blur-xl bg-gradient-to-br from-indigo-600/90 to-purple-600/90 text-white p-4 sm:p-6 rounded-2xl border border-white/20 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-4px] cursor-pointer"
+               style={{ 
+                 boxShadow: '0_15px_30px_rgba(99,102,241,0.4),_0_5px_15px_rgba(99,102,241,0.3),_inset_0_1px_0_rgba(255,255,255,0.2)',
+                 transformStyle: 'preserve-3d'
+               }}>
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{stats.totalFarmers}</div>
             <div className="opacity-90 text-xs sm:text-sm md:text-base">👨‍🌾 Total Farmers</div>
           </div>
 
           {/* Pending Verifications Card */}
-          <div className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer">
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{stats.pendingVerifications}</div>
+          <div className="backdrop-blur-xl bg-gradient-to-br from-indigo-600/90 to-purple-600/90 text-white p-4 sm:p-6 rounded-2xl border border-white/20 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-4px] cursor-pointer"
+               style={{ 
+                 boxShadow: '0_15px_30px_rgba(99,102,241,0.4),_0_5px_15px_rgba(99,102,241,0.3),_inset_0_1px_0_rgba(255,255,255,0.2)',
+                 transformStyle: 'preserve-3d'
+               }}>
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{stats.pendingVerifications}</div>
             <div className="opacity-90 text-xs sm:text-sm md:text-base">⏳ Pending Verifications</div>
           </div>
         </div>
 
         {/* Main Content Card */}
-        <div className="bg-white rounded-xl shadow-2xl p-4 sm:p-6 md:p-8">
+        <div className="backdrop-blur-xl bg-white/95 rounded-3xl p-4 sm:p-6 md:p-8 border border-white/50 transition-all duration-500" 
+             style={{ 
+               boxShadow: '0_25px_50px_-12px_rgba(99,102,241,0.4),_0_0_0_1px_rgba(255,255,255,0.5),_inset_0_1px_0_0_rgba(255,255,255,0.8)',
+               transformStyle: 'preserve-3d'
+             }}>
           {/* Header with Actions */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900">🔧 Admin Dashboard</h2>
             <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
               <button
                 onClick={() => navigate("/operators/manage")}
-                className="px-2 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-blue-600 to-blue-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(37,99,235,0.3)' }}
               >
                 👨‍💼 Operators
               </button>
 
               <button
                 onClick={() => navigate("/farmers")}
-                className="px-2 sm:px-4 py-2 bg-green-600 hover:bg-green-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-green-600 to-green-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(22,163,74,0.3)' }}
               >
                 👨‍🌾 Farmers
               </button>
 
               <button
                 onClick={() => navigate("/admin/reports")}
-                className="px-2 sm:px-4 py-2 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-orange-600 to-orange-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(234,88,12,0.3)' }}
               >
                 📊 Reports
               </button>
 
               <button
                 onClick={() => navigate("/admin/supply-requests")}
-                className="px-2 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-indigo-600 to-indigo-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(79,70,229,0.3)' }}
               >
                 📦 Requests
               </button>
 
               <button
                 onClick={() => navigate("/admin/settings")}
-                className="px-2 sm:px-4 py-2 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-purple-600 to-purple-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(147,51,234,0.3)' }}
               >
                 ⚙️ Settings
               </button>
 
               <button
                 onClick={() => navigate("/admin/logs")}
-                className="px-2 sm:px-4 py-2 bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-cyan-600 to-cyan-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(8,145,178,0.3)' }}
               >
                 📜 Logs
               </button>
               
               <button
                 onClick={logout}
-                className="px-2 sm:px-4 py-2 bg-gray-600 hover:bg-gray-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-gray-600 to-gray-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(75,85,99,0.3)' }}
               >
                 🚪 Logout
               </button>
@@ -365,6 +395,32 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Enhanced Animations */}
+      <style>{`
+        @keyframes blob {
+          0%, 100% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+
+        /* Smooth transitions */
+        * {
+          transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+      `}</style>
     </div>
   );
 }

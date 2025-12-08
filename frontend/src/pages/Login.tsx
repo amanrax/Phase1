@@ -37,8 +37,8 @@ export default function Login() {
   // If navigating after successful login, show loading state
   if (isNavigating) {
     return (
-      <div className="min-h-screen bg-[linear-gradient(135deg,_#667eea_0%,_#764ba2_100%)] flex items-center justify-center">
-        <div className="text-white text-xl">Redirecting to dashboard...</div>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center">
+        <div className="text-white text-xl font-semibold animate-pulse">Redirecting to dashboard...</div>
       </div>
     );
   }
@@ -110,190 +110,226 @@ export default function Login() {
   const passwordInputType = isFarmer ? "date" : "password";
 
   return (
-    <div
-      className="min-h-screen bg-[linear-gradient(135deg,_#667eea_0%,_#764ba2_100%)] flex items-center justify-center p-4 font-sans"
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "16px",
-        fontFamily: "'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
-      }}
-    >
-      <div className="w-full max-w-[420px]" style={{ width: "100%", maxWidth: "420px" }}>
-        {/* Header */}
-        <div className="text-center text-white mb-8">
-          <h1
-            className="text-[2.8rem] font-bold mb-[10px] drop-shadow animate-fade-in"
-            style={{ 
-              textShadow: "2px 2px 4px rgba(0,0,0,0.3)", 
-              fontSize: "2.8rem", 
-              marginBottom: "10px",
-              animation: "fadeIn 0.6s ease-out"
-            }}
-          >
-            🌾 CEM
-          </h1>
-          <p className="text-base opacity-90 tracking-wide" style={{ fontSize: "16px", opacity: 0.9 }}>
-            Chiefdom Empowerment Model
-          </p>
-        </div>
+    <div className="min-h-screen relative overflow-hidden transition-all duration-500 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute top-40 right-20 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-20 left-40 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
 
-        {/* Login Card */}
-        <div
-          className="bg-white rounded-[15px] p-[30px] shadow-[0_15px_35px_rgba(0,0,0,0.1)] border border-[rgba(255,255,255,0.2)] overflow-hidden"
-          style={{
-            background: "white",
-            borderRadius: "15px",
-            padding: "30px",
-            boxShadow: "0 15px 35px rgba(0,0,0,0.1)",
-            border: "1px solid rgba(255,255,255,0.2)",
-          }}
-        >
-          {/* Role Tabs with Labels */}
-          <div className="flex flex-col items-center mb-[30px]">
-            <div className="flex w-full mb-[20px] bg-[#f8f9fa] rounded-[10px] overflow-hidden">
-              {roles.map((role, idx) => (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => setUserType(role)}
-                  className={`flex-1 py-[15px] border-none bg-transparent cursor-pointer text-[14px] font-bold tracking-wide transition-all duration-300 flex items-center justify-center gap-2 ${
-                    userType === role
-                      ? "bg-[#007bff] text-white"
-                      : "text-gray-700 hover:bg-[rgba(0,123,255,0.1)]"
-                  } ${idx < roles.length - 1 ? 'border-r border-[#e0e0e0]' : ''}`}
-                  style={{
-                    flex: 1,
-                    padding: "15px",
-                    border: "none",
-                    background: userType === role ? "#007bff" : "transparent",
-                    color: userType === role ? "white" : "#555",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                    transition: "all 0.3s",
-                    borderRight: idx < roles.length - 1 ? "1px solid #e0e0e0" : "none",
-                  }}
-                >
-                  <span className="text-lg">{role === "admin" ? "👨‍💼" : role === "operator" ? "📋" : "👨‍🌾"}</span>
-                  <span className="hidden sm:inline">{role.charAt(0).toUpperCase() + role.slice(1)}</span>
-                </button>
-              ))}
+      {/* Main Content */}
+      <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
+        <div className="w-full max-w-md">
+          {/* Header with 3D Effect */}
+          <div className="text-center mb-8 animate-float perspective-1000">
+            <div className="inline-block p-6 rounded-3xl mb-4 transform transition-all duration-500 hover:rotate-y-12 preserve-3d bg-gradient-to-br from-white to-gray-100 shadow-[0_20px_50px_rgba(99,102,241,0.4),0_0_0_1px_rgba(255,255,255,0.5)] hover:shadow-[0_30px_60px_rgba(99,102,241,0.5)]" style={{ transform: 'translateZ(50px)' }}>
+              <h1 className="text-6xl font-bold text-purple-600" style={{ textShadow: '0 4px 8px rgba(139,92,246,0.3)' }}>
+                🌾
+              </h1>
             </div>
-            {/* Labels under buttons */}
-            <div className="flex w-full justify-between text-xs text-gray-600 px-2">
-              <span className="flex-1 text-center">Admin</span>
-              <span className="flex-1 text-center">Operator</span>
-              <span className="flex-1 text-center">Farmer</span>
-            </div>
+            <h1 className="text-4xl font-bold mb-2 text-white" style={{ textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)' }}>
+              CEM Platform
+            </h1>
+            <p className="text-lg text-white/90 font-medium" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
+              Chiefdom Empowerment Model
+            </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-[20px] mt-2">
-            {/* Username Field */}
-            <div>
-              <label className="block mb-2 font-semibold text-gray-800 text-sm tracking-wide">{usernameLabel}</label>
-              <input
-                type={usernameInputType}
-                placeholder={usernamePlaceholder}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete={isFarmer ? "off" : "email"}
-                className="w-full px-[15px] py-[12px] border-2 border-[#e0e0e0] rounded-[8px] text-base font-sans transition-all duration-300 bg-white focus:outline-none focus:border-[#007bff] focus:shadow-[0_0_0_3px_rgba(0,123,255,0.1)]"
-                style={{
-                  width: "100%",
-                  padding: "12px 15px",
-                  border: "2px solid #e0e0e0",
-                  borderRadius: "8px",
-                  fontSize: "16px",
-                  transition: "all 0.3s",
-                  background: "white",
-                  boxSizing: "border-box",
-                }}
-              />
+          {/* Login Card with Enhanced 3D Effect */}
+          <div className="backdrop-blur-xl rounded-3xl p-8 border transition-all duration-500 transform preserve-3d bg-white/90 border-white/50 shadow-[0_25px_50px_-12px_rgba(99,102,241,0.4),0_0_0_1px_rgba(255,255,255,0.5),inset_0_1px_0_0_rgba(255,255,255,0.8)] hover:shadow-[0_30px_60px_-15px_rgba(99,102,241,0.5)]" style={{ transformStyle: 'preserve-3d', transform: 'translateZ(0)' }}>
+            {/* Role Tabs */}
+            <div className="mb-8">
+              <div className="flex rounded-2xl p-1.5 bg-gray-100" style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}>
+                {roles.map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => setUserType(role)}
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all duration-300 transform ${
+                      userType === role
+                        ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-[0_8px_16px_rgba(99,102,241,0.4),0_4px_6px_rgba(99,102,241,0.3)] scale-105 translate-y-[-2px]'
+                        : 'text-gray-700 hover:bg-gray-200 hover:translate-y-[-1px] hover:shadow-md'
+                    }`}
+                    style={{ 
+                      transformStyle: 'preserve-3d',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-2xl" style={{ 
+                        filter: userType === role ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' : 'none',
+                        transform: 'translateZ(10px)'
+                      }}>
+                        {role === "admin" ? "👨‍💼" : role === "operator" ? "📋" : "👨‍🌾"}
+                      </span>
+                      <span className="text-xs">{role.charAt(0).toUpperCase() + role.slice(1)}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Password Field */}
-            <div>
-              <label className="block mb-2 font-semibold text-gray-800 text-sm tracking-wide">{passwordLabel}</label>
-              <input
-                type={passwordInputType}
-                placeholder={passwordPlaceholder}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete={isFarmer ? "off" : "current-password"}
-                className="w-full px-[15px] py-[12px] border-2 border-[#e0e0e0] rounded-[8px] text-base font-sans transition-all duration-300 bg-white focus:outline-none focus:border-[#007bff] focus:shadow-[0_0_0_3px_rgba(0,123,255,0.1)]"
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Username Field */}
+              <div>
+                <label className="block mb-2 font-semibold text-sm text-gray-700">
+                  {usernameLabel}
+                </label>
+                <div className="relative group">
+                  <input
+                    type={usernameInputType}
+                    placeholder={usernamePlaceholder}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete={isFarmer ? "off" : "email"}
+                    className="w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.3),0_8px_16px_rgba(99,102,241,0.2)] focus:translate-y-[-2px]"
+                    style={{
+                      transformStyle: 'preserve-3d',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8)'
+                    }}
+                  />
+                  <div className="absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-300 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100"></div>
+                </div>
+              </div>
+
+              {/* Password Field */}
+              <div>
+                <label className="block mb-2 font-semibold text-sm text-gray-700">
+                  {passwordLabel}
+                </label>
+                <div className="relative group">
+                  <input
+                    type={passwordInputType}
+                    placeholder={passwordPlaceholder}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete={isFarmer ? "off" : "current-password"}
+                    className="w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.3),0_8px_16px_rgba(99,102,241,0.2)] focus:translate-y-[-2px]"
+                    style={{
+                      transformStyle: 'preserve-3d',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8)'
+                    }}
+                  />
+                  <div className="absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-300 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100"></div>
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="px-4 py-3 rounded-xl border-l-4 animate-shake bg-red-50 text-red-700 border-red-500">
+                  {error}
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                onMouseEnter={() => setHoveredButton(true)}
+                onMouseLeave={() => setHoveredButton(false)}
+                className={`w-full py-4 px-6 rounded-xl font-bold text-base transition-all duration-300 transform flex items-center justify-center gap-3 relative overflow-hidden ${
+                  isLoading
+                    ? 'bg-gray-400 cursor-not-allowed text-white'
+                    : 'bg-gradient-to-br from-indigo-600 via-indigo-500 to-purple-600 text-white hover:scale-[1.02] hover:translate-y-[-4px] active:scale-[0.98] active:translate-y-[0px]'
+                } ${isLoading ? 'animate-pulse' : ''}`}
                 style={{
-                  width: "100%",
-                  padding: "12px 15px",
-                  border: "2px solid #e0e0e0",
-                  borderRadius: "8px",
-                  fontSize: "16px",
-                  transition: "all 0.3s",
-                  background: "white",
-                  boxSizing: "border-box",
+                  transformStyle: 'preserve-3d',
+                  boxShadow: isLoading 
+                    ? 'none'
+                    : hoveredButton
+                    ? '0 20px 30px rgba(99,102,241,0.5), 0 10px 20px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.3)'
+                    : '0 10px 20px rgba(99,102,241,0.4), 0 5px 10px rgba(99,102,241,0.2), inset 0 1px 0 rgba(255,255,255,0.3)'
                 }}
-              />
+              >
+                {/* Shine effect on hover */}
+                <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform translate-x-[-100%] transition-transform duration-700 ${hoveredButton && !isLoading ? 'translate-x-[100%]' : ''}`}></div>
+                
+                <span className="text-2xl relative z-10" style={{ 
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                  transform: 'translateZ(10px)'
+                }}>
+                  {userType === "admin" ? "🚀" : userType === "operator" ? "📋" : "👨‍🌾"}
+                </span>
+                <span className="relative z-10">{isLoading ? "Logging in..." : `Login as ${userType.charAt(0).toUpperCase() + userType.slice(1)}`}</span>
+              </button>
+            </form>
+
+            {/* Footer */}
+            <div className="mt-6 text-center text-sm text-gray-600">
+              <p>Secure Agricultural Management System</p>
             </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 text-red-700 px-4 py-3 rounded-[8px] text-sm border-l-4 border-red-500">{error}</div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              onMouseEnter={() => setHoveredButton(true)}
-              onMouseLeave={() => setHoveredButton(false)}
-              className={`w-full py-[12px] px-[20px] border-none rounded-[8px] font-bold font-sans transition-all duration-300 flex items-center justify-center gap-2 text-base shadow hover:-translate-y-[2px] hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] tracking-wide ${
-                isLoading
-                  ? "bg-gray-400 cursor-not-allowed text-white animate-pulse"
-                  : hoveredButton
-                  ? "bg-[#0056b3] text-white"
-                  : "bg-[#007bff] text-white"
-              }`}
-              style={{
-                width: "100%",
-                padding: "12px 20px",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: 700,
-                cursor: isLoading ? "not-allowed" : "pointer",
-                background: isLoading ? "#9ca3af" : hoveredButton ? "#0056b3" : "#007bff",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                boxSizing: "border-box",
-                transition: "all 0.3s",
-                transform: hoveredButton && !isLoading ? "translateY(-2px)" : "translateY(0)",
-                boxShadow: hoveredButton && !isLoading ? "0 4px 12px rgba(0,0,0,0.15)" : "none"
-              }}
-            >
-              <span className="text-xl">{userType === "admin" ? "🚀" : userType === "operator" ? "📋" : "👨‍🌾"}</span>
-              <span>{isLoading ? "Logging in..." : `Login as ${userType.charAt(0).toUpperCase() + userType.slice(1)}`}</span>
-            </button>
-          </form>
+          </div>
         </div>
       </div>
 
+      {/* Enhanced Animations */}
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes blob {
+          0%, 100% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotateX(0deg); }
+          50% { transform: translateY(-10px) rotateX(5deg); }
+        }
+
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+          20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+
+        .animate-shake {
+          animation: shake 0.5s;
+        }
+
+        .perspective-1000 {
+          perspective: 1000px;
+        }
+
+        .preserve-3d {
+          transform-style: preserve-3d;
+        }
+
+        .rotate-y-12:hover {
+          transform: rotateY(12deg) rotateX(-5deg) translateZ(50px);
+        }
+
+        /* Enhanced depth with multiple shadows */
+        .depth-shadow {
+          box-shadow: 
+            0 1px 2px rgba(0,0,0,0.1),
+            0 2px 4px rgba(0,0,0,0.1),
+            0 4px 8px rgba(0,0,0,0.1),
+            0 8px 16px rgba(0,0,0,0.1),
+            0 16px 32px rgba(0,0,0,0.1);
+        }
+
+        /* Smooth cubic-bezier for natural motion */
+        * {
+          transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         }
       `}</style>
     </div>
