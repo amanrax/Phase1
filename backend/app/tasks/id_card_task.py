@@ -76,16 +76,16 @@ def generate_id_card(farmer_id: str):
         c.setFillColor(colors.HexColor('#14532d'))
         c.rect(0, CARD_HEIGHT - 15*mm, CARD_WIDTH, 15*mm, fill=1, stroke=0)
         
-        # Title
+        # Left side - Organization info
         c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(5*mm, CARD_HEIGHT - 7*mm, "REPUBLIC OF ZAMBIA")
-        c.setFont("Helvetica", 7)
-        c.drawString(5*mm, CARD_HEIGHT - 11*mm, "Ministry of Agriculture")
+        c.setFont("Helvetica-Bold", 7)
+        c.drawString(5*mm, CARD_HEIGHT - 7*mm, "CHIEFDOM ENTERPRISE")
+        c.setFont("Helvetica", 6)
+        c.drawString(5*mm, CARD_HEIGHT - 11*mm, "MWasree Enterprises Ltd")
         
-        # Brand text (right side)
-        c.setFont("Helvetica-Bold", 12)
-        c.drawRightString(CARD_WIDTH - 5*mm, CARD_HEIGHT - 7*mm, "Chiefdom Model")
+        # Right side - Program branding
+        c.setFont("Helvetica-Bold", 11)
+        c.drawRightString(CARD_WIDTH - 5*mm, CARD_HEIGHT - 7*mm, "CEM")
         c.setFont("Helvetica", 6)
         c.drawRightString(CARD_WIDTH - 5*mm, CARD_HEIGHT - 11*mm, "Farmer ID Card")
         
@@ -277,7 +277,7 @@ def generate_id_card(farmer_id: str):
         c.drawString(info_x + 2*mm, current_y + operator_h - 5.5*mm, f"Created by: {operator_display[:16]}")
         c.setFont("Helvetica", 4.5)
         c.setFillColor(colors.HexColor('#6b7280'))
-        c.drawString(info_x + 2*mm, current_y + 1.5*mm, "Ministry of Agriculture, Zambia")        # Bottom verification & issued date bar (moved from front side)
+        c.drawString(info_x + 2*mm, current_y + 1.5*mm, "MWasree Enterprises Ltd, Zambia")        # Bottom verification & issued date bar (moved from front side)
         issued_date = farmer.get('created_at', datetime.utcnow())
         if isinstance(issued_date, str):
             try:

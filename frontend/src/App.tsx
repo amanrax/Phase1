@@ -1,6 +1,6 @@
 // src/App.tsx
 import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RoleRoute } from "@/components/RoleRoute";
@@ -48,7 +48,7 @@ function App() {
   };
   return (
     <NotificationProvider>
-      <BrowserRouter>
+      <HashRouter>
         <SessionTimeout />
         <ToastContainer />
         <Routes>
@@ -238,7 +238,7 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
     </NotificationProvider>
   );
 }

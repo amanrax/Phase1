@@ -144,13 +144,13 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
                     justifyContent: 'space-between'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '24px' }}>🇿🇲</span>
+                      <span style={{ fontSize: '24px' }}>🌾</span>
                       <div>
                         <p style={{ color: 'white', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                          Republic of Zambia
+                          Chiefdom Enterprise Program
                         </p>
                         <p style={{ color: '#bbf7d0', fontSize: '9px', fontWeight: '600', margin: 0 }}>
-                          Chiefdom Empowerment Model (CEM)
+                          MWasree Enterprises Limited
                         </p>
                       </div>
                     </div>
@@ -360,7 +360,7 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
                             <strong>Created by:</strong> {farmer.created_by || "N/A"}
                           </p>
                           <p style={{ margin: '3px 0', fontSize: '8px', color: '#6b7280' }}>
-                            Chiefdom Empowerment Model (CEM)
+                            MWasree Enterprises Ltd, Zambia
                           </p>
                         </div>
                       </div>
