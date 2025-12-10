@@ -1,0 +1,88 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                    QUICK APK BUILD & TEST GUIDE                          ║
+║                        December 9, 2025                                   ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+🎯 THE FIX WE MADE:
+  Before: Login click → Dashboard doesn't load (BrowserRouter broken)
+  After:  Login click → Dashboard loads (HashRouter works) ✅
+
+📝 STEP-BY-STEP BUILD:
+
+  1. Open Android Studio
+     $ npx cap open android
+     
+  2. In Android Studio:
+     Build → Build → Build APK (Debug)
+     Wait 2-3 minutes...
+     
+  3. APK Location:
+     frontend/android/app/build/outputs/apk/debug/app-debug.apk
+
+📱 STEP-BY-STEP TESTING:
+
+  1. Enable USB Debugging on Phone
+     Settings → Developer Options → USB Debugging (ON)
+     
+  2. Connect Phone via USB
+  
+  3. Install APK
+     $ adb install app-debug.apk
+     
+  4. Launch App
+     Tap app icon on phone
+     OR: adb shell am start -n zm.gov.agri.cem/.MainActivity
+
+✅ TEST LOGIN:
+
+  1. Enter Credentials:
+     Email: admin@ziamis.mwasree.zm
+     Password: Admin@2024
+     
+  2. Click "Login"
+  
+  3. You should see:
+     Loading animation (briefly)
+     ↓
+     Dashboard appears with stats ✅
+     
+  4. NOT see:
+     Login page staying visible ❌
+
+✨ SUCCESS LOOKS LIKE:
+  ✅ Dashboard appears after login
+  ✅ Can see farmer stats
+  ✅ Sidebar menu visible
+  ✅ Can click menu items
+  ✅ Everything works on mobile screen
+
+🐛 IF LOGIN PAGE STAYS:
+  $ adb shell pm clear zm.gov.agri.cem
+  $ adb install -r app-debug.apk
+  Try again
+
+📊 WHAT CHANGED IN CODE:
+  File: frontend/src/App.tsx
+  
+  Before: import { BrowserRouter, ... }
+          <BrowserRouter>
+          
+  After:  import { HashRouter, ... }
+          <HashRouter>
+          
+  Why? BrowserRouter uses History API (broken on file:// protocol)
+       HashRouter uses URL hashes (#/path) - works everywhere
+
+🔍 VERIFY FIX:
+  $ grep -n "HashRouter" frontend/src/App.tsx
+  Should show: HashRouter imported and used
+
+📞 HELP:
+  Check logs: adb logcat | grep -i error
+  View guide: APK_BUILD_AND_TEST.md
+  Backend test: curl http://localhost:8000/api/health
+
+═══════════════════════════════════════════════════════════════════════════
+
+Ready? Start with Android Studio! ↑
+

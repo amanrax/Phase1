@@ -1,0 +1,23 @@
+# Fly.io configuration
+app = "ziamis-backend"
+primary_region = "jnb"
+
+[build]
+  image = "amanrax/ziamis:latest"
+
+[env]
+  ENVIRONMENT = "production"
+  CORS_ORIGINS = "*"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8000
+  processes = ["app"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls"]
+  
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
