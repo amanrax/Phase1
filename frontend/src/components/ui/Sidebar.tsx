@@ -48,9 +48,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ navGroups, onClose }) => {
     <div className="w-64 h-screen bg-gradient-to-b from-gray-900 to-gray-800 flex flex-col shadow-2xl">
       {/* Logo Area */}
       <div className="bg-gradient-to-r from-purple-700 to-blue-600 h-16 flex items-center justify-center border-b border-purple-800 shadow-lg flex-shrink-0">
-        <div className="text-center">
-          <i className="fa-solid fa-wheat-awn text-white text-2xl drop-shadow-lg"></i>
-          <h1 className="text-white font-bold text-lg mt-1 drop-shadow-lg">CMM</h1>
+        <div className="text-center flex items-center gap-2">
+          <img src="/cem-logo.svg" alt="CEM Logo" className="w-10 h-10 drop-shadow-lg" />
+          <div>
+            <h1 className="text-white font-bold text-sm drop-shadow-lg">CEM</h1>
+            <p className="text-xs text-gray-200">Platform</p>
+          </div>
         </div>
       </div>
 

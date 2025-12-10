@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Outer rounded square background -->
+  <rect width="200" height="200" rx="45" fill="#f5f7fa" />
+  
+  <!-- Left green leaf -->
+  <path d="M 70 65 Q 50 75 55 105 Q 60 130 85 125 Q 80 100 75 75 Q 72 70 70 65" fill="#66BB6A" />
+  
+  <!-- Left leaf vein/shadow -->
+  <path d="M 70 80 Q 68 95 72 110" stroke="#2E7D32" stroke-width="2.5" fill="none" stroke-linecap="round" />
+  
+  <!-- Right blue section with chart line -->
+  <ellipse cx="135" cy="100" rx="40" ry="50" fill="#1E88E5" />
+  
+  <!-- Chart/growth line on blue section -->
+  <polyline points="110,130 120,110 130,120 140,95 155,115" 
+            stroke="white" stroke-width="4" fill="none" 
+            stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+  
+  <!-- CEM Text -->
+  <text x="100" y="50" font-family="Arial, Helvetica, sans-serif" font-size="36" 
+        font-weight="bold" text-anchor="middle" fill="#0D47A1">CEM</text>
+  
+  <!-- Optional: subtle glow effect -->
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+</svg>

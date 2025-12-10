@@ -123,10 +123,8 @@ export default function Login() {
         <div className="w-full max-w-md">
           {/* Header with 3D Effect */}
           <div className="text-center mb-8 animate-float perspective-1000">
-            <div className="inline-block p-6 rounded-3xl mb-4 transform transition-all duration-500 hover:rotate-y-12 preserve-3d bg-gradient-to-br from-white to-gray-100 shadow-[0_20px_50px_rgba(99,102,241,0.4),0_0_0_1px_rgba(255,255,255,0.5)] hover:shadow-[0_30px_60px_rgba(99,102,241,0.5)]" style={{ transform: 'translateZ(50px)' }}>
-              <h1 className="text-6xl font-bold text-purple-600" style={{ textShadow: '0 4px 8px rgba(139,92,246,0.3)' }}>
-                🌾
-              </h1>
+            <div className="inline-block p-4 rounded-3xl mb-4 transform transition-all duration-500 hover:rotate-y-12 preserve-3d bg-gradient-to-br from-white to-gray-100 shadow-[0_20px_50px_rgba(99,102,241,0.4),0_0_0_1px_rgba(255,255,255,0.5)] hover:shadow-[0_30px_60px_rgba(99,102,241,0.5)]" style={{ transform: 'translateZ(50px)' }}>
+              <img src="/cem-logo.svg" alt="CEM Logo" className="w-24 h-24 mx-auto" />
             </div>
             <h1 className="text-4xl font-bold mb-2 text-white" style={{ textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)' }}>
               CEM Platform
