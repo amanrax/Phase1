@@ -90,6 +90,8 @@ def serialize_geo_doc(doc: dict, exclude_id: bool = True) -> dict:
     Returns:
         dict: Serialized document
     """
+    import math
+    
     if not doc:
         return None
     
@@ -101,6 +103,9 @@ def serialize_geo_doc(doc: dict, exclude_id: bool = True) -> dict:
         # Handle ObjectId
         if hasattr(value, '__class__') and value.__class__.__name__ == 'ObjectId':
             result[key] = str(value)
+        # Handle NaN and Inf values (convert to None for JSON compliance)
+        elif isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+            result[key] = None
         else:
             result[key] = value
     
@@ -154,6 +159,10 @@ async def list_provinces(
         if not provinces:
             logger.warning("No provinces found in database")
             return []
+        
+        # DEBUG: Log first province structure
+        if provinces:
+            logger.info(f"First province keys: {list(provinces[0].keys())}")
         
         # Serialize and return
         result = [serialize_geo_doc(p) for p in provinces]
@@ -523,27 +532,38 @@ async def get_geo_hierarchy(
         districts = await db.districts.find({}).sort("district_name", 1).to_list(500)
         chiefdoms = await db.chiefdoms.find({}).sort("chiefdom_name", 1).to_list(2000)
         
+        logger.info(f"Building hierarchy from {len(provinces)} provinces, {len(districts)} districts, {len(chiefdoms)} chiefdoms")
+        
         # Build hierarchy
         hierarchy = []
         
         for province in provinces:
-            province_code = province["province_code"]
+            # Use province_id field from MongoDB (will be mapped to province_code by serialize)
+            province_id = province.get("province_id")
+            
+            if not province_id:
+                logger.warning(f"Province {province.get('province_name')} has no province_id")
+                continue  # Skip if no identifier
             
             # Get districts for this province
             province_districts = [
                 d for d in districts 
-                if d.get("province_code") == province_code
+                if d.get("province_id") == province_id
             ]
             
             # For each district, get chiefdoms
             districts_with_chiefdoms = []
             for district in province_districts:
-                district_code = district["district_code"]
+                # Use district_id field from MongoDB
+                district_id = district.get("district_id")
+                
+                if not district_id:
+                    continue  # Skip if no identifier
                 
                 district_chiefdoms = [
                     serialize_geo_doc(c)
                     for c in chiefdoms
-                    if c.get("district_code", "").upper() == district_code.upper()
+                    if c.get("district_id", "").upper() == district_id.upper()
                 ]
                 
                 # Normalize chiefdom names

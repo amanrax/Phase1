@@ -193,6 +193,25 @@ export const farmerService = {
     const baseURL = api.defaults.baseURL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
     return `${baseURL}/farmers/${farmerId}/qr`;
   },
+
+  /**
+   * Deactivate a farmer (set is_active to false).
+   * Backend: PUT /api/farmers/{farmer_id}
+   */
+  async deactivateFarmer(farmerId: string): Promise<any> {
+    const { data } = await api.put(`/farmers/${farmerId}`, { is_active: false });
+    return data;
+  },
+
+  /**
+   * Activate a farmer (set is_active to true).
+   * Backend: PUT /api/farmers/{farmer_id}
+   */
+  async activateFarmer(farmerId: string): Promise<any> {
+    const { data } = await api.put(`/farmers/${farmerId}`, { is_active: true });
+    return data;
+  },
 };
 
 export default farmerService;
+

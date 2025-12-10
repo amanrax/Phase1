@@ -18,8 +18,6 @@ services:
         condition: service_healthy
     env_file:
       - ./backend/.env
-    environment:
-      - FRONTEND_ORIGIN=https://frightening-gravestone-jr47wg46pv6295j-5173.app.github.dev
     volumes:
       - ./backend:/app
       - ./uploads:/app/uploads
@@ -33,15 +31,13 @@ services:
   # ===============================
   # ⚙️ CELERY WORKER
   # ===============================
-  farmer-worker:
+  celery-worker:
     build:
       context: ./backend
-    container_name: farmer-worker
+    container_name: celery-worker
     command: >
       sh -c "celery -A app.tasks.celery_app.celery_app worker --loglevel=info"
     depends_on:
-      #farmer-mongo:
-        #condition: service_healthy
       farmer-redis:
         condition: service_healthy
     env_file:
@@ -106,7 +102,7 @@ services:
       - farmer-backend
     environment:
       # Use HTTPS backend URL for Codespaces
-      - VITE_API_BASE_URL=https://frightening-gravestone-jr47wg46pv6295j-8000.app.github.dev
+      - VITE_API_BASE_URL=https://animated-cod-9grvj4gpw77f7xww-8000.app.github.dev
     volumes:
       - ./frontend:/app
       - /app/node_modules

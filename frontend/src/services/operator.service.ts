@@ -19,8 +19,8 @@ export const operatorService = {
       full_name: `${operatorData.first_name} ${operatorData.last_name}`.trim(),
       phone: operatorData.phone,
       role: operatorData.role || "OPERATOR",
-      assigned_district: operatorData.assigned_district || undefined,
-      assigned_province: operatorData.assigned_province || undefined,
+      assigned_districts: operatorData.assigned_districts || [],
+      assigned_regions: operatorData.assigned_regions || [],
     };
 
     const response = await api.post("/operators/", payload);
@@ -28,7 +28,25 @@ export const operatorService = {
   },
 
   async update(operatorId: string, operatorData: any): Promise<any> {
-    const response = await api.put(`/operators/${operatorId}`, operatorData);
+    // Transform payload to match backend schema
+    const payload: any = {};
+    
+    if (operatorData.full_name !== undefined) payload.full_name = operatorData.full_name;
+    if (operatorData.phone !== undefined) payload.phone = operatorData.phone;
+    if (operatorData.is_active !== undefined) payload.is_active = operatorData.is_active;
+    
+    // Backend expects assigned_districts (array), not assigned_district (string)
+    if (operatorData.assigned_district !== undefined) {
+      payload.assigned_districts = operatorData.assigned_district ? [operatorData.assigned_district] : [];
+    } else if (operatorData.assigned_districts !== undefined) {
+      payload.assigned_districts = operatorData.assigned_districts;
+    }
+    
+    if (operatorData.assigned_regions !== undefined) {
+      payload.assigned_regions = operatorData.assigned_regions;
+    }
+    
+    const response = await api.put(`/operators/${operatorId}`, payload);
     return response.data;
   },
 

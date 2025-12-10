@@ -35,10 +35,43 @@ from app.utils.security import (
     validate_password_strength
 )
 from app.dependencies.roles import get_current_user, require_admin
+from app.services.logging_service import log_event, sanitize_body
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+
+# ==============================
+# Helper Functions
+# ==============================
+def normalize_date(date_str: str) -> str:
+    """
+    Normalize date to YYYY-MM-DD format.
+    Accepts: YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY, YYYY/MM/DD
+    Returns: YYYY-MM-DD
+    """
+    if not date_str or not isinstance(date_str, str):
+        return date_str
+    
+    date_str = date_str.strip()
+    
+    # Try to parse different formats
+    formats = [
+        "%Y-%m-%d",  # YYYY-MM-DD
+        "%d-%m-%Y",  # DD-MM-YYYY
+        "%d/%m/%Y",  # DD/MM/YYYY
+        "%Y/%m/%d",  # YYYY/MM/DD
+    ]
+    
+    for fmt in formats:
+        try:
+            parsed_date = datetime.strptime(date_str, fmt)
+            return parsed_date.strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    
+    # If no format matched, return as-is
+    return date_str
 
 
 # ==============================
@@ -54,7 +87,14 @@ async def login(
     credentials: LoginRequest,
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    print(credentials)
+    # Structured logging: login attempt
+    await log_event(
+        level="INFO",
+        module="auth",
+        action="login_attempt",
+        details=sanitize_body({"email": credentials.email}),
+        endpoint="/api/auth/login",
+    )
     """
     Login endpoint - returns JWT tokens and user information.
     
@@ -99,16 +139,53 @@ async def login(
             )
         
         if not farmer_doc.get("is_active", True):
+            await log_event(
+                level="WARNING",
+                module="auth",
+                action="login_blocked",
+                details={"reason": "farmer_inactive", "nrc": login_identifier},
+                endpoint="/api/auth/login",
+                user_id=str(farmer_doc.get("_id")),
+                role="FARMER",
+            )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Account is disabled. Contact administrator.",
             )
             
         # Verify password against date of birth
-        if credentials.password != farmer_doc.get("personal_info", {}).get("date_of_birth"):
+        stored_dob = farmer_doc.get("personal_info", {}).get("date_of_birth")
+        entered_dob = normalize_date(credentials.password)
+        stored_dob_normalized = normalize_date(stored_dob)
+        
+        if entered_dob != stored_dob_normalized:
+            await log_event(
+                level="WARNING",
+                module="auth",
+                action="login_failed",
+                details={"reason": "dob_mismatch", "nrc": login_identifier},
+                endpoint="/api/auth/login",
+                role="FARMER",
+            )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid NRC or date of birth",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Validate role if specified
+        if credentials.role and credentials.role.lower() != "farmer":
+            await log_event(
+                level="WARNING",
+                module="auth",
+                action="login_failed",
+                details={"reason": "role_mismatch", "nrc": login_identifier, "expected_role": credentials.role, "actual_role": "FARMER"},
+                endpoint="/api/auth/login",
+                role="FARMER",
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid credentials for {credentials.role} login",
                 headers={"WWW-Authenticate": "Bearer"},
             )
             
@@ -129,8 +206,18 @@ async def login(
             farmer_id=farmer_id
         )
 
+        await log_event(
+            level="INFO",
+            module="auth",
+            action="login_success",
+            details={"role": "FARMER", "farmer_id": farmer_id},
+            endpoint="/api/auth/login",
+            user_id=str(farmer_doc.get("_id")),
+            role="FARMER",
+        )
         return LoginResponse(
             access_token=access_token,
+            refresh_token=refresh_token,
             token_type="bearer",
             expires_in=get_token_expiry_seconds("access"),
             user=user_out
@@ -155,12 +242,40 @@ async def login(
             )
         
         if not user_doc.get("is_active", True):
+            await log_event(
+                level="WARNING",
+                module="auth",
+                action="login_blocked",
+                details={"reason": "user_inactive", "email": login_identifier},
+                endpoint="/api/auth/login",
+                user_id=str(user_doc.get("_id")),
+                role=",".join(user_doc.get("roles", [])) if user_doc.get("roles") else None,
+            )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Account is disabled. Contact administrator.",
             )
-            
+        
+        # Validate role if specified
         user_roles = user_doc.get("roles", [])
+        if credentials.role:
+            expected_role = credentials.role.upper()
+            if expected_role not in user_roles:
+                await log_event(
+                    level="WARNING",
+                    module="auth",
+                    action="login_failed",
+                    details={"reason": "role_mismatch", "email": login_identifier, "expected_role": expected_role, "actual_roles": user_roles},
+                    endpoint="/api/auth/login",
+                    user_id=str(user_doc.get("_id")),
+                    role=",".join(user_roles) if user_roles else None,
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"Invalid credentials for {credentials.role} login",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            
         access_token = create_access_token(login_identifier, roles=user_roles)
         refresh_token = create_refresh_token(login_identifier)
         
@@ -172,8 +287,18 @@ async def login(
         
         user_out = UserOut.from_mongo(user_doc)
         
+        await log_event(
+            level="INFO",
+            module="auth",
+            action="login_success",
+            details={"roles": user_roles, "email": login_identifier},
+            endpoint="/api/auth/login",
+            user_id=str(user_doc.get("_id")),
+            role=",".join(user_roles) if user_roles else None,
+        )
         return LoginResponse(
             access_token=access_token,
+            refresh_token=refresh_token,
             token_type="bearer",
             expires_in=get_token_expiry_seconds("access"),
             user=user_out
@@ -233,12 +358,19 @@ async def register_user(
     # Hash password
     password_hash = hash_password(user_data.password)
     
-    # Create user document
+    # Create user document - handle both UserRole enum and string values
+    roles_list = []
+    for role in user_data.roles:
+        if isinstance(role, str):
+            roles_list.append(role)
+        else:
+            roles_list.append(role.value)
+    
     now = datetime.now(timezone.utc)
     user_doc = {
         "email": email,
         "password_hash": password_hash,
-        "roles": [role.value for role in user_data.roles],
+        "roles": roles_list,
         "is_active": True,
         "created_at": now,
         "updated_at": now,

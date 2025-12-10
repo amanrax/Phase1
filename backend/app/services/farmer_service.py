@@ -212,15 +212,27 @@ class FarmerService:
         if status:
             query["registration_status"] = status
         
-        # If allowed_districts is provided, filter by those districts
+        # Handle allowed_districts and created_by as OR conditions
+        # Operator can see: farmers in their assigned districts OR farmers they created
+        or_conditions = []
+        
         if allowed_districts:
-            query["address.district_name"] = {"$in": allowed_districts}
-        elif district:
-            # Only apply single district filter if allowed_districts not specified
-            query["address.district_name"] = district
+            or_conditions.append({"address.district_name": {"$in": allowed_districts}})
         
         if created_by:
-            query["created_by"] = created_by
+            or_conditions.append({"created_by": created_by})
+        
+        # If we have OR conditions, add them to query
+        if or_conditions:
+            if len(or_conditions) == 1:
+                # Only one condition, don't use $or
+                query.update(or_conditions[0])
+            else:
+                # Both district and created_by, use $or
+                query["$or"] = or_conditions
+        elif district:
+            # No allowed_districts or created_by, apply single district filter
+            query["address.district_name"] = district
         
         # Exact farmer_id match takes precedence over search
         if farmer_id_exact:
@@ -228,8 +240,8 @@ class FarmerService:
         # NRC exact (hashed) match takes precedence if farmer_id_exact not provided
         elif nrc:
             query["nrc_hash"] = hmac_hash(nrc, salt="nrc")
-        elif search:
-            # Text search across multiple fields
+        elif search and "$or" not in query:
+            # Text search across multiple fields (only if $or not already in query)
             query["$or"] = [
                 {"farmer_id": {"$regex": search, "$options": "i"}},
                 {"personal_info.first_name": {"$regex": search, "$options": "i"}},
@@ -354,6 +366,15 @@ class FarmerService:
         
         if not update_dict:
             return FarmerOut.from_mongo(existing)
+        
+        # Merge nested updates with existing data to preserve fields not being updated
+        for nested_key in ['personal_info', 'address', 'farm_info', 'household_info']:
+            if nested_key in update_dict and isinstance(update_dict[nested_key], dict):
+                # Merge with existing nested object
+                existing_nested = existing.get(nested_key, {})
+                if isinstance(existing_nested, dict):
+                    # Update only the fields provided, keep the rest
+                    update_dict[nested_key] = {**existing_nested, **update_dict[nested_key]}
         
         # Add updated timestamp
         now = datetime.now(datetime.timezone.utc) if hasattr(datetime, 'timezone') else datetime.utcnow()

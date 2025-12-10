@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { operatorService } from "@/services/operator.service";
 import geoService from "@/services/geo.service";
+import { useNotification } from '@/contexts/NotificationContext';
 
 const getErrorMessage = (err: unknown): string => {
   if (typeof err === "object" && err !== null) {
@@ -41,6 +42,14 @@ export default function OperatorEdit() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Custom inputs for Others option
+  const [customProvince, setCustomProvince] = useState("");
+  const [customDistrict, setCustomDistrict] = useState("");
+  const [showCustomProvince, setShowCustomProvince] = useState(false);
+  const [showCustomDistrict, setShowCustomDistrict] = useState(false);
+  
+  const { success: showSuccess, error: showError } = useNotification();
 
   useEffect(() => {
     loadProvinces();
@@ -72,11 +81,13 @@ export default function OperatorEdit() {
     try {
       setLoading(true);
       const op = await operatorService.getOperator(operatorId!);
+      // Backend returns assigned_districts (array), we use first element
+      const district = op.assigned_districts?.[0] || op.assigned_district || "";
       setFormData({
         full_name: op.full_name || "",
         email: op.email || "",
         phone: op.phone || "",
-        assigned_district: op.assigned_district || "",
+        assigned_district: district,
         is_active: op.is_active ?? true,
       });
     } catch (err: unknown) {
@@ -87,6 +98,17 @@ export default function OperatorEdit() {
   };
 
   const handleProvinceChange = async (provinceCode: string) => {
+    if (provinceCode === 'OTHER') {
+      setShowCustomProvince(true);
+      setShowCustomDistrict(false);
+      setSelectedProvince("");
+      setFormData(prev => ({ ...prev, assigned_district: "" }));
+      setDistricts([]);
+      return;
+    }
+    
+    setShowCustomProvince(false);
+    setCustomProvince("");
     setSelectedProvince(provinceCode);
     setFormData(prev => ({ ...prev, assigned_district: "" }));
     if (provinceCode) {
@@ -95,22 +117,64 @@ export default function OperatorEdit() {
       setDistricts([]);
     }
   };
+  
+  const handleDistrictChange = (districtName: string) => {
+    if (districtName === 'OTHER') {
+      setShowCustomDistrict(true);
+      setFormData(prev => ({ ...prev, assigned_district: "" }));
+      return;
+    }
+    
+    setShowCustomDistrict(false);
+    setCustomDistrict("");
+    setFormData(prev => ({ ...prev, assigned_district: districtName }));
+  };
 
   const handleSave = async () => {
     if (!operatorId) return;
 
     if (!formData.full_name.trim() || !formData.email.trim()) {
-      alert("Please fill in all required fields");
+      showError("Please fill in all required fields");
       return;
     }
 
     try {
       setSaving(true);
+      
+      // Handle custom province creation
+      if (showCustomProvince && customProvince.trim()) {
+        const newProvince = await geoService.createCustomProvince(customProvince.trim());
+        showSuccess(`Custom province "${newProvince.name}" created successfully!`);
+        
+        // Reload provinces
+        const allProvinces = await geoService.provinces();
+        setProvinces(allProvinces);
+        setSelectedProvince(newProvince.code);
+        
+        // Load districts for the new province
+        await loadDistricts(newProvince.code);
+      }
+      
+      // Handle custom district creation
+      if (showCustomDistrict && customDistrict.trim() && selectedProvince) {
+        const newDistrict = await geoService.createCustomDistrict(
+          selectedProvince,
+          customDistrict.trim()
+        );
+        formData.assigned_district = newDistrict.name;
+        showSuccess(`Custom district "${newDistrict.name}" created successfully!`);
+        
+        // Reload districts
+        const allDistricts = await geoService.districts(selectedProvince);
+        setDistricts(allDistricts);
+      }
+      
       await operatorService.update(operatorId, formData);
-      alert("✅ Operator updated successfully");
+      showSuccess("✅ Operator updated successfully");
       navigate("/operators/manage");
     } catch (err: unknown) {
-      alert(getErrorMessage(err) || "Failed to update operator");
+      const errorMsg = getErrorMessage(err) || "Failed to update operator";
+      showError(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -165,7 +229,7 @@ export default function OperatorEdit() {
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
       <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
         <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
-          🌾 AgriManage Pro
+          🌾 Chiefdom Management Model
         </h1>
         <p style={{ fontSize: "18px", opacity: 0.9 }}>Edit Operator</p>
       </div>
@@ -266,7 +330,7 @@ export default function OperatorEdit() {
                   Province
                 </label>
                 <select
-                  value={selectedProvince}
+                  value={showCustomProvince ? 'OTHER' : selectedProvince}
                   onChange={(e) => handleProvinceChange(e.target.value)}
                   style={{
                     width: "100%",
@@ -283,7 +347,24 @@ export default function OperatorEdit() {
                   {provinces.map(p => (
                     <option key={p.code} value={p.code}>{p.name}</option>
                   ))}
+                  <option value="OTHER">Others - Specify</option>
                 </select>
+                {showCustomProvince && (
+                  <input
+                    type="text"
+                    value={customProvince}
+                    onChange={(e) => setCustomProvince(e.target.value)}
+                    placeholder="Enter province name"
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "2px solid #e0e0e0",
+                      borderRadius: "8px",
+                      fontSize: "15px",
+                      marginTop: "8px"
+                    }}
+                  />
+                )}
               </div>
 
               <div>
@@ -291,9 +372,9 @@ export default function OperatorEdit() {
                   Assigned District
                 </label>
                 <select
-                  value={formData.assigned_district}
-                  onChange={(e) => setFormData(prev => ({ ...prev, assigned_district: e.target.value }))}
-                  disabled={!selectedProvince}
+                  value={showCustomDistrict ? 'OTHER' : formData.assigned_district}
+                  onChange={(e) => handleDistrictChange(e.target.value)}
+                  disabled={showCustomProvince || (!selectedProvince && !customProvince)}
                   style={{
                     width: "100%",
                     padding: "12px",
@@ -301,7 +382,7 @@ export default function OperatorEdit() {
                     borderRadius: "8px",
                     fontSize: "15px",
                     transition: "border 0.3s",
-                    opacity: selectedProvince ? 1 : 0.5
+                    opacity: (showCustomProvince || (!selectedProvince && !customProvince)) ? 0.5 : 1
                   }}
                   onFocus={(e) => e.currentTarget.style.borderColor = "#667eea"}
                   onBlur={(e) => e.currentTarget.style.borderColor = "#e0e0e0"}
@@ -310,7 +391,24 @@ export default function OperatorEdit() {
                   {districts.map(d => (
                     <option key={d.code} value={d.name}>{d.name}</option>
                   ))}
+                  <option value="OTHER">Others - Specify</option>
                 </select>
+                {showCustomDistrict && (
+                  <input
+                    type="text"
+                    value={customDistrict}
+                    onChange={(e) => setCustomDistrict(e.target.value)}
+                    placeholder="Enter district name"
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "2px solid #e0e0e0",
+                      borderRadius: "8px",
+                      fontSize: "15px",
+                      marginTop: "8px"
+                    }}
+                  />
+                )}
               </div>
             </div>
 

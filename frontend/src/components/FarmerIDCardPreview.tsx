@@ -53,7 +53,8 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 50,
-        padding: '16px'
+        padding: '16px',
+        overflow: 'auto'
       }}
     >
       <div 
@@ -61,10 +62,12 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
           background: 'white',
           borderRadius: '16px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          maxWidth: '1000px',
+          maxWidth: '95vw',
           width: '100%',
-          padding: '32px',
-          position: 'relative'
+          padding: '24px',
+          position: 'relative',
+          maxHeight: '90vh',
+          overflowY: 'auto'
         }}
       >
         {/* Close Button */}
@@ -91,10 +94,10 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '30px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>
+          <h2 style={{ fontSize: 'clamp(20px, 5vw, 30px)', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>
             🆔 Farmer ID Card Preview
           </h2>
-          <p style={{ color: '#6b7280' }}>
+          <p style={{ color: '#6b7280', fontSize: 'clamp(14px, 4vw, 16px)' }}>
             {farmer.personal_info?.first_name} {farmer.personal_info?.last_name}
           </p>
         </div>
@@ -141,18 +144,18 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
                     justifyContent: 'space-between'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '24px' }}>🇿🇲</span>
+                      <span style={{ fontSize: '24px' }}>🌾</span>
                       <div>
                         <p style={{ color: 'white', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                          Republic of Zambia
+                          Chiefdom Enterprise Program
                         </p>
                         <p style={{ color: '#bbf7d0', fontSize: '9px', fontWeight: '600', margin: 0 }}>
-                          Ministry of Agriculture
+                          MWasree Enterprises Limited
                         </p>
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ color: 'white', fontSize: '18px', fontWeight: 'bold', margin: 0 }}>ZIAMIS</p>
+                      <p style={{ color: 'white', fontSize: '18px', fontWeight: 'bold', margin: 0 }}>CHIEFDOM</p>
                       <p style={{ color: '#bbf7d0', fontSize: '8px', margin: 0 }}>
                         Farmer Registry
                       </p>
@@ -357,7 +360,7 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
                             <strong>Created by:</strong> {farmer.created_by || "N/A"}
                           </p>
                           <p style={{ margin: '3px 0', fontSize: '8px', color: '#6b7280' }}>
-                            Ministry of Agriculture, Zambia
+                            MWasree Enterprises Ltd, Zambia
                           </p>
                         </div>
                       </div>

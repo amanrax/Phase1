@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 
@@ -31,25 +31,41 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   onSearchChange,
   topBarActions
 }) => {
-  return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Sidebar */}
-      <Sidebar navGroups={navGroups} />
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-      {/* Main Content Area */}
-      <div className="ml-64">
-        {/* Top Bar */}
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Hidden on mobile, always visible on md+ */}
+      <div className={`fixed md:static left-0 top-0 h-screen z-40 transition-transform duration-300 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      }`}>
+        <Sidebar navGroups={navGroups} onClose={() => setSidebarOpen(false)} />
+      </div>
+
+      {/* Main Content Area - Full width on mobile, with margin on desktop */}
+      <div className="flex-1 flex flex-col w-full md:w-auto">
+        {/* Top Bar with Mobile Menu Toggle */}
         <TopBar 
           title={pageTitle} 
           showSearch={showSearch}
           onSearchChange={onSearchChange}
+          onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+          sidebarOpen={sidebarOpen}
         >
           {topBarActions}
         </TopBar>
 
-        {/* Page Content */}
-        <div className="pt-16">
-          <div className="p-6 fade-in">
+        {/* Page Content - Properly padded and scrollable */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 sm:p-6 fade-in">
             {children}
           </div>
         </div>

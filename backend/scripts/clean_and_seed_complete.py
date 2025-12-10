@@ -181,7 +181,7 @@ async def main():
     # ============================================
     print("\n[4/6] Creating Admin user...")
     
-    admin_email = "admin@ziamis.gov.zm"
+    admin_email = "admin@ziamis.mwasree.zm"
     admin_password = "Admin@2024"
     
     admin_doc = {
@@ -206,7 +206,7 @@ async def main():
     
     for idx, district_info in enumerate(OPERATOR_DISTRICTS, 1):
         operator_id = generate_operator_id()
-        email = f"operator{idx}@ziamis.gov.zm"
+        email = f"operator{idx}@ziamis.mwasree.zm"
         password = f"Operator{idx}@2024"
         full_name = f"Operator {district_info['name'].split()[0]}"
         
@@ -267,7 +267,7 @@ async def main():
             first_name = first_names[farmer_counter % len(first_names)]
             last_name = last_names[farmer_counter % len(last_names)]
             nrc = generate_nrc()
-            email = f"farmer{farmer_counter:02d}@ziamis.gov.zm"
+            email = f"farmer{farmer_counter:02d}@ziamis.mwasree.zm"
             password = f"Farmer{farmer_counter:02d}@2024"
             farmer_id = generate_farmer_id(nrc)
             phone = generate_phone("96" + str(farmer_counter % 10))

@@ -5,10 +5,11 @@ from typing import List, Optional, Dict, Any
 from uuid import uuid4
 from datetime import datetime, timezone
 from app.database import get_db
-from app.dependencies.roles import require_role, require_admin, get_current_user
+from app.dependencies.roles import require_role, require_admin, get_current_user, require_operator
 from app.utils.security import hash_password
 from app.models.user import UserRole
 from bson import ObjectId # Import ObjectId
+from app.services.logging_service import log_event
 
 
 router = APIRouter(prefix="/operators", tags=["Operators"])
@@ -27,11 +28,11 @@ class OperatorCreate(BaseModel):
 
 
 class OperatorUpdate(BaseModel):
-    full_name: Optional[str]
-    phone: Optional[str]
-    assigned_regions: Optional[List[str]]
-    assigned_districts: Optional[List[str]]
-    is_active: Optional[bool]
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    assigned_regions: Optional[List[str]] = None
+    assigned_districts: Optional[List[str]] = None
+    is_active: Optional[bool] = None
 
 
 class OperatorOut(BaseModel):
@@ -107,7 +108,16 @@ async def _get_operator_stats(operator_id: str, db):
     summary="Create operator",
     description="Admin only. Creates user and operator profile."
 )
-async def create_operator(payload: OperatorCreate, db=Depends(get_db)):
+async def create_operator(payload: OperatorCreate, db=Depends(get_db), current_user: dict = Depends(require_admin)):
+    await log_event(
+        level="INFO",
+        module="operators",
+        action="create_attempt",
+        details={"email": payload.email},
+        endpoint="/api/operators",
+        user_id=current_user.get("email"),
+        role="ADMIN",
+    )
     email = payload.email.lower().strip()
 
     # Check if user exists
@@ -154,6 +164,15 @@ async def create_operator(payload: OperatorCreate, db=Depends(get_db)):
         created_at=now,
         farmer_count=0,
     )
+    await log_event(
+        level="INFO",
+        module="operators",
+        action="create_success",
+        details={"operator_id": operator_id, "email": email},
+        endpoint="/api/operators",
+        user_id=current_user.get("email"),
+        role="ADMIN",
+    )
     return {"message": "Operator created", "operator": out.dict()}
 
 
@@ -169,7 +188,17 @@ async def list_operators(
     region: Optional[str] = None,
     is_active: Optional[bool] = None,
     db=Depends(get_db),
+    current_user: dict = Depends(require_admin),
 ):
+    await log_event(
+        level="DEBUG",
+        module="operators",
+        action="list_query",
+        details={"skip": skip, "limit": limit, "region": region, "is_active": is_active},
+        endpoint="/api/operators",
+        user_id=current_user.get("email"),
+        role="ADMIN",
+    )
     query = {}
     if region:
         query["assigned_regions"] = region
@@ -190,14 +219,67 @@ async def list_operators(
 
 
 @router.get(
+    "/me",
+    summary="Get current operator's profile",
+    description="Returns the current operator's profile including assigned districts",
+    dependencies=[Depends(require_operator)]
+)
+async def get_current_operator(
+    db=Depends(get_db),
+    current_user: dict = Depends(require_operator)
+):
+    """Get current operator's profile with district assignment"""
+    # current_user contains the email from JWT
+    operator_email = current_user.get("email")
+    
+    # Find operator record by email
+    operator = await db.operators.find_one({"email": operator_email})
+    
+    if not operator:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operator profile not found")
+    
+    # Return operator info including assigned_districts (as list)
+    assigned_districts = operator.get("assigned_districts", [])
+    # If districts is a list, return the first one; otherwise return the single district
+    primary_district = assigned_districts[0] if isinstance(assigned_districts, list) and len(assigned_districts) > 0 else None
+    
+    return {
+        "operator_id": operator.get("operator_id"),
+        "name": operator.get("full_name") or operator.get("name"),
+        "assigned_district": primary_district,  # Primary district for filtering
+        "assigned_districts": assigned_districts,  # All districts
+        "phone": operator.get("phone"),
+        "email": operator_email
+    }
+
+
+@router.get(
     "/{operator_id}",
     dependencies=[Depends(require_role([UserRole.ADMIN.value, UserRole.OPERATOR.value]))],
     summary="Get operator",
     description="Get details and stats of specific operator."
 )
-async def get_operator(operator_id: str, db=Depends(get_db)):
+async def get_operator(operator_id: str, db=Depends(get_db), current_user: dict = Depends(require_role([UserRole.ADMIN.value, UserRole.OPERATOR.value]))):
+    await log_event(
+        level="DEBUG",
+        module="operators",
+        action="get_attempt",
+        details={"operator_id": operator_id},
+        endpoint=f"/api/operators/{operator_id}",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])),
+    )
     op = await db.operators.find_one({"operator_id": operator_id})
     if not op:
+        await log_event(
+            level="WARNING",
+            module="operators",
+            action="get_not_found",
+            details={"operator_id": operator_id},
+            endpoint=f"/api/operators/{operator_id}",
+            user_id=current_user.get("email"),
+            role=",".join(current_user.get("roles", [])),
+        )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operator not found")
     op_doc = _doc_to_operator(op)
     stats = await _get_operator_stats(operator_id, db)
@@ -211,12 +293,29 @@ async def get_operator(operator_id: str, db=Depends(get_db)):
     summary="Update operator",
     description="Admin only. Update operator details or deactivate."
 )
-async def update_operator(operator_id: str, payload: OperatorUpdate, db=Depends(get_db)):
+async def update_operator(operator_id: str, payload: OperatorUpdate, db=Depends(get_db), current_user: dict = Depends(require_admin)):
+    await log_event(
+        level="INFO",
+        module="operators",
+        action="update_attempt",
+        details={"operator_id": operator_id},
+        endpoint=f"/api/operators/{operator_id}",
+        user_id=current_user.get("email"),
+        role="ADMIN",
+    )
     op = await db.operators.find_one({"operator_id": operator_id})
     if not op:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operator not found")
 
-    update_data = {k: v for k, v in payload.dict().items() if v is not None}
+    # Build update dict, excluding None values and empty lists
+    update_data = {}
+    for key, value in payload.dict().items():
+        if value is not None:
+            # Skip empty lists for assigned_districts/assigned_regions
+            if isinstance(value, list) and len(value) == 0 and key in ['assigned_districts', 'assigned_regions']:
+                continue
+            update_data[key] = value
+    
     if not update_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No fields to update")
 
@@ -306,3 +405,4 @@ async def operator_statistics(operator_id: str, db=Depends(get_db)):
 
     stats = await _get_operator_stats(operator_id, db)
     return {"operator_id": operator_id, "operator_name": op.get("full_name"), **stats}
+

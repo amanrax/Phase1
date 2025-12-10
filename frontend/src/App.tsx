@@ -1,9 +1,12 @@
 // src/App.tsx
 import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RoleRoute } from "@/components/RoleRoute";
+import { NotificationProvider } from "@/contexts/NotificationContext";
+import ToastContainer from "@/components/ToastContainer";
+import SessionTimeout from "@/components/SessionTimeout";
 
 // Pages
 import Login from "@/pages/Login";
@@ -19,6 +22,11 @@ import OperatorEdit from "@/pages/OperatorEdit";
 import FarmerDashboard from "@/pages/FarmerDashboard";
 import FarmerDetails from "@/pages/FarmerDetails";
 import FarmerIDCard from "@/pages/FarmerIDCard";
+import AdminReports from "@/pages/AdminReports";
+import AdminSettings from "@/pages/AdminSettings";
+import AdminSupplyRequests from "@/pages/AdminSupplyRequests";
+import FarmerSupplyRequests from "@/pages/FarmerSupplyRequests";
+import LogViewer from "@/pages/LogViewer";
 
 function App() {
   const { loadUser, token, user } = useAuthStore();
@@ -38,12 +46,15 @@ function App() {
     if (role === "farmer") return "/farmer-dashboard";
     return "/login";
   };
-
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
+    <NotificationProvider>
+      <HashRouter>
+        <SessionTimeout />
+        <ToastContainer />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login />} />
 
         {/* Admin Routes */}
         <Route
@@ -82,6 +93,46 @@ function App() {
             <ProtectedRoute>
               <RoleRoute requiredRole="admin">
                 <OperatorEdit />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/reports"
+          element={
+            <ProtectedRoute>
+              <RoleRoute requiredRole="admin">
+                <AdminReports />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <ProtectedRoute>
+              <RoleRoute requiredRole="admin">
+                <AdminSettings />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/supply-requests"
+          element={
+            <ProtectedRoute>
+              <RoleRoute requiredRole="admin">
+                <AdminSupplyRequests />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/logs"
+          element={
+            <ProtectedRoute>
+              <RoleRoute requiredRole="admin">
+                <LogViewer />
               </RoleRoute>
             </ProtectedRoute>
           }
@@ -162,6 +213,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/farmer/supply-requests"
+          element={
+            <ProtectedRoute>
+              <RoleRoute requiredRole="farmer">
+                <FarmerSupplyRequests />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
 
         {/* Default Route */}
         <Route
@@ -177,7 +238,8 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
+    </NotificationProvider>
   );
 }
 

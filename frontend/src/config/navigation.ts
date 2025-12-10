@@ -1,4 +1,4 @@
-// Navigation configuration for ZIAMIS Pro
+// Navigation configuration for Chiefdom Management Model
 // Define all navigation groups and items with role-based access
 
 export interface NavItem {

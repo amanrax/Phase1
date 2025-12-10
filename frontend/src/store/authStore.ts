@@ -11,11 +11,16 @@ export interface AuthState {
   role: string | null;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  lastActivity: number;
+  showTimeoutWarning: boolean;
+  login: (email: string, password: string, role?: string) => Promise<void>;
   logout: () => void;
   loadUser: () => Promise<void>;
   refreshAccessToken: () => Promise<string | null>;
   setToken: (token: string) => void;
+  updateActivity: () => void;
+  setShowTimeoutWarning: (show: boolean) => void;
+  extendSession: () => void;
 }
 
 const useAuthStore = create<AuthState>()(
@@ -28,12 +33,14 @@ const useAuthStore = create<AuthState>()(
       role: null,
       isLoading: false,
       error: null,
+      lastActivity: Date.now(),
+      showTimeoutWarning: false,
 
       // ---------- FIXED LOGIN ----------
-      login: async (email: string, password: string) => {
+      login: async (email: string, password: string, role?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authService.login(email, password);
+          const response = await authService.login(email, password, role);
 
           const userRoles = response.user?.roles || [];
           // Normalize role strings to uppercase to match backend role checks
@@ -55,6 +62,7 @@ const useAuthStore = create<AuthState>()(
             role: primaryRole,
             isLoading: false,
             error: null,
+            lastActivity: Date.now(),
           });
         } catch (error: any) {
           let message = "Login failed. Please try again.";
@@ -137,6 +145,12 @@ const useAuthStore = create<AuthState>()(
       },
 
       setToken: (token: string) => set({ token }),
+      
+      updateActivity: () => set({ lastActivity: Date.now(), showTimeoutWarning: false }),
+      
+      setShowTimeoutWarning: (show: boolean) => set({ showTimeoutWarning: show }),
+      
+      extendSession: () => set({ lastActivity: Date.now(), showTimeoutWarning: false }),
     }),
     {
       name: "auth-storage",
