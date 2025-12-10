@@ -1,0 +1,48 @@
+# docker-compose.prod.yml - AWS-only deployment (DocumentDB + ElastiCache)
+# Use this locally to test with AWS services
+# In production, use ECS task definition instead
+
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: ziamis-backend-prod
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+      - REFRESH_TOKEN_EXPIRE_MINUTES=43200
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/auth/login"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: ziamis-celery-prod
+    environment:
+      - ENVIRONMENT=production
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - CELERY_BROKER_URL=${REDIS_URL}
+      - CELERY_RESULT_BACKEND=${REDIS_URL}
+    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=4
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
