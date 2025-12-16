@@ -42,6 +42,25 @@ async def generate_idcard(
     return await IDCardService.generate(farmer_id, background_tasks, db)
 
 
+# Also expose a GET endpoint for environments where POST without a body
+# may be problematic (some clients/proxies). This routes to the same
+# generation logic and returns the same 202 response.
+@router.get(
+    "/{farmer_id}/generate-idcard",
+    summary="(GET) Generate farmer ID card asynchronously",
+    description="Queue ID card generation task for the farmer (GET alias). Admin/Operator only.",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=dict
+)
+async def generate_idcard_get(
+    farmer_id: str,
+    background_tasks: BackgroundTasks,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    _: dict = Depends(require_role(["ADMIN", "OPERATOR"]))
+):
+    return await IDCardService.generate(farmer_id, background_tasks, db)
+
+
 @router.get(
     "/{farmer_id}/download-idcard",
     summary="Download generated farmer ID card PDF",

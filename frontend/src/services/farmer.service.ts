@@ -87,10 +87,10 @@ export const farmerService = {
   async uploadPhoto(farmerId: string, file: File): Promise<any> {
     const formData = new FormData();
     formData.append("file", file);
+    // IMPORTANT: Don't set Content-Type header - let axios auto-generate with boundary
     const response = await api.post(
       `/farmers/${farmerId}/upload-photo`,
-      formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      formData
     );
     return response.data;
   },
@@ -106,10 +106,10 @@ export const farmerService = {
   ): Promise<any> {
     const formData = new FormData();
     formData.append("file", file);
+    // IMPORTANT: Don't set Content-Type header - let axios auto-generate with boundary
     const response = await api.post(
       `/farmers/${farmerId}/documents/${docType}`,
-      formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      formData
     );
     return response.data;
   },
@@ -139,7 +139,9 @@ export const farmerService = {
    * Backend: POST /api/farmers/{farmer_id}/generate-idcard
    */
   async generateIDCard(farmerId: string): Promise<any> {
-    const response = await api.post(`/farmers/${farmerId}/generate-idcard`);
+    // Use GET to trigger generation as a fallback for clients/proxies
+    // that may mishandle empty POST bodies. Backend accepts both GET and POST.
+    const response = await api.get(`/farmers/${farmerId}/generate-idcard`);
     return response.data;
   },
 
@@ -190,7 +192,7 @@ export const farmerService = {
    * Backend: GET /api/farmers/{farmer_id}/qr
    */
   getQRCode(farmerId: string): string {
-    const baseURL = api.defaults.baseURL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+    const baseURL = api.defaults.baseURL || "http://ziamis-alb-226056829.ap-south-1.elb.amazonaws.com";
     return `${baseURL}/farmers/${farmerId}/qr`;
   },
 
