@@ -12,6 +12,9 @@ import qrcode
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
+import logging
+from kombu.exceptions import OperationalError as KombuOperationalError
+from redis.exceptions import TimeoutError as RedisTimeoutError
 
 
 class IDCardService:
@@ -98,9 +101,16 @@ class IDCardService:
         if not farmer:
             raise HTTPException(status_code=404, detail="Farmer not found")
 
-        # Queue Celery task for ID card generation
-        from app.tasks.id_card_task import generate_id_card
-        generate_id_card.delay(farmer_id)
+        # Queue Celery task for ID card generation with defensive handling
+        try:
+            from app.tasks.id_card_task import generate_id_card
+            generate_id_card.delay(farmer_id)
+        except (KombuOperationalError, RedisTimeoutError) as exc:
+            logging.exception("Failed to enqueue ID card generation task")
+            raise HTTPException(status_code=503, detail="Service unavailable: background queue unreachable")
+        except Exception:
+            logging.exception("Unexpected error while enqueueing ID card task")
+            raise HTTPException(status_code=500, detail="Internal server error while queuing task")
 
         return {
             "message": "ID card generation queued",
