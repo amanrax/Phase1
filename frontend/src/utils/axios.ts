@@ -6,9 +6,12 @@ import { getApiBaseUrl } from "@/config/mobile";
 // Get API base URL (handles web, Codespaces, and mobile)
 let API_BASE_URL = getApiBaseUrl();
 
-if (import.meta.env.DEV) {
-  console.log("[Axios] API_BASE_URL:", API_BASE_URL);
-}
+console.log('╔════════════════════════════════════════════════════════════╗');
+console.log('║              AXIOS INSTANCE - API URL DEBUG               ║');
+console.log('╚════════════════════════════════════════════════════════════╝');
+console.log('[Axios] API_BASE_URL:', API_BASE_URL);
+console.log('[Axios] Full endpoint will be:', `${API_BASE_URL}/api`);
+console.log('[Axios] Is mobile?', !!(window as any).Capacitor);
 
 // ----------------------------------------
 // Create axios instance
@@ -16,15 +19,17 @@ if (import.meta.env.DEV) {
 // ----------------------------------------
 const axiosClient = axios.create({
   baseURL: `${API_BASE_URL}/api`,
-  timeout: 10000,
+  timeout: 30000, // 30 seconds for mobile
   headers: { "Content-Type": "application/json" },
 });
 
-// ----------------------------------------
-// Add token to headers and track activity
-// ----------------------------------------
+// Log every request
 axiosClient.interceptors.request.use(
   (config) => {
+    console.log('🌐 [Axios Request]', config.method?.toUpperCase(), config.url);
+    console.log('   Base URL:', config.baseURL);
+    console.log('   Full URL:', `${config.baseURL}${config.url}`);
+    
     const token = localStorage.getItem("token") || useAuthStore.getState().token;
 
     if (token) {
@@ -37,7 +42,10 @@ axiosClient.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('❌ [Axios Request Error]', error);
+    return Promise.reject(error);
+  }
 );
 
 // ----------------------------------------
