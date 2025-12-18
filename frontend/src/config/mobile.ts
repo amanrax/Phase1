@@ -4,15 +4,9 @@ export const getApiBaseUrl = (): string => {
   const isCapacitor = !!(window as any).Capacitor;
   
   if (isCapacitor) {
-    // Production API URL for mobile builds
-    const prodApiUrl = import.meta.env.VITE_API_PROD_URL;
-    if (prodApiUrl) {
-      return prodApiUrl;
-    }
-    
-    // Fallback to development API if VITE_API_PROD_URL not set
-    console.warn('[Mobile] Production API URL not set. Using development URL.');
-    return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+    // HARDCODED AWS backend for mobile app
+    console.log('[Mobile] Using AWS backend: http://13.233.201.167:8000');
+    return 'http://13.233.201.167:8000';
   }
   
   // Web build - use standard logic
