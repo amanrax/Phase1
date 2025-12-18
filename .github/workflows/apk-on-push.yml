@@ -1,0 +1,113 @@
+# Build Android APK on push
+# - Builds frontend with VITE_MOBILE_API_URL (from repo secret or fallback)
+# - Runs Capacitor sync and builds Android debug APK
+# - Uploads APK as workflow artifact for easy download
+#
+# Notes:
+# - Set repository secret `VITE_MOBILE_API_URL` to your API Gateway or backend URL to override the fallback.
+# - For release signing, add keystore secrets and modify the Gradle signingConfig steps.
+
+name: Build Android APK on Push
+
+on:
+  push:
+    branches: [ main, farmer-edit-fix ]
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Set VITE_MOBILE_API_URL (secret or fallback)
+        run: |
+          if [ -n "${{ secrets.VITE_MOBILE_API_URL }}" ]; then
+            echo "VITE_MOBILE_API_URL=${{ secrets.VITE_MOBILE_API_URL }}" >> $GITHUB_ENV
+            echo "Using VITE_MOBILE_API_URL from secrets"
+          else
+            echo "VITE_MOBILE_API_URL=https://jydqy4tril.execute-api.ap-south-1.amazonaws.com/prod" >> $GITHUB_ENV
+            echo "No secret found; using fallback API Gateway URL"
+          fi
+
+      - name: Build frontend (Vite)
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install Capacitor & sync Android
+        working-directory: frontend
+        run: |
+          npm ci
+          npx cap sync android
+
+      - name: Setup Java JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Setup Android SDK
+        uses: r0adkll/setup-android@v2
+        with:
+          api-level: 33
+          build-tools: '33.0.2'
+          target: android-33
+
+      - name: Build Android APK (debug)
+        working-directory: frontend/android
+        env:
+          JAVA_HOME: ${{ steps.setup-java.outputs.java-home }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug -Pci --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Build & sign release (optional)
+        if: ${{ secrets.KEYSTORE_BASE64 && secrets.KEYSTORE_PASSWORD && secrets.KEY_ALIAS && secrets.KEY_PASSWORD }}
+        working-directory: frontend/android
+        env:
+          JAVA_HOME: ${{ steps.setup-java.outputs.java-home }}
+        run: |
+          set -e
+          echo "Decoding keystore from secret..."
+          echo "$KEYSTORE_BASE64" | base64 --decode > keystore.jks
+          chmod 600 keystore.jks
+
+          echo "Building release APK (unsigned)..."
+          chmod +x ./gradlew
+          ./gradlew assembleRelease -Pci --no-daemon
+
+          UNSIGNED_APK=app/build/outputs/apk/release/app-release-unsigned.apk
+          SIGNED_APK=app/build/outputs/apk/release/app-release-signed.apk
+
+          echo "Signing APK using apksigner..."
+          APKSIGNER_PATH=$(find "$ANDROID_HOME" -type f -name apksigner -print -quit || true)
+          if [ -z "$APKSIGNER_PATH" ]; then
+            # fallback to build-tools path
+            APKSIGNER_PATH="$ANDROID_SDK_ROOT/build-tools/33.0.2/apksigner"
+          fi
+
+          "$APKSIGNER_PATH" sign --ks keystore.jks --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} --key-pass pass:${{ secrets.KEY_PASSWORD }} --out "$SIGNED_APK" "$UNSIGNED_APK"
+
+      - name: Upload release APK artifact (signed)
+        if: ${{ secrets.KEYSTORE_BASE64 && secrets.KEYSTORE_PASSWORD && secrets.KEY_ALIAS && secrets.KEY_PASSWORD }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: frontend/android/app/build/outputs/apk/release/app-release-signed.apk

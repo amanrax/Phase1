@@ -10,15 +10,20 @@ export const getApiBaseUrl = (): string => {
   console.log('[Mobile] Window.Capacitor exists?', !!(window as any).Capacitor);
   
   if (isCapacitor) {
-    // HARDCODED AWS backend for mobile app
-    const url = 'http://13.233.201.167:8000';
-    console.log('[Mobile] ✅ USING HARDCODED AWS BACKEND:', url);
-    console.log('[Mobile] This should work if your phone can reach this IP');
-    
-    // Test alert
-    alert(`Mobile App Starting\nBackend: ${url}\nIf login fails, check if phone can access this IP in browser`);
-    
-    return url;
+    // Prefer build-time override for mobile backend (secure & flexible)
+    const envUrl = import.meta.env.VITE_MOBILE_API_URL as string | undefined;
+
+    if (envUrl) {
+      console.log('[Mobile] ✅ Using VITE_MOBILE_API_URL from build:', envUrl);
+      alert(`Mobile App Starting\nBackend: ${envUrl}`);
+      return envUrl;
+    }
+
+    // Fallback to previous hardcoded IP (keeps current behavior for quick testing)
+    const fallback = 'http://13.233.201.167:8000';
+    console.warn('[Mobile] Using fallback mobile backend (no VITE_MOBILE_API_URL set):', fallback);
+    alert(`Mobile App Starting\nBackend: ${fallback}\nIf login fails, open this URL in your phone browser or set VITE_MOBILE_API_URL to an HTTPS endpoint.`);
+    return fallback;
   }
   
   // Web build - use standard logic

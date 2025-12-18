@@ -71,3 +71,28 @@ echo ""
 echo "🔍 Get task public IP:"
 echo "   aws ecs list-tasks --cluster $CLUSTER_NAME --service-name $SERVICE_NAME --region $REGION"
 echo "   aws ecs describe-tasks --cluster $CLUSTER_NAME --tasks <TASK_ARN> --region $REGION"
+
+# --------------------------------------------------
+# Optional: deploy frontend to S3 + invalidate CloudFront
+# Requires: S3_BUCKET (bucket name) and optionally CLOUDFRONT_DIST_ID
+# --------------------------------------------------
+if [ -n "$S3_BUCKET" ]; then
+  FRONTEND_DIR="/workspaces/Phase1/frontend/dist"
+  if [ -d "$FRONTEND_DIR" ]; then
+    echo "📤 Syncing frontend to s3://$S3_BUCKET/"
+    aws s3 sync "$FRONTEND_DIR/" "s3://$S3_BUCKET/" --delete --acl public-read --region $REGION
+    echo "✅ Frontend synced to s3://$S3_BUCKET/"
+
+    if [ -n "$CLOUDFRONT_DIST_ID" ]; then
+      echo "🚀 Creating CloudFront invalidation for distribution: $CLOUDFRONT_DIST_ID"
+      INVALIDATION_ID=$(aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DIST_ID" --paths "/*" --query 'Invalidation.Id' --output text)
+      echo "✅ Invalidation requested: $INVALIDATION_ID"
+    else
+      echo "ℹ️ CLOUDFRONT_DIST_ID not set; skipping CloudFront invalidation"
+    fi
+  else
+    echo "⚠️ Frontend dist directory not found at $FRONTEND_DIR; ensure 05-build-and-push.sh ran successfully"
+  fi
+else
+  echo "ℹ️ S3_BUCKET not set; skipping frontend deploy"
+fi
