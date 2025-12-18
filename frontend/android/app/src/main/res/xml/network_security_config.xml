@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Trust all certificates for ngrok domains (development only) -->
+    <!-- Allow cleartext traffic to AWS backend -->
     <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">13.233.201.167</domain>
         <domain includeSubdomains="true">ngrok-free.dev</domain>
         <domain includeSubdomains="true">ngrok-free.app</domain>
         <domain includeSubdomains="true">ngrok.io</domain>
