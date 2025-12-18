@@ -1,5 +1,5 @@
 // src/pages/AdminDashboard.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
@@ -31,6 +31,23 @@ interface Stats {
   pendingVerifications: number;
 }
 
+// Cache for dashboard data with 2 minute TTL
+const dashboardCache = {
+  data: null as any,
+  timestamp: 0,
+  TTL: 2 * 60 * 1000, // 2 minutes
+  isValid() {
+    return this.data && (Date.now() - this.timestamp) < this.TTL;
+  },
+  set(data: any) {
+    this.data = data;
+    this.timestamp = Date.now();
+  },
+  get() {
+    return this.isValid() ? this.data : null;
+  }
+};
+
 export default function AdminDashboard() {
   const { logout } = useAuthStore();
   const navigate = useNavigate();
@@ -43,17 +60,38 @@ export default function AdminDashboard() {
     totalOperators: 0,
     pendingVerifications: 0,
   });
+  const loadingRef = useRef(false); // Prevent duplicate loads
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
+    // Check if already loading
+    if (loadingRef.current) {
+      console.log('Data already loading, skipping...');
+      return;
+    }
+
+    // Check cache first
+    const cachedData = dashboardCache.get();
+    if (cachedData) {
+      console.log('Loading from cache...');
+      setFarmers(cachedData.farmers);
+      setOperators(cachedData.operators);
+      setStats(cachedData.stats);
+      return;
+    }
+
+    loadingRef.current = true;
     setLoading(true);
     try {
-      const statsData = await dashboardService.getStats();
-      const farmersData = await farmerService.getFarmers(5, 0);
-      const operatorsData = await operatorService.getOperators(10, 0);
+      // Load data in parallel for faster response
+      const [statsData, farmersData, operatorsData] = await Promise.all([
+        dashboardService.getStats(),
+        farmerService.getFarmers(5, 0),
+        operatorService.getOperators(10, 0)
+      ]);
       
       // Farmers endpoint returns array directly
       const farmersList = Array.isArray(farmersData) ? farmersData : (farmersData.results || []);
@@ -64,273 +102,144 @@ export default function AdminDashboard() {
       console.log('Farmers loaded:', farmersList.length);
       console.log('Operators loaded:', operatorsList.length);
       
-      setFarmers(farmersList);
-      setOperators(operatorsList);
-      setStats({
+      const statsObject = {
         totalFarmers: statsData.farmers?.total || 0,
         totalOperators: statsData.operators || 0,
         pendingVerifications: statsData.farmers?.pending || 0,
+      };
+
+      // Cache the results
+      dashboardCache.set({
+        farmers: farmersList,
+        operators: operatorsList,
+        stats: statsObject
       });
+      
+      setFarmers(farmersList);
+      setOperators(operatorsList);
+      setStats(statsObject);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute top-40 right-20 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-20 left-40 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
       {/* Header */}
-      <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
-        <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
-          🌾 AgriManage Pro
+      <div className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4 relative z-10">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2" style={{ textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)' }}>
+          🌾 Chiefdom Management Model
         </h1>
-        <p style={{ fontSize: "16px", opacity: 0.9 }}>Advanced Agricultural Management System - Admin Dashboard</p>
+        <p className="text-xs sm:text-sm md:text-base opacity-90" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>Advanced Agricultural Management System - Admin Dashboard</p>
       </div>
 
       {/* Main Container */}
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px 20px 20px" }}>
-        {/* Stats Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "20px" }}>
-          <div style={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white",
-            padding: "25px",
-            borderRadius: "12px",
-            textAlign: "center",
-            boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-            transition: "all 0.3s"
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = "translateY(-5px)";
-            e.currentTarget.style.boxShadow = "0 15px 35px rgba(0,0,0,0.2)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 10px 25px rgba(0,0,0,0.15)";
-          }}>
-            <div style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "5px" }}>{stats.totalOperators}</div>
-            <div style={{ opacity: 0.9, fontSize: "14px" }}>👨‍💼 Total Operators</div>
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pb-6 relative z-10">
+        {/* Stats Grid - Mobile responsive */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
+          {/* Operators Card */}
+          <div className="backdrop-blur-xl bg-gradient-to-br from-indigo-600/90 to-purple-600/90 text-white p-4 sm:p-6 rounded-2xl border border-white/20 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-4px] cursor-pointer" 
+               style={{ 
+                 boxShadow: '0_15px_30px_rgba(99,102,241,0.4),_0_5px_15px_rgba(99,102,241,0.3),_inset_0_1px_0_rgba(255,255,255,0.2)',
+                 transformStyle: 'preserve-3d'
+               }}>
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{stats.totalOperators}</div>
+            <div className="opacity-90 text-xs sm:text-sm md:text-base">👨‍💼 Total Operators</div>
           </div>
 
-          <div style={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white",
-            padding: "25px",
-            borderRadius: "12px",
-            textAlign: "center",
-            boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-            transition: "all 0.3s"
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = "translateY(-5px)";
-            e.currentTarget.style.boxShadow = "0 15px 35px rgba(0,0,0,0.2)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 10px 25px rgba(0,0,0,0.15)";
-          }}>
-            <div style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "5px" }}>{stats.totalFarmers}</div>
-            <div style={{ opacity: 0.9, fontSize: "14px" }}>👨‍🌾 Total Farmers</div>
+          {/* Farmers Card */}
+          <div className="backdrop-blur-xl bg-gradient-to-br from-indigo-600/90 to-purple-600/90 text-white p-4 sm:p-6 rounded-2xl border border-white/20 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-4px] cursor-pointer"
+               style={{ 
+                 boxShadow: '0_15px_30px_rgba(99,102,241,0.4),_0_5px_15px_rgba(99,102,241,0.3),_inset_0_1px_0_rgba(255,255,255,0.2)',
+                 transformStyle: 'preserve-3d'
+               }}>
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{stats.totalFarmers}</div>
+            <div className="opacity-90 text-xs sm:text-sm md:text-base">👨‍🌾 Total Farmers</div>
           </div>
 
-          <div style={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white",
-            padding: "25px",
-            borderRadius: "12px",
-            textAlign: "center",
-            boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-            transition: "all 0.3s"
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = "translateY(-5px)";
-            e.currentTarget.style.boxShadow = "0 15px 35px rgba(0,0,0,0.2)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 10px 25px rgba(0,0,0,0.15)";
-          }}>
-            <div style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "5px" }}>{stats.pendingVerifications}</div>
-            <div style={{ opacity: 0.9, fontSize: "14px" }}>⏳ Pending Verifications</div>
+          {/* Pending Verifications Card */}
+          <div className="backdrop-blur-xl bg-gradient-to-br from-indigo-600/90 to-purple-600/90 text-white p-4 sm:p-6 rounded-2xl border border-white/20 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-4px] cursor-pointer"
+               style={{ 
+                 boxShadow: '0_15px_30px_rgba(99,102,241,0.4),_0_5px_15px_rgba(99,102,241,0.3),_inset_0_1px_0_rgba(255,255,255,0.2)',
+                 transformStyle: 'preserve-3d'
+               }}>
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{stats.pendingVerifications}</div>
+            <div className="opacity-90 text-xs sm:text-sm md:text-base">⏳ Pending Verifications</div>
           </div>
         </div>
 
         {/* Main Content Card */}
-        <div style={{ background: "white", borderRadius: "15px", padding: "30px", boxShadow: "0 15px 35px rgba(0,0,0,0.1)" }}>
+        <div className="backdrop-blur-xl bg-white/95 rounded-3xl p-4 sm:p-6 md:p-8 border border-white/50 transition-all duration-500" 
+             style={{ 
+               boxShadow: '0_25px_50px_-12px_rgba(99,102,241,0.4),_0_0_0_1px_rgba(255,255,255,0.5),_inset_0_1px_0_0_rgba(255,255,255,0.8)',
+               transformStyle: 'preserve-3d'
+             }}>
           {/* Header with Actions */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px", flexWrap: "wrap", gap: "15px" }}>
-            <h2 style={{ fontSize: "24px", fontWeight: "600", color: "#333", margin: 0 }}>🔧 Admin Dashboard</h2>
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900">🔧 Admin Dashboard</h2>
+            <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
               <button
                 onClick={() => navigate("/operators/manage")}
-                style={{
-                  padding: "10px 20px",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  background: "#007bff",
-                  color: "white",
-                  transition: "all 0.3s"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = "#0056b3";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = "#007bff";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }}
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-blue-600 to-blue-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(37,99,235,0.3)' }}
               >
-                👨‍💼 View All Operators
+                👨‍💼 Operators
               </button>
 
               <button
                 onClick={() => navigate("/farmers")}
-                style={{
-                  padding: "10px 20px",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  background: "#28a745",
-                  color: "white",
-                  transition: "all 0.3s"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = "#218838";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = "#28a745";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }}
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-green-600 to-green-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(22,163,74,0.3)' }}
               >
-                👨‍🌾 View All Farmers
+                👨‍🌾 Farmers
               </button>
 
               <button
                 onClick={() => navigate("/admin/reports")}
-                style={{
-                  padding: "10px 20px",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  background: "#c2410c",
-                  color: "white",
-                  transition: "all 0.3s"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = "#9a3412";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = "#c2410c";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }}
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-orange-600 to-orange-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(234,88,12,0.3)' }}
               >
-                📊 View Reports
+                📊 Reports
+              </button>
+
+              <button
+                onClick={() => navigate("/admin/supply-requests")}
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-indigo-600 to-indigo-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(79,70,229,0.3)' }}
+              >
+                📦 Requests
               </button>
 
               <button
                 onClick={() => navigate("/admin/settings")}
-                style={{
-                  padding: "10px 20px",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  background: "#7c3aed",
-                  color: "white",
-                  transition: "all 0.3s"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = "#6d28d9";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = "#7c3aed";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }}
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-purple-600 to-purple-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(147,51,234,0.3)' }}
               >
                 ⚙️ Settings
               </button>
 
               <button
-                onClick={() => navigate("/admin/supply-requests")}
-                style={{
-                  padding: "10px 20px",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  background: "#c2410c",
-                  color: "white",
-                  transition: "all 0.3s"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = "#9a3412";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = "#c2410c";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }}
-              >
-                📦 Supply Requests
-              </button>
-
-              <button
                 onClick={() => navigate("/admin/logs")}
-                style={{
-                  padding: "10px 20px",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  background: "#0891b2",
-                  color: "white",
-                  transition: "all 0.3s"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = "#0e7490";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = "#0891b2";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }}
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-cyan-600 to-cyan-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(8,145,178,0.3)' }}
               >
-                📜 System Logs
+                📜 Logs
               </button>
               
               <button
                 onClick={logout}
-                style={{
-                  padding: "10px 20px",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  background: "#6c757d",
-                  color: "white",
-                  transition: "all 0.3s"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = "#5a6268";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = "#6c757d";
-                }}
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-gray-600 to-gray-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(75,85,99,0.3)' }}
               >
                 🚪 Logout
               </button>
@@ -338,106 +247,77 @@ export default function AdminDashboard() {
           </div>
 
           {/* Operators Management Section */}
-          <div style={{ marginBottom: "40px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "20px", fontWeight: "600", margin: 0, color: "#333" }}>👨‍💼 System Operators</h3>
-              <button
-                onClick={() => navigate("/operators/manage")}
-                style={{
-                  padding: "8px 16px",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "13px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  background: "#007bff",
-                  color: "white",
-                  transition: "all 0.3s"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = "#0056b3";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = "#007bff";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }}
-              >
-                ➕ Add Operator
-              </button>
+          <div className="mb-8 sm:mb-12">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">👨‍💼 System Operators</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    dashboardCache.data = null;
+                    loadData();
+                  }}
+                  disabled={loading}
+                  className="px-3 py-1.5 bg-green-700 hover:bg-green-800 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  title="Refresh dashboard data"
+                >
+                  <i className={`fa-solid fa-rotate-right ${loading ? 'animate-spin' : ''}`}></i>
+                  Refresh
+                </button>
+                <button
+                  onClick={() => navigate("/operators/manage")}
+                  className="px-3 sm:px-4 py-1 sm:py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
+                >
+                  ➕ Add Operator
+                </button>
+              </div>
             </div>
 
             {loading ? (
-              <div style={{ textAlign: "center", padding: "40px" }}>
-                <div style={{
-                  display: "inline-block",
-                  width: "40px",
-                  height: "40px",
-                  border: "4px solid #f3f3f3",
-                  borderTop: "4px solid #007bff",
-                  borderRadius: "50%",
-                  animation: "spin 1s linear infinite"
-                }}></div>
-                <p style={{ marginTop: "15px", color: "#666" }}>Loading...</p>
+              <div className="text-center py-8 sm:py-16">
+                <div className="inline-block w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <p className="mt-3 sm:mt-4 text-gray-600 text-sm sm:text-base">Loading...</p>
               </div>
             ) : operators.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px 20px", color: "#666", background: "#f8f9fa", borderRadius: "12px" }}>
-                <div style={{ fontSize: "48px", marginBottom: "10px" }}>👨‍💼</div>
-                <p style={{ fontSize: "16px", marginBottom: "8px", fontWeight: "600" }}>No operators found</p>
-                <p style={{ fontSize: "14px", marginBottom: "15px" }}>Add operators to help manage farmers</p>
+              <div className="text-center py-8 sm:py-16 text-gray-600 bg-gray-50 rounded-lg">
+                <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">👨‍💼</div>
+                <p className="text-base sm:text-lg font-semibold mb-2">No operators found</p>
+                <p className="text-xs sm:text-sm mb-3 sm:mb-4">Add operators to help manage farmers</p>
                 <button
                   onClick={() => navigate("/operators/manage")}
-                  style={{
-                    padding: "10px 20px",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    background: "#28a745",
-                    color: "white"
-                  }}
+                  className="px-4 sm:px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-all"
                 >
                   Add First Operator
                 </button>
               </div>
             ) : (
-              <div style={{ overflowX: "auto", background: "#f8f9fa", borderRadius: "12px", border: "1px solid #e0e0e0" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "2px solid #dee2e6" }}>
-                      <th style={{ padding: "12px 15px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Name</th>
-                      <th style={{ padding: "12px 15px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Email</th>
-                      <th style={{ padding: "12px 15px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Phone</th>
-                      <th style={{ padding: "12px 15px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>District</th>
-                      <th style={{ padding: "12px 15px", textAlign: "center", fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <div className="bg-gray-50 rounded-lg border border-gray-200">
+                <div className="overflow-hidden">
+                  <table className="w-full text-left text-sm table-fixed">
+                    <thead className="bg-gray-100 border-b border-gray-200">
+                      <tr>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase truncate" style={{width: '20%'}}>Name</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase truncate" style={{width: '25%'}}>Email</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase truncate hidden md:table-cell" style={{width: '15%'}}>Phone</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase truncate hidden lg:table-cell" style={{width: '20%'}}>District</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase text-center truncate" style={{width: '20%'}}>Status</th>
+                      </tr>
+                    </thead>
+                  <tbody className="divide-y divide-gray-200">
                     {operators.slice(0, 5).map((op) => (
                       <tr
                         key={op.operator_id || op._id}
-                        style={{ borderBottom: "1px solid #dee2e6", background: "white", transition: "all 0.2s", cursor: "pointer" }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.background = "#f8f9ff";
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.background = "white";
-                        }}
+                        className="bg-white hover:bg-gray-50 transition-colors cursor-pointer"
                       >
-                        <td style={{ padding: "15px", fontWeight: "600", color: "#333" }}>{op.full_name}</td>
-                        <td style={{ padding: "15px", color: "#666", fontSize: "14px" }}>{op.email}</td>
-                        <td style={{ padding: "15px", color: "#666", fontSize: "14px" }}>{op.phone || "-"}</td>
-                        <td style={{ padding: "15px", color: "#666", fontSize: "14px" }}>{op.assigned_district || "All Districts"}</td>
-                        <td style={{ padding: "15px", textAlign: "center" }}>
-                          <span style={{
-                            padding: "4px 12px",
-                            borderRadius: "20px",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            background: op.is_active !== false ? "#d4edda" : "#f8d7da",
-                            color: op.is_active !== false ? "#155724" : "#721c24"
-                          }}>
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-900 truncate" title={op.full_name}>{op.full_name}</td>
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 text-xs sm:text-sm truncate" title={op.email}>{op.email}</td>
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 text-xs sm:text-sm truncate hidden md:table-cell" title={op.phone || "-"}>{op.phone || "-"}</td>
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 text-xs sm:text-sm truncate hidden lg:table-cell" title={op.assigned_district || "All Districts"}>{op.assigned_district || "All Districts"}</td>
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 text-center">
+                          <span className={`inline-block px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${
+                            op.is_active !== false 
+                              ? "bg-green-100 text-green-800" 
+                              : "bg-red-100 text-red-800"
+                          }`}>
                             {op.is_active !== false ? "✓ Active" : "✗ Inactive"}
                           </span>
                         </td>
@@ -445,24 +325,12 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+                </div>
                 {operators.length > 5 && (
-                  <div style={{ textAlign: "center", padding: "15px", background: "white", borderTop: "1px solid #dee2e6" }}>
+                  <div className="text-center py-3 sm:py-4 bg-white border-t border-gray-200">
                     <button
                       onClick={() => navigate("/operators/manage")}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#007bff",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        cursor: "pointer"
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.textDecoration = "underline";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.textDecoration = "none";
-                      }}
+                      className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-semibold transition-colors"
                     >
                       View All {operators.length} Operators →
                     </button>
@@ -474,90 +342,49 @@ export default function AdminDashboard() {
 
           {/* Recent Farmers Section */}
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "20px", fontWeight: "600", margin: 0, color: "#333" }}>👨‍🌾 Recent Farmers</h3>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">👨‍🌾 Recent Farmers</h3>
               <button
                 onClick={() => navigate("/farmers")}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#007bff",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.textDecoration = "underline";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.textDecoration = "none";
-                }}
+                className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-semibold transition-colors"
               >
                 View All →
               </button>
             </div>
 
             {loading ? (
-              <div style={{ textAlign: "center", padding: "40px" }}>
-                <div style={{
-                  display: "inline-block",
-                  width: "40px",
-                  height: "40px",
-                  border: "4px solid #f3f3f3",
-                  borderTop: "4px solid #007bff",
-                  borderRadius: "50%",
-                  animation: "spin 1s linear infinite"
-                }}></div>
-                <p style={{ marginTop: "15px", color: "#666" }}>Loading...</p>
+              <div className="text-center py-8 sm:py-16">
+                <div className="inline-block w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <p className="mt-3 sm:mt-4 text-gray-600 text-sm sm:text-base">Loading...</p>
               </div>
             ) : farmers.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "60px 20px", color: "#666" }}>
-                <div style={{ fontSize: "60px", marginBottom: "15px" }}>🌾</div>
-                <p style={{ fontSize: "18px", marginBottom: "8px", fontWeight: "600" }}>No farmers registered yet</p>
-                <p style={{ fontSize: "14px", marginBottom: "20px" }}>Operators can register farmers in the system</p>
+              <div className="text-center py-12 sm:py-20 text-gray-600">
+                <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">🌾</div>
+                <p className="text-base sm:text-lg font-semibold mb-2">No farmers registered yet</p>
+                <p className="text-xs sm:text-sm">Operators can register farmers in the system</p>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+              <div className="flex flex-col gap-3 sm:gap-4">
                 {farmers.map((farmer) => (
                   <div
                     key={farmer.farmer_id || farmer._id}
                     onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
-                    style={{
-                      border: "1px solid #e0e0e0",
-                      borderRadius: "12px",
-                      padding: "20px",
-                      background: "#fafafa",
-                      transition: "all 0.3s",
-                      cursor: "pointer"
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.1)";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.background = "white";
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.boxShadow = "none";
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.background = "#fafafa";
-                    }}
+                    className="border border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50 hover:bg-white hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer"
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <div>
-                        <div style={{ fontSize: "18px", fontWeight: "700", color: "#333", marginBottom: "4px" }}>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-base sm:text-lg font-bold text-gray-900 truncate">
                           {farmer.first_name} {farmer.last_name}
                         </div>
-                        <div style={{ color: "#666", fontSize: "14px", lineHeight: "1.6" }}>
+                        <div className="text-gray-600 text-xs sm:text-sm mt-1 line-clamp-2">
                           📱 {farmer.primary_phone || farmer.phone} • 🆔 {farmer.farmer_id}
                         </div>
                       </div>
-                      <div style={{
-                        padding: "4px 12px",
-                        borderRadius: "20px",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        background: farmer.registration_status === "verified" ? "#d4edda" : "#fff3cd",
-                        color: farmer.registration_status === "verified" ? "#155724" : "#856404"
-                      }}>
+                      <div className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                        farmer.registration_status === "verified"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}>
                         {farmer.registration_status || "Registered"}
                       </div>
                     </div>
@@ -569,9 +396,29 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Enhanced Animations */}
       <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
+        @keyframes blob {
+          0%, 100% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+
+        /* Smooth transitions */
+        * {
+          transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         }
       `}</style>
     </div>

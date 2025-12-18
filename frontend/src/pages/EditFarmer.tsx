@@ -237,6 +237,14 @@ export default function EditFarmer() {
     try {
       const cleanPhone = (phone: string) => phone.replace(/[\s\-()]/g, "");
       
+      const normalizeGender = (g: string) => {
+        const val = g?.toLowerCase();
+        if (val === "male") return "Male";
+        if (val === "female") return "Female";
+        if (val === "other") return "Other";
+        return "";
+      };
+
       const finalProvinceCode = showCustomProvince ? "OTHER" : formData.province_code;
       const finalProvinceName = showCustomProvince ? customProvince : formData.province_name;
       const finalDistrictCode = showCustomDistrict ? "OTHER" : formData.district_code;
@@ -250,9 +258,9 @@ export default function EditFarmer() {
           first_name: formData.first_name,
           last_name: formData.last_name,
           phone_primary: cleanPhone(formData.phone_primary),
-          nrc: formData.nrc,
+          nrc: formData.nrc.trim(),
           date_of_birth: formData.date_of_birth,
-          gender: formData.gender,
+          gender: normalizeGender(formData.gender),
         },
         address: {
           province_code: finalProvinceCode,
@@ -314,14 +322,14 @@ export default function EditFarmer() {
 
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
-      <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
-        <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
-          🌾 AgriManage Pro
+      <div style={{ textAlign: "center", color: "white", paddingTop: "20px", paddingBottom: "20px" }}>
+        <h1 style={{ fontSize: "clamp(1.5rem, 5vw, 2.8rem)", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
+          🌾 Chiefdom Management Model
         </h1>
-        <p style={{ fontSize: "18px", opacity: 0.9 }}>Edit Farmer</p>
+        <p style={{ fontSize: "clamp(14px, 3vw, 18px)", opacity: 0.9 }}>Edit Farmer</p>
       </div>
 
-      <div style={{ maxWidth: "900px", margin: "0 auto", padding: "0 20px 40px 20px" }}>
+      <div style={{ maxWidth: "900px", margin: "0 auto", padding: "0 15px 40px 15px" }}>
         <button
           onClick={() => navigate(-1)}
           style={{
@@ -343,11 +351,11 @@ export default function EditFarmer() {
 
         <form onSubmit={handleSubmit}>
           {/* Personal Info */}
-          <div style={{ background: "white", padding: "25px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
-            <h3 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+          <div style={{ background: "white", padding: "clamp(15px, 4vw, 25px)", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
+            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
               👤 Personal Information
             </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
                   First Name <span style={{ color: "#dc3545" }}>*</span>
@@ -445,11 +453,11 @@ export default function EditFarmer() {
           </div>
 
           {/* Address */}
-          <div style={{ background: "white", padding: "25px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
-            <h3 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+          <div style={{ background: "white", padding: "clamp(15px, 4vw, 25px)", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
+            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
               📍 Address
             </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Province</label>
                 <select
@@ -530,11 +538,11 @@ export default function EditFarmer() {
           </div>
 
           {/* Farm Info */}
-          <div style={{ background: "white", padding: "25px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
-            <h3 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+          <div style={{ background: "white", padding: "clamp(15px, 4vw, 25px)", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
+            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
               🌾 Farm Information
             </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Farm Size (hectares)</label>
                 <input
@@ -587,11 +595,11 @@ export default function EditFarmer() {
           </div>
 
           {/* Household Info */}
-          <div style={{ background: "white", padding: "25px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
-            <h3 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+          <div style={{ background: "white", padding: "clamp(15px, 4vw, 25px)", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
+            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
               🏠 Household Information
             </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Household Size</label>
                 <input
@@ -620,13 +628,13 @@ export default function EditFarmer() {
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: "flex", gap: "15px", justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", gap: "15px", justifyContent: "flex-end", flexWrap: "wrap" }}>
             <button
               type="button"
               onClick={() => navigate(-1)}
               style={{
                 padding: "12px 30px", background: "#6c757d", color: "white", border: "none",
-                borderRadius: "8px", fontSize: "15px", fontWeight: "600", cursor: "pointer", transition: "all 0.3s"
+                borderRadius: "8px", fontSize: "clamp(13px, 2vw, 15px)", fontWeight: "600", cursor: "pointer", transition: "all 0.3s", flex: "1 1 120px", minWidth: "120px"
               }}
               onMouseOver={(e) => e.currentTarget.style.background = "#5a6268"}
               onMouseOut={(e) => e.currentTarget.style.background = "#6c757d"}
@@ -638,8 +646,8 @@ export default function EditFarmer() {
               disabled={saving}
               style={{
                 padding: "12px 30px", background: saving ? "#ccc" : "#28a745", color: "white",
-                border: "none", borderRadius: "8px", fontSize: "15px", fontWeight: "600",
-                cursor: saving ? "not-allowed" : "pointer", transition: "all 0.3s"
+                border: "none", borderRadius: "8px", fontSize: "clamp(13px, 2vw, 15px)", fontWeight: "600",
+                cursor: saving ? "not-allowed" : "pointer", transition: "all 0.3s", flex: "1 1 120px", minWidth: "120px"
               }}
               onMouseOver={(e) => !saving && (e.currentTarget.style.background = "#218838")}
               onMouseOut={(e) => !saving && (e.currentTarget.style.background = "#28a745")}

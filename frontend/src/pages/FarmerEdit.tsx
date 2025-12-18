@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import farmerService from '../services/farmer.service';
 import geoService from '../services/geo.service';
-import { useNotification } from '@/components/Notification';
+import { useNotification } from '@/contexts/NotificationContext';
 
 interface FarmerData {
   farmer_id?: string;
@@ -51,7 +51,7 @@ interface GeoOption {
 const FarmerEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { showSuccess, showError, showWarning } = useNotification();
+  const { success: showSuccess, error: showError } = useNotification();
   const [formData, setFormData] = useState<FarmerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -162,67 +162,23 @@ const FarmerEdit: React.FC = () => {
   const handleDistrictChange = async (districtCode: string) => {
     if (districtCode === 'OTHER') {
       setShowCustomDistrict(true);
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData) return;
-
-    setSubmitting(true);
-    setError(null);
-
-    try {
-      // Handle custom province creation
-      if (showCustomProvince && customProvince.trim()) {
-        const newProvince = await geoService.createCustomProvince(customProvince.trim());
-        formData.address.province_code = newProvince.code;
-        formData.address.province_name = newProvince.name;
-        showSuccess(`Custom province "${newProvince.name}" created successfully!`);
-        
-        // Reload provinces to include the new one
-        const allProvinces = await geoService.provinces();
-        setProvinces(allProvinces);
-      }
-      
-      // Handle custom district creation
-      if (showCustomDistrict && customDistrict.trim() && formData.address.province_code) {
-        const newDistrict = await geoService.createCustomDistrict(
-          formData.address.province_code,
-          customDistrict.trim()
-        );
-        formData.address.district_code = newDistrict.code;
-        formData.address.district_name = newDistrict.name;
-        showSuccess(`Custom district "${newDistrict.name}" created successfully!`);
-        
-        // Reload districts to include the new one
-        const allDistricts = await geoService.districts(formData.address.province_code);
-        setDistricts(allDistricts);
-      }
-      
-      // Handle custom chiefdom creation
-      if (showCustomChiefdom && customChiefdom.trim() && formData.address.district_code) {
-        const newChiefdom = await geoService.createCustomChiefdom(
-          formData.address.district_code,
-          customChiefdom.trim()
-        );
-        formData.address.chiefdom_code = newChiefdom.code;
-        formData.address.chiefdom_name = newChiefdom.name;
-        showSuccess(`Custom chiefdom "${newChiefdom.name}" created successfully!`);
-        
-        // Reload chiefdoms to include the new one
-        const allChiefdoms = await geoService.chiefdoms(formData.address.district_code);
-        setChiefdoms(allChiefdoms);
-      }
-      
-      await farmerService.update(id!, formData);
-      showSuccess('Farmer updated successfully!');
-      navigate(`/farmers/${id}`);
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.detail || 'Failed to update farmer';
-      setError(errorMsg);
-      showError(errorMsg);
-    } finally {
-      setSubmitting(false);
+      setShowCustomChiefdom(false);
+      setFormData(prev => prev ? {
+        ...prev,
+        address: {
+          ...prev.address,
+          district_code: '',
+          district_name: '',
+          chiefdom_code: '',
+          chiefdom_name: ''
+        }
+      } : null);
+      setChiefdoms([]);
+      return;
     }
-  };setCustomDistrict('');
+    
+    setShowCustomDistrict(false);
+    setCustomDistrict('');
     
     const selectedDistrict = districts.find(d => d.code === districtCode);
     if (!selectedDistrict) return;
@@ -363,16 +319,16 @@ const FarmerEdit: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg text-gray-600">Loading farmer data...</div>
+      <div className="flex items-center justify-center min-h-screen" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div className="text-sm sm:text-base lg:text-lg text-gray-600" style={{ fontSize: '0.875rem', color: '#4b5563' }}>Loading farmer data...</div>
       </div>
     );
   }
 
   if (error && !formData) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8" style={{ maxWidth: '56rem', margin: '0 auto', padding: '1.5rem' }}>
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 sm:px-6 py-3 rounded text-sm sm:text-base" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca', color: '#991b1b', padding: '0.75rem 1.5rem', borderRadius: '0.375rem' }}>
           {error}
         </div>
       </div>
@@ -382,108 +338,108 @@ const FarmerEdit: React.FC = () => {
   if (!formData) return null;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 fade-in">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Edit Farmer</h1>
-        <p className="text-sm text-gray-500">Farmer ID: {formData.farmer_id || id}</p>
+    <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 fade-in" style={{ maxWidth: '72rem', margin: '0 auto', padding: '1.5rem' }}>
+      <div className="mb-4 sm:mb-6" style={{ marginBottom: '1.5rem' }}>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800" style={{ fontSize: '1.875rem', fontWeight: '700', color: '#1f2937' }}>Edit Farmer</h1>
+        <p className="text-xs sm:text-sm text-gray-500" style={{ fontSize: '0.875rem', color: '#6b7280' }}>Farmer ID: {formData.farmer_id || id}</p>
       </div>
 
       {error && (
-        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 sm:px-6 py-3 rounded text-sm sm:text-base" style={{ marginBottom: '1rem', backgroundColor: '#fef2f2', borderColor: '#fecaca', color: '#991b1b', padding: '0.75rem 1.5rem', borderRadius: '0.375rem' }}>
           {error}
         </div>
       )}
       
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {/* Personal Information */}
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">Personal Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm" style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4" style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>Personal Information</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">First Name *</label>
+              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>First Name *</label>
               <input
                 type="text"
                 value={formData.personal_info.first_name}
                 onChange={(e) => updatePersonalInfo('first_name', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Last Name *</label>
+              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Last Name *</label>
               <input
                 type="text"
                 value={formData.personal_info.last_name}
                 onChange={(e) => updatePersonalInfo('last_name', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Primary Phone *</label>
+              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Primary Phone *</label>
               <input
                 type="text"
                 value={formData.personal_info.phone_primary}
                 onChange={(e) => updatePersonalInfo('phone_primary', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 placeholder="+260977123456"
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Secondary Phone</label>
+              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Secondary Phone</label>
               <input
                 type="text"
                 value={formData.personal_info.phone_secondary || ''}
                 onChange={(e) => updatePersonalInfo('phone_secondary', e.target.value || undefined)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 placeholder="+260977123456"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Email</label>
+              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Email</label>
               <input
                 type="email"
                 value={formData.personal_info.email || ''}
                 onChange={(e) => updatePersonalInfo('email', e.target.value || undefined)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 placeholder="farmer@example.com"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">NRC Number *</label>
+              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>NRC Number *</label>
               <input
                 type="text"
                 value={formData.personal_info.nrc}
                 onChange={(e) => updatePersonalInfo('nrc', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 placeholder="123456/12/1"
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Date of Birth *</label>
+              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Date of Birth *</label>
               <input
                 type="date"
                 value={formData.personal_info.date_of_birth}
                 onChange={(e) => updatePersonalInfo('date_of_birth', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Gender *</label>
+              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Gender *</label>
               <select
                 value={formData.personal_info.gender}
                 onChange={(e) => updatePersonalInfo('gender', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 required
               >
                 <option value="Male">Male</option>
@@ -493,21 +449,21 @@ const FarmerEdit: React.FC = () => {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Ethnic Group</label>
+              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Ethnic Group</label>
               <input
                 type="text"
                 value={formData.personal_info.ethnic_group || ''}
                 onChange={(e) => updatePersonalInfo('ethnic_group', e.target.value || undefined)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
               />
             </div>
           </div>
         </div>
 
         {/* Address Information */}
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">Address Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm" style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4" style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>Address Information</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
             <div>
               <label className="text-xs font-bold text-gray-600 uppercase">Province *</label>
               <select
@@ -639,9 +595,8 @@ const FarmerEdit: React.FC = () => {
 
         {/* Farm Information */}
         {formData.farm_info && (
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Farm Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm" style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4" style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>Farm Information</h2>\n            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
               <div>
                 <label className="text-xs font-bold text-gray-600 uppercase">Farm Size (Hectares) *</label>
                 <input
@@ -704,9 +659,9 @@ const FarmerEdit: React.FC = () => {
 
         {/* Household Information */}
         {formData.household_info && (
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Household Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm" style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4" style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>Household Information</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
               <div>
                 <label className="text-xs font-bold text-gray-600 uppercase">Household Size *</label>
                 <input
@@ -744,18 +699,18 @@ const FarmerEdit: React.FC = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <button
             type="submit"
             disabled={submitting}
-            className="bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-6 rounded-lg transition shadow-lg disabled:opacity-50"
+            className="bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-4 sm:px-6 rounded-lg transition shadow-lg disabled:opacity-50 text-sm sm:text-base" style={{ backgroundColor: '#15803d', color: 'white', fontWeight: '700', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', opacity: submitting ? 0.5 : 1 }}
           >
             {submitting ? 'Saving...' : 'Save Changes'}
           </button>
           <button
             type="button"
             onClick={() => navigate(`/farmers/${id}`)}
-            className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-bold py-3 px-6 rounded-lg transition"
+            className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-bold py-3 px-4 sm:px-6 rounded-lg transition text-sm sm:text-base" style={{ backgroundColor: '#ffffff', borderColor: '#d1d5db', color: '#374151', fontWeight: '700', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid', cursor: 'pointer' }}
           >
             Cancel
           </button>

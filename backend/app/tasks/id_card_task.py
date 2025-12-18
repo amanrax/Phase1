@@ -10,10 +10,9 @@ from datetime import datetime
 import os
 from pymongo import MongoClient
 from app.config import settings
+from app.services.gridfs_service import sync_gridfs_service
 import json
-
-UPLOAD_DIR = "/app/uploads/idcards"
-QR_DIR = "/app/uploads/qr"
+import io
 
 # Credit card size: 85.6mm x 53.98mm
 CARD_WIDTH = 85.6 * mm
@@ -33,9 +32,6 @@ def generate_id_card(farmer_id: str):
         raise Exception(f"Farmer {farmer_id} not found in DB.")
 
     try:
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
-        os.makedirs(QR_DIR, exist_ok=True)
-
         # Generate QR code with farmer data
         qr_data = json.dumps({
             "farmer_id": farmer_id,
@@ -51,18 +47,36 @@ def generate_id_card(farmer_id: str):
         qr.make(fit=True)
         qr_img = qr.make_image(fill_color="black", back_color="white")
         
-        qr_path = os.path.join(QR_DIR, f"{farmer_id}_qr.png")
-        qr_img.save(qr_path)
-        print(f"✅ QR code saved to: {qr_path}")
+        # Save QR code to memory buffer instead of disk
+        qr_buffer = io.BytesIO()
+        qr_img.save(qr_buffer, format='PNG')
+        qr_buffer.seek(0)
+        qr_data_bytes = qr_buffer.read()
+        
+        # Upload QR code to GridFS
+        qr_file_id = sync_gridfs_service.upload_file(
+            file_data=qr_data_bytes,
+            filename=f"{farmer_id}_qr.png",
+            farmer_id=farmer_id,
+            file_type="qr"
+        )
+        print(f"✅ QR code uploaded to GridFS: {qr_file_id}")
 
-        # Get photo path
-        photo_path = farmer.get("documents", {}).get("photo")
-        if photo_path and not photo_path.startswith("/app"):
-            photo_path = f"/app{photo_path}" if not photo_path.startswith("/") else f"/app{photo_path}"
-
-        # Create PDF with front and back pages
-        pdf_path = os.path.join(UPLOAD_DIR, f"{farmer_id}_card.pdf")
-        c = pdf_canvas.Canvas(pdf_path, pagesize=(CARD_WIDTH, CARD_HEIGHT))
+        # Get photo from GridFS if available
+        photo_file_id = farmer.get("documents", {}).get("photo_file_id")
+        photo_data = None
+        
+        if photo_file_id:
+            try:
+                photo_bytes, _ = sync_gridfs_service.download_file(photo_file_id)
+                photo_data = io.BytesIO(photo_bytes)
+                print(f"✅ Photo loaded from GridFS: {photo_file_id}")
+            except Exception as e:
+                print(f"⚠️ Photo load failed: {e}")
+        
+        # Create PDF in memory
+        pdf_buffer = io.BytesIO()
+        c = pdf_canvas.Canvas(pdf_buffer, pagesize=(CARD_WIDTH, CARD_HEIGHT))
 
         # ============================================
         # FRONT SIDE
@@ -90,11 +104,11 @@ def generate_id_card(farmer_id: str):
         c.drawRightString(CARD_WIDTH - 5*mm, CARD_HEIGHT - 11*mm, "Farmer Registry")
         
         # Photo placeholder or actual photo (positioned to avoid header overlap)
-        photo_x = 5*mm
-        # Ensure top of photo sits below header (header height 15mm) with a small gap
-        photo_h = 24*mm
-        photo_w = 20*mm
-        photo_y = CARD_HEIGHT - (15*mm + photo_h + 4*mm)  # = ~10.98mm from bottom
+        photo_x =data:
+            try:
+                img = ImageReader(photo_data)
+                c.drawImage(img, photo_x, photo_y, photo_w, photo_h, mask='auto')
+                print(f"✅ Photo added from GridFS4*mm)  # = ~10.98mm from bottom
         # Recalculate if card size changes in future
         
         if photo_path and os.path.exists(photo_path):
@@ -200,22 +214,22 @@ def generate_id_card(farmer_id: str):
         c.setFillColor(colors.HexColor('#f3f4f6'))
         c.rect(0, 0, CARD_WIDTH, CARD_HEIGHT, fill=1, stroke=0)
         
-        # Header
-        c.setFillColor(colors.HexColor('#15803d'))
-        c.rect(0, CARD_HEIGHT - 8*mm, CARD_WIDTH, 8*mm, fill=1, stroke=0)
-        c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 8)
-        c.drawCentredString(CARD_WIDTH/2, CARD_HEIGHT - 5.5*mm, "FARMER IDENTIFICATION CARD")
+        # Header from memory buffer
+        qr_buffer.seek(0)
+        qr_img_reader = ImageReader(qr_buffer)
+        qr_size = 28*mm
+        qr_x = 5*mm
+        qr_y = CARD_HEIGHT - 40*mm
         
-        # QR Code
-        if os.path.exists(qr_path):
-            qr_img_reader = ImageReader(qr_path)
-            qr_size = 28*mm
-            qr_x = 5*mm
-            qr_y = CARD_HEIGHT - 40*mm
-            
-            # White background for QR
-            c.setFillColor(colors.white)
+        # White background for QR
+        c.setFillColor(colors.white)
+        c.rect(qr_x - 2*mm, qr_y - 2*mm, qr_size + 4*mm, qr_size + 4*mm, fill=1, stroke=1)
+        c.drawImage(qr_img_reader, qr_x, qr_y, qr_size, qr_size)
+        
+        c.setFillColor(colors.HexColor('#4b5563'))
+        c.setFont("Helvetica-Bold", 5)
+        c.drawCentredString(qr_x + qr_size/2, qr_y - 4*mm, "SCAN TO VERIFY")
+        c.setFillColor(colors.white)
             c.rect(qr_x - 2*mm, qr_y - 2*mm, qr_size + 4*mm, qr_size + 4*mm, fill=1, stroke=1)
             c.drawImage(qr_img_reader, qr_x, qr_y, qr_size, qr_size)
             
@@ -293,23 +307,26 @@ def generate_id_card(farmer_id: str):
         
         # Save PDF
         c.save()
-        print(f"✅ PDF saved to: {pdf_path}")
+        print(f"✅ PDF generated in memory")
         
-        # Verify file exists
-        if os.path.exists(pdf_path):
-            file_size = os.path.getsize(pdf_path)
-            print(f"✅ PDF file verified: {file_size} bytes")
-        else:
-            raise Exception(f"PDF file not found after output: {pdf_path}")
+        # Upload PDF to GridFS
+        pdf_buffer.seek(0)
+        pdf_bytes = pdf_buffer.read()
+        pdf_file_id = sync_gridfs_service.upload_file(
+            file_data=pdf_bytes,
+            filename=f"{farmer_id}_card.pdf",
+            farmer_id=farmer_id,
+            file_type="idcard"
+        )
+        print(f"✅ ID card PDF uploaded to GridFS: {pdf_file_id}")
 
-        # Update farmer record in database
+        # Update farmer record in database with GridFS file IDs
         result = db.farmers.update_one(
             {"farmer_id": farmer_id},
             {
                 "$set": {
-                    "id_card_path": pdf_path,
-                    "qr_code_path": qr_path,
-                    "qr_code_url": f"/uploads/qr/{farmer_id}_qr.png",  # Web-accessible path
+                    "id_card_file_id": pdf_file_id,
+                    "qr_code_file_id": qr_file_id,
                     "id_card_generated_at": datetime.utcnow()
                 }
             }
@@ -317,7 +334,11 @@ def generate_id_card(farmer_id: str):
         print(f"✅ Database updated: matched={result.matched_count}, modified={result.modified_count}")
 
         client.close()
-        return {"message": "ID card generated", "id_card_path": pdf_path}
+        return {
+            "message": "ID card generated",
+            "id_card_file_id": pdf_file_id,
+            "qr_code_file_id": qr_file_id
+        }
     
     except Exception as e:
         client.close()

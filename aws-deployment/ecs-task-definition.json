@@ -1,0 +1,143 @@
+{
+  "family": "cem-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::701708343469:role/ecsTaskExecutionRoleCEM",
+  "taskRoleArn": "arn:aws:iam::701708343469:role/ecsTaskRoleCEM",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "701708343469.dkr.ecr.ap-south-1.amazonaws.com/cem-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "hostPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "ENVIRONMENT",
+          "value": "production"
+        },
+        {
+          "name": "DEBUG",
+          "value": "False"
+        },
+        {
+          "name": "JWT_ALGORITHM",
+          "value": "HS256"
+        },
+        {
+          "name": "ACCESS_TOKEN_EXPIRE_MINUTES",
+          "value": "30"
+        },
+        {
+          "name": "REFRESH_TOKEN_EXPIRE_DAYS",
+          "value": "7"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "MONGODB_URL",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:cem/mongo-uri"
+        },
+        {
+          "name": "MONGODB_DB_NAME",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:cem/mongo-db-name"
+        },
+        {
+          "name": "REDIS_URL",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:cem/redis-url"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:cem/jwt-secret"
+        },
+        {
+          "name": "SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:cem/secret-key"
+        },
+        {
+          "name": "SEED_ADMIN_EMAIL",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:cem/admin-email"
+        },
+        {
+          "name": "SEED_ADMIN_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:cem/admin-password"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/cem-backend",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8000/api/health || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    },
+    {
+      "name": "celery-worker",
+      "image": "701708343469.dkr.ecr.ap-south-1.amazonaws.com/cem-backend:latest",
+      "essential": false,
+      "command": [
+        "celery",
+        "-A",
+        "app.tasks.celery_app.celery_app",
+        "worker",
+        "--loglevel=info"
+      ],
+      "environment": [
+        {
+          "name": "ENVIRONMENT",
+          "value": "production"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "MONGODB_URL",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:cem/mongo-uri"
+        },
+        {
+          "name": "MONGODB_DB_NAME",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:cem/mongo-db-name"
+        },
+        {
+          "name": "REDIS_URL",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:cem/redis-url"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:cem/jwt-secret"
+        },
+        {
+          "name": "SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:cem/secret-key"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/cem-celery",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "celery",
+          "awslogs-create-group": "true"
+        }
+      }
+    }
+  ]
+}

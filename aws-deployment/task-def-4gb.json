@@ -1,0 +1,158 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "701708343469.dkr.ecr.ap-south-1.amazonaws.com/ziamis-backend:gridfs",
+      "cpu": 0,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "hostPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "ACCESS_TOKEN_EXPIRE_MINUTES",
+          "value": "60"
+        },
+        {
+          "name": "SEED_ADMIN_PASSWORD",
+          "value": "admin123"
+        },
+        {
+          "name": "ENVIRONMENT",
+          "value": "production"
+        },
+        {
+          "name": "REFRESH_TOKEN_EXPIRE_DAYS",
+          "value": "7"
+        },
+        {
+          "name": "DEBUG",
+          "value": "False"
+        },
+        {
+          "name": "MONGODB_DB_NAME",
+          "value": "zambian_farmer_db"
+        },
+        {
+          "name": "REDIS_URL",
+          "value": "redis://ziamis-redis-001.ziamis-redis.nb3o6e.aps1.cache.amazonaws.com:6379/0"
+        },
+        {
+          "name": "SEED_ADMIN_EMAIL",
+          "value": "admin@agrimanage.com"
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "secrets": [
+        {
+          "name": "MONGODB_URL",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:ziamis/mongodb-url-flvTdg"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:ziamis/jwt-secret-XOQ6YD"
+        },
+        {
+          "name": "SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:ziamis/secret-key-9Bc7UL"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/cem-backend-gridfs",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "backend"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8000/api/health || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      },
+      "systemControls": []
+    },
+    {
+      "name": "celery-worker",
+      "image": "701708343469.dkr.ecr.ap-south-1.amazonaws.com/ziamis-backend:gridfs",
+      "cpu": 0,
+      "portMappings": [],
+      "essential": true,
+      "command": [
+        "celery",
+        "-A",
+        "app.tasks.celery_app",
+        "worker",
+        "--loglevel=info"
+      ],
+      "environment": [
+        {
+          "name": "SEED_ADMIN_PASSWORD",
+          "value": "admin123"
+        },
+        {
+          "name": "MONGODB_DB_NAME",
+          "value": "zambian_farmer_db"
+        },
+        {
+          "name": "ENVIRONMENT",
+          "value": "production"
+        },
+        {
+          "name": "REDIS_URL",
+          "value": "redis://ziamis-redis-001.ziamis-redis.nb3o6e.aps1.cache.amazonaws.com:6379/0"
+        },
+        {
+          "name": "SEED_ADMIN_EMAIL",
+          "value": "admin@agrimanage.com"
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "secrets": [
+        {
+          "name": "MONGODB_URL",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:ziamis/mongodb-url-flvTdg"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:ziamis/jwt-secret-XOQ6YD"
+        },
+        {
+          "name": "SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:701708343469:secret:ziamis/secret-key-9Bc7UL"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/cem-celery-gridfs",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "celery"
+        }
+      },
+      "systemControls": []
+    }
+  ],
+  "family": "cem-backend-gridfs",
+  "taskRoleArn": "arn:aws:iam::701708343469:role/ecsTaskRole",
+  "executionRoleArn": "arn:aws:iam::701708343469:role/ecsTaskExecutionRole",
+  "networkMode": "awsvpc",
+  "volumes": [],
+  "placementConstraints": [],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "2048",
+  "memory": "4096"
+}

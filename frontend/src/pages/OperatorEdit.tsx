@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { operatorService } from "@/services/operator.service";
 import geoService from "@/services/geo.service";
-import { useNotification } from "@/components/Notification";
+import { useNotification } from '@/contexts/NotificationContext';
 
 const getErrorMessage = (err: unknown): string => {
   if (typeof err === "object" && err !== null) {
@@ -49,7 +49,7 @@ export default function OperatorEdit() {
   const [showCustomProvince, setShowCustomProvince] = useState(false);
   const [showCustomDistrict, setShowCustomDistrict] = useState(false);
   
-  const { showSuccess, showError } = useNotification();
+  const { success: showSuccess, error: showError } = useNotification();
 
   useEffect(() => {
     loadProvinces();
@@ -229,7 +229,7 @@ export default function OperatorEdit() {
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
       <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
         <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
-          🌾 AgriManage Pro
+          🌾 Chiefdom Management Model
         </h1>
         <p style={{ fontSize: "18px", opacity: 0.9 }}>Edit Operator</p>
       </div>

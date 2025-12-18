@@ -262,12 +262,12 @@ export default function CreateOperator() {
           }
         }}>
           {/* Personal Information */}
-          <fieldset style={{ border: "1px solid #ddd", borderRadius: "8px", padding: "20px", marginBottom: "20px" }}>
-            <legend style={{ fontWeight: "bold", fontSize: "16px", padding: "0 10px" }}>
+          <fieldset style={{ border: "1px solid #ddd", borderRadius: "8px", padding: "clamp(15px, 4vw, 20px)", marginBottom: "20px" }}>
+            <legend style={{ fontWeight: "bold", fontSize: "clamp(14px, 3vw, 16px)", padding: "0 10px" }}>
               👤 Personal Information
             </legend>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "15px" }}>
               <div>
                 <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
                   First Name <span style={{ color: "red" }}>*</span>
@@ -277,7 +277,7 @@ export default function CreateOperator() {
                   value={formData.first_name}
                   onChange={(e) => handleChange("first_name", e.target.value)}
                   required
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "4px" }}
+                  style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "4px", fontSize: "clamp(13px, 2vw, 14px)" }}
                 />
               </div>
 

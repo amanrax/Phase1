@@ -30,6 +30,7 @@ from app.routes import (
     reports,
     supplies,
     logs,
+    files,  # GridFS file downloads
 )
 
 # Configure logging
@@ -121,6 +122,7 @@ app.include_router(dashboard.router, prefix="/api", tags=["Dashboard"])
 app.include_router(reports.router, prefix="/api", tags=["Reports"])
 app.include_router(supplies.router, prefix="/api", tags=["Supply Requests"])
 app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
+app.include_router(files.router, prefix="/api", tags=["Files"])  # GridFS downloads
 app.include_router(sync.router, prefix="/api", tags=["Synchronization"])
 app.include_router(farmers_qr.router, prefix="/api", tags=["Farmers QR"])
 app.include_router(health.router, prefix="/api/health", tags=["Health"])

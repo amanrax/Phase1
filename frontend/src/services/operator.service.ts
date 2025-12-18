@@ -19,8 +19,8 @@ export const operatorService = {
       full_name: `${operatorData.first_name} ${operatorData.last_name}`.trim(),
       phone: operatorData.phone,
       role: operatorData.role || "OPERATOR",
-      assigned_district: operatorData.assigned_district || undefined,
-      assigned_province: operatorData.assigned_province || undefined,
+      assigned_districts: operatorData.assigned_districts || [],
+      assigned_regions: operatorData.assigned_regions || [],
     };
 
     const response = await api.post("/operators/", payload);

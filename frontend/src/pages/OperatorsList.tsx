@@ -84,214 +84,191 @@ export default function OperatorsList() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="app-page-header">
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <button onClick={() => navigate("/")} aria-label="Back" className="btn-back">
-            ← BACK
-          </button>
-          <h1 className="app-title" style={{ margin: 0 }}>Field Operators</h1>
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate("/")} 
+              className="text-green-700 hover:text-green-800 font-bold text-sm"
+            >
+              ← BACK
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">📋 Field Operators</h1>
+          </div>
         </div>
       </header>
 
       {/* Content */}
-      <div style={{ maxWidth: "1200px", margin: "20px auto", padding: "0 20px" }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <button
           onClick={() => navigate("/operators/create")}
-          aria-label="Add New Operator"
-          style={{
-            marginBottom: "20px",
-            padding: "10px 20px",
-            backgroundColor: "#16A34A",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
+          className="mb-6 bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg transition shadow-lg inline-flex items-center gap-2"
         >
-          ➕ Add New Operator
+          <i className="fa-solid fa-plus"></i> Add New Operator
         </button>
 
         {error && (
           <div
             role="alert"
-            style={{
-              backgroundColor: "#FEE2E2",
-              color: "#DC2626",
-              padding: "15px",
-              marginBottom: "20px",
-              borderRadius: "6px",
-            }}
+            className="mb-6 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500"
           >
             {error}
           </div>
         )}
 
         {loading ? (
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "40px",
-              textAlign: "center",
-              borderRadius: "6px",
-            }}
-          >
-            ⏳ Loading...
+          <div className="bg-white p-12 text-center rounded-xl shadow-sm">
+            <div className="inline-block">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600"></div>
+            </div>
+            <p className="mt-4 text-gray-600">Loading operators...</p>
           </div>
         ) : operators.length === 0 ? (
-          <div
-            style={{
-              padding: "40px",
-              textAlign: "center",
-              color: "#666",
-            }}
-          >
-            No operators found
+          <div className="bg-white p-12 text-center rounded-xl shadow-sm">
+            <p className="text-gray-600 text-lg">No operators found</p>
           </div>
         ) : (
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              backgroundColor: "white",
-            }}
-            aria-label="Operators list"
-          >
-            <thead style={{ backgroundColor: "#F3F4F6" }}>
-              <tr>
-                <th style={{ padding: "15px", textAlign: "left" }}>#</th>
-                <th style={{ padding: "15px", textAlign: "left" }}>Name</th>
-                <th style={{ padding: "15px", textAlign: "left" }}>Phone</th>
-                <th style={{ padding: "15px", textAlign: "left" }}>Email</th>
-                <th style={{ padding: "15px", textAlign: "left" }}>Role</th>
-                <th style={{ padding: "15px", textAlign: "left" }}>District</th>
-                <th style={{ padding: "15px", textAlign: "left" }}>Status</th>
-                <th style={{ padding: "15px", textAlign: "left" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-sm text-gray-600">
+                <thead className="bg-gray-100 text-gray-700 font-bold uppercase text-xs">
+                  <tr>
+                    <th className="px-6 py-3">#</th>
+                    <th className="px-6 py-3">Name</th>
+                    <th className="px-6 py-3">Phone</th>
+                    <th className="px-6 py-3">Email</th>
+                    <th className="px-6 py-3">District</th>
+                    <th className="px-6 py-3">Status</th>
+                    <th className="px-6 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {operators.map((op, i) => (
+                    <tr key={op.operator_id || i} className="hover:bg-green-50 transition">
+                      <td className="px-6 py-4 font-bold text-gray-800">{i + 1}</td>
+                      <td className="px-6 py-4 font-bold text-gray-800">
+                        {op.first_name} {op.last_name}
+                      </td>
+                      <td className="px-6 py-4">{op.phone}</td>
+                      <td className="px-6 py-4">{op.email || "-"}</td>
+                      <td className="px-6 py-4">{op.assigned_district || "-"}</td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                            op.status === "active"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {op.status?.toUpperCase() || "UNKNOWN"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => navigate(`/operators/${op.operator_id}`)}
+                            className="text-green-600 hover:text-green-800 font-bold text-lg"
+                            title="View Details"
+                          >
+                            👁️
+                          </button>
+                          <button
+                            onClick={() => navigate(`/operators/edit/${op.operator_id}`)}
+                            className="text-blue-600 hover:text-blue-800 font-bold text-lg"
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(op.operator_id, op.status)}
+                            className={`font-bold text-lg ${
+                              op.status === "active"
+                                ? "text-red-600 hover:text-red-800"
+                                : "text-green-600 hover:text-green-800"
+                            }`}
+                            title={op.status === "active" ? "Deactivate" : "Activate"}
+                          >
+                            {op.status === "active" ? "🔴" : "🟢"}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(op.operator_id, `${op.first_name} ${op.last_name}`)}
+                            className="text-red-600 hover:text-red-800 font-bold text-lg"
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-gray-200">
               {operators.map((op, i) => (
-                <tr
-                  key={op.operator_id || i}
-                  style={{ borderBottom: "1px solid #E5E7EB" }}
-                >
-                  <td style={{ padding: "15px" }}>{i + 1}</td>
-                  <td style={{ padding: "15px", fontWeight: "bold" }}>
-                    {op.first_name} {op.last_name}
-                  </td>
-                  <td style={{ padding: "15px" }}>{op.phone}</td>
-                  <td style={{ padding: "15px" }}>{op.email || "-"}</td>
-                  <td style={{ padding: "15px" }}>
+                <div key={op.operator_id || i} className="p-4 hover:bg-green-50 transition">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Operator #{i + 1}</p>
+                      <h3 className="text-lg font-bold text-gray-800 mt-1">
+                        {op.first_name} {op.last_name}
+                      </h3>
+                    </div>
                     <span
-                      style={{
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        backgroundColor: "#DBEAFE",
-                        color: "#1E40AF",
-                      }}
-                    >
-                      {op.role}
-                    </span>
-                  </td>
-                  <td style={{ padding: "15px" }}>{op.assigned_district || "-"}</td>
-                  <td style={{ padding: "15px" }}>
-                    <span
-                      style={{
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        backgroundColor:
-                          op.status === "active" ? "#D1FAE5" : "#FEE2E2",
-                        color: op.status === "active" ? "#065F46" : "#991B1B",
-                      }}
+                      className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
+                        op.status === "active"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
                     >
                       {op.status?.toUpperCase() || "UNKNOWN"}
                     </span>
-                  </td>
-                  <td
-                    style={{
-                      padding: "15px",
-                      display: "flex",
-                      gap: "10px",
-                    }}
-                  >
+                  </div>
+                  <div className="text-sm text-gray-600 space-y-1 mb-4">
+                    <p><strong>Phone:</strong> {op.phone}</p>
+                    <p><strong>Email:</strong> {op.email || "-"}</p>
+                    <p><strong>District:</strong> {op.assigned_district || "-"}</p>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
                     <button
                       onClick={() => navigate(`/operators/${op.operator_id}`)}
-                      aria-label={`View operator ${op.first_name}`}
-                      style={{
-                        color: "#16A34A",
-                        border: "none",
-                        background: "transparent",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                        fontSize: "18px",
-                      }}
-                      title="View Details"
+                      className="flex-1 bg-green-100 text-green-800 font-bold py-2 px-3 rounded-lg text-sm hover:bg-green-200 transition"
                     >
-                      👁️
+                      👁️ View
                     </button>
                     <button
                       onClick={() => navigate(`/operators/edit/${op.operator_id}`)}
-                      aria-label={`Edit operator ${op.first_name}`}
-                      style={{
-                        color: "#2563EB",
-                        border: "none",
-                        background: "transparent",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                        fontSize: "18px",
-                      }}
-                      title="Edit"
+                      className="flex-1 bg-blue-100 text-blue-800 font-bold py-2 px-3 rounded-lg text-sm hover:bg-blue-200 transition"
                     >
-                      ✏️
+                      ✏️ Edit
                     </button>
                     <button
-                      onClick={() =>
-                        handleToggleStatus(op.operator_id, op.status)
-                      }
-                      aria-label={`Toggle status for ${op.first_name}`}
-                      style={{
-                        color: op.status === "active" ? "#DC2626" : "#16A34A",
-                        border: "none",
-                        background: "transparent",
-                        cursor: "pointer",
-                        fontSize: "18px",
-                      }}
-                      title={
-                        op.status === "active" ? "Deactivate" : "Activate"
-                      }
+                      onClick={() => handleToggleStatus(op.operator_id, op.status)}
+                      className={`flex-1 font-bold py-2 px-3 rounded-lg text-sm transition ${
+                        op.status === "active"
+                          ? "bg-red-100 text-red-800 hover:bg-red-200"
+                          : "bg-green-100 text-green-800 hover:bg-green-200"
+                      }`}
                     >
-                      {op.status === "active" ? "🔴" : "🟢"}
+                      {op.status === "active" ? "🔴 Deactivate" : "🟢 Activate"}
                     </button>
                     <button
-                      onClick={() =>
-                        handleDelete(
-                          op.operator_id,
-                          `${op.first_name} ${op.last_name}`
-                        )
-                      }
-                      aria-label={`Delete operator ${op.first_name}`}
-                      style={{
-                        color: "#DC2626",
-                        border: "none",
-                        background: "transparent",
-                        cursor: "pointer",
-                        fontSize: "18px",
-                      }}
+                      onClick={() => handleDelete(op.operator_id, `${op.first_name} ${op.last_name}`)}
+                      className="bg-red-100 text-red-800 font-bold py-2 px-3 rounded-lg text-sm hover:bg-red-200 transition"
                       title="Delete"
                     >
                       🗑️
                     </button>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
         )}
       </div>
     </div>
