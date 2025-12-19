@@ -110,35 +110,33 @@ cors_kwargs = dict(
 # when an edge/proxy modifies requests). We'll add CORSMiddleware
 # after declaring PreflightMiddleware to ensure OPTIONS are handled
 # consistently.
+
 from starlette.responses import Response
 
 
-class PreflightMiddleware(BaseHTTPMiddleware):
-    """Simple middleware to ensure OPTIONS preflight requests are answered
-    quickly and consistently with the configured CORS headers.
-
-    This complements CORSMiddleware for environments where an edge (ALB/CF)
-    or the application stack may not forward OPTIONS to the normal router.
-    """
-
-    async def dispatch(self, request, call_next):
-        if request.method == "OPTIONS":
-            origin = request.headers.get("origin") or "*"
-            allow_headers = ",".join(settings.CORS_ALLOW_HEADERS) if settings.CORS_ALLOW_HEADERS != ["*"] else request.headers.get("access-control-request-headers", "*")
-            allow_methods = ",".join(settings.CORS_ALLOW_METHODS)
-            headers = {
-                "Access-Control-Allow-Origin": origin,
-                "Access-Control-Allow-Methods": allow_methods,
-                "Access-Control-Allow-Headers": allow_headers,
-                "Access-Control-Allow-Credentials": "true" if settings.CORS_ALLOW_CREDENTIALS else "false",
-                "Access-Control-Max-Age": "3600",
-            }
-            return Response(status_code=200, content=b"", headers=headers)
+# Use an "http" middleware so it reliably runs before third-party
+# middlewares like CORSMiddleware. This short-circuits OPTIONS
+# preflight requests and returns consistent CORS headers.
+@app.middleware("http")
+async def preflight_middleware(request: Request, call_next):
+    if request.method == "OPTIONS":
+        origin = request.headers.get("origin") or "*"
+        allow_headers = ",".join(settings.CORS_ALLOW_HEADERS) if settings.CORS_ALLOW_HEADERS != ["*"] else request.headers.get("access-control-request-headers", "*")
+        allow_methods = ",".join(settings.CORS_ALLOW_METHODS)
+        headers = {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Methods": allow_methods,
+            "Access-Control-Allow-Headers": allow_headers,
+            "Access-Control-Allow-Credentials": "true" if settings.CORS_ALLOW_CREDENTIALS else "false",
+            "Access-Control-Max-Age": "3600",
+        }
+        return Response(status_code=200, content=b"", headers=headers)
+    return await call_next(request)
 
 
-app.add_middleware(PreflightMiddleware)
-# Add CORSMiddleware after the preflight middleware so OPTIONS are
-# handled first by our short-circuit handler.
+# Add CORSMiddleware after our preflight handler (order of registration
+# is not always the same as execution order for add_middleware, so using
+# an "http" middleware above ensures preflight runs first).
 app.add_middleware(CORSMiddleware, **cors_kwargs)
 app.add_middleware(LoggingMiddleware)
 
