@@ -2,6 +2,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
+import axiosClient from "@/utils/axios";
+import { getCachedApiBase } from "@/utils/networkProbe";
+import { getApiBaseUrl } from "@/config/mobile";
 import { useNotification } from "@/contexts/NotificationContext";
 
 const roles = ["admin", "operator", "farmer"];
@@ -12,6 +15,7 @@ export default function Login() {
   const [userType, setUserType] = useState("admin");
   const [hoveredButton, setHoveredButton] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [diag, setDiag] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const { login, isLoading, error, token, user } = useAuthStore();
@@ -98,6 +102,24 @@ export default function Login() {
       const errorMsg = err.response?.data?.detail || err.message || 'Invalid credentials. Please try again.';
       console.error("Error message:", errorMsg);
       showError(errorMsg);
+
+      // Diagnostic info for device (no adb)
+      try {
+        const axiosBase = axiosClient?.defaults?.baseURL || null;
+        const cached = getCachedApiBase();
+        const rawCandidate = getApiBaseUrl();
+        const diagObj = {
+          message: errorMsg,
+          axiosBase,
+          cached,
+          rawCandidate,
+          errorResponse: err.response?.data || null,
+        };
+        setDiag(JSON.stringify(diagObj, null, 2));
+        console.log('[Login DIAG]', diagObj);
+      } catch (dErr) {
+        console.warn('Failed to gather diag info', dErr);
+      }
     }
   };
   
@@ -221,6 +243,13 @@ export default function Login() {
                 <div className="px-4 py-3 rounded-xl border-l-4 animate-shake bg-red-50 text-red-700 border-red-500">
                   {error}
                 </div>
+              )}
+
+              {/* Diagnostic output (visible when provided) */}
+              {diag && (
+                <pre className="mt-4 p-3 rounded-lg bg-gray-100 text-xs text-gray-800 overflow-auto" style={{maxHeight: 200}}>
+                  {diag}
+                </pre>
               )}
 
               {/* Submit Button */}
