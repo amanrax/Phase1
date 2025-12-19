@@ -104,7 +104,12 @@ cors_kwargs = dict(
     expose_headers=["Content-Length", "Content-Type", "Authorization"],
     max_age=3600,  # Cache preflight requests for 1 hour
 )
-app.add_middleware(CORSMiddleware, **cors_kwargs)
+# NOTE: CORSMiddleware is added after the PreflightMiddleware below so
+# the PreflightMiddleware can short-circuit OPTIONS requests even when
+# the incoming Origin isn't yet validated by CORSMiddleware (useful
+# when an edge/proxy modifies requests). We'll add CORSMiddleware
+# after declaring PreflightMiddleware to ensure OPTIONS are handled
+# consistently.
 from starlette.responses import Response
 
 
@@ -132,6 +137,9 @@ class PreflightMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(PreflightMiddleware)
+# Add CORSMiddleware after the preflight middleware so OPTIONS are
+# handled first by our short-circuit handler.
+app.add_middleware(CORSMiddleware, **cors_kwargs)
 app.add_middleware(LoggingMiddleware)
 
 
