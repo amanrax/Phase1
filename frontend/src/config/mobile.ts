@@ -11,18 +11,18 @@ export const getApiBaseUrl = (): string => {
   
   if (isCapacitor) {
     // Prefer build-time override for mobile backend (secure & flexible)
-    const envUrl = import.meta.env.VITE_MOBILE_API_URL as string | undefined;
+    const envUrl = import.meta.env.VITE_MOBILE_API_URL as string | undefined || import.meta.env.VITE_API_PROD_URL as string | undefined;
 
     if (envUrl) {
-      console.log('[Mobile] ✅ Using VITE_MOBILE_API_URL from build:', envUrl);
+      console.log('[Mobile] ✅ Using mobile API URL from build/env:', envUrl);
       alert(`Mobile App Starting\nBackend: ${envUrl}`);
       return envUrl;
     }
 
-    // Fallback to previous hardcoded IP (keeps current behavior for quick testing)
-    const fallback = 'http://13.233.201.167:8000';
-    console.warn('[Mobile] Using fallback mobile backend (no VITE_MOBILE_API_URL set):', fallback);
-    alert(`Mobile App Starting\nBackend: ${fallback}\nIf login fails, open this URL in your phone browser or set VITE_MOBILE_API_URL to an HTTPS endpoint.`);
+    // Fallback to CloudFront domain if present, else previous hardcoded IP
+    const fallback = 'https://d118h66w5gx0vz.cloudfront.net';
+    console.warn('[Mobile] Using fallback mobile backend (no env urls set):', fallback);
+    alert(`Mobile App Starting\nBackend: ${fallback}\nIf login fails, open this URL in your phone browser or update VITE_MOBILE_API_URL.`);
     return fallback;
   }
   
