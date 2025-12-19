@@ -10,8 +10,8 @@ on:
 env:
   AWS_REGION: ap-south-1
   ECR_REPOSITORY: ziamis-backend
-  ECS_CLUSTER: ziamis-prod
-  ECS_SERVICE: ziamis-api
+  ECS_CLUSTER: ziamis-cluster
+  ECS_SERVICE: ziamis-backend-service
 
 jobs:
   deploy:
