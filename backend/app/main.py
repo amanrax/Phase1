@@ -134,6 +134,22 @@ class PreflightMiddleware(BaseHTTPMiddleware):
 app.add_middleware(PreflightMiddleware)
 app.add_middleware(LoggingMiddleware)
 
+
+# Global fallback for OPTIONS preflight requests (answers any path)
+@app.options("/{full_path:path}", include_in_schema=False)
+async def global_options(full_path: str, request: Request):
+    origin = request.headers.get("origin") or "*"
+    allow_headers = ",".join(settings.CORS_ALLOW_HEADERS) if settings.CORS_ALLOW_HEADERS != ["*"] else request.headers.get("access-control-request-headers", "*")
+    allow_methods = ",".join(settings.CORS_ALLOW_METHODS)
+    headers = {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Methods": allow_methods,
+        "Access-Control-Allow-Headers": allow_headers,
+        "Access-Control-Allow-Credentials": "true" if settings.CORS_ALLOW_CREDENTIALS else "false",
+        "Access-Control-Max-Age": "3600",
+    }
+    return Response(status_code=200, content=b"", headers=headers)
+
 # Removed EnsureCORSHeadersMiddleware as CORSMiddleware with regex should handle Codespaces
 
 # ============================================
