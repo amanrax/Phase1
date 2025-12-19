@@ -18,7 +18,8 @@
     </domain-config>
     
     <!-- Default configuration for other domains -->
-    <base-config cleartextTrafficPermitted="false">
+    <!-- During debugging allow cleartext globally so WebView/fetch to IPs works reliably -->
+    <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
