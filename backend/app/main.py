@@ -78,6 +78,12 @@ allowed_origins = [
     "http://127.0.0.1:5173",
     "http://127.0.0.1:8000",
     "http://127.0.0.1:3000",
+    # Common origins used by Capacitor / Ionic WebViews on mobile devices
+    "http://localhost",
+    "capacitor://localhost",
+    "ionic://localhost",
+    # CloudFront domain used by mobile builds (ensure mobile/web builds allowed)
+    "https://d118h66w5gx0vz.cloudfront.net",
 ]
 
 # Allow overriding frontend origin via env (useful in Codespaces)
@@ -98,8 +104,34 @@ cors_kwargs = dict(
     expose_headers=["Content-Length", "Content-Type", "Authorization"],
     max_age=3600,  # Cache preflight requests for 1 hour
 )
-
 app.add_middleware(CORSMiddleware, **cors_kwargs)
+from starlette.responses import Response
+
+
+class PreflightMiddleware(BaseHTTPMiddleware):
+    """Simple middleware to ensure OPTIONS preflight requests are answered
+    quickly and consistently with the configured CORS headers.
+
+    This complements CORSMiddleware for environments where an edge (ALB/CF)
+    or the application stack may not forward OPTIONS to the normal router.
+    """
+
+    async def dispatch(self, request, call_next):
+        if request.method == "OPTIONS":
+            origin = request.headers.get("origin") or "*"
+            allow_headers = ",".join(settings.CORS_ALLOW_HEADERS) if settings.CORS_ALLOW_HEADERS != ["*"] else request.headers.get("access-control-request-headers", "*")
+            allow_methods = ",".join(settings.CORS_ALLOW_METHODS)
+            headers = {
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": allow_methods,
+                "Access-Control-Allow-Headers": allow_headers,
+                "Access-Control-Allow-Credentials": "true" if settings.CORS_ALLOW_CREDENTIALS else "false",
+                "Access-Control-Max-Age": "3600",
+            }
+            return Response(status_code=200, content=b"", headers=headers)
+
+
+app.add_middleware(PreflightMiddleware)
 app.add_middleware(LoggingMiddleware)
 
 # Removed EnsureCORSHeadersMiddleware as CORSMiddleware with regex should handle Codespaces
