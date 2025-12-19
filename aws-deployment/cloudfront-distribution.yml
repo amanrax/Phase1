@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFront distribution in front of an existing ALB to provide HTTPS (no custom domain required).
+
+Parameters:
+  OriginDomainName:
+    Type: String
+    Description: "ALB DNS name (e.g. my-alb-123456.us-east-1.elb.amazonaws.com)"
+  OriginHTTPPort:
+    Type: Number
+    Default: 80
+    Description: "Origin HTTP port (set to 8000 if your ALB or service listens on port 8000)"
+  PriceClass:
+    Type: String
+    Default: PriceClass_100
+    AllowedValues: [PriceClass_100, PriceClass_200, PriceClass_All]
+    Description: CloudFront price class
+
+Resources:
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        PriceClass: !Ref PriceClass
+        Origins:
+          - Id: ALBOrigin
+            DomainName: !Ref OriginDomainName
+            CustomOriginConfig:
+              HTTPPort: !Ref OriginHTTPPort
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+        DefaultCacheBehavior:
+          TargetOriginId: ALBOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: none
+        DefaultRootObject: ""
+
+Outputs:
+  DistributionDomainName:
+    Description: "CloudFront domain name (use as API base, e.g. https://dxxxxxx.cloudfront.net)"
+    Value: !GetAtt CloudFrontDistribution.DomainName
