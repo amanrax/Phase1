@@ -5,6 +5,7 @@ import useAuthStore from "@/store/authStore";
 import axiosClient from "@/utils/axios";
 import { getCachedApiBase } from "@/utils/networkProbe";
 import { getApiBaseUrl } from "@/config/mobile";
+import { ensureApiBase } from "@/utils/networkProbe";
 import { useNotification } from "@/contexts/NotificationContext";
 
 const roles = ["admin", "operator", "farmer"];
@@ -16,6 +17,7 @@ export default function Login() {
   const [hoveredButton, setHoveredButton] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [diag, setDiag] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const { login, isLoading, error, token, user } = useAuthStore();
@@ -120,6 +122,49 @@ export default function Login() {
       } catch (dErr) {
         console.warn('Failed to gather diag info', dErr);
       }
+    }
+  };
+
+  const timeoutFetch = async (url: string, ms = 4000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), ms);
+    try {
+      const res = await fetch(url, { method: 'GET', signal: controller.signal });
+      return { ok: res.ok, status: res.status, text: await res.text() };
+    } finally {
+      clearTimeout(id);
+    }
+  };
+
+  const testConnection = async () => {
+    setTestResult('Running tests...');
+    try {
+      const candidate = getApiBaseUrl();
+      const normalized = candidate.replace(/\/$/, '');
+      const httpsCandidate = normalized.startsWith('http://') ? normalized.replace('http://','https://') : normalized;
+      const paths = ['/api/health', '/health', '/api'];
+      const results: any[] = [];
+
+      // Try explicit candidate then https fallback
+      for (const host of [normalized, httpsCandidate]) {
+        for (const p of paths) {
+          const url = `${host}${p}`;
+          try {
+            const r = await timeoutFetch(url, 4000);
+            results.push({ url, ok: r.ok, status: r.status, body: r.text.slice(0, 500) });
+            if (r.ok) {
+              setTestResult(JSON.stringify({ successUrl: url, status: r.status, body: r.text }, null, 2));
+              return;
+            }
+          } catch (err: any) {
+            results.push({ url, error: String(err) });
+          }
+        }
+      }
+
+      setTestResult(JSON.stringify({ attempted: results }, null, 2));
+    } catch (err: any) {
+      setTestResult(String(err));
     }
   };
   
@@ -249,6 +294,17 @@ export default function Login() {
               {diag && (
                 <pre className="mt-4 p-3 rounded-lg bg-gray-100 text-xs text-gray-800 overflow-auto" style={{maxHeight: 200}}>
                   {diag}
+                </pre>
+              )}
+
+              <div className="mt-3 flex gap-2">
+                <button type="button" onClick={testConnection} className="px-3 py-2 bg-yellow-100 text-yellow-800 rounded">Test Connection</button>
+                <button type="button" onClick={() => { setDiag(null); setTestResult(null); }} className="px-3 py-2 bg-gray-100 text-gray-800 rounded">Clear</button>
+              </div>
+
+              {testResult && (
+                <pre className="mt-3 p-3 rounded-lg bg-black text-white text-xs overflow-auto" style={{maxHeight: 300}}>
+                  {testResult}
                 </pre>
               )}
 
