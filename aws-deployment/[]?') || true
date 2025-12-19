@@ -1,0 +1,27 @@
+{
+    "Listeners": [
+        {
+            "ListenerArn": "arn:aws:elasticloadbalancing:ap-south-1:701708343469:listener/app/ziamis-alb/1c2c8f11ff2a2225/f47e844cebd5ab6c",
+            "LoadBalancerArn": "arn:aws:elasticloadbalancing:ap-south-1:701708343469:loadbalancer/app/ziamis-alb/1c2c8f11ff2a2225",
+            "Port": 80,
+            "Protocol": "HTTP",
+            "DefaultActions": [
+                {
+                    "Type": "forward",
+                    "TargetGroupArn": "arn:aws:elasticloadbalancing:ap-south-1:701708343469:targetgroup/ziamis-backend-tg/83b489b2df6142e3",
+                    "ForwardConfig": {
+                        "TargetGroups": [
+                            {
+                                "TargetGroupArn": "arn:aws:elasticloadbalancing:ap-south-1:701708343469:targetgroup/ziamis-backend-tg/83b489b2df6142e3",
+                                "Weight": 1
+                            }
+                        ],
+                        "TargetGroupStickinessConfig": {
+                            "Enabled": false
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
