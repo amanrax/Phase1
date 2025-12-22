@@ -3,7 +3,9 @@ import api from "@/utils/axios";
 export const operatorService = {
   async getOperators(limit = 50, offset = 0): Promise<any> {
     // Backend uses /operators/ endpoint
-    const response = await api.get(`/operators/?limit=${limit}&skip=${offset}`);
+    // Add a timestamp query param to bust caches (CDN/proxy) after mutations
+    const cacheBuster = `t=${Date.now()}`;
+    const response = await api.get(`/operators/?limit=${limit}&skip=${offset}&${cacheBuster}`);
     return response.data;
   },
 
