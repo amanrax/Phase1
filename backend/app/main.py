@@ -141,6 +141,30 @@ app.add_middleware(CORSMiddleware, **cors_kwargs)
 app.add_middleware(LoggingMiddleware)
 
 
+# ============================================
+# Prevent CloudFront / intermediary caching for API responses
+# Adds conservative Cache-Control headers for API endpoints so
+# clients and CDNs return fresh data after mutations.
+# ============================================
+@app.middleware("http")
+async def cache_control_middleware(request: Request, call_next):
+    response = await call_next(request)
+
+    try:
+        path = request.url.path or ""
+        # Only apply to API endpoints
+        if path.startswith("/api/"):
+            # For all API responses, instruct proxies and browsers not to cache
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Vary"] = response.headers.get("Vary", "Origin, Authorization")
+    except Exception:
+        # Fail-safe: do not break request flow if header assignment fails
+        pass
+
+    return response
+
+
 # Global fallback for OPTIONS preflight requests (answers any path)
 @app.options("/{full_path:path}", include_in_schema=False)
 async def global_options(full_path: str, request: Request):
