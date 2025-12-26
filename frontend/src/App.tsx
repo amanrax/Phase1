@@ -54,7 +54,6 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
-          <Route path="/login" element={<Login />} />
 
         {/* Admin Routes */}
         <Route
