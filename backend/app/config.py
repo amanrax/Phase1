@@ -154,6 +154,19 @@ def get_settings() -> Settings:
 # Global settings instance
 settings = get_settings()
 
+# If running in production on EC2, temporarily allow the EC2 host in CORS.
+# NOTE: This is a convenience override for initial deployment/testing only.
+# Restrict origins before long-term production use.
+try:
+    if settings.ENVIRONMENT == "production":
+        settings.CORS_ORIGINS = [
+            "http://13.204.83.198:8000",
+            "*",
+        ]
+except Exception:
+    # If settings object is immutable or assignment fails, skip override
+    pass
+
 # Usage:
 # from app.config import settings
 # print(settings.MONGODB_URL)
