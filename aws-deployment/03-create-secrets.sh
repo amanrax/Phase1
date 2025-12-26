@@ -3,6 +3,10 @@
 # AWS Secrets Manager - Create Production Secrets
 # ============================================
 
+# SAFETY GUARD: AWS secrets creation temporarily DISABLED
+echo "[SAFE-GUARD] AWS secrets creation disabled. Remove guard to re-enable." >&2
+exit 0
+
 set -e
 
 REGION="ap-south-1"

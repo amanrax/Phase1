@@ -11,9 +11,13 @@ const config: CapacitorConfig = {
     // Production-ready server settings
     androidScheme: 'https',
     url: 'http://13.204.83.198:8000',
+    cleartext: true,
     allowNavigation: [
-      '13.204.83.198',
-      '13.204.83.198:8000',
+      'http://13.204.83.198',
+      'http://13.204.83.198:8000',
+      'http://localhost',
+      'http://127.0.0.1',
+      'http://10.0.2.2'
     ],
   },
   plugins: {

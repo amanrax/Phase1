@@ -3,6 +3,10 @@
 # Build and Push Docker Image to ECR
 # ============================================
 
+# SAFETY GUARD: Build & push to ECR temporarily DISABLED
+echo "[SAFE-GUARD] AWS build-and-push disabled. Remove guard to re-enable." >&2
+exit 0
+
 set -e
 
 REGION="ap-south-1"

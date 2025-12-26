@@ -3,6 +3,12 @@
 # Master Deployment Script
 # ============================================
 
+# SAFETY GUARD: AWS deployment scripts temporarily DISABLED
+# Reason: User requested to disable AWS automation to avoid unexpected charges.
+# To re-enable, remove or comment out the following two lines.
+echo "[SAFE-GUARD] AWS deployment disabled. Remove guard to re-enable." >&2
+exit 0
+
 set -e
 
 echo "🚀 CEM AWS Deployment - Complete Pipeline"

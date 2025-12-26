@@ -3,6 +3,10 @@
 # Deploy ECS Service
 # ============================================
 
+# SAFETY GUARD: ECS deploy temporarily DISABLED
+echo "[SAFE-GUARD] ECS deploy disabled. Remove guard to re-enable." >&2
+exit 0
+
 set -e
 
 REGION="ap-south-1"

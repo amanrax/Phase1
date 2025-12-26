@@ -3,6 +3,11 @@
 # AWS Infrastructure Setup - CEM Production
 # ============================================
 
+# SAFETY GUARD: AWS infrastructure setup temporarily DISABLED
+# To re-enable, remove the guard below.
+echo "[SAFE-GUARD] AWS infrastructure setup disabled. Remove guard to re-enable." >&2
+exit 0
+
 set -e
 
 REGION="ap-south-1"
