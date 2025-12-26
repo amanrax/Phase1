@@ -12,7 +12,7 @@ const config: CapacitorConfig = {
     // url: 'http://192.168.1.100:5173',
     // cleartext: true,
     androidScheme: 'http',
-    allowNavigation: ['13.233.201.167']
+    allowNavigation: ['13.233.201.167', '10.0.3.120', 'http://10.0.3.120:8000']
   },
   plugins: {
     SplashScreen: {
