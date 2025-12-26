@@ -8,14 +8,12 @@ const config: CapacitorConfig = {
   appName: 'Chiefdom Empowerment Model',
   webDir: 'dist',
   server: {
-    // For development, you can set this to your local or staging API
-    // url: 'http://192.168.1.100:5173',
-    // cleartext: true,
+    // Production-ready server settings
     androidScheme: 'https',
+    url: 'http://13.204.83.198:8000',
     allowNavigation: [
       '13.204.83.198',
       '13.204.83.198:8000',
-      '*', // Allow all for development; restrict later in production
     ],
   },
   plugins: {

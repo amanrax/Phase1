@@ -154,15 +154,16 @@ def get_settings() -> Settings:
 # Global settings instance
 settings = get_settings()
 
-# If running in production on EC2, temporarily allow the EC2 host in CORS.
-# NOTE: This is a convenience override for initial deployment/testing only.
-# Restrict origins before long-term production use.
+# Production override: if running in production, restrict CORS to the EC2 host only.
+# IMPORTANT: remove or refine this to your production domains before long-term use.
 try:
     if settings.ENVIRONMENT == "production":
         settings.CORS_ORIGINS = [
             "http://13.204.83.198:8000",
-            "*",
         ]
+        settings.CORS_ALLOW_CREDENTIALS = True
+        settings.CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        settings.CORS_ALLOW_HEADERS = ["*"]
 except Exception:
     # If settings object is immutable or assignment fails, skip override
     pass
