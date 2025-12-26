@@ -1,10 +1,11 @@
 // src/utils/axios.ts
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import useAuthStore from "@/store/authStore";
-import { getApiBaseUrl } from "@/config/mobile";
 
-// Get API base URL (handles web, Codespaces, and mobile)
-let API_BASE_URL = getApiBaseUrl();
+// Use Vite environment variables for the API base URL.
+// VITE_API_BASE_URL should be defined in your .env files (e.g., .env.development, .env.production).
+// Fallback to a default for local development if not set.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 console.log('╔════════════════════════════════════════════════════════════╗');
 console.log('║              AXIOS INSTANCE - API URL DEBUG               ║');
