@@ -1,0 +1,1 @@
+AWS_PROFILE=default [aws_cleanup.sh](http://_vscodecontentref_/1) --dry-run --region ap-south-1 --domain d118h66w5gx0vz.cloudfront.net --cluster ziamis-cluster

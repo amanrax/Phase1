@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # ===============================
   # 🌾 FASTAPI BACKEND SERVICE
@@ -8,20 +10,22 @@ services:
       dockerfile: Dockerfile
     container_name: farmer-backend
     command: >
-      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --timeout-keep-alive 120"
+      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2"
     ports:
       - "8000:8000"
     depends_on:
-      farmer-mongo:
-        condition: service_healthy
       farmer-redis:
         condition: service_healthy
-    env_file:
-      - ./backend/.env
     environment:
-      - FRONTEND_ORIGIN=https://jubilant-goggles-r5q9pv5j6rjh59rq-5173.app.github.dev
+      - MONGODB_URL=${MONGODB_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - SECRET_KEY=${SECRET_KEY}
+      - SEED_ADMIN_EMAIL=${SEED_ADMIN_EMAIL}
+      - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD}
+      - REDIS_URL=redis://farmer-redis:6379
+      - ENVIRONMENT=production
+
     volumes:
-      - ./backend:/app
       - ./uploads:/app/uploads
     restart: always
     healthcheck:
@@ -30,91 +34,59 @@ services:
       timeout: 10s
       retries: 5
 
+
   # ===============================
   # ⚙️ CELERY WORKER
   # ===============================
   celery-worker:
     build:
       context: ./backend
+      dockerfile: Dockerfile
     container_name: celery-worker
     command: >
-      sh -c "celery -A app.tasks.celery_app.celery_app worker --loglevel=info"
+      sh -c "celery -A app.tasks.celery_app.celery_app worker --loglevel=info --concurrency=2"
     depends_on:
       farmer-redis:
         condition: service_healthy
-    env_file:
-      - ./backend/.env
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_URL=redis://farmer-redis:6379
+      - ENVIRONMENT=production
     volumes:
-      - ./backend:/app
       - ./uploads:/app/uploads
     restart: always
     healthcheck:
       test: ["CMD", "celery", "-A", "app.tasks.celery_app.celery_app", "inspect", "ping"]
-      interval: 30s
+      interval: 60s
       timeout: 10s
       retries: 5
 
+
   # ===============================
-  # 🧠 REDIS (CACHE + CELERY BROKER)
+  # 🧠 REDIS (CACHE + CELERY BROKER) - WITH PERSISTENCE
   # ===============================
   farmer-redis:
-    image: redis:7.0
+    image: redis:7-alpine
     container_name: farmer-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      interval: 30s
       timeout: 5s
       retries: 5
-    restart: always
 
-  # ===============================
-  # 🍃 MONGODB DATABASE
-  # ===============================
-  farmer-mongo:
-    image: mongo:7.0
-    container_name: farmer-mongo
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: Admin123
-      MONGO_INITDB_DATABASE: zambian_farmer_db
-    volumes:
-      - mongo_data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: always
-
-  # ===============================
-  # 🌐 FRONTEND SERVICE (Optional)
-  # ===============================
-  farmer-frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: farmer-frontend
-    ports:
-      - "5173:5173"
-    depends_on:
-      - farmer-backend
-    environment:
-      # Use HTTPS backend URL for Codespaces
-      - VITE_API_BASE_URL=https://jubilant-goggles-r5q9pv5j6rjh59rq-8000.app.github.dev
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    restart: always
-    command: >
-      sh -c "npm run dev -- --host"
 
 # ===============================
 # Persistent Volumes
 # ===============================
 volumes:
-  mongo_data:
+  redis_data:
+    driver: local
   uploads:
+    driver: local

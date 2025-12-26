@@ -63,7 +63,7 @@ def generate_id_card(farmer_id: str):
         print(f"✅ QR code uploaded to GridFS: {qr_file_id}")
 
         # Get photo from GridFS if available
-        photo_file_id = farmer.get("documents", {}).get("photo_file_id")
+        photo_file_id = (farmer.get("documents") or {}).get("photo_file_id")
         photo_data = None
         
         if photo_file_id:
@@ -104,21 +104,31 @@ def generate_id_card(farmer_id: str):
         c.drawRightString(CARD_WIDTH - 5*mm, CARD_HEIGHT - 11*mm, "Farmer Registry")
         
         # Photo placeholder or actual photo (positioned to avoid header overlap)
-        photo_x =data:
+        photo_w = 22 * mm
+        photo_h = 28 * mm
+        photo_x = 5 * mm
+        photo_y = CARD_HEIGHT - 15*mm - photo_h - 2*mm
+        photo_path = (farmer.get('documents') or {}).get('photo')
+
+        if photo_data:
             try:
                 img = ImageReader(photo_data)
                 c.drawImage(img, photo_x, photo_y, photo_w, photo_h, mask='auto')
-                print(f"✅ Photo added from GridFS4*mm)  # = ~10.98mm from bottom
-        # Recalculate if card size changes in future
-        
-        if photo_path and os.path.exists(photo_path):
+                print(f"✅ Photo added from GridFS: {photo_file_id}")
+            except Exception as e:
+                print(f"⚠️ Photo failed to render from GridFS: {e}")
+                c.setFillColor(colors.HexColor('#e5e7eb'))
+                c.rect(photo_x, photo_y, photo_w, photo_h, fill=1, stroke=0)
+                c.setFillColor(colors.HexColor('#9ca3af'))
+                c.setFont("Helvetica", 20)
+                c.drawCentredString(photo_x + photo_w/2, photo_y + photo_h/2 - 3*mm, "👤")
+        elif photo_path and os.path.exists(photo_path):
             try:
                 img = ImageReader(photo_path)
                 c.drawImage(img, photo_x, photo_y, photo_w, photo_h, mask='auto')
                 print(f"✅ Photo added: {photo_path}")
             except Exception as e:
                 print(f"⚠️ Photo failed: {e}")
-                # Draw placeholder
                 c.setFillColor(colors.HexColor('#e5e7eb'))
                 c.rect(photo_x, photo_y, photo_w, photo_h, fill=1, stroke=0)
                 c.setFillColor(colors.HexColor('#9ca3af'))
@@ -131,7 +141,7 @@ def generate_id_card(farmer_id: str):
             c.setFillColor(colors.HexColor('#9ca3af'))
             c.setFont("Helvetica", 20)
             c.drawCentredString(photo_x + photo_w/2, photo_y + photo_h/2 - 3*mm, "👤")
-        
+
         # Farmer details (right of photo) redesigned for tighter vertical spacing
         detail_x = 28*mm
         # Start just below header with proper spacing to avoid header touch
@@ -229,14 +239,7 @@ def generate_id_card(farmer_id: str):
         c.setFillColor(colors.HexColor('#4b5563'))
         c.setFont("Helvetica-Bold", 5)
         c.drawCentredString(qr_x + qr_size/2, qr_y - 4*mm, "SCAN TO VERIFY")
-        c.setFillColor(colors.white)
-            c.rect(qr_x - 2*mm, qr_y - 2*mm, qr_size + 4*mm, qr_size + 4*mm, fill=1, stroke=1)
-            c.drawImage(qr_img_reader, qr_x, qr_y, qr_size, qr_size)
-            
-            c.setFillColor(colors.HexColor('#4b5563'))
-            c.setFont("Helvetica-Bold", 5)
-            c.drawCentredString(qr_x + qr_size/2, qr_y - 4*mm, "SCAN TO VERIFY")
-            print(f"✅ QR code added to PDF")
+        print(f"✅ QR code added to PDF")
         
         # Right column boxes - only Address and Operator (Farm Details removed)
         info_x = 38*mm

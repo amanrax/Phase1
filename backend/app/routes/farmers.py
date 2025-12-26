@@ -131,8 +131,15 @@ async def create_farmer(
     # Initialize service
     farmer_service = FarmerService(db)
     
-    # Create farmer
+    # Determine who created the farmer. For operators we store the operator_id
+    # so operator-scoped queries (created_by == operator_id) work correctly.
     created_by = current_user.get("email")
+    # If the caller is an operator, prefer operator_id from the operators collection
+    if current_user.get("roles") and "OPERATOR" in current_user.get("roles", []):
+        op_doc = await db.operators.find_one({"email": current_user.get("email")})
+        if op_doc and op_doc.get("operator_id"):
+            created_by = op_doc.get("operator_id")
+
     farmer = await farmer_service.create_farmer(farmer_data, created_by=created_by)
     
     await log_event(

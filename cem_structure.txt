@@ -1,0 +1,444 @@
+.
+├── ALL_LOGIN_CREDENTIALS.md
+├── AWS_MIGRATION_SUMMARY.md
+├── BUGS_FOUND.md
+├── BUG_FIXES_COMPLETED.md
+├── BUILD_MOBILE_APK.md
+├── COMPREHENSIVE_TEST_REPORT.md
+├── DATA_MAPPING_ANALYSIS.md
+├── DEPLOYMENT_READY.md
+├── FARMER_IDCARD_FEATURE.md
+├── FARMER_LOGIN_CREDENTIALS.txt
+├── FARMER_NRC_LOGIN_CREDENTIALS.txt
+├── FARMER_REGISTRATION_COMPLETE.md
+├── GRADIENT_MIGRATION_COMPLETE.md
+├── ID_CARD_GENERATION_COMPLETE.md
+├── MOBILE_APK_READY.md
+├── PROJECT_COMPLETE_DOCUMENTATION.md
+├── Project Flow.txt
+├── QUICK_START.md
+├── README.md
+├── SEEDED_CREDENTIALS.txt
+├── TESTING.md
+├── TEST_RESULTS_SUMMARY.txt
+├── ZFMS.txt
+├── advanced_farmer_system.html
+├── artifacts
+│   ├── app-debug.apk
+│   ├── ziamis-debug-apk
+│   │   └── app-debug.apk
+│   └── ziamis-run-74
+│       └── ziamis-debug-apk
+│           ├── SHA256.txt
+│           └── app-debug.apk
+├── aws-deployment
+│   ├── 00-preflight-check.sh
+│   ├── 01-cleanup-aws.sh
+│   ├── 02-setup-aws-infrastructure.sh
+│   ├── 03-create-secrets.sh
+│   ├── 04-create-iam-roles.sh
+│   ├── 05-build-and-push.sh
+│   ├── 06-deploy-ecs-service.sh
+│   ├── README.md
+│   ├── README_CLOUDFRONT.md
+│   ├── []?') || true
+│   ├── cloudfront-distribution.yml
+│   ├── deploy-all.sh
+│   ├── deploy-cloudfront.sh
+│   ├── deploy-gridfs-update.sh
+│   ├── ecs-task-definition.json
+│   ├── elbv2 describe-rules --listener-arn  --output json
+│   ├── get-public-ip.sh
+│   ├── recreate-alb.sh
+│   ├── setup-alb.sh
+│   ├── sts get-caller-identity --output json
+│   └── task-def-4gb.json
+├── backend
+│   ├── Dockerfile
+│   ├── FARMER_LOGIN_CREDENTIALS.txt
+│   ├── app
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   ├── dependencies
+│   │   │   └── roles.py
+│   │   ├── main.py
+│   │   ├── main.py.backup2
+│   │   ├── main.py.backup_cors
+│   │   ├── middleware
+│   │   │   └── logging_middleware.py
+│   │   ├── models
+│   │   │   ├── farmer.py
+│   │   │   └── user.py
+│   │   ├── routes
+│   │   │   ├── auth.py
+│   │   │   ├── dashboard.py
+│   │   │   ├── farmer_idcards.py
+│   │   │   ├── farmer_photos.py
+│   │   │   ├── farmer_reports.py 
+│   │   │   ├── farmers.py
+│   │   │   ├── farmers.py.backup
+│   │   │   ├── farmers_qr.py
+│   │   │   ├── files.py
+│   │   │   ├── geo.py
+│   │   │   ├── geo_custom.py
+│   │   │   ├── health.py
+│   │   │   ├── logs.py
+│   │   │   ├── operators.py
+│   │   │   ├── reports.py
+│   │   │   ├── supplies.py
+│   │   │   ├── sync.py
+│   │   │   ├── uploads.py
+│   │   │   └── users.py
+│   │   ├── services
+│   │   │   ├── farmer_service.py
+│   │   │   ├── gridfs_service.py
+│   │   │   ├── idcard_service.py
+│   │   │   ├── logging_service.py
+│   │   │   ├── photo_service.py
+│   │   │   └── report_service.py 
+│   │   ├── tasks
+│   │   │   ├── celery_app.py
+│   │   │   ├── id_card_task.py
+│   │   │   ├── log_cleanup_task.py
+│   │   │   └── sync_tasks.py
+│   │   └── utils
+│   │       ├── crypto_utils.py
+│   │       └── security.py
+│   ├── data
+│   │   ├── chiefdoms.csv
+│   │   ├── districts.csv
+│   │   └── provinces.csv
+│   ├── requirements-test.txt
+│   ├── requirements.txt
+│   ├── run_tests.sh
+│   ├── scripts
+│   │   ├── check_farmer_data.py
+│   │   ├── clean_and_seed_all.py
+│   │   ├── clean_and_seed_complete.py
+│   │   ├── create_test_users.py
+│   │   ├── fix_mongo_roles.py
+│   │   ├── fix_null_documents.py
+│   │   ├── fix_operator_districts.py
+│   │   ├── fix_roles_uppercase.py
+│   │   ├── seed_admin.py
+│   │   ├── seed_geo_from_csv.py
+│   │   └── test_auth.py
+│   ├── test_password.py
+│   ├── tests
+│   │   ├── __init__.py
+│   │   ├── conftest.py
+│   │   ├── test_admin_operations.py
+│   │   ├── test_auth.py
+│   │   ├── test_geo_data.py
+│   │   └── test_logging.py
+│   └── uploads
+├── cem_structure.txt
+├── cropdetials.html
+├── docker-compose.yml
+├── docs
+│   ├── COMPREHENSIVE_TESTING_PLAN.md
+│   └── LOGGING_IMPLEMENTATION_COMPLETE.md
+├── ecs-deploy-policy.json
+├── example.html
+├── frontend
+│   ├── DESIGN_SYSTEM_SETUP_COMPLETE.md
+│   ├── Dockerfile
+│   ├── IMPLEMENTATION_GUIDE.md
+│   ├── MIGRATION_CHECKLIST.md
+│   ├── README.md
+│   ├── UI_COMPONENTS_GUIDE.md
+│   ├── android
+│   │   ├── app
+│   │   │   ├── build.gradle
+│   │   │   ├── capacitor.build.gradle
+│   │   │   ├── proguard-rules.pro
+│   │   │   └── src
+│   │   ├── build.gradle
+│   │   ├── capacitor.settings.gradle
+│   │   ├── gradle
+│   │   │   └── wrapper
+│   │   ├── gradle.properties
+│   │   ├── gradlew
+│   │   ├── gradlew.bat
+│   │   ├── settings.gradle
+│   │   └── variables.gradle
+│   ├── build-mobile.sh
+│   ├── capacitor.config.ts
+│   ├── design-system-reference.html
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── ios
+│   │   └── App
+│   │       ├── App
+│   │       ├── App.xcodeproj
+│   │       ├── App.xcworkspace
+│   │       └── Podfile
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.cjs
+│   ├── public
+│   │   ├── cem-logo.svg
+│   │   ├── icons
+│   │   │   ├── icon-128x128.png
+│   │   │   ├── icon-128x128.png.svg
+│   │   │   ├── icon-144x144.png
+│   │   │   ├── icon-144x144.png.svg
+│   │   │   ├── icon-152x152.png
+│   │   │   ├── icon-152x152.png.svg
+│   │   │   ├── icon-192x192.png
+│   │   │   ├── icon-192x192.png.svg
+│   │   │   ├── icon-384x384.png
+│   │   │   ├── icon-384x384.png.svg
+│   │   │   ├── icon-512x512.png
+│   │   │   ├── icon-512x512.png.svg
+│   │   │   ├── icon-72x72.png
+│   │   │   ├── icon-72x72.png.svg
+│   │   │   ├── icon-96x96.png
+│   │   │   └── icon-96x96.png.svg
+│   │   ├── manifest.json
+│   │   ├── service-worker.js
+│   │   └── vite.svg
+│   ├── src
+│   │   ├── App.css
+│   │   ├── App.tsx
+│   │   ├── assets
+│   │   │   ├── react.svg
+│   │   │   └── rocket-animation.json
+│   │   ├── components
+│   │   │   ├── Button.tsx
+│   │   │   ├── FarmerIDCardPreview.tsx
+│   │   │   ├── FormInput.tsx
+│   │   │   ├── Header.tsx
+│   │   │   ├── Notification.tsx
+│   │   │   ├── PageHeader.tsx
+│   │   │   ├── ProtectedRoute.tsx
+│   │   │   ├── RoleRoute.tsx
+│   │   │   ├── SessionTimeout.tsx
+│   │   │   ├── SessionTimeoutModal.tsx
+│   │   │   ├── ToastContainer.tsx
+│   │   │   └── ui
+│   │   ├── config
+│   │   │   ├── mobile.ts
+│   │   │   └── navigation.ts
+│   │   ├── contexts
+│   │   │   └── NotificationContext.tsx
+│   │   ├── index.css
+│   │   ├── main.tsx
+│   │   ├── pages
+│   │   │   ├── AdminDashboard.tsx
+│   │   │   ├── AdminReports.tsx
+│   │   │   ├── AdminSettings.tsx
+│   │   │   ├── AdminSupplyRequests.tsx
+│   │   │   ├── CreateOperator.tsx
+│   │   │   ├── Dashboard.tsx
+│   │   │   ├── EditFarmer.tsx
+│   │   │   ├── EditFarmer.tsx.backup
+│   │   │   ├── ExampleDashboard.tsx
+│   │   │   ├── FarmerDashboard.tsx
+│   │   │   ├── FarmerDetails.tsx
+│   │   │   ├── FarmerDetails.tsx.backup
+│   │   │   ├── FarmerEdit.tsx
+│   │   │   ├── FarmerIDCard.tsx
+│   │   │   ├── FarmerRegistration
+│   │   │   ├── FarmerSupplyRequests.tsx
+│   │   │   ├── FarmersList.tsx
+│   │   │   ├── LogViewer.tsx
+│   │   │   ├── Login.tsx
+│   │   │   ├── OperatorDashboard.tsx
+│   │   │   ├── OperatorDetails.tsx
+│   │   │   ├── OperatorDetails.tsx.backup
+│   │   │   ├── OperatorEdit.tsx
+│   │   │   ├── OperatorEdit.tsx.backup
+│   │   │   ├── OperatorManagement.tsx
+│   │   │   ├── OperatorManagement.tsx.backup
+│   │   │   └── OperatorsList.tsx
+│   │   ├── registerSW.ts
+│   │   ├── services
+│   │   │   ├── auth.service.ts
+│   │   │   ├── dashboard.service.ts
+│   │   │   ├── ethnicGroup.service.ts
+│   │   │   ├── farmer.service.ts
+│   │   │   ├── geo.service.ts
+│   │   │   ├── logs.service.ts
+│   │   │   ├── operator.service.ts
+│   │   │   └── user.service.ts
+│   │   ├── store
+│   │   │   └── authStore.ts
+│   │   ├── styles
+│   │   │   └── shared.css
+│   │   ├── types
+│   │   │   └── types.ts
+│   │   ├── utils
+│   │   │   ├── axios.ts
+│   │   │   ├── debug.ts
+│   │   │   └── networkProbe.ts
+│   │   └── vite-env.d.ts
+│   ├── tailwind.config.js
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   ├── tsconfig.tsbuildinfo
+│   ├── vite.config.d.ts
+│   ├── vite.config.js
+│   └── vite.config.ts
+├── generate_docs.sh
+├── infra
+│   └── terraform
+│       ├── README.md
+│       ├── main.tf
+│       ├── outputs.tf
+│       └── variables.tf
+├── login.json
+├── mongo_clean.json
+├── mongo_output.json
+├── mongo_output.log
+├── operator
+├── qr_check.json
+├── qr_test.json
+├── qr_verify.json
+├── scripts
+│   ├── AWS_PROFILE=default [aws_cleanup.sh](htt
+│   ├── README_MFA_and_rotation.md
+│   ├── aws_cleanup.sh
+│   ├── aws_cleanup_force.sh
+│   ├── remove_exposed_key.sh
+│   ├── rotate_github_secrets.sh
+│   └── run_crud_test.py
+├── smoke_results.txt
+├── structure.txt
+├── sync_payload.json
+├── test_auth_cycle.sh
+├── test_bug_fix.py
+├── test_farmer.json
+├── test_large.txt
+├── test_phase1_validation.sh
+├── test_phase2_backend_full.sh
+├── test_reports.sh
+├── test_small.txt
+├── test_uploads
+│   └── photo.jpg
+├── uploads
+│   ├── ZM11674FFE
+│   │   └── photos
+│   │       └── photo.jpg
+│   ├── ZM2EC5197E
+│   │   └── photos
+│   │       └── photo.jpg
+│   ├── ZM2F48ABB4
+│   │   └── photos
+│   │       └── photo.jpg
+│   ├── ZM38228A63
+│   │   └── photos
+│   │       └── photo.jpg
+│   ├── ZM499C54E2
+│   │   └── photos
+│   │       └── photo.jpg
+│   ├── ZM49AB9C7D
+│   │   └── photos
+│   │       └── photo.jpg
+│   ├── ZM4F35996B
+│   │   └── photos
+│   │       └── photo.jpg
+│   ├── ZM5E5BEB24
+│   │   └── photos
+│   │       ├── ZM5E5BEB24_photo.JPG
+│   │       └── ZM5E5BEB24_photo.png
+│   ├── ZM669E6ED7
+│   │   └── photos
+│   │       └── photo.jpg
+│   ├── ZM7EC0E8BC
+│   │   └── photos
+│   │       └── photo.jpg
+│   ├── ZM9D6E4DA2
+│   │   └── photos
+│   │       └── photo.jpg
+│   ├── ZMB740531F
+│   │   ├── idcards
+│   │   │   └── ZMB740531F_card.pdf
+│   │   ├── photos
+│   │   │   └── photo.jpg
+│   │   └── qr
+│   │       └── ZMB740531F_qr.png
+│   ├── ZMBA8334DF
+│   │   └── photos
+│   │       └── photo.jpg
+│   ├── ZMF0A6216E
+│   │   ├── idcards
+│   │   │   └── ZMF0A6216E_card.pdf
+│   │   └── qr
+│   │       └── ZMF0A6216E_qr.png
+│   ├── ZMF274261F
+│   │   └── photos
+│   │       └── photo.jpg
+│   ├── documents
+│   │   └── ZM8AC3063F
+│   │       ├── ZM8AC3063F_land_title.pdf
+│   │       ├── ZM8AC3063F_license.pdf
+│   │       └── ZM8AC3063F_nrc.pdf
+│   ├── farmers
+│   │   └── documents
+│   │       ├── ZM11674FFE_nrc_1763714739.jpg
+│   │       ├── ZM2EC5197E_nrc_1763540293.pdf
+│   │       ├── ZM2F48ABB4_land_title_1763536788.jpg
+│   │       ├── ZM2F48ABB4_nrc_1763536772.jpg
+│   │       ├── ZM2F48ABB4_nrc_1763536898.jpg
+│   │       ├── ZM38228A63_land_title_1763973635.jpg
+│   │       ├── ZM38228A63_land_title_1763982476.pdf
+│   │       ├── ZM38228A63_nrc_1763973627.jpg
+│   │       ├── ZM38228A63_nrc_1763981943.jpg
+│   │       ├── ZM38228A63_nrc_1763982189.pdf
+│   │       ├── ZM38228A63_nrc_1763982378.pdf
+│   │       ├── ZM38228A63_nrc_1763982465.pdf
+│   │       ├── ZM38228A63_nrc_1763983262.pdf
+│   │       ├── ZM49AB9C7D_land_title_1764158998.pdf
+│   │       ├── ZM49AB9C7D_nrc_1764158987.pdf
+│   │       ├── ZM4F35996B_certificate_1763535754.png
+│   │       ├── ZM4F35996B_land_title_1763535680.pdf
+│   │       ├── ZM4F35996B_license_1763535715.jpg
+│   │       ├── ZM4F35996B_nrc_1763535670.pdf
+│   │       ├── ZM4F35996B_nrc_1763535683.pdf
+│   │       ├── ZM669E6ED7_nrc_1763537065.pdf
+│   │       ├── ZM7EC0E8BC_land_title_1764154829.pdf
+│   │       ├── ZM7EC0E8BC_nrc_1764154816.pdf
+│   │       ├── ZM9D6E4DA2_land_title_1763536426.jpg
+│   │       ├── ZM9D6E4DA2_license_1763536437.pdf
+│   │       ├── ZM9D6E4DA2_nrc_1763536396.pdf
+│   │       ├── ZMB740531F_nrc_1764154930.pdf
+│   │       ├── ZMBA8334DF_land_title_1764154510.pdf
+│   │       ├── ZMBA8334DF_nrc_1764154492.pdf
+│   │       ├── ZMBA8334DF_nrc_1764154501.pdf
+│   │       ├── ZMF0A6216E_nrc_1764155767.pdf
+│   │       └── ZMF274261F_nrc_1763728398.jpg
+│   ├── idcards
+│   │   ├── ZM1BFFA0F9_card.pdf
+│   │   ├── ZM5CC08BB8_card.pdf
+│   │   ├── ZM6AAC0450_card.pdf
+│   │   ├── ZM880CB4DC_card.pdf
+│   │   ├── ZM8AC3063F_card.pdf
+│   │   ├── ZMB740531F_card.pdf
+│   │   └── ZMF0A6216E_card.pdf
+│   ├── photos
+│   │   ├── ZM1BFFA0F9
+│   │   │   └── ZM1BFFA0F9_photo.jpg
+│   │   ├── ZM3880A741
+│   │   │   └── ZM3880A741_photo.jpg
+│   │   ├── ZM5CA6FCB0
+│   │   │   └── ZM5CA6FCB0_photo.jpg
+│   │   ├── ZM5CC08BB8
+│   │   │   └── ZM5CC08BB8_photo.jpg
+│   │   └── ZM6AAC0450
+│   │       └── ZM6AAC0450_photo.jpg
+│   └── qr
+│       ├── ZM1BFFA0F9_qr.png
+│       ├── ZM5CC08BB8_qr.png
+│       ├── ZM6AAC0450_qr.png
+│       ├── ZM880CB4DC_qr.png
+│       ├── ZM8AC3063F_qr.png
+│       ├── ZMB740531F_qr.png
+│       └── ZMF0A6216E_qr.png
+├── verify_setup.py
+├── verify_system.sh
+├── ziamis-cem-aws-backend.apk
+└── ziamis-cem-production.apk
+
+96 directories, 346 files

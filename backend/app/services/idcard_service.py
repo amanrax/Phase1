@@ -8,6 +8,9 @@ from pathlib import Path
 from datetime import datetime
 from fastapi import HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
+import tempfile
+import os
+from app.services.gridfs_service import gridfs_service
 import qrcode
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -112,8 +115,38 @@ class IDCardService:
         """Download generated ID card PDF."""
         farmer = await db.farmers.find_one({"farmer_id": farmer_id})
         if not farmer or not farmer.get("id_card_path"):
-            raise HTTPException(status_code=404, detail="ID card not found")
+            # Try GridFS fallback if id_card_file_id present
+            file_id = farmer.get("id_card_file_id") if farmer else None
+            if not file_id:
+                raise HTTPException(status_code=404, detail="ID card not found")
 
+            try:
+                # Download bytes from GridFS via async service
+                file_bytes, meta = await gridfs_service.download_file(file_id)
+            except Exception as e:
+                raise HTTPException(status_code=404, detail=f"ID card not found in GridFS: {e}")
+
+            # Write to a temporary file and return FileResponse
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf", prefix=f"{farmer_id}_idcard_", dir=os.getenv("TMPDIR", "/tmp"))
+            try:
+                tmp.write(file_bytes)
+                tmp.flush()
+                tmp.close()
+                return FileResponse(
+                    tmp.name,
+                    media_type=meta.get("content_type", "application/pdf"),
+                    filename=meta.get("filename", os.path.basename(tmp.name)),
+                    headers={"Content-Disposition": f"inline; filename={meta.get('filename', os.path.basename(tmp.name))}"}
+                )
+            except Exception:
+                # Ensure temp file removed on failure
+                try:
+                    os.unlink(tmp.name)
+                except Exception:
+                    pass
+                raise HTTPException(status_code=500, detail="Failed to prepare ID card file for download")
+
+        # Local filesystem path case (backwards compatibility)
         file_path = farmer["id_card_path"]
         if not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail="ID card file missing on disk")

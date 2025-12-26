@@ -84,28 +84,30 @@ class GridFSService:
             tuple: (file_data, metadata)
         """
         bucket = await self.get_bucket()
-        
+
         try:
-            # Get file info
-            file_info = await bucket.find_one({"_id": ObjectId(file_id)})
+            # Retrieve file info from the files collection
+            db = await get_db()
+            files_col = db["cem_files.files"]
+            file_info = await files_col.find_one({"_id": ObjectId(file_id)})
             if not file_info:
                 raise FileNotFoundError(f"File {file_id} not found")
-            
+
             # Download file data
             file_data = io.BytesIO()
             await bucket.download_to_stream(ObjectId(file_id), file_data)
             file_data.seek(0)
-            
+
             metadata = {
-                "filename": file_info.filename,
-                "content_type": file_info.metadata.get("content_type"),
-                "uploaded_at": file_info.upload_date,
-                "length": file_info.length,
-                **file_info.metadata
+                "filename": file_info.get("filename"),
+                "content_type": (file_info.get("metadata") or {}).get("content_type"),
+                "uploaded_at": file_info.get("uploadDate") or file_info.get("upload_date"),
+                "length": file_info.get("length"),
+                **(file_info.get("metadata") or {}),
             }
-            
+
             return file_data.read(), metadata
-        
+
         except Exception as e:
             raise FileNotFoundError(f"Error downloading file {file_id}: {str(e)}")
     

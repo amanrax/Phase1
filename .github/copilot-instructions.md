@@ -477,5 +477,497 @@ Test responsive behavior (mobile, tablet, desktop) when adding new layouts
 
 Keep form wizards consistent with the step indicator pattern shown above
 
-Reference Files Note
-The attached files (cropdetials-1.html, ZFMS-1.txt, example.html) are reference only and not part of the project codebase. Extract design patterns, color schemes, component structures, and UX flows from these files, then implement them using React + TypeScript + Tailwind CSS in your components.
+
+
+CEM (Chiefdom Empowerment Model) – Complete Copilot Instructions
+For Backend, Frontend, Deployment, and Mobile Readiness
+1. Project Overview
+Goal: Deploy a mobile-first farmer management system (CEM) for Zambian smallholder farmers with production-ready backend, responsive frontend, and APK capability.
+
+Current Status:
+
+Backend: FastAPI + MongoDB Atlas + Celery + Redis ✓ (working locally)
+
+Frontend: React + TypeScript + Vite + Tailwind CSS ✓ (working locally)
+
+Infrastructure: New AWS account (free tier credits $135.57 remaining until 11/20/2026)
+
+Deployment: Mobile APK is primary; web frontend is optional
+
+Design System: Zambian green theme (#15803d) with Tailwind CSS
+
+Team: Single full-stack developer using GitHub Codespaces, AWS, and GitHub Student pack
+
+2. Directory Structure & Key Files
+text
+
+3. Database & Infrastructure
+MongoDB
+Current: MongoDB Atlas free tier (in-use)
+
+Retention: Keep as-is; no migration needed for production
+
+Collections: farmers, operators, admins, logs, system_logs, id_cards, supply_requests, documents and there may  be more
+
+Redis
+Current: AWS ElastiCache (limited free tier) or local Redis in docker-compose
+
+Purpose: Celery broker + caching
+
+Retention: For MVP, free ElastiCache or local Docker Redis is fine
+
+AWS Services for Deployment
+EC2 (t3.micro): Free tier; run Docker containers here
+
+Secrets Manager: Store Mongo URI, Redis URL, JWT secrets, API keys
+
+VPC + Security Groups: Control inbound/outbound traffic
+
+CloudWatch Logs: Centralize container logs
+
+4. Backend Patterns & Constraints
+Async vs Sync Database Access
+text
+Request handlers (routes/):
+  ✓ Use motor (async) via database.py
+  
+Celery tasks (tasks/):
+  ✓ Use pymongo (sync) directly
+  ✗ Do NOT use motor in tasks; it breaks task lifecycle
+Key Services (Business Logic)
+Farmer CRUD, status updates
+
+ Token refresh, logout, password reset
+
+ Structured logging to MongoDB
+
+ ID card generation (sync, calls Celery task)
+ Email/SMS stubs for alerts
+
+Celery Tasks (background jobs)
+Generate and store ID cards (uses GridFS)
+
+ Aggregate reports asynchronously
+ Periodic log cleanup (keep 7 days)
+
+Config Expectations
+MONGO_URI – MongoDB Atlas connection string (required)
+
+REDIS_URL – Redis connection (e.g., redis://localhost:6379)
+
+JWT_SECRET – Signing key for tokens (required)
+
+VITE_API_BASE_URL – Frontend-facing API URL (e.g., http://localhost:8000)
+
+LOG_LEVEL – Info, Debug, Error (default: Info)
+
+ENVIRONMENT – local, staging, production
+
+5. Frontend Design System (Non-Negotiable)
+Color Palette
+css
+:root {
+  /* Primary Zambia Green */
+  --zam-green-700: #15803d;
+  --zam-green-800: #166534;
+  --zam-green-900: #14532d;
+  
+  /* Secondary Orange (alerts, warnings) */
+  --zam-orange: #c2410c;
+  
+  /* Neutral */
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+}
+Typography
+Body Font: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif
+
+Page Title: text-2xl font-bold text-gray-800
+
+Section Header: text-lg font-bold text-gray-800
+
+Label: text-xs font-bold text-gray-600 uppercase tracking-wider
+
+Body: text-sm text-gray-600
+
+Component Patterns
+Buttons:
+
+tsx
+// Primary (green)
+<button className="bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition">
+  Action
+</button>
+
+// Secondary (white outline)
+<button className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 py-2 px-4 rounded-lg">
+  Cancel
+</button>
+Form Inputs:
+
+tsx
+<input 
+  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+  type="text"
+/>
+Cards:
+
+tsx
+<div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition border border-gray-200">
+  {/* content */}
+</div>
+Stat Cards (Dashboard):
+
+tsx
+<div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-600 hover:shadow-md transition">
+  <div className="flex justify-between">
+    <div>
+      <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Farmers Registered</p>
+      <h3 className="text-2xl font-bold text-gray-800 mt-1">1,240</h3>
+    </div>
+    <div className="bg-green-50 p-3 rounded-lg text-green-600">
+      <i className="fa-solid fa-users text-xl"></i>
+    </div>
+  </div>
+</div>
+Tables:
+
+tsx
+<div className="bg-white rounded-xl shadow-sm overflow-hidden">
+  <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+    <h3 className="font-bold text-lg">Farmers List</h3>
+    <button className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg">
+      <i className="fa-solid fa-plus mr-2"></i> Add Farmer
+    </button>
+  </div>
+  <table className="w-full text-left text-sm text-gray-600">
+    <thead className="bg-gray-100 text-gray-700 font-bold uppercase text-xs">
+      <tr>
+        <th className="px-6 py-3">Name</th>
+        <th className="px-6 py-3">Status</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200">
+      <tr className="hover:bg-green-50 transition">
+        <td className="px-6 py-4">John Doe</td>
+        <td className="px-6 py-4">
+          <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-semibold rounded-full">
+            Active
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+Status Badges:
+
+Active: bg-green-100 text-green-800
+
+Pending: bg-yellow-100 text-yellow-800
+
+Rejected: bg-red-100 text-red-800
+
+Icons
+Use Font Awesome 6.4.0 (included via CDN)
+
+Common: fa-solid fa-users, fa-solid fa-chart-line, fa-solid fa-gear, fa-solid fa-wheat-awn
+
+6. Frontend Data Flow
+text
+Component
+  ↓
+  Hook (useState, useContext)
+  ↓
+  Service Layer (frontend/src/services/farmer.service.ts)
+  ↓
+  Axios (frontend/src/utils/axios.ts)
+  ↓
+  Backend API
+  ↓
+  Backend Service (business logic)
+  ↓
+  MongoDB (motor async)
+Key Rules:
+
+Never call axios directly in components; use *.service.ts files
+
+Auth Store (Zustand) syncs tokens to localStorage; axios interceptor refreshes on 401
+
+Refresh flow: Attempt one POST /auth/refresh, then logout on failure
+
+7. Development Workflow
+Full Stack (Local)
+bash
+docker-compose up --build
+# Launches: backend (8000), frontend (5173), mongo, redis, celery worker
+Backend Only
+bash
+cd backend
+python -m pip install -r requirements.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+Frontend Only
+bash
+cd frontend
+npm install
+npm run dev
+Run Celery Worker
+bash
+cd backend
+celery -A app.tasks.celery_app worker --loglevel=info
+8. Common Task Instructions for Copilot
+A. Add a New Backend Endpoint
+Instruction to Copilot:
+
+text
+Create a new REST endpoint GET /api/farmers/{farmer_id}/stats
+
+Requirements:
+- Route: backend/app/routes/farmers.py
+- Service: backend/app/services/farmer_service.py (new or add to existing)
+- Database: Use motor async client from backend/app/database.py
+- Auth: Require JWT; extract user from request (admin or operator role)
+- Logging: Log the request start, response time, and any errors using backend/app/services/logging_service.py
+- Response schema: Use Pydantic model FarmerStatsResponse in backend/app/schemas/
+- Error handling: Return 404 if farmer not found, 403 if unauthorized, 500 if DB error
+- No hardcoded values; all config from backend/app/config.py
+
+Do NOT change existing auth flow, database client, or logging patterns.
+B. Add a New Frontend Page
+Instruction to Copilot:
+
+text
+Create a new page "Reports" for admins to view aggregated farmer stats.
+
+Requirements:
+- File: frontend/src/pages/Reports.tsx
+- Service: frontend/src/services/reports.service.ts (fetch /api/reports)
+- State: Use Zustand store for report filters (role, date range)
+- Design: Follow the dashboard design system:
+  - Stat cards with green borders (border-l-4 border-green-600)
+  - Table with pagination
+  - Search/filter inputs using the form input pattern
+  - Loading spinner while fetching
+  - Error notification using notification service
+- Icons: Font Awesome (fa-solid fa-chart-bar, fa-solid fa-download)
+- Responsive: mobile-first (sm:, md:, lg: prefixes)
+- Error handling: Show error toast if API fails; show empty state if no data
+- TypeScript strict: No 'as any'
+
+Do NOT hardcode any API URLs; use service layer.
+Do NOT change existing auth flow or axios interceptor.
+C. Add Error Handling & Notifications
+Instruction to Copilot:
+
+text
+Audit and fix error handling across all pages:
+
+Requirements:
+- All API calls must have try-catch
+- On error:
+  - Log to console (dev) and backend (prod)
+  - Show user-friendly toast/notification
+  - Do NOT expose internal error messages to users
+- Notification service: Use a centralized toast/notification component
+- Types: 'success', 'error', 'warning', 'info'
+- Duration: 3–5 seconds auto-dismiss
+- Styling: Match design system (green for success, red for error, yellow for warning)
+- Examples:
+  - 401 → "Session expired. Please log in again."
+  - 404 → "Resource not found."
+  - 500 → "Something went wrong. Please try again later."
+
+Do NOT change component logic or business rules; only add error handling UI.
+D. Prepare for Mobile (PWA + Capacitor)
+Instruction to Copilot:
+
+text
+Make the frontend ready for mobile deployment:
+
+Requirements:
+1. Manifest & PWA:
+   - Create public/manifest.json
+   - App name: "CEM"
+   - Icons: 192x192, 512x512 PNG (use your logo)
+   - Display: standalone
+   - Theme color: #15803d
+   - Background color: #ffffff
+
+2. Responsive Design:
+   - All pages must work on mobile (375px), tablet (768px), desktop (1920px)
+   - Use mobile-first approach (base + sm: md: lg: modifiers)
+   - Sidebar → hamburger menu on mobile
+   - Forms: Full width on mobile, 2-3 cols on desktop
+
+3. Performance:
+   - Lazy load images
+   - Code split pages
+   - Debounce search/filter inputs
+
+4. Service Worker:
+   - Basic caching for offline functionality (shell, static assets)
+
+5. Build Variants:
+   - Development: VITE_API_BASE_URL=http://localhost:8000
+   - Production APK: VITE_API_BASE_URL=https://api.cem.yourdomain.com (or EC2 IP)
+
+Do NOT change business logic or API contracts.
+Do NOT modify auth flow; PWA reuses existing Zustand store.
+E. Logging & Monitoring
+Instruction to Copilot:
+
+text
+Implement structured logging across backend:
+
+Requirements:
+1. Logging Service (backend/app/services/logging_service.py):
+   - Log to MongoDB collection system_logs
+   - Schema: {timestamp, level, module, endpoint, user_id, role, action, details, ip_address, response_time_ms}
+   - Async writes (don't block requests)
+
+2. Log All Endpoints:
+   - Log start: endpoint, user_id, role
+   - Log end: response code, response time
+   - Log errors: exception type, traceback
+
+3. Cleanup:
+   - Celery task: Keep logs for 7 days; delete older
+   - Run daily at 2 AM UTC
+
+4. Viewing Logs:
+   - Add endpoint GET /api/admin/logs (admin only)
+   - Filter by: date range, level, module, endpoint
+   - Return paginated results
+
+5. Frontend (optional):
+   - Add page: Admin → System Logs
+   - Table with log entries, filterable
+
+Do NOT log sensitive data (passwords, tokens, PII).
+Do NOT slow down requests with sync logging.
+F. Deployment to AWS EC2
+Instruction to Copilot:
+
+text
+Prepare backend for AWS EC2 deployment:
+
+Requirements:
+1. Environment:
+   - Create .env.production with all secrets (use AWS Secrets Manager)
+   - No hardcoded values
+   - Required vars: MONGO_URI, REDIS_URL, JWT_SECRET, ENVIRONMENT=production
+
+2. Dockerfile:
+   - Multi-stage: builder + runtime
+   - Base: python:3.11-slim
+   - Install deps, copy app, expose 8000
+   - CMD: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+3. docker-compose.yml (production):
+   - backend service: pull from ECR or local build
+   - environment: inject from .env.production
+   - volumes: /data for logs/certs
+   - restart: always
+   - health check: curl http://localhost:8000/health
+
+4. EC2 Setup Script:
+   - Launch t3.micro Ubuntu 22.04
+   - Install Docker + Docker Compose
+   - Clone repo, set .env.production
+   - Run docker-compose up -d
+   - Set up NGINX reverse proxy (port 80 → 8000)
+   - Enable SSL (Let's Encrypt/Certbot)
+
+5. Secrets Manager:
+   - Store MONGO_URI, REDIS_URL, JWT_SECRET in AWS Secrets Manager
+   - Fetch at startup or via environment variable
+
+Do NOT commit .env.production to Git.
+Do NOT use hardcoded localhost URLs in production.
+9. Current Issues & Fixes
+Issue 1: Env Variable Mismatch
+Problem: docker-compose.yml sets VITE_API_URL but frontend expects VITE_API_BASE_URL
+
+Fix: Standardize on VITE_API_BASE_URL everywhere; update docker-compose.yml and .env files
+
+Issue 2: Hard-Coded Remote URLs
+Problem: Fallback URLs in frontend/src/utils/axios.ts and vite.config.ts
+
+Fix: Remove fallbacks; rely on env variables only. Gate console.log with import.meta.env.DEV
+
+Issue 3: Backup Files
+Problem: Stale backups (frontend_backup/, *.bak) clutter repo
+
+Fix: Delete old backups; keep only active code
+
+Issue 4: Inconsistent UI
+Problem: Some components don't follow the design system
+
+Fix: Audit all components; update to match green theme, Tailwind classes, spacing
+
+10. Testing & Quality Checklist
+Before deploying to AWS, verify:
+
+ Backend starts without errors: docker-compose up --build
+
+ Frontend loads at http://localhost:5173
+
+ Login works for admin/operator/farmer roles
+
+ All REST endpoints respond (use curl or Postman)
+
+ Celery worker starts and processes tasks
+
+ Logs are being stored in MongoDB
+
+ API errors show user-friendly messages (no raw exceptions)
+
+ Forms validate inputs client-side and show errors
+
+ Tables paginate and filter correctly
+
+ Mobile layout is responsive (test in Chrome DevTools)
+
+ Auth refresh works (test by manually expiring token)
+
+ Rate limiting is in place (if needed)
+
+11. Deployment Steps (Once Ready)
+Set up AWS account (✓ Done)
+
+Create EC2 instance (t3.micro, free tier)
+
+Store secrets in AWS Secrets Manager
+
+Push backend to ECR (if using ECS later)
+
+SSH into EC2, install Docker, clone repo
+
+Set .env.production with AWS secrets
+
+Run docker-compose up -d
+
+Point mobile APK to backend URL
+
+Monitor logs via CloudWatch or docker logs
+
+
+# Rules
+1. Do NOT change core business logic
+2. Do NOT add hardcoded values
+3. Do NOT use 'as any' in TypeScript
+4. Do NOT modify auth flow without updating both frontend/src/utils/axios.ts and frontend/src/store/authStore.ts
+5. Always use service layer (frontend/src/services/*.ts) for API calls; never direct axios in components
+6. Always log operations using backend/app/services/logging_service.py
+7. Preserve motor vs pymongo split for async/sync database access
+8. Follow design system patterns for all UI components
+13. Success Criteria
+
+
+
+
+
+
+
