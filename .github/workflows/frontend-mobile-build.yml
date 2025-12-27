@@ -38,7 +38,7 @@ jobs:
           elif [ -n "${{ secrets.VITE_MOBILE_API_URL }}" ]; then
             VITE_MOBILE_API_URL="${{ secrets.VITE_MOBILE_API_URL }}"
           else
-            VITE_MOBILE_API_URL="http://13.233.201.167:8000"
+            VITE_MOBILE_API_URL="http://13.204.83.198:8000"
           fi
           echo "Using VITE_MOBILE_API_URL=${VITE_MOBILE_API_URL}"
           export VITE_MOBILE_API_URL

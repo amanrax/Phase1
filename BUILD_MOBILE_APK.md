@@ -1,7 +1,7 @@
 # 📱 Build Mobile APK for CEM Backend
 
 ## Current Backend URL
-**Production Backend**: `http://13.233.201.167:8000`
+**Production Backend**: `http://13.204.83.198:8000`
 
 ## Quick Build Steps
 
@@ -33,7 +33,7 @@ npm install @capacitor/core @capacitor/cli @capacitor/android
 #### 1. Update Backend URL
 Already updated in `/workspaces/Phase1/frontend/.env`:
 ```
-VITE_API_BASE_URL=http://13.233.201.167:8000
+VITE_API_BASE_URL=http://13.204.83.198:8000
 ```
 
 #### 2. Initialize Capacitor (if needed)
@@ -58,7 +58,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'http',
-    allowNavigation: ['13.233.201.167']
+    allowNavigation: ['13.204.83.198']
   },
   android: {
     allowMixedContent: true
@@ -129,7 +129,7 @@ Password: Admin@123
 ---
 
 ## Backend Endpoints
-All requests go to: `http://13.233.201.167:8000/api/*`
+All requests go to: `http://13.204.83.198:8000/api/*`
 
 - Login: `POST /api/auth/login`
 - Farmers: `GET /api/farmers/`
@@ -142,7 +142,7 @@ All requests go to: `http://13.233.201.167:8000/api/*`
 ## Troubleshooting
 
 ### Network Error
-- Ensure device can reach `13.233.201.167` (not behind restrictive firewall)
+- Ensure device can reach `13.204.83.198` (not behind restrictive firewall)
 - Check `androidScheme: 'http'` in capacitor.config.ts
 - Verify `allowMixedContent: true` in Android config
 
@@ -158,7 +158,7 @@ All requests go to: `http://13.233.201.167:8000/api/*`
 ---
 
 ## Current Status
-✅ Backend deployed: http://13.233.201.167:8000
+✅ Backend deployed: http://13.204.83.198:8000
 ✅ Backend tested: All CRUD operations working
 ✅ Frontend .env updated: Points to AWS backend
 ⏳ APK build: Ready to build with updated URL

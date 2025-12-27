@@ -45,7 +45,7 @@ if [ -d "$FRONTEND_DIR" ]; then
 			echo "Using existing VITE_MOBILE_API_URL from environment: $VITE_MOBILE_API_URL"
 		else
 			# Fallback to deployed IP if not set
-			export VITE_MOBILE_API_URL="http://13.233.201.167:8000"
+			export VITE_MOBILE_API_URL="http://13.204.83.198:8000"
 			echo "No VITE_MOBILE_API_URL found; falling back to $VITE_MOBILE_API_URL"
 		fi
 

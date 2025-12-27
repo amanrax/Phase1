@@ -1,9 +1,39 @@
 # 📱 Mobile APK - Ready for Installation
+## ✅ APK Information
+**File**: `ziamis-cem-aws-backend.apk` (3.6 MB)
+**Backend**: `http://13.204.83.198:8000`
+**Status**: Ready to install
+
+---
+
+## 🔐 Login Credentials
+
+```
+Email: admin0@gmail.com
+Password: Admin@123
+```
+# 📱 Mobile APK - Ready for Installation
 
 ## ✅ APK Information
 
 **File**: `ziamis-cem-aws-backend.apk` (3.6 MB)
-**Backend**: `http://13.233.201.167:8000`
+**Backend**: `http://13.204.83.198:8000`
+**Status**: Ready to install
+
+---
+
+## 🔐 Login Credentials
+
+```
+Email: admin0@gmail.com
+Password: Admin@123
+````markdown
+# 📱 Mobile APK - Ready for Installation
+
+## ✅ APK Information
+
+**File**: `ziamis-cem-aws-backend.apk` (3.6 MB)
+**Backend**: `http://13.204.83.198:8000`
 **Status**: Ready to install
 
 ---
@@ -71,7 +101,7 @@ adb install ziamis-cem-aws-backend.apk
 
 ## 🌐 Backend API
 
-**Base URL**: `http://13.233.201.167:8000`
+**Base URL**: `http://13.204.83.198:8000`
 
 ### Key Endpoints:
 - Login: `POST /api/auth/login`
@@ -81,7 +111,7 @@ adb install ziamis-cem-aws-backend.apk
 - Generate ID Card: `POST /api/farmers/{farmer_id}/generate-idcard`
 - Dashboard Stats: `GET /api/dashboard/stats`
 
-**Full API Documentation**: http://13.233.201.167:8000/docs
+**Full API Documentation**: http://13.204.83.198:8000/docs
 
 ---
 
@@ -92,7 +122,7 @@ adb install ziamis-cem-aws-backend.apk
 2. Extracted APK contents
 3. Updated hardcoded backend URL in JavaScript bundle
 4. Replaced: `http://ziamis-alb-226056829.ap-south-1.elb.amazonaws.com`
-5. With: `http://13.233.201.167:8000`
+5. With: `http://13.204.83.198:8000`
 6. Repackaged as `ziamis-cem-aws-backend.apk`
 
 ### Modified Files in APK
@@ -101,7 +131,7 @@ adb install ziamis-cem-aws-backend.apk
 ### App Configuration
 - **Capacitor**: Configured for HTTP connections
 - **Android Scheme**: `http` (allows cleartext traffic)
-- **Network Security**: Allows connections to 13.233.201.167
+- **Network Security**: Allows connections to 13.204.83.198
 - **Timeout**: 30 seconds (for slow mobile networks)
 
 ---
@@ -148,8 +178,8 @@ adb install ziamis-cem-aws-backend.apk
 **Issue**: Cannot connect to backend
 **Check**:
 1. Device has internet connection
-2. Can reach 13.233.201.167 (not behind restrictive firewall)
-3. Backend is running: http://13.233.201.167:8000/api/health
+2. Can reach 13.204.83.198 (not behind restrictive firewall)
+3. Backend is running: http://13.204.83.198:8000/api/health
 
 ### Photos Won't Upload
 **Issue**: Upload fails
@@ -181,31 +211,21 @@ adb install ziamis-cem-aws-backend.apk
 
 ## 📊 System Status
 
-### Backend
-- **URL**: http://13.233.201.167:8000
-- **Status**: ✅ Running (1/1 tasks)
-- **Platform**: AWS ECS Fargate
-- **Resources**: 2 vCPU, 4GB RAM
-- **Storage**: MongoDB GridFS
-- **Database**: MongoDB Atlas (zambian_farmer_db)
+````markdown
+# 📱 Mobile APK - Ready for Installation
 
-### Mobile App
-- **APK**: ziamis-cem-aws-backend.apk (3.6 MB)
-- **Status**: ✅ Ready to install
-- **Backend**: Connected to AWS ECS
-- **Features**: Full CRUD operations working
+## ✅ APK Information
+
+**File**: `ziamis-cem-aws-backend.apk` (3.6 MB)
+**Backend**: `http://13.204.83.198:8000`
+**Status**: Ready to install
 
 ---
 
-## ✅ Verification Results
+## 🔐 Login Credentials
 
-All CRUD operations tested and verified:
-- ✅ Authentication working
-- ✅ Farmers: CREATE ✓ READ ✓ UPDATE ✓ DELETE ✓
-- ✅ Operators: CREATE ✓ READ ✓ UPDATE ✓ DELETE ✓
-- ✅ Admins: READ ✓
-- ✅ Documents: UPLOAD ✓ DOWNLOAD ✓ (GridFS)
-- ✅ ID Cards: GENERATE ✓
-- ✅ Reports: STATS ✓
+```
+Email: admin0@gmail.com
+Password: Admin@123
+```
 
-**Mobile app is ready for use!** 🎉
