@@ -7,19 +7,15 @@ const BACKEND_URL = process.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export default defineConfig({
   plugins: [react()],
+  base: './', // Crucial for Capacitor builds
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
   build: {
-    rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'index.html'),
-      },
-    },
-    // Copy service worker to dist
-    copyPublicDir: true,
+    outDir: 'dist',
+    assetsDir: 'assets',
   },
   server: {
     port: 5173,
