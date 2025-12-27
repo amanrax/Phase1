@@ -8,13 +8,16 @@ const config: CapacitorConfig = {
   appName: 'CEM',
   webDir: 'dist',
   server: {
-    androidScheme: 'https',
+    androidScheme: 'http',
     cleartext: true,
     allowNavigation: [
       '13.204.83.198',
       '13.204.83.198:8000', // For API calls
       'localhost'
     ],
+  },
+  android: {
+    allowMixedContent: true
   },
   plugins: {
     SplashScreen: {
