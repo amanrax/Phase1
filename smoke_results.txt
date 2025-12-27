@@ -1,4 +1,4 @@
-API_BASE=https://d118h66w5gx0vz.cloudfront.net/api
+API_BASE=http://13.204.83.198:8000/api
 --- GET /health ---
 {"status":"ok"}
 HTTP_STATUS:200

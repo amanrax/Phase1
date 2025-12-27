@@ -98,7 +98,7 @@ class Settings(BaseSettings):
             "http://localhost:3000",
             "http://127.0.0.1:8000",
             "http://127.0.0.1:5173",
-            "https://d118h66w5gx0vz.cloudfront.net",
+            "http://13.204.83.198:8000",
             "https://cem-backend-alb-v2-1010955380.ap-south-1.elb.amazonaws.com",
         ],
         description="Allowed CORS origins (do NOT use '*' in production)"

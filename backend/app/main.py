@@ -83,7 +83,7 @@ allowed_origins = [
     "capacitor://localhost",
     "ionic://localhost",
     # CloudFront domain used by mobile builds (ensure mobile/web builds allowed)
-    "https://d118h66w5gx0vz.cloudfront.net",
+    "http://13.204.83.198:8000",
 ]
 
 # Allow overriding frontend origin via env (useful in Codespaces)

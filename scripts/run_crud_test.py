@@ -6,7 +6,7 @@ import json
 import sys
 from urllib import request, error
 
-BASE = "https://d118h66w5gx0vz.cloudfront.net/api"
+BASE = "http://13.204.83.198:8000/api"
 
 def req(method, path, token=None, payload=None):
     url = BASE + path

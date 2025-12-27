@@ -19,8 +19,8 @@ export const getApiBaseUrl = (): string => {
       return envUrl;
     }
 
-    // Fallback to CloudFront domain if present, else previous hardcoded IP
-    const fallback = 'https://d118h66w5gx0vz.cloudfront.net';
+    // Fallback to provided API base for mobile builds
+    const fallback = 'http://13.204.83.198:8000';
     console.warn('[Mobile] Using fallback mobile backend (no env urls set):', fallback);
     alert(`Mobile App Starting\nBackend: ${fallback}\nIf login fails, open this URL in your phone browser or update VITE_MOBILE_API_URL.`);
     return fallback;
