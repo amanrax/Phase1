@@ -21,17 +21,19 @@ export interface AuthState {
   updateActivity: () => void;
   setShowTimeoutWarning: (show: boolean) => void;
   extendSession: () => void;
-}
-
-const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      token: null,
-      refreshToken: null,
-      roles: [],
-      role: null,
-      isLoading: false,
+      },
+    },
+    {
+      name: "auth-storage",
+      partialize: (state) => ({
+        token: state.token,
+        refreshToken: state.refreshToken,
+        user: state.user,
+        roles: state.roles,
+        role: state.role,
+        // persist lastActivity so session timeout survives app restarts
+        lastActivity: state.lastActivity,
+      }),
       error: null,
       lastActivity: Date.now(),
       showTimeoutWarning: false,
@@ -170,6 +172,10 @@ const useAuthStore = create<AuthState>()(
           if (state.roles.length > 0) {
             state.role = state.roles[0];
           }
+        }
+        // Ensure lastActivity is a number and set to now if missing
+        if (!state?.lastActivity || typeof state.lastActivity !== 'number') {
+          state.lastActivity = Date.now();
         }
       },
     }

@@ -135,38 +135,7 @@ export default function Login() {
       clearTimeout(id);
     }
   };
-
-  const testConnection = async () => {
-    setTestResult('Running tests...');
-    try {
-      const candidate = getApiBaseUrl();
-      const normalized = candidate.replace(/\/$/, '');
-      const httpsCandidate = normalized.startsWith('http://') ? normalized.replace('http://','https://') : normalized;
-      const paths = ['/api/health', '/health', '/api'];
-      const results: any[] = [];
-
-      // Try explicit candidate then https fallback
-      for (const host of [normalized, httpsCandidate]) {
-        for (const p of paths) {
-          const url = `${host}${p}`;
-          try {
-            const r = await timeoutFetch(url, 4000);
-            results.push({ url, ok: r.ok, status: r.status, body: r.text.slice(0, 500) });
-            if (r.ok) {
-              setTestResult(JSON.stringify({ successUrl: url, status: r.status, body: r.text }, null, 2));
-              return;
-            }
-          } catch (err: any) {
-            results.push({ url, error: String(err) });
-          }
-        }
-      }
-
-      setTestResult(JSON.stringify({ attempted: results }, null, 2));
-    } catch (err: any) {
-      setTestResult(String(err));
-    }
-  };
+  // NOTE: Test connection helper removed from UI for production builds.
   
   const isFarmer = userType === "farmer";
   const usernameLabel = isFarmer ? "🆔 NRC Number" : userType === "admin" ? "🔐 Admin Email" : "📧 Email Address";
@@ -297,16 +266,7 @@ export default function Login() {
                 </pre>
               )}
 
-              <div className="mt-3 flex gap-2">
-                <button type="button" onClick={testConnection} className="px-3 py-2 bg-yellow-100 text-yellow-800 rounded">Test Connection</button>
-                <button type="button" onClick={() => { setDiag(null); setTestResult(null); }} className="px-3 py-2 bg-gray-100 text-gray-800 rounded">Clear</button>
-              </div>
-
-              {testResult && (
-                <pre className="mt-3 p-3 rounded-lg bg-black text-white text-xs overflow-auto" style={{maxHeight: 300}}>
-                  {testResult}
-                </pre>
-              )}
+              {/* Test connection tooling removed from primary login UI. */}
 
               {/* Submit Button */}
               <button
