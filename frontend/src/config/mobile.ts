@@ -15,14 +15,12 @@ export const getApiBaseUrl = (): string => {
 
     if (envUrl) {
       console.log('[Mobile] ✅ Using mobile API URL from build/env:', envUrl);
-      alert(`Mobile App Starting\nBackend: ${envUrl}`);
       return envUrl;
     }
 
     // Fallback to provided API base for mobile builds
     const fallback = 'http://13.204.83.198:8000';
     console.warn('[Mobile] Using fallback mobile backend (no env urls set):', fallback);
-    alert(`Mobile App Starting\nBackend: ${fallback}\nIf login fails, open this URL in your phone browser or update VITE_MOBILE_API_URL.`);
     return fallback;
   }
   

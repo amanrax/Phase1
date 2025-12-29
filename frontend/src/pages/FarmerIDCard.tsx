@@ -100,7 +100,15 @@ const FarmerIDCard: React.FC = () => {
     if (!farmer) return;
     try {
       setError(null);
-      await farmerService.viewIDCard(farmer.farmer_id);
+      const url = await farmerService.viewIDCard(farmer.farmer_id);
+      if (url) {
+        try {
+          sessionStorage.setItem('idcard_view_url', url);
+        } catch (e) {
+          console.warn('Failed to store idcard url in sessionStorage', e);
+        }
+        navigate('/farmer/idcard-view');
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || "Failed to view ID card");
     }

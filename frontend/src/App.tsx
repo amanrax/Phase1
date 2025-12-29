@@ -21,6 +21,7 @@ import OperatorEdit from "@/pages/OperatorEdit";
 import FarmerDashboard from "@/pages/FarmerDashboard";
 import FarmerDetails from "@/pages/FarmerDetails";
 import FarmerIDCard from "@/pages/FarmerIDCard";
+import IDCardViewer from "@/pages/IDCardViewer";
 import AdminReports from "@/pages/AdminReports";
 import AdminSettings from "@/pages/AdminSettings";
 import AdminSupplyRequests from "@/pages/AdminSupplyRequests";
@@ -208,6 +209,16 @@ function App() {
               <ProtectedRoute>
                 <RoleRoute requiredRole="farmer">
                   <FarmerIDCard />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/farmer/idcard-view"
+            element={
+              <ProtectedRoute>
+                <RoleRoute requiredRole="farmer">
+                  <IDCardViewer />
                 </RoleRoute>
               </ProtectedRoute>
             }
