@@ -1,4 +1,4 @@
-// src/store/authStore.ts
+// frontend/src/store/authStore.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authService } from "@/services/auth.service";
@@ -161,8 +161,8 @@ const useAuthStore = create<AuthState>()(
         // persist lastActivity so session timeout survives app restarts
         lastActivity: state.lastActivity,
       }),
-      // Normalize roles to uppercase when loading from localStorage
       onRehydrateStorage: () => (state) => {
+        if (!state) return;
         if (state?.roles && Array.isArray(state.roles)) {
           state.roles = state.roles.map((r: any) =>
             typeof r === "string" ? r.toUpperCase() : r
@@ -172,7 +172,7 @@ const useAuthStore = create<AuthState>()(
           }
         }
         // Ensure lastActivity is a number and set to now if missing
-        if (!state?.lastActivity || typeof state.lastActivity !== 'number') {
+        if (!state?.lastActivity || typeof state.lastActivity !== "number") {
           state.lastActivity = Date.now();
         }
       },
