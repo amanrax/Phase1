@@ -20,13 +20,15 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file (JPG, PNG)");
+      const { error } = useNotification();
+      error("Please select an image file (JPG, PNG)");
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert("File size must be less than 5MB");
+      const { error } = useNotification();
+      error("File size must be less than 5MB");
       return;
     }
 
@@ -42,7 +44,8 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
 
   const handleUpload = async () => {
     if (!photo) {
-      alert("Please select a photo first");
+      const { error } = useNotification();
+      error("Please select a photo first");
       return;
     }
 
@@ -50,10 +53,12 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
     try {
       await farmerService.uploadPhoto(farmerId, photo);
       setUploaded(true);
-      alert("✅ Photo uploaded successfully!");
+      const { success } = useNotification();
+      success("Photo uploaded successfully!");
     } catch (error: any) {
       console.error("Upload failed:", error);
-      alert(error.message || "Failed to upload photo");
+      const { error: showError } = useNotification();
+      showError(error.message || "Failed to upload photo");
     } finally {
       setUploading(false);
     }

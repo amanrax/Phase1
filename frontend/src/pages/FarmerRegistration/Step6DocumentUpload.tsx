@@ -34,7 +34,8 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert("File size must be less than 10MB");
+      const { error } = useNotification();
+      error("File size must be less than 10MB");
       return;
     }
 
@@ -57,10 +58,12 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
       newDocuments[index] = { ...newDocuments[index], uploaded: true, uploading: false, file: null };
       setDocuments(newDocuments);
 
-      alert(`✅ ${doc.label} uploaded successfully!`);
+      const { success } = useNotification();
+      success(`${doc.label} uploaded successfully!`);
     } catch (error: any) {
       console.error("Upload failed:", error);
-      alert(error.message || `Failed to upload ${doc.label}`);
+      const { error: showError } = useNotification();
+      showError(error.message || `Failed to upload ${doc.label}`);
 
       newDocuments[index] = { ...newDocuments[index], uploading: false };
       setDocuments(newDocuments);
