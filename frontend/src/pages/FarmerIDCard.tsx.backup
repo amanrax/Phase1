@@ -92,7 +92,8 @@ const FarmerIDCard: React.FC = () => {
       setSuccessMessage(response?.message || "ID card generation started! Please wait...");
       showInfo("ID card generation in progress...", 5000);
 
-      const maxAttempts = 12;
+      // Poll farmer record for ID card generation status
+      const maxAttempts = 12; // ~60s at 5s interval
       let attempts = 0;
       const poll = setInterval(async () => {
         attempts += 1;
@@ -164,7 +165,7 @@ const FarmerIDCard: React.FC = () => {
         try {
           sessionStorage.setItem('idcard_view_url', url);
           console.log('[PDF] Navigating to viewer');
-          safeNavigate(navigate, '/farmer/idcard-view');
+          navigate('/farmer/idcard-view');
         } catch (e) {
           console.error('[PDF] Failed to store URL in sessionStorage:', e);
           showError('Failed to prepare ID card viewer. Please try again.', 5000);
@@ -241,7 +242,7 @@ const FarmerIDCard: React.FC = () => {
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
               <button onClick={() => safeNavigate(navigate, "/farmer-dashboard")} className="text-green-700 hover:text-green-800 font-bold text-sm">
                 ← BACK
               </button>
@@ -385,36 +386,36 @@ const FarmerIDCard: React.FC = () => {
                       {viewLoading ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                          <span>Loading...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>👁️</span> View ID Card
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      onClick={handleDownloadIDCard}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2"
-                    >
-                      <span>⬇️</span> Download
-                    </button>
-
-                    <button
-                      onClick={handleGenerateIDCard}
-                      disabled={generating}
-                      className={`w-full font-bold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2 ${
-                        generating
-                          ? "bg-gray-400 cursor-not-allowed text-white"
-                          : "bg-purple-600 hover:bg-purple-700 text-white"
-                      }`}
-                    >
-                      {generating ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                          <span>Regenerating...</span>
-                        </>
+                        try {
+                          setViewLoading(true);
+                          setError(null);
+                          showInfo("Loading ID card preview...", 3000);
+      
+                          console.log('[PDF] Fetching PDF for farmer:', farmer.farmer_id);
+                          const url = await farmerService.viewIDCard(farmer.farmer_id);
+      
+                          if (url) {
+                            console.log('[PDF] PDF URL received, storing in sessionStorage');
+                            try {
+                              sessionStorage.setItem('idcard_view_url', url);
+                              console.log('[PDF] Navigating to viewer');
+                              safeNavigate(navigate, '/farmer/idcard-view');
+                            } catch (e) {
+                              console.error('[PDF] Failed to store URL in sessionStorage:', e);
+                              showError('Failed to prepare ID card viewer. Please try again.', 5000);
+                            }
+                          } else {
+                            console.error('[PDF] No URL returned from viewIDCard');
+                            showError('ID card not available. Please generate it first.', 5000);
+                          }
+                        } catch (err: any) {
+                          console.error('[PDF] Failed to load ID card:', err);
+                          const msg = err.response?.data?.detail || err.message || "Failed to view ID card. Please generate it first.";
+                          setError(msg);
+                          showError(msg, 5000);
+                        } finally {
+                          setViewLoading(false);
+                        }
                       ) : (
                         <>
                           <span>🔄</span> Regenerate
@@ -444,7 +445,7 @@ const FarmerIDCard: React.FC = () => {
                     {generating ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                        <span>Generating...</span>
+                        Generating...
                       </>
                     ) : (
                       <>
