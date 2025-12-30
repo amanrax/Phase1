@@ -4,7 +4,7 @@ android {
     namespace "zm.gov.agri.cem"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "zm.gov.agri.cem"
+        applicationId "com.cem.farmerapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
