@@ -123,9 +123,9 @@ const FarmerIDCard: React.FC = () => {
       setError(null);
       const savedFilename = await farmerService.downloadIDCard(farmer.farmer_id);
       if (savedFilename) {
-        showSuccess("ID card saved! Check your Downloads folder or chosen app.", 6000);
+        showSuccess("ID card saved to Documents folder!", 5000);
       } else {
-        showSuccess("ID card downloaded to your Downloads folder!", 4000);
+        showSuccess("ID card downloaded successfully!", 4000);
       }
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Failed to download ID card";

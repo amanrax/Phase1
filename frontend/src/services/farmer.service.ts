@@ -153,13 +153,12 @@ export const farmerService = {
     });
     const blob = new Blob([response.data], { type: 'application/pdf' });
 
-    // Use Capacitor Share on native to let user pick where to save the file (Downloads, Drive, etc.)
+    // Try native save on Capacitor
     try {
       const { Capacitor } = await import("@capacitor/core");
 
-      if (Capacitor && (Capacitor.isNativePlatform && Capacitor.isNativePlatform())) {
+      if (Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
         const { Filesystem, Directory } = await import("@capacitor/filesystem");
-        const { Share } = await import("@capacitor/share");
 
         const blobToBase64 = (b: Blob): Promise<string> =>
           new Promise((resolve, reject) => {
@@ -173,29 +172,41 @@ export const farmerService = {
           });
 
         const base64 = await blobToBase64(blob);
-        const filename = `Farmer_${farmerId}_ID_Card.pdf`;
+        const timestamp = new Date().getTime();
+        const filename = `Farmer_${farmerId}_ID_Card_${timestamp}.pdf`;
 
-        // Save to Cache directory (temporary) and open the share dialog for the user to persist
-        const res = await Filesystem.writeFile({
-          path: filename,
-          data: base64,
-          directory: Directory.Cache,
-        });
+        // Try to save directly to Documents directory (visible in file manager)
+        try {
+          const result = await Filesystem.writeFile({
+            path: filename,
+            data: base64,
+            directory: Directory.Documents,
+          });
 
-        // res.uri is typically a content URI or file path that Share can use
-        const uri = (res as any).uri || (res as any).uriPath || filename;
+          console.log('✅ File saved to Documents:', (result as any).uri || filename);
+          return filename;
+        } catch (err) {
+          console.error('Failed to save to Documents, trying External:', err);
 
-        await Share.share({
-          title: 'Save Farmer ID Card',
-          text: `ID Card for Farmer ${farmerId}`,
-          url: uri,
-          dialogTitle: 'Save ID Card',
-        });
+          // Fallback: try External directory
+          try {
+            const result = await Filesystem.writeFile({
+              path: `Download/${filename}`,
+              data: base64,
+              directory: Directory.External,
+            });
 
-        return filename;
+            console.log('✅ File saved to External/Download:', (result as any).uri || filename);
+            return filename;
+          } catch (extErr) {
+            console.error('External storage also failed:', extErr);
+            throw new Error('Failed to save file. Please check storage permissions.');
+          }
+        }
       }
     } catch (e) {
-      console.error('Mobile save failed, falling back to web download:', e);
+      console.error('❌ Native save failed:', e);
+      // Fall through to web download
     }
 
     // Web fallback: browser download
