@@ -204,9 +204,11 @@ class SyncGridFSService:
     """
     
     def __init__(self):
-        """Initialize sync GridFS bucket"""
+        """Initialize sync GridFS bucket and keep DB reference"""
         client = MongoClient(settings.MONGODB_URL)
         db = client[settings.MONGODB_DB_NAME]
+        self.client = client
+        self.db = db
         self.bucket = GridFSBucket(db, bucket_name="cem_files")
     
     def upload_file(
@@ -238,22 +240,24 @@ class SyncGridFSService:
     def download_file(self, file_id: str) -> tuple[bytes, dict]:
         """Download file from GridFS (sync)"""
         try:
-            file_info = self.bucket.find_one({"_id": ObjectId(file_id)})
+            # GridFSBucket does not expose find_one; query the files collection directly
+            files_col = self.db["cem_files.files"]
+            file_info = files_col.find_one({"_id": ObjectId(file_id)})
             if not file_info:
                 raise FileNotFoundError(f"File {file_id} not found")
-            
+
             file_data = io.BytesIO()
             self.bucket.download_to_stream(ObjectId(file_id), file_data)
             file_data.seek(0)
-            
+
             metadata = {
-                "filename": file_info.filename,
-                "content_type": file_info.metadata.get("content_type"),
-                "uploaded_at": file_info.upload_date,
-                "length": file_info.length,
-                **file_info.metadata
+                "filename": file_info.get("filename"),
+                "content_type": (file_info.get("metadata") or {}).get("content_type"),
+                "uploaded_at": file_info.get("uploadDate") or file_info.get("upload_date"),
+                "length": file_info.get("length"),
+                **(file_info.get("metadata") or {})
             }
-            
+
             return file_data.read(), metadata
         
         except Exception as e:

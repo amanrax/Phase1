@@ -30,6 +30,7 @@ interface Farmer {
     profile?: string;
   };
   id_card_path?: string;
+  id_card_file_id?: string;
   id_card_generated_at?: string;
   qr_code_path?: string;
   created_at?: string;
@@ -315,7 +316,7 @@ const FarmerIDCard: React.FC = () => {
             <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition">
               <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-orange-500">🆔 ID Card</h2>
 
-              {farmer?.id_card_path ? (
+              {(farmer?.id_card_file_id || farmer?.id_card_path || farmer?.id_card_generated_at) ? (
                 <div>
                   <div className="bg-green-50 border-2 border-green-600 rounded-lg p-4 mb-4">
                     <p className="text-green-800 font-bold flex items-center gap-2">
