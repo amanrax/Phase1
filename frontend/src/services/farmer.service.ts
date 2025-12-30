@@ -139,9 +139,9 @@ export const farmerService = {
    * Backend: POST /api/farmers/{farmer_id}/generate-idcard
    */
   async generateIDCard(farmerId: string): Promise<any> {
-    // Use GET to trigger generation as a fallback for clients/proxies
-    // that may mishandle empty POST bodies. Backend accepts both GET and POST.
-    const response = await api.get(`/farmers/${farmerId}/generate-idcard`);
+    // Use POST to trigger generation (some deployed routes only allow POST)
+    // Send an empty body to explicitly call the POST handler.
+    const response = await api.post(`/farmers/${farmerId}/generate-idcard`, {});
     return response.data;
   },
 
