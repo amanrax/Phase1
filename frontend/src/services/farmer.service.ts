@@ -87,10 +87,10 @@ export const farmerService = {
   async uploadPhoto(farmerId: string, file: File): Promise<any> {
     const formData = new FormData();
     formData.append("file", file);
-    // IMPORTANT: Don't set Content-Type header - let axios auto-generate with boundary
     const response = await api.post(
       `/farmers/${farmerId}/upload-photo`,
-      formData
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
     return response.data;
   },
@@ -106,10 +106,10 @@ export const farmerService = {
   ): Promise<any> {
     const formData = new FormData();
     formData.append("file", file);
-    // IMPORTANT: Don't set Content-Type header - let axios auto-generate with boundary
     const response = await api.post(
       `/farmers/${farmerId}/documents/${docType}`,
-      formData
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
     return response.data;
   },
@@ -139,9 +139,7 @@ export const farmerService = {
    * Backend: POST /api/farmers/{farmer_id}/generate-idcard
    */
   async generateIDCard(farmerId: string): Promise<any> {
-    // Use POST to trigger generation (some deployed routes only allow POST)
-    // Send an empty body to explicitly call the POST handler.
-    const response = await api.post(`/farmers/${farmerId}/generate-idcard`, {});
+    const response = await api.post(`/farmers/${farmerId}/generate-idcard`);
     return response.data;
   },
 
@@ -149,61 +147,17 @@ export const farmerService = {
    * Download an existing farmer ID card (PDF blob).
    * Backend: GET /api/farmers/{farmer_id}/download-idcard
    */
-  async downloadIDCard(farmerId: string): Promise<string | void> {
+  async downloadIDCard(farmerId: string): Promise<void> {
     const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
       responseType: "blob",
     });
-    const blob = new Blob([response.data], { type: "application/pdf" });
-    const filename = `${farmerId}_id_card.pdf`;
-
-    // Try native save on Capacitor (Android/iOS). If unavailable, fall back to web download.
-    try {
-      // dynamic import so web bundles without Capacitor still work
-      // Use a runtime-resolved module specifier to prevent bundler resolving native plugin
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const capCoreModule = "@capacitor/core";
-      const { Capacitor } = await import(capCoreModule as any);
-      if (Capacitor && (Capacitor.isNativePlatform && Capacitor.isNativePlatform())) {
-        const fsModule = "@capacitor/filesystem";
-        const { writeFile, Directory } = await import(fsModule as any);
-
-        const blobToBase64 = (b: Blob) =>
-          new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(b);
-          });
-
-        const dataUrl = await blobToBase64(blob);
-        // dataUrl is like 'data:application/pdf;base64,.....' so strip the prefix
-        const base64 = dataUrl.split(",")[1];
-
-        // Write to external directory (Android Downloads). Directory.External is recommended for Android.
-        const res = await writeFile({ path: filename, data: base64, directory: Directory.External, recursive: true });
-
-        // On native, return path/uri so caller can notify user
-        // `res.uri` is available on some platforms; fallback to filename
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return (res && (res.uri || res.uriPath)) || filename;
-      }
-    } catch (e) {
-      // Not running on Capacitor/native or Filesystem plugin missing — fall back to web
-      // continue to web fallback
-    }
-
-    // Web fallback: trigger a browser download
-    const url = window.URL.createObjectURL(blob);
+    const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", filename);
+    link.setAttribute("download", `${farmerId}_id_card.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
-    window.URL.revokeObjectURL(url);
-
-    return filename;
   },
 
   async viewIDCard(farmerId: string): Promise<string> {
@@ -237,7 +191,7 @@ export const farmerService = {
    * Backend: GET /api/farmers/{farmer_id}/qr
    */
   getQRCode(farmerId: string): string {
-    const baseURL = api.defaults.baseURL || "http://ziamis-alb-226056829.ap-south-1.elb.amazonaws.com";
+    const baseURL = api.defaults.baseURL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
     return `${baseURL}/farmers/${farmerId}/qr`;
   },
 
