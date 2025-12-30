@@ -153,13 +153,49 @@ export const farmerService = {
     const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
       responseType: "blob",
     });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const blob = new Blob([response.data], { type: "application/pdf" });
+    const filename = `${farmerId}_id_card.pdf`;
+
+    // Try native save on Capacitor (Android/iOS). If unavailable, fall back to web download.
+    try {
+      // dynamic import so web bundles without Capacitor still work
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { Capacitor } = await import("@capacitor/core");
+      if (Capacitor && (Capacitor.isNativePlatform && Capacitor.isNativePlatform())) {
+        const { writeFile, Directory } = await import("@capacitor/filesystem");
+
+        const blobToBase64 = (b: Blob) =>
+          new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(b);
+          });
+
+        const dataUrl = await blobToBase64(blob);
+        // dataUrl is like 'data:application/pdf;base64,.....' so strip the prefix
+        const base64 = dataUrl.split(",")[1];
+
+        // Write to external directory (Android Downloads). Directory.External is recommended for Android.
+        await writeFile({ path: filename, data: base64, directory: Directory.External, recursive: true });
+
+        // On native, user-accessible path varies; show notification from caller.
+        return;
+      }
+    } catch (e) {
+      // Not running on Capacitor/native or Filesystem plugin missing — fall back to web
+      // continue to web fallback
+    }
+
+    // Web fallback: trigger a browser download
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `${farmerId}_id_card.pdf`);
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     link.remove();
+    window.URL.revokeObjectURL(url);
   },
 
   async viewIDCard(farmerId: string): Promise<string> {
