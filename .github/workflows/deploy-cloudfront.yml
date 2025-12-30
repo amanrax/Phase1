@@ -1,0 +1,39 @@
+name: Deploy CloudFront Distribution
+
+on:
+  workflow_dispatch:
+    inputs:
+      origin_domain:
+        description: 'ALB DNS name (e.g. cem-backend-alb-v2-1010955380.ap-south-1.elb.amazonaws.com)'
+        required: true
+      origin_port:
+        description: 'Origin HTTP port (80 or 8000)'
+        required: true
+        default: '8000'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy CloudFront CloudFormation
+        run: |
+          cd aws-deployment
+          aws cloudformation deploy \
+            --template-file cloudfront-distribution.yml \
+            --stack-name cem-cloudfront \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides OriginDomainName=${{ github.event.inputs.origin_domain }} OriginHTTPPort=${{ github.event.inputs.origin_port }}
+
+      - name: Output distribution domain
+        run: |
+          aws cloudformation describe-stacks --stack-name cem-cloudfront --query 'Stacks[0].Outputs' --output table

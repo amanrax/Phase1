@@ -4,14 +4,20 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'zm.gov.agri.cem',
-  appName: 'Chiefdom Empowerment Model',
+  appId: 'com.cem.app',
+  appName: 'CEM',
   webDir: 'dist',
   server: {
-    // For development, you can set this to your local or staging API
-    // url: 'http://192.168.1.100:5173',
-    // cleartext: true,
-    androidScheme: 'https'
+    androidScheme: 'http',
+    cleartext: true,
+    allowNavigation: [
+      '13.204.83.198',
+      '13.204.83.198:8000', // For API calls
+      'localhost'
+    ],
+  },
+  android: {
+    allowMixedContent: true
   },
   plugins: {
     SplashScreen: {
@@ -26,3 +32,4 @@ const config: CapacitorConfig = {
 };
 
 export default config;
+

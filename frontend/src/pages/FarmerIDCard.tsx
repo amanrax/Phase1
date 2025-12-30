@@ -30,6 +30,7 @@ interface Farmer {
     profile?: string;
   };
   id_card_path?: string;
+  id_card_file_id?: string;
   id_card_generated_at?: string;
   qr_code_path?: string;
   created_at?: string;
@@ -74,9 +75,32 @@ const FarmerIDCard: React.FC = () => {
       setGenerating(true);
       setError(null);
       setSuccessMessage(null);
-      await farmerService.generateIDCard(farmer.farmer_id);
-      setSuccessMessage("ID card generation started! Please wait...");
-      setTimeout(() => loadFarmerData(), 5000);
+      const response = await farmerService.generateIDCard(farmer.farmer_id);
+      setSuccessMessage(response?.message || "ID card generation started! Please wait...");
+
+      // Poll farmer record for ID card generation status
+      const maxAttempts = 12; // ~60s at 5s interval
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts += 1;
+        try {
+          const updated = await farmerService.getFarmer(farmer.farmer_id);
+          setFarmer(updated);
+          if (updated?.id_card_file_id || updated?.id_card_path || updated?.id_card_generated_at) {
+            clearInterval(poll);
+            setSuccessMessage('ID card generated successfully');
+          } else if (attempts >= maxAttempts) {
+            clearInterval(poll);
+            setError('ID card generation did not complete. Please try again or contact support.');
+          }
+        } catch (e) {
+          // Continue polling; but if persistent error, stop after attempts
+          if (attempts >= maxAttempts) {
+            clearInterval(poll);
+            setError('ID card generation failed. Check backend logs.');
+          }
+        }
+      }, 5000);
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || "Failed to generate ID card");
     } finally {
@@ -100,7 +124,15 @@ const FarmerIDCard: React.FC = () => {
     if (!farmer) return;
     try {
       setError(null);
-      await farmerService.viewIDCard(farmer.farmer_id);
+      const url = await farmerService.viewIDCard(farmer.farmer_id);
+      if (url) {
+        try {
+          sessionStorage.setItem('idcard_view_url', url);
+        } catch (e) {
+          console.warn('Failed to store idcard url in sessionStorage', e);
+        }
+        navigate('/farmer/idcard-view');
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || "Failed to view ID card");
     }
@@ -284,7 +316,7 @@ const FarmerIDCard: React.FC = () => {
             <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition">
               <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-orange-500">🆔 ID Card</h2>
 
-              {farmer?.id_card_path ? (
+              {(farmer?.id_card_file_id || farmer?.id_card_path || farmer?.id_card_generated_at) ? (
                 <div>
                   <div className="bg-green-50 border-2 border-green-600 rounded-lg p-4 mb-4">
                     <p className="text-green-800 font-bold flex items-center gap-2">

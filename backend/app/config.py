@@ -98,6 +98,8 @@ class Settings(BaseSettings):
             "http://localhost:3000",
             "http://127.0.0.1:8000",
             "http://127.0.0.1:5173",
+            "http://13.204.83.198:8000",
+            "https://cem-backend-alb-v2-1010955380.ap-south-1.elb.amazonaws.com",
         ],
         description="Allowed CORS origins (do NOT use '*' in production)"
     )
@@ -151,6 +153,20 @@ def get_settings() -> Settings:
 
 # Global settings instance
 settings = get_settings()
+
+# Production override: if running in production, restrict CORS to the EC2 host only.
+# IMPORTANT: remove or refine this to your production domains before long-term use.
+try:
+    if settings.ENVIRONMENT == "production":
+        settings.CORS_ORIGINS = [
+            "http://13.204.83.198:8000",
+        ]
+        settings.CORS_ALLOW_CREDENTIALS = True
+        settings.CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        settings.CORS_ALLOW_HEADERS = ["*"]
+except Exception:
+    # If settings object is immutable or assignment fails, skip override
+    pass
 
 # Usage:
 # from app.config import settings

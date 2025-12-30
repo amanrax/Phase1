@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
+import axiosClient from "@/utils/axios";
+import { getApiBaseUrl } from "@/config/mobile";
 import { useNotification } from "@/contexts/NotificationContext";
 
 const roles = ["admin", "operator", "farmer"];
@@ -12,6 +14,7 @@ export default function Login() {
   const [userType, setUserType] = useState("admin");
   const [hoveredButton, setHoveredButton] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [diag, setDiag] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const { login, isLoading, error, token, user } = useAuthStore();
@@ -98,6 +101,22 @@ export default function Login() {
       const errorMsg = err.response?.data?.detail || err.message || 'Invalid credentials. Please try again.';
       console.error("Error message:", errorMsg);
       showError(errorMsg);
+
+      // Simplified diagnostic info
+      try {
+        const axiosBase = axiosClient?.defaults?.baseURL || null;
+        const configuredUrl = getApiBaseUrl();
+        const diagObj = {
+          message: errorMsg,
+          axiosBase,
+          configuredUrl,
+          errorResponse: err.response?.data || null,
+        };
+        setDiag(JSON.stringify(diagObj, null, 2));
+        console.log('[Login DIAG]', diagObj);
+      } catch (dErr) {
+        console.warn('Failed to gather diag info', dErr);
+      }
     }
   };
   
@@ -223,6 +242,13 @@ export default function Login() {
                 </div>
               )}
 
+              {/* Diagnostic output (visible when provided) */}
+              {diag && (
+                <pre className="mt-4 p-3 rounded-lg bg-gray-100 text-xs text-gray-800 overflow-auto" style={{maxHeight: 200}}>
+                  {diag}
+                </pre>
+              )}
+
               {/* Submit Button */}
               <button
                 type="submit"
@@ -333,4 +359,3 @@ export default function Login() {
     </div>
   );
 }
-

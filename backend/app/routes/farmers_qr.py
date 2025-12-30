@@ -74,20 +74,8 @@ async def download_idcard(farmer_id: str, db=Depends(get_db)):
     Download generated ID card PDF for a farmer.
     Farmers can download their own cards.
     """
-    farmer = await db.farmers.find_one({"farmer_id": farmer_id})
-    if not farmer:
-        raise HTTPException(status_code=404, detail="Farmer not found")
-
-    # Check for ID card path (new field)
-    file_path = farmer.get("id_card_path")
-    if not file_path or not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="ID card not generated yet")
-
-    return FileResponse(
-        path=file_path,
-        media_type="application/pdf",
-        filename=f"{farmer_id}_card.pdf"
-    )
+    # Delegate to IDCardService which supports GridFS fallback
+    return await IDCardService.download(farmer_id, db)
 
 
 @router.get("/{farmer_id}/qr",

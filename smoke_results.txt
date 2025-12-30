@@ -1,0 +1,99 @@
+API_BASE=http://13.204.83.198:8000/api
+--- GET /health ---
+{"status":"ok"}
+HTTP_STATUS:200
+--- OPTIONS /health ---
+HTTP/1.1 400 Bad Request
+Content-Type: text/plain; charset=utf-8
+Content-Length: 22
+Connection: keep-alive
+Date: Mon, 22 Dec 2025 10:46:41 GMT
+access-control-allow-credentials: true
+server: uvicorn
+vary: Origin
+access-control-allow-methods: GET, POST, PUT, DELETE, PATCH, OPTIONS
+access-control-max-age: 3600
+X-Cache: Error from cloudfront
+Via: 1.1 74bc4d6da93c01db6e18e2b45fa9a18c.cloudfront.net (CloudFront)
+X-Amz-Cf-Pop: CDG54-P2
+X-Amz-Cf-Id: XRVlCgo9oqLKxOZhE6GaYrgXTYe7av6DfmQtjglrZsma176xLJKpog==
+
+Disallowed CORS origin
+HTTP_STATUS:400
+--- LOGIN (admin) ---
+HTTP_STATUS:200
+{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkB6aWFtaXMuZ292LnptIiwidHlwZSI6ImFjY2VzcyIsImV4cCI6MTc2NjQwNDAwMiwiaWF0IjoxNzY2NDAwNDAyLCJhdWQiOiJ6YW1iaWFuX2Zhcm1lcl9zeXN0ZW0iLCJyb2xlcyI6WyJBRE1JTiJdfQ.A8dQWBRSCdQNLE8UO_9BZ2dghLuw9SB4WjGLOIs5I8M","refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkB6aWFtaXMuZ292LnptIiwidHlwZSI6InJlZnJlc2giLCJleHAiOjE3NjcwMDUyMDIsImlhdCI6MTc2NjQwMDQwMiwiYXVkIjoiemFtYmlhbl9mYXJtZXJfc3lzdGVtIn0.kxReaTZpjx9ZK54qjbkOs2GsBuy0EeoCKgpWjPRNtg0","token_type":"bearer","expires_in":3600,"user":{"_id":"69257b233f1401e280b927fb","email":"admin@ziamis.gov.zm","roles":["ADMIN"],"is_active":true,"created_at":"2025-11-25T09:47:15.250000","updated_at":null,"last_login":"2025-12-22T04:56:09.515000","full_name":"System Administrator","phone":"+260977000001","farmer_id":null}}
+Access token present: 251
+--- CREATE OPERATOR ---
+HTTP_STATUS:201
+Request payload:
+{
+  "personal_info": {
+    "first_name": "Smoke",
+    "last_name": "Farmer",
+    "phone_primary": "+260136209064",
+    "nrc": "526559/19/2",
+    "date_of_birth": "1990-01-01",
+    "gender": "Male"
+  },
+  "address": {
+    "province_code": "LP",
+    "province_name": "Luapula Province",
+    "district_code": "LP05",
+    "district_name": "Kawambwa District",
+    "village": "Smoke Village"
+  },
+  "temp_id": "temp-1766401558"
+}
+Response body:
+{"_id":"69492616d968811a28883d35","farmer_id":"ZM16DCC947","registration_status":"pending","created_at":"2025-12-22T11:05:58.932000","updated_at":"2025-12-22T11:05:58.932000","personal_info":{"first_name":"Smoke","last_name":"Farmer","phone_primary":"+260136209064","phone_secondary":null,"email":null,"nrc":"526559/19/2","date_of_birth":"1990-01-01","gender":"Male","ethnic_group":null},"address":{"province_code":"LP","province_name":"Luapula Province","district_code":"LP05","district_name":"Kawambwa District","chiefdom_code":"","chiefdom_name":"","village":"Smoke Village","street":null,"gps_latitude":null,"gps_longitude":null},"farm_info":null,"household_info":null,"documents":null,"identification_documents":[],"is_active":true,"review_notes":null,"reviewed_by":null,"reviewed_at":null,"id_card_path":null,"qr_code_path":null,"id_card_generated_at":null}Created farmer id: ZM16DCC947
+GET /api/farmers/ZM16DCC947
+{"_id":"69492616d968811a28883d35","farmer_id":"ZM16DCC947","registration_status":"pending","created_at":"2025-12-22T11:05:58.932000","updated_at":"2025-12-22T11:05:58.932000","personal_info":{"first_name":"Smoke","last_name":"Farmer","phone_primary":"+260136209064","phone_secondary":null,"email":null,"nrc":"526559/19/2","date_of_birth":"1990-01-01","gender":"Male","ethnic_group":null},"address":{"province_code":"LP","province_name":"Luapula Province","district_code":"LP05","district_name":"Kawambwa District","chiefdom_code":"","chiefdom_name":"","village":"Smoke Village","street":null,"gps_latitude":null,"gps_longitude":null},"farm_info":null,"household_info":null,"documents":null,"identification_documents":[],"is_active":true,"review_notes":null,"reviewed_by":null,"reviewed_at":null,"id_card_path":null,"qr_code_path":null,"id_card_generated_at":null}SUCCESS: Farmer created and verified.
+\n==== E2E OPERATOR/FARMER FLOW TEST START: Mon Dec 22 11:18:54 UTC 2025 ====
+\n-- Admin login --
+ADMIN_HTTP:HTTP_STATUS:200
+{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkB6aWFtaXMuZ292LnptIiwidHlwZSI6ImFjY2VzcyIsImV4cCI6MTc2NjQwNTkzNSwiaWF0IjoxNzY2NDAyMzM1LCJhdWQiOiJ6YW1iaWFuX2Zhcm1lcl9zeXN0ZW0iLCJyb2xlcyI6WyJBRE1JTiJdfQ.kzVxt5rnNYnDbDMpDqBeYtu7iozFnl3omPhJJ7wCXyY","refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkB6aWFtaXMuZ292LnptIiwidHlwZSI6InJlZnJlc2giLCJleHAiOjE3NjcwMDcxMzUsImlhdCI6MTc2NjQwMjMzNSwiYXVkIjoiemFtYmlhbl9mYXJtZXJfc3lzdGVtIn0.68HvtrqoCuxvGfbZcWnd8SM5_JkV9wYlpeinUv5iAiw","token_type":"bearer","expires_in":3600,"user":{"_id":"69257b233f1401e280b927fb","email":"admin@ziamis.gov.zm","roles":["ADMIN"],"is_active":true,"created_at":"2025-11-25T09:47:15.250000","updated_at":null,"last_login":"2025-12-22T10:46:42.341000","full_name":"System Administrator","phone":"+260977000001","farmer_id":null}}
+Admin token length: 251
+\n-- Create operator (admin) --
+OP_CREATE_HTTP:HTTP_STATUS:201
+{"message":"Operator created","operator":{"operator_id":"OP53DA74A2","email":"op-1766402336@example.com","full_name":"E2E Operator","phone":"+260971111222","assigned_regions":["Luapula Province"],"assigned_districts":["Kawambwa District"],"is_active":true,"created_at":"2025-12-22T11:18:56.716837+00:00","farmer_count":0}}
+Created operator_id: OP53DA74A2
+\n-- List operators (admin) --
+{
+  "count": 26,
+  "results": {
+    "operator_id": "OP53DA74A2",
+    "user_id": "694929202ebd3fc5ce72c62b",
+    "email": "op-1766402336@example.com",
+    "full_name": "E2E Operator",
+    "phone": "+260971111222",
+    "assigned_regions": [
+      "Luapula Province"
+    ],
+    "assigned_districts": [
+      "Kawambwa District"
+    ],
+    "is_active": true,
+    "created_at": "2025-12-22T11:18:56.716000",
+    "updated_at": "2025-12-22T11:18:56.716000",
+    "farmer_count": 9
+  }
+}
+\n-- Update operator (admin) --
+{"operator_id":"OP53DA74A2","user_id":"694929202ebd3fc5ce72c62b","email":"op-1766402336@example.com","full_name":"E2E Operator Updated","phone":"+260971111222","assigned_regions":["Luapula Province"],"assigned_districts":["Kawambwa District"],"is_active":true,"created_at":"2025-12-22T11:18:56.716000","updated_at":"2025-12-22T11:18:59.441000"}\n-- Deactivate operator (admin) --
+{"operator_id":"OP53DA74A2","user_id":"694929202ebd3fc5ce72c62b","email":"op-1766402336@example.com","full_name":"E2E Operator Updated","phone":"+260971111222","assigned_regions":["Luapula Province"],"assigned_districts":["Kawambwa District"],"is_active":false,"created_at":"2025-12-22T11:18:56.716000","updated_at":"2025-12-22T11:19:00.046000"}\n-- Operator login (expected blocked) --
+OP_LOGIN_HTTP:HTTP_STATUS:403
+{"detail":"Account is disabled. Contact administrator."}
+\n-- Reactivate operator (admin) --
+{"operator_id":"OP53DA74A2","user_id":"694929202ebd3fc5ce72c62b","email":"op-1766402336@example.com","full_name":"E2E Operator Updated","phone":"+260971111222","assigned_regions":["Luapula Province"],"assigned_districts":["Kawambwa District"],"is_active":true,"created_at":"2025-12-22T11:18:56.716000","updated_at":"2025-12-22T11:19:01.545000"}\n-- Operator login (expected success) --
+OP_LOGIN_HTTP:HTTP_STATUS:200
+{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcC0xNzY2NDAyMzM2QGV4YW1wbGUuY29tIiwidHlwZSI6ImFjY2VzcyIsImV4cCI6MTc2NjQwNTk0MiwiaWF0IjoxNzY2NDAyMzQyLCJhdWQiOiJ6YW1iaWFuX2Zhcm1lcl9zeXN0ZW0iLCJyb2xlcyI6WyJPUEVSQVRPUiJdfQ.R-FRs_IaUYA2NNl2cZsa5mFCoFJVWf-lzEFpTu33WAw","refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcC0xNzY2NDAyMzM2QGV4YW1wbGUuY29tIiwidHlwZSI6InJlZnJlc2giLCJleHAiOjE3NjcwMDcxNDIsImlhdCI6MTc2NjQwMjM0MiwiYXVkIjoiemFtYmlhbl9mYXJtZXJfc3lzdGVtIn0.Wl_qdDod53N4-qPzsVgY0aN3qhZ-AXKsRIDFhfRVNRs","token_type":"bearer","expires_in":3600,"user":{"_id":"694929202ebd3fc5ce72c62b","email":"op-1766402336@example.com","roles":["OPERATOR"],"is_active":true,"created_at":"2025-12-22T11:18:56.716000","updated_at":"2025-12-22T11:18:56.716000","last_login":null,"full_name":null,"phone":null,"farmer_id":null}}
+Operator token length: 263
+\n-- Operator's farmers (initial) --
+{"count":0,"results":[]}\n-- Create farmer as operator --
+F_CREATE_HTTP:HTTP_STATUS:201
+{"_id":"694929282ebd3fc5ce72c645","farmer_id":"ZM403471BE","registration_status":"pending","created_at":"2025-12-22T11:19:04.197000","updated_at":"2025-12-22T11:19:04.197000","personal_info":{"first_name":"OpCreated","last_name":"Farmer","phone_primary":"+260369176990","phone_secondary":null,"email":"farmer-1766402343@example.com","nrc":"466184/63/5","date_of_birth":"1990-01-01","gender":"Male","ethnic_group":null},"address":{"province_code":"LP","province_name":"Luapula Province","district_code":"LP05","district_name":"Kawambwa District","chiefdom_code":"","chiefdom_name":"","village":"Op Village","street":null,"gps_latitude":null,"gps_longitude":null},"farm_info":null,"household_info":null,"documents":null,"identification_documents":[],"is_active":true,"review_notes":null,"reviewed_by":null,"reviewed_at":null,"id_card_path":null,"qr_code_path":null,"id_card_generated_at":null}
+Created farmer_id: ZM403471BE
+\n== ADMIN -> OPERATOR: Mon Dec 22 11:19:32 UTC 2025 ==
+ADMIN_HTTP:HTTP_STATUS:200
+{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkB6aWFtaXMuZ292LnptIiwidHlwZSI6ImFjY2VzcyIsImV4cCI6MTc2NjQwNTk3MywiaWF0IjoxNzY2NDAyMzczLCJhdWQiOiJ6YW1iaWFuX2Zhcm1lcl9zeXN0ZW0iLCJyb2xlcyI6WyJBRE1JTiJdfQ.DJeO5_czlmMWKOhIi0PfhowB97QQTfKwIPKQfxSusOw","refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkB6aWFtaXMuZ292LnptIiwidHlwZSI6InJlZnJlc2giLCJleHAiOjE3NjcwMDcxNzMsImlhdCI6MTc2NjQwMjM3MywiYXVkIjoiemFtYmlhbl9mYXJtZXJfc3lzdGVtIn0.WHoUwtUpxW3aFjkSyJkcQa8OqMVaA3I-9phJbcVxqYo","token_type":"bearer","expires_in":3600,"user":{"_id":"69257b233f1401e280b927fb","email":"admin@ziamis.gov.zm","roles":["ADMIN"],"is_active":true,"created_at":"2025-11-25T09:47:15.250000","updated_at":null,"last_login":"2025-12-22T11:18:55.763000","full_name":"System Administrator","phone":"+260977000001","farmer_id":null}}

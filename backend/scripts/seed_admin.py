@@ -23,6 +23,9 @@ admin = {
     "email": EMAIL,
     "password_hash": HASHED,
     "roles": ["ADMIN"],  # ✅ always ensure this field exists
+    "is_active": True,
+    "created_at": __import__('datetime').datetime.utcnow(),
+    "updated_at": __import__('datetime').datetime.utcnow(),
 }
 
 existing = db.users.find_one({"email": EMAIL})

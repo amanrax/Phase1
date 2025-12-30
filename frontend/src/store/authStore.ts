@@ -13,7 +13,7 @@ export interface AuthState {
   error: string | null;
   lastActivity: number;
   showTimeoutWarning: boolean;
-  login: (email: string, password: string, role?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   loadUser: () => Promise<void>;
   refreshAccessToken: () => Promise<string | null>;
@@ -37,10 +37,10 @@ const useAuthStore = create<AuthState>()(
       showTimeoutWarning: false,
 
       // ---------- FIXED LOGIN ----------
-      login: async (email: string, password: string, role?: string) => {
+      login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authService.login(email, password, role);
+          const response = await authService.login(email, password);
 
           const userRoles = response.user?.roles || [];
           // Normalize role strings to uppercase to match backend role checks
@@ -49,7 +49,7 @@ const useAuthStore = create<AuthState>()(
           );
           const primaryRole = normalizedRoles.length > 0 ? normalizedRoles[0] : null;
 
-          localStorage.setItem("token", response.access_token);
+          localStorage.setItem("access_token", response.access_token);
           if (response.refresh_token) {
             localStorage.setItem("refresh_token", response.refresh_token);
           }
@@ -95,13 +95,13 @@ const useAuthStore = create<AuthState>()(
           role: null,
           error: null,
         });
-        localStorage.removeItem("token");
+        localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         sessionStorage.clear();
       },
 
       loadUser: async () => {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("access_token");
         if (!token) return;
 
         set({ isLoading: true });
@@ -135,7 +135,7 @@ const useAuthStore = create<AuthState>()(
           const newToken = await authService.refresh(refreshToken);
           if (newToken) {
             set({ token: newToken });
-            localStorage.setItem("token", newToken);
+            localStorage.setItem("access_token", newToken);
             return newToken;
           }
         } catch {

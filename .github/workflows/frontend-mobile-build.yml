@@ -1,0 +1,52 @@
+# Workflow: Build frontend for mobile with VITE_MOBILE_API_URL
+# Triggers: manual `workflow_dispatch` with optional `mobile_api_url` input.
+# Produces: `frontend-dist` artifact containing `frontend/dist` (Vite build output).
+
+name: Frontend Mobile Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      mobile_api_url:
+        description: 'Mobile API URL (VITE_MOBILE_API_URL). Optional - fallback to secret or default.'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build frontend with VITE_MOBILE_API_URL
+        run: |
+          set -e
+          cd frontend
+          if [ -n "${{ github.event.inputs.mobile_api_url }}" ]; then
+            VITE_MOBILE_API_URL="${{ github.event.inputs.mobile_api_url }}"
+          elif [ -n "${{ secrets.VITE_MOBILE_API_URL }}" ]; then
+            VITE_MOBILE_API_URL="${{ secrets.VITE_MOBILE_API_URL }}"
+          else
+            VITE_MOBILE_API_URL="http://13.204.83.198:8000"
+          fi
+          echo "Using VITE_MOBILE_API_URL=${VITE_MOBILE_API_URL}"
+          export VITE_MOBILE_API_URL
+          npm run build
+        shell: bash
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist

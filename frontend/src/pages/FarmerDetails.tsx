@@ -774,17 +774,17 @@ function DocumentSection({ title, docType, docPath, uploading, onUpload, onDelet
           <div className="text-green-600 text-sm sm:text-base font-semibold mb-3 flex items-center gap-2" style={{ color: "#28a745", fontSize: "14px", fontWeight: "600", marginBottom: "10px", display: "flex", alignItems: "center", gap: "5px" }}>
             ✓ Uploaded
           </div>
-          <a
-            href={
-              docPath.startsWith('http') 
-                ? docPath 
-                : docPath.startsWith('/uploads')
-                ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${docPath}`
-                : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/${docPath}`
-            }
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg mb-3 text-sm text-center font-semibold transition-all"
+          <button
+            onClick={() => {
+              // Store the document path and navigate into the in-app document viewer
+              try {
+                sessionStorage.setItem('doc_view_path', docPath);
+              } catch (e) {
+                console.warn('Failed to store doc path', e);
+              }
+              window.location.hash = '#/document-view';
+            }}
+            className="w-full block p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg mb-3 text-sm text-center font-semibold transition-all"
             style={{
               display: "block",
               padding: "10px",
@@ -798,15 +798,9 @@ function DocumentSection({ title, docType, docPath, uploading, onUpload, onDelet
               fontWeight: "600",
               transition: "all 0.3s"
             }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = "#0056b3";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = "#007bff";
-            }}
           >
             👁️ View
-          </a>
+          </button>
           
           {/* Replace button */}
           <input

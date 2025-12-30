@@ -1,0 +1,1 @@
+518d2a90d48acfe9faa5803d45f830e383a5aec5053a233249c205dcbe4d7d51  artifacts/ziamis-run-74/ziamis-debug-apk/app-debug.apk

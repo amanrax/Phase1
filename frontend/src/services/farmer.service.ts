@@ -162,13 +162,14 @@ export const farmerService = {
     link.remove();
   },
 
-  async viewIDCard(farmerId: string): Promise<void> {
+  async viewIDCard(farmerId: string): Promise<string> {
     const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
       responseType: "blob",
     });
     const blob = new Blob([response.data], { type: "application/pdf" });
     const url = window.URL.createObjectURL(blob);
-    window.open(url, "_blank");
+    // Return the URL to allow in-app viewing/navigation
+    return url;
   },
 
   /**

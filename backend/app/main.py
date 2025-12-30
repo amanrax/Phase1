@@ -11,7 +11,7 @@ import os
 
 # Import configuration and database
 from app.config import settings
-from app.database import connect_to_database, close_database_connection, seed_initial_data
+from app.database import connect_to_database, close_database_connection
 from app.middleware.logging_middleware import LoggingMiddleware
 
 # Import routers
@@ -30,7 +30,7 @@ from app.routes import (
     reports,
     supplies,
     logs,
-    ethnic_groups,
+    files,  # GridFS file downloads
 )
 
 # Configure logging
@@ -47,7 +47,6 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     logger.info("🚀 Starting Zambian Farmer System API...")
     await connect_to_database()
-    await seed_initial_data()
     logger.info("✅ Application startup complete")
     yield
     logger.info("🧹 Shutting down application...")
@@ -79,11 +78,12 @@ allowed_origins = [
     "http://127.0.0.1:5173",
     "http://127.0.0.1:8000",
     "http://127.0.0.1:3000",
-    # Capacitor mobile app origins
-    "capacitor://localhost",
-    "https://localhost",
-    "ionic://localhost",
+    # Common origins used by Capacitor / Ionic WebViews on mobile devices
     "http://localhost",
+    "capacitor://localhost",
+    "ionic://localhost",
+    # CloudFront domain used by mobile builds (ensure mobile/web builds allowed)
+    "http://13.204.83.198:8000",
 ]
 
 # Allow overriding frontend origin via env (useful in Codespaces)
@@ -92,32 +92,93 @@ if frontend_origin_env and frontend_origin_env not in allowed_origins:
     # Add the explicit frontend origin provided via environment
     allowed_origins.append(frontend_origin_env)
 
-# Allow GitHub Codespaces subdomains matching port 5173, 8000, or 3000
-# Also allow ngrok domains for mobile testing
-# Patterns:
-# - https://[any-alphanumeric-and-hyphens]-[port].app.github.dev (Codespaces)
-# - https://[anything].ngrok-free.app (ngrok)
-# - https://[anything].ngrok.io (ngrok legacy)
-# - https://[anything].ngrok-free.dev (ngrok)
-allow_origin_regex = r"^https:\/\/([a-z0-9\-]+-(?:5173|8000|3000)\.app\.github\.dev|[a-z0-9\-]+\.ngrok-free\.(app|dev)|[a-z0-9\-]+\.ngrok\.io)$"
-
-logger.info(f"✅ CORS Allowed Origins (static): {allowed_origins}")
-logger.info(f"✅ CORS Allowed Origins (regex pattern): {allow_origin_regex}")
+# Allow GitHub Codespaces subdomains matching either port 5173/8000/3000
+allow_origin_regex = r"^https:\/\/[\-a-z0-9]+-(?:5173|8000|3000)\.app\.github\.dev$"
 
 cors_kwargs = dict(
-    allow_origins=allowed_origins,
-    allow_origin_regex=allow_origin_regex,
+    allow_origins=allowed_origins, # Now contains explicit origins + frontend_origin_env
+    allow_origin_regex=allow_origin_regex, # Also consider regex for dynamic Codespaces origins
     allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=settings.CORS_ALLOW_METHODS,
     allow_headers=settings.CORS_ALLOW_HEADERS,
     expose_headers=["Content-Length", "Content-Type", "Authorization"],
     max_age=3600,  # Cache preflight requests for 1 hour
 )
+# NOTE: CORSMiddleware is added after the PreflightMiddleware below so
+# the PreflightMiddleware can short-circuit OPTIONS requests even when
+# the incoming Origin isn't yet validated by CORSMiddleware (useful
+# when an edge/proxy modifies requests). We'll add CORSMiddleware
+# after declaring PreflightMiddleware to ensure OPTIONS are handled
+# consistently.
 
+from starlette.responses import Response
+
+
+# Use an "http" middleware so it reliably runs before third-party
+# middlewares like CORSMiddleware. This short-circuits OPTIONS
+# preflight requests and returns consistent CORS headers.
+@app.middleware("http")
+async def preflight_middleware(request: Request, call_next):
+    if request.method == "OPTIONS":
+        origin = request.headers.get("origin") or "*"
+        allow_headers = ",".join(settings.CORS_ALLOW_HEADERS) if settings.CORS_ALLOW_HEADERS != ["*"] else request.headers.get("access-control-request-headers", "*")
+        allow_methods = ",".join(settings.CORS_ALLOW_METHODS)
+        headers = {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Methods": allow_methods,
+            "Access-Control-Allow-Headers": allow_headers,
+            "Access-Control-Allow-Credentials": "true" if settings.CORS_ALLOW_CREDENTIALS else "false",
+            "Access-Control-Max-Age": "3600",
+        }
+        return Response(status_code=200, content=b"", headers=headers)
+    return await call_next(request)
+
+
+# Add CORSMiddleware after our preflight handler (order of registration
+# is not always the same as execution order for add_middleware, so using
+# an "http" middleware above ensures preflight runs first).
 app.add_middleware(CORSMiddleware, **cors_kwargs)
 app.add_middleware(LoggingMiddleware)
 
-logger.info("🔄 CORS middleware configured and applied")
+
+# ============================================
+# Prevent CloudFront / intermediary caching for API responses
+# Adds conservative Cache-Control headers for API endpoints so
+# clients and CDNs return fresh data after mutations.
+# ============================================
+@app.middleware("http")
+async def cache_control_middleware(request: Request, call_next):
+    response = await call_next(request)
+
+    try:
+        path = request.url.path or ""
+        # Only apply to API endpoints
+        if path.startswith("/api/"):
+            # For all API responses, instruct proxies and browsers not to cache
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Vary"] = response.headers.get("Vary", "Origin, Authorization")
+    except Exception:
+        # Fail-safe: do not break request flow if header assignment fails
+        pass
+
+    return response
+
+
+# Global fallback for OPTIONS preflight requests (answers any path)
+@app.options("/{full_path:path}", include_in_schema=False)
+async def global_options(full_path: str, request: Request):
+    origin = request.headers.get("origin") or "*"
+    allow_headers = ",".join(settings.CORS_ALLOW_HEADERS) if settings.CORS_ALLOW_HEADERS != ["*"] else request.headers.get("access-control-request-headers", "*")
+    allow_methods = ",".join(settings.CORS_ALLOW_METHODS)
+    headers = {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Methods": allow_methods,
+        "Access-Control-Allow-Headers": allow_headers,
+        "Access-Control-Allow-Credentials": "true" if settings.CORS_ALLOW_CREDENTIALS else "false",
+        "Access-Control-Max-Age": "3600",
+    }
+    return Response(status_code=200, content=b"", headers=headers)
 
 # Removed EnsureCORSHeadersMiddleware as CORSMiddleware with regex should handle Codespaces
 
@@ -139,11 +200,11 @@ app.include_router(dashboard.router, prefix="/api", tags=["Dashboard"])
 app.include_router(reports.router, prefix="/api", tags=["Reports"])
 app.include_router(supplies.router, prefix="/api", tags=["Supply Requests"])
 app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
+app.include_router(files.router, prefix="/api", tags=["Files"])  # GridFS downloads
 app.include_router(sync.router, prefix="/api", tags=["Synchronization"])
 app.include_router(farmers_qr.router, prefix="/api", tags=["Farmers QR"])
-app.include_router(ethnic_groups.router, prefix="/api", tags=["Ethnic Groups"])
 app.include_router(health.router, prefix="/api/health", tags=["Health"])
-app.include_router(logs.router, prefix="/api/logs", tags=["Logs"])
+app.include_router(logs.router, prefix="/api", tags=["Logs"])
 
 logger.info("✅ All API routers registered")
 
