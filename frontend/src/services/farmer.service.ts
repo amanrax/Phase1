@@ -159,10 +159,13 @@ export const farmerService = {
     // Try native save on Capacitor (Android/iOS). If unavailable, fall back to web download.
     try {
       // dynamic import so web bundles without Capacitor still work
+      // Use a runtime-resolved module specifier to prevent bundler resolving native plugin
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { Capacitor } = await import("@capacitor/core");
+      const capCoreModule = "@capacitor/core";
+      const { Capacitor } = await import(capCoreModule as any);
       if (Capacitor && (Capacitor.isNativePlatform && Capacitor.isNativePlatform())) {
-        const { writeFile, Directory } = await import("@capacitor/filesystem");
+        const fsModule = "@capacitor/filesystem";
+        const { writeFile, Directory } = await import(fsModule as any);
 
         const blobToBase64 = (b: Blob) =>
           new Promise<string>((resolve, reject) => {
