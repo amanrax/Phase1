@@ -56,12 +56,8 @@ export default function Login() {
     }
     
     try {
-      // Convert date format for farmers: YYYY-MM-DD (from date input) -> DD-MM-YYYY (backend expects)
-      let passwordToSend = password;
-      if (userType === "farmer" && password.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const [year, month, day] = password.split('-');
-        passwordToSend = `${day}-${month}-${year}`;
-      }
+      // Send password as-is (date picker already gives YYYY-MM-DD format)
+      const passwordToSend = password;
       
       console.log("[Login] Starting login process...");
       console.log("Calling login with:", { email, password: passwordToSend, userType });
@@ -88,7 +84,7 @@ export default function Login() {
       console.log("[Login] Target route:", targetRoute);
       
       // Show success message
-      showSuccess(`Welcome back, ${user?.email || 'User'}!`);
+      showSuccess(`Welcome back, ${user?.email || user?.full_name || 'User'}!`);
       
       // Set navigating state to show loading screen
       setIsNavigating(true);
@@ -124,7 +120,7 @@ export default function Login() {
   const usernameLabel = isFarmer ? "🆔 NRC Number" : userType === "admin" ? "🔐 Admin Email" : "📧 Email Address";
   const usernamePlaceholder = isFarmer ? "e.g., 123456/12/1" : userType === "admin" ? "admin@example.com" : "operator@example.com";
   const passwordLabel = isFarmer ? "🎂 Date of Birth" : "🔑 Password";
-  const passwordPlaceholder = isFarmer ? "DD-MM-YYYY (or YYYY-MM-DD)" : "Enter your password";
+  const passwordPlaceholder = isFarmer ? "Select your date of birth" : "Enter your password";
   const usernameInputType = isFarmer ? "text" : "email";
   const passwordInputType = isFarmer ? "date" : "password";
 
