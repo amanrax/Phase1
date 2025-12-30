@@ -1,7 +1,7 @@
 // src/pages/FarmerDashboard.tsx
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { safeNavigate } from '@/utils/navigation';
+import { safeNavigate } from '@/config/navigation';
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
