@@ -151,13 +151,53 @@ export const farmerService = {
     const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
       responseType: "blob",
     });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+
+    // Try native save on Capacitor (Android/iOS). If unavailable, fall back to web download.
+    try {
+      const capCoreModule = "@capacitor/core";
+      const { Capacitor } = await import(capCoreModule as any);
+      if (Capacitor && (Capacitor.isNativePlatform && Capacitor.isNativePlatform())) {
+        const fsModule = "@capacitor/filesystem";
+        const { writeFile, Directory } = await import(fsModule as any);
+
+        const blobToBase64 = (b: Blob) =>
+          new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(b);
+          });
+
+        const base64 = await blobToBase64(blob);
+
+        // Try to write to external Downloads directory where possible
+        const filename = `${farmerId}_id_card.pdf`;
+        try {
+          const res = await writeFile({ path: filename, data: base64, directory: Directory.External, recursive: true });
+          // Some platforms return a uri/path
+          // @ts-ignore
+          return (res && (res.uri || res.uriPath)) || filename;
+        } catch (writeErr) {
+          // Fallback to Documents dir
+          const res = await writeFile({ path: filename, data: base64, directory: Directory.Documents, recursive: true });
+          // @ts-ignore
+          return (res && (res.uri || res.uriPath)) || filename;
+        }
+      }
+    } catch (e) {
+      // Not running on Capacitor/native or Filesystem plugin missing — fall back to web download
+    }
+
+    // Web fallback: trigger a browser download
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", `${farmerId}_id_card.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
+    window.URL.revokeObjectURL(url);
   },
 
   async viewIDCard(farmerId: string): Promise<string> {
@@ -165,8 +205,29 @@ export const farmerService = {
       responseType: "blob",
     });
     const blob = new Blob([response.data], { type: "application/pdf" });
+
+    // For native mobile WebViews blob URLs may be unreliable in iframes.
+    // Return a base64 data URL when running on Capacitor to improve compatibility.
+    try {
+      const capCoreModule = "@capacitor/core";
+      const { Capacitor } = await import(capCoreModule as any);
+      if (Capacitor && (Capacitor.isNativePlatform && Capacitor.isNativePlatform())) {
+        const toBase64 = (b: Blob) =>
+          new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(b);
+          });
+
+        const dataUrl = await toBase64(blob); // already includes the data:...prefix
+        return dataUrl;
+      }
+    } catch (e) {
+      // ignore and fallback to blob URL
+    }
+
     const url = window.URL.createObjectURL(blob);
-    // Return the URL to allow in-app viewing/navigation
     return url;
   },
 
