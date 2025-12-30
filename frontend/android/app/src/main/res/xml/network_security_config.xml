@@ -1,14 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <!-- Base configuration - allow cleartext for development -->
     <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system" />
+            <certificates src="user" />
         </trust-anchors>
     </base-config>
     
+    <!-- Production Backend - AWS EC2 -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">13.204.83.198</domain>
-        <domain includeSubdomains="true">localhost</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+    
+    
+
+    
+    <!-- MongoDB Atlas (if needed for direct access) -->
+    <!-- <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">mongodb.net</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config> -->
+    
+    <!-- Future HTTPS domain (when you get SSL certificate) -->
+    <!-- <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">yourapp.com</domain>
+        <domain includeSubdomains="true">api.yourapp.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config> -->
+    
+    <!-- GitHub Codespaces (for testing) -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">app.github.dev</domain>
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>

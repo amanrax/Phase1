@@ -147,53 +147,62 @@ export const farmerService = {
    * Download an existing farmer ID card (PDF blob).
    * Backend: GET /api/farmers/{farmer_id}/download-idcard
    */
-  async downloadIDCard(farmerId: string): Promise<void> {
+  async downloadIDCard(farmerId: string): Promise<string | void> {
     const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
       responseType: "blob",
     });
     const blob = new Blob([response.data], { type: 'application/pdf' });
 
-    // Try native save on Capacitor (Android/iOS). If unavailable, fall back to web download.
+    // Use Capacitor Share on native to let user pick where to save the file (Downloads, Drive, etc.)
     try {
-      const capCoreModule = "@capacitor/core";
-      const { Capacitor } = await import(capCoreModule as any);
-      if (Capacitor && (Capacitor.isNativePlatform && Capacitor.isNativePlatform())) {
-        const fsModule = "@capacitor/filesystem";
-        const { writeFile, Directory } = await import(fsModule as any);
+      const { Capacitor } = await import("@capacitor/core");
 
-        const blobToBase64 = (b: Blob) =>
-          new Promise<string>((resolve, reject) => {
+      if (Capacitor && (Capacitor.isNativePlatform && Capacitor.isNativePlatform())) {
+        const { Filesystem, Directory } = await import("@capacitor/filesystem");
+        const { Share } = await import("@capacitor/share");
+
+        const blobToBase64 = (b: Blob): Promise<string> =>
+          new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+            reader.onloadend = () => {
+              const result = reader.result as string;
+              resolve(result.split(',')[1]);
+            };
             reader.onerror = reject;
             reader.readAsDataURL(b);
           });
 
         const base64 = await blobToBase64(blob);
+        const filename = `Farmer_${farmerId}_ID_Card.pdf`;
 
-        // Try to write to external Downloads directory where possible
-        const filename = `${farmerId}_id_card.pdf`;
-        try {
-          const res = await writeFile({ path: filename, data: base64, directory: Directory.External, recursive: true });
-          // Some platforms return a uri/path
-          // @ts-ignore
-          return (res && (res.uri || res.uriPath)) || filename;
-        } catch (writeErr) {
-          // Fallback to Documents dir
-          const res = await writeFile({ path: filename, data: base64, directory: Directory.Documents, recursive: true });
-          // @ts-ignore
-          return (res && (res.uri || res.uriPath)) || filename;
-        }
+        // Save to Cache directory (temporary) and open the share dialog for the user to persist
+        const res = await Filesystem.writeFile({
+          path: filename,
+          data: base64,
+          directory: Directory.Cache,
+        });
+
+        // res.uri is typically a content URI or file path that Share can use
+        const uri = (res as any).uri || (res as any).uriPath || filename;
+
+        await Share.share({
+          title: 'Save Farmer ID Card',
+          text: `ID Card for Farmer ${farmerId}`,
+          url: uri,
+          dialogTitle: 'Save ID Card',
+        });
+
+        return filename;
       }
     } catch (e) {
-      // Not running on Capacitor/native or Filesystem plugin missing — fall back to web download
+      console.error('Mobile save failed, falling back to web download:', e);
     }
 
-    // Web fallback: trigger a browser download
+    // Web fallback: browser download
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `${farmerId}_id_card.pdf`);
+    link.setAttribute("download", `Farmer_${farmerId}_ID_Card.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -254,6 +263,34 @@ export const farmerService = {
   getQRCode(farmerId: string): string {
     const baseURL = api.defaults.baseURL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
     return `${baseURL}/farmers/${farmerId}/qr`;
+  },
+
+  /**
+   * Get a QR image URL for a farmer. If the QR is stored in GridFS (file id),
+   * fetch it via authenticated API and return an object URL suitable for
+   * assigning to an <img> src. Caller is responsible for revoking the URL.
+   */
+  async getQRCodeUrl(farmer: any): Promise<string | null> {
+    if (!farmer) return null;
+
+    // If backend stored a public path, use it
+    if (farmer.qr_code_path) return farmer.qr_code_path;
+
+    // If GridFS file id is present, fetch the file with auth and return object URL
+    const fileId = farmer.qr_code_file_id;
+    if (fileId) {
+      try {
+        const resp = await api.get(`/files/${fileId}`, { responseType: 'blob' });
+        const blob = new Blob([resp.data], { type: resp.headers['content-type'] || 'image/png' });
+        const url = window.URL.createObjectURL(blob);
+        return url;
+      } catch (e) {
+        console.warn('Failed to fetch QR from GridFS', e);
+        return null;
+      }
+    }
+
+    return null;
   },
 
   /**

@@ -42,6 +42,7 @@ const FarmerIDCard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [farmer, setFarmer] = useState<Farmer | null>(null);
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +65,12 @@ const FarmerIDCard: React.FC = () => {
       }
       const data = await farmerService.getFarmer(farmerId);
       setFarmer(data);
+      try {
+        const q = await farmerService.getQRCodeUrl(data);
+        setQrUrl(q);
+      } catch (e) {
+        console.warn('Failed to load QR', e);
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || "Failed to load farmer data");
     } finally {
@@ -114,11 +121,11 @@ const FarmerIDCard: React.FC = () => {
     if (!farmer) return;
     try {
       setError(null);
-      const saved = await farmerService.downloadIDCard(farmer.farmer_id);
-      if (saved) {
-        showSuccess(`Saved: ${saved}`, 5000);
+      const savedFilename = await farmerService.downloadIDCard(farmer.farmer_id);
+      if (savedFilename) {
+        showSuccess("ID card saved! Check your Downloads folder or chosen app.", 6000);
       } else {
-        showSuccess("ID card downloaded successfully!", 4000);
+        showSuccess("ID card downloaded to your Downloads folder!", 4000);
       }
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Failed to download ID card";
@@ -410,6 +417,15 @@ const FarmerIDCard: React.FC = () => {
               <p className="text-sm text-gray-600 mb-4">
                 Your ID card contains a scannable QR code with farmer details for verification at agricultural offices.
               </p>
+              <div className="flex justify-center mb-4">
+                <div className="p-4 bg-gray-100 rounded-lg">
+                  {qrUrl ? (
+                    <img src={qrUrl} alt="QR Code" className="w-48 h-48" />
+                  ) : (
+                    <div className="w-48 h-48 flex items-center justify-center text-sm text-gray-500">No QR available</div>
+                  )}
+                </div>
+              </div>
               <div className="bg-blue-50 border-l-4 border-blue-500 p-3">
                 <p className="text-xs text-blue-800">
                   <strong>💡 Tip:</strong> Keep your ID card safe for agricultural support services.

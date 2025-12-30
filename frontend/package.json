@@ -21,6 +21,7 @@
     "@capacitor/android": "^6.0.0",
     "@capacitor/core": "^6.0.0",
     "@capacitor/ios": "^6.0.0",
+    "@capacitor/share": "^6.0.4",
     "@fortawesome/fontawesome-free": "^7.1.0",
     "axios": "^1.13.1",
     "jspdf": "^3.0.4",
