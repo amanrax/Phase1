@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Chiefdom Empowerment Model</string>
-    <string name="title_activity_main">Chiefdom Empowerment Model</string>
-    <string name="package_name">zm.gov.agri.cem</string>
-    <string name="custom_url_scheme">zm.gov.agri.cem</string>
+    <string name="app_name">CEM</string>
+    <string name="title_activity_main">CEM</string>
+    <string name="package_name">cem.debug</string>
+    <string name="custom_url_scheme">cem.debug</string>
 </resources>

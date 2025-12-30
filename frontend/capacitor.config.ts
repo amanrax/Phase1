@@ -4,29 +4,30 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.cem.app',
-  appName: 'CEM',
+  appId: 'com.cem.farmerapp',
+  appName: 'CEM Farmer',
   webDir: 'dist',
   server: {
-    androidScheme: 'http',
-    cleartext: true,
-    allowNavigation: [
-      '13.204.83.198',
-      '13.204.83.198:8000', // For API calls
-      'localhost'
-    ],
+    androidScheme: 'https',
+    cleartext: true
   },
   android: {
-    allowMixedContent: true
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true,
+    loggingBehavior: 'debug'
+  },
+  ios: {
+    contentInset: 'automatic',
+    allowsBackForwardNavigationGestures: false
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 2000,
-      backgroundColor: '#15803d',
+      launchShowDuration: 1500,
+      backgroundColor: '#4f46e5',
       showSpinner: false,
       androidSpinnerStyle: 'small',
-      iosSpinnerStyle: 'small',
-      spinnerColor: '#ffffff'
+      iosSpinnerStyle: 'small'
     }
   }
 };
