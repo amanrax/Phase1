@@ -6,6 +6,7 @@ import { RoleRoute } from "@/components/RoleRoute";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import ToastContainer from "@/components/ToastContainer";
 import SessionTimeout from "@/components/SessionTimeout";
+import { useBackButton } from "@/hooks/useBackButton";
 
 // Pages
 import Login from "@/pages/Login";
@@ -48,9 +49,12 @@ function App() {
     return "/login";
   };
 
-  return (
-    <NotificationProvider>
-      <HashRouter>
+  const AppContent: React.FC = () => {
+    // Handle Android back button
+    useBackButton();
+
+    return (
+      <>
         <SessionTimeout />
         <ToastContainer />
         <Routes>
@@ -256,6 +260,14 @@ function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+      </>
+    );
+  };
+
+  return (
+    <NotificationProvider>
+      <HashRouter>
+        <AppContent />
       </HashRouter>
     </NotificationProvider>
   );
