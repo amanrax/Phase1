@@ -3,9 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import axiosClient from "@/utils/axios";
-import { getCachedApiBase } from "@/utils/networkProbe";
 import { getApiBaseUrl } from "@/config/mobile";
-import { ensureApiBase } from "@/utils/networkProbe";
 import { useNotification } from "@/contexts/NotificationContext";
 
 const roles = ["admin", "operator", "farmer"];
@@ -17,7 +15,6 @@ export default function Login() {
   const [hoveredButton, setHoveredButton] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [diag, setDiag] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const { login, isLoading, error, token, user } = useAuthStore();
@@ -105,16 +102,14 @@ export default function Login() {
       console.error("Error message:", errorMsg);
       showError(errorMsg);
 
-      // Diagnostic info for device (no adb)
+      // Simplified diagnostic info
       try {
         const axiosBase = axiosClient?.defaults?.baseURL || null;
-        const cached = getCachedApiBase();
-        const rawCandidate = getApiBaseUrl();
+        const configuredUrl = getApiBaseUrl();
         const diagObj = {
           message: errorMsg,
           axiosBase,
-          cached,
-          rawCandidate,
+          configuredUrl,
           errorResponse: err.response?.data || null,
         };
         setDiag(JSON.stringify(diagObj, null, 2));
@@ -124,18 +119,6 @@ export default function Login() {
       }
     }
   };
-
-  const timeoutFetch = async (url: string, ms = 4000) => {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), ms);
-    try {
-      const res = await fetch(url, { method: 'GET', signal: controller.signal });
-      return { ok: res.ok, status: res.status, text: await res.text() };
-    } finally {
-      clearTimeout(id);
-    }
-  };
-  // NOTE: Test connection helper removed from UI for production builds.
   
   const isFarmer = userType === "farmer";
   const usernameLabel = isFarmer ? "🆔 NRC Number" : userType === "admin" ? "🔐 Admin Email" : "📧 Email Address";
@@ -266,8 +249,6 @@ export default function Login() {
                 </pre>
               )}
 
-              {/* Test connection tooling removed from primary login UI. */}
-
               {/* Submit Button */}
               <button
                 type="submit"
@@ -378,4 +359,3 @@ export default function Login() {
     </div>
   );
 }
-
