@@ -13,8 +13,10 @@ export const useBackButton = () => {
         const { App } = await import('@capacitor/app');
 
         const listener = await App.addListener('backButton', ({ canGoBack }) => {
+          const rawPath = (location.pathname && location.pathname !== '/') ? location.pathname : (location.hash || '');
+          const currentPath = rawPath.startsWith('#') ? rawPath.replace('#', '') : rawPath;
           console.log('[BackButton] Hardware back pressed, canGoBack:', canGoBack);
-          console.log('[BackButton] Current path:', location.pathname);
+          console.log('[BackButton] Current path:', currentPath);
 
           const exitPaths = [
             '/admin-dashboard',
@@ -23,18 +25,18 @@ export const useBackButton = () => {
             '/login',
           ];
 
-          if (exitPaths.includes(location.pathname)) {
+          if (exitPaths.includes(currentPath)) {
             if (window.confirm('Exit app?')) {
               App.exitApp();
             }
           } else if (canGoBack) {
             navigate(-1);
           } else {
-            if (location.pathname.startsWith('/admin')) {
+            if (currentPath.startsWith('/admin')) {
               navigate('/admin-dashboard', { replace: true });
-            } else if (location.pathname.startsWith('/operator')) {
+            } else if (currentPath.startsWith('/operator')) {
               navigate('/operator-dashboard', { replace: true });
-            } else if (location.pathname.startsWith('/farmer')) {
+            } else if (currentPath.startsWith('/farmer')) {
               navigate('/farmer-dashboard', { replace: true });
             } else {
               navigate('/login', { replace: true });

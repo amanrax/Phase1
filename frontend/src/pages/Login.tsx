@@ -13,7 +13,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [userType, setUserType] = useState("admin");
   const [hoveredButton, setHoveredButton] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
+  // navigation/loading redirect state removed to prevent stuck "Loading..." screen
   const [diag, setDiag] = useState<string | null>(null);
 
   const navigate = useNavigate();
@@ -37,14 +37,7 @@ export default function Login() {
     }
   }, [token, user, isLoading, navigate]);
 
-  // If navigating after successful login, show loading state
-  if (isNavigating) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center">
-        <div className="text-white text-xl font-semibold animate-pulse">Redirecting to dashboard...</div>
-      </div>
-    );
-  }
+  // NOTE: removed intermediate navigating screen to allow immediate navigation
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -85,9 +78,6 @@ export default function Login() {
       
       // Show success message
       showSuccess(`Welcome back, ${user?.email || user?.full_name || 'User'}!`);
-      
-      // Set navigating state to show loading screen
-      setIsNavigating(true);
       
       // Use React Router navigate for both web and mobile
       console.log("[Login] Executing navigation to:", targetRoute);
