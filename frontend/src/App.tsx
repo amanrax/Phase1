@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -31,13 +31,16 @@ import FarmerSupplyRequests from "@/pages/FarmerSupplyRequests";
 import LogViewer from "@/pages/LogViewer";
 
 function App() {
-  const { loadUser, token, user } = useAuthStore();
+  const token = useAuthStore((state) => state.token);
+  const user = useAuthStore((state) => state.user);
 
+  // ✅ FIX: Only run once when token changes, using getState() to avoid dependency
   useEffect(() => {
-    if (token) {
-      loadUser();
+    if (token && !user) {
+      // Call loadUser directly from store without adding it to dependencies
+      useAuthStore.getState().loadUser();
     }
-  }, [token, loadUser]);
+  }, [token]); // Only depend on token, not loadUser
 
   // Determine dashboard route based on user role
   const getDashboardRoute = () => {
@@ -49,7 +52,7 @@ function App() {
     return "/login";
   };
 
-  const AppContent: React.FC = () => {
+  const AppContent = () => {
     // Handle Android back button
     useBackButton();
 
