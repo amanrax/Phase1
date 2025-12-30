@@ -149,7 +149,7 @@ export const farmerService = {
    * Download an existing farmer ID card (PDF blob).
    * Backend: GET /api/farmers/{farmer_id}/download-idcard
    */
-  async downloadIDCard(farmerId: string): Promise<void> {
+  async downloadIDCard(farmerId: string): Promise<string | void> {
     const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
       responseType: "blob",
     });
@@ -177,10 +177,13 @@ export const farmerService = {
         const base64 = dataUrl.split(",")[1];
 
         // Write to external directory (Android Downloads). Directory.External is recommended for Android.
-        await writeFile({ path: filename, data: base64, directory: Directory.External, recursive: true });
+        const res = await writeFile({ path: filename, data: base64, directory: Directory.External, recursive: true });
 
-        // On native, user-accessible path varies; show notification from caller.
-        return;
+        // On native, return path/uri so caller can notify user
+        // `res.uri` is available on some platforms; fallback to filename
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return (res && (res.uri || res.uriPath)) || filename;
       }
     } catch (e) {
       // Not running on Capacitor/native or Filesystem plugin missing — fall back to web
@@ -196,6 +199,8 @@ export const farmerService = {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+
+    return filename;
   },
 
   async viewIDCard(farmerId: string): Promise<string> {

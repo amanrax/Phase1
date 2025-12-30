@@ -13,7 +13,7 @@ export interface AuthState {
   error: string | null;
   lastActivity: number;
   showTimeoutWarning: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, role?: string) => Promise<void>;
   logout: () => void;
   loadUser: () => Promise<void>;
   refreshAccessToken: () => Promise<string | null>;
@@ -37,10 +37,10 @@ const useAuthStore = create<AuthState>()(
       showTimeoutWarning: false,
 
       // ---------- FIXED LOGIN ----------
-      login: async (email: string, password: string) => {
+      login: async (email: string, password: string, role?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authService.login(email, password);
+          const response = await authService.login(email, password, role);
 
           const userRoles = response.user?.roles || [];
           // Normalize role strings to uppercase to match backend role checks
@@ -74,8 +74,8 @@ const useAuthStore = create<AuthState>()(
             message = detail;
           }
 
-          alert(`Login Error: ${message}`);
-
+          // Avoid blocking native alert; store error for UI to display
+          console.warn("Login Error:", message);
           set({
             error: message,
             isLoading: false,
@@ -122,7 +122,7 @@ const useAuthStore = create<AuthState>()(
           });
         } catch {
           set({ isLoading: false, error: "Failed to load user." });
-          localStorage.removeItem("token");
+          localStorage.removeItem("access_token");
         }
       },
 

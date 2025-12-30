@@ -177,8 +177,12 @@ export default function FarmerDetails() {
 
   const handleDownloadIDCard = async () => {
     try {
-      await farmerService.downloadIDCard(farmerId!);
-      showSuccess("✓ ID card downloaded!", 4000);
+      const saved = await farmerService.downloadIDCard(farmerId!);
+      if (saved) {
+        showSuccess(`Saved: ${saved}`, 5000);
+      } else {
+        showSuccess("✓ ID card downloaded!", 4000);
+      }
     } catch (err: unknown) {
       showError(getErrorMessage(err) || "ID card not ready yet.", 5000);
     }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
+import { useNotification } from "@/contexts/NotificationContext";
 
 interface Farmer {
   farmer_id: string;
@@ -45,6 +46,7 @@ const FarmerIDCard: React.FC = () => {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { success: showSuccess, error: showError } = useNotification();
 
   useEffect(() => {
     loadFarmerData();
@@ -112,11 +114,16 @@ const FarmerIDCard: React.FC = () => {
     if (!farmer) return;
     try {
       setError(null);
-      await farmerService.downloadIDCard(farmer.farmer_id);
-      setSuccessMessage("ID card downloaded successfully!");
-      setTimeout(() => setSuccessMessage(null), 3000);
+      const saved = await farmerService.downloadIDCard(farmer.farmer_id);
+      if (saved) {
+        showSuccess(`Saved: ${saved}`, 5000);
+      } else {
+        showSuccess("ID card downloaded successfully!", 4000);
+      }
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || "Failed to download ID card");
+      const msg = err.response?.data?.detail || err.message || "Failed to download ID card";
+      showError(msg, 5000);
+      setError(msg);
     }
   };
 

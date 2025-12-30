@@ -70,8 +70,12 @@ export default function FarmerDashboard() {
         showError("Farmer ID not available", 4000);
         return;
       }
-      await farmerService.downloadIDCard(farmerId);
-      showSuccess("✓ ID Card downloaded!", 4000);
+      const saved = await farmerService.downloadIDCard(farmerId);
+      if (saved) {
+        showSuccess(`Saved: ${saved}`, 5000);
+      } else {
+        showSuccess("✓ ID Card downloaded!", 4000);
+      }
     } catch (error: any) {
       console.error("Download failed:", error);
       const errorMsg = error.response?.data?.detail || "ID card not available yet. Please contact your operator.";
