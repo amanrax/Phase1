@@ -45,9 +45,31 @@ const IDCardViewer: React.FC = () => {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition">
-          <object data={url} type="application/pdf" width="100%" height="800px">
-            <iframe src={url} title="ID Card" width="100%" height="800px" />
-          </object>
+          <div className="flex items-center justify-end gap-3 mb-4">
+            <a
+              href={url}
+              download="id_card.pdf"
+              className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg"
+            >
+              ⬇️ Download
+            </a>
+            <button
+              onClick={() => {
+                try { URL.revokeObjectURL(url); } catch {}
+                navigate(-1);
+              }}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg"
+            >
+              ← Back
+            </button>
+          </div>
+          <div style={{ width: '100%', height: '80vh' }}>
+            <iframe
+              src={url}
+              title="ID Card"
+              style={{ width: '100%', height: '100%', border: 'none' }}
+            />
+          </div>
         </div>
       </div>
     </div>

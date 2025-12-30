@@ -167,7 +167,7 @@ export const farmerService = {
     const blob = new Blob([response.data], { type: "application/pdf" });
     const url = window.URL.createObjectURL(blob);
     // Return the URL to allow in-app viewing/navigation
-    return url as unknown as void;
+    return url;
   },
 
   /**

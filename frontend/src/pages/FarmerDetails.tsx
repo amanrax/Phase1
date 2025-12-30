@@ -784,7 +784,7 @@ function DocumentSection({ title, docType, docPath, uploading, onUpload, onDelet
               }
               window.location.hash = '#/document-view';
             }}
-            className="block p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg mb-3 text-sm text-center font-semibold transition-all"
+            className="w-full block p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg mb-3 text-sm text-center font-semibold transition-all"
             style={{
               display: "block",
               padding: "10px",

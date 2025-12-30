@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const DocumentViewer: React.FC = () => {
@@ -25,8 +25,8 @@ const DocumentViewer: React.FC = () => {
   const src = path.startsWith('http')
     ? path
     : path.startsWith('/uploads')
-    ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${path}`
-    : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/${path}`;
+    ? `${import.meta.env.VITE_API_BASE_URL || 'http://13.204.83.198:8000'}${path}`
+    : `${import.meta.env.VITE_API_BASE_URL || 'http://13.204.83.198:8000'}/${path}`;
 
   return (
     <div className="min-h-screen bg-slate-50">
