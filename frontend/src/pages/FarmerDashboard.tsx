@@ -1,5 +1,5 @@
 // src/Dashboard.tsx (Farmer Dashboard)
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
@@ -16,10 +16,40 @@ export default function FarmerDashboard() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [showIDCardPreview, setShowIDCardPreview] = useState(false);
 
+  const loadFarmerData = useCallback(async () => {
+    let mounted = true;
+    try {
+      setLoading(true);
+
+      if (!user?.farmer_id) {
+        console.error("No farmer_id in JWT token - authentication issue");
+        setFarmerData(null);
+        showError("Unable to load farmer profile - authentication issue", 5000);
+        return;
+      }
+
+      const fullData = await farmerService.getFarmer(user.farmer_id);
+      if (!mounted) return;
+      setFarmerData(fullData);
+    } catch (error: any) {
+      console.error("Failed to load farmer data:", error);
+      const errorMsg = error.response?.data?.detail || "Failed to load farmer profile";
+      showError(errorMsg, 5000);
+      setFarmerData(null);
+    } finally {
+      if (mounted) setLoading(false);
+    }
+  }, [user?.farmer_id, showError]);
+
   useEffect(() => {
-    loadFarmerData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    let cancelled = false;
+    const run = async () => {
+      if (cancelled) return;
+      await loadFarmerData();
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [loadFarmerData]);
 
   useEffect(() => {
     if (farmerData) {
@@ -32,36 +62,7 @@ export default function FarmerDashboard() {
     }
   }, [farmerData]);
 
-  const loadFarmerData = async () => {
-    try {
-      setLoading(true);
-      
-      console.log("Loading farmer data for user:", user);
-
-      if (!user?.farmer_id) {
-        console.error("No farmer_id in JWT token - authentication issue");
-        console.log("User data:", { email: user?.email, roles: user?.roles, farmer_id: user?.farmer_id });
-        setFarmerData(null);
-        showError("Unable to load farmer profile - authentication issue", 5000);
-        setLoading(false);
-        return;
-      }
-
-      console.log("Loading farmer by farmer_id from token:", user.farmer_id);
-      const fullData = await farmerService.getFarmer(user.farmer_id);
-      console.log("Loaded farmer data:", fullData);
-      setFarmerData(fullData);
-      setLoading(false);
-      
-    } catch (error: any) {
-      console.error("Failed to load farmer data:", error);
-      const errorMsg = error.response?.data?.detail || "Failed to load farmer profile";
-      showError(errorMsg, 5000);
-      setFarmerData(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // loadFarmerData implemented above as a stable useCallback
 
   const handleDownloadIDCard = async () => {
     try {
