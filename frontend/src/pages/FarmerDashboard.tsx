@@ -1,5 +1,5 @@
-// src/Dashboard.tsx (Farmer Dashboard)
-import { useEffect, useState, useCallback } from "react";
+// src/pages/FarmerDashboard.tsx
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
@@ -11,58 +11,53 @@ export default function FarmerDashboard() {
   const navigate = useNavigate();
   const { success: showSuccess, error: showError, info: showInfo } = useNotification();
 
-  const [farmerData, setFarmerData] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [farmerData, setFarmerData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [showIDCardPreview, setShowIDCardPreview] = useState(false);
 
+  // Use ref to track if we've already loaded data
+  const hasLoadedRef = useRef(false);
+
+  // Stable callback that doesn't depend on showError
   const loadFarmerData = useCallback(async () => {
-    let mounted = true;
     try {
       setLoading(true);
 
       if (!user?.farmer_id) {
         console.error("No farmer_id in JWT token - authentication issue");
         setFarmerData(null);
-        showError("Unable to load farmer profile - authentication issue", 5000);
         return;
       }
 
       const fullData = await farmerService.getFarmer(user.farmer_id);
-      if (!mounted) return;
       setFarmerData(fullData);
+      hasLoadedRef.current = true;
     } catch (error: any) {
       console.error("Failed to load farmer data:", error);
-      const errorMsg = error.response?.data?.detail || "Failed to load farmer profile";
-      showError(errorMsg, 5000);
       setFarmerData(null);
     } finally {
-      if (mounted) setLoading(false);
+      setLoading(false);
     }
-  }, [user?.farmer_id, showError]);
+  }, [user?.farmer_id]); // Only depends on farmer_id
 
+  // Load data once on mount
   useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      if (cancelled) return;
-      await loadFarmerData();
-    };
-    run();
-    return () => { cancelled = true; };
+    if (!hasLoadedRef.current) {
+      loadFarmerData();
+    }
   }, [loadFarmerData]);
 
+  // Set QR code URL when farmer data changes
   useEffect(() => {
     if (farmerData) {
       const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-      // Use qr_code_url if available, otherwise construct from farmer_id
       const url = farmerData.qr_code_url 
         ? `${baseURL}${farmerData.qr_code_url}`
         : `${baseURL}/uploads/qr/${farmerData.farmer_id}_qr.png`;
       setQrCodeUrl(url);
     }
   }, [farmerData]);
-
-  // loadFarmerData implemented above as a stable useCallback
 
   const handleDownloadIDCard = async () => {
     try {
@@ -91,6 +86,11 @@ export default function FarmerDashboard() {
     }
     setShowIDCardPreview(true);
     showInfo("Displaying your ID Card", 3000);
+  };
+
+  const handleRetry = () => {
+    hasLoadedRef.current = false;
+    loadFarmerData();
   };
 
   if (loading) {
@@ -178,7 +178,7 @@ export default function FarmerDashboard() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center" style={{ display: "flex", gap: "15px", justifyContent: "center" }}>
               <button
-                onClick={loadFarmerData}
+                onClick={handleRetry}
                 className="px-4 sm:px-6 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-sm font-semibold transition-all"
                 style={{
                   padding: "10px 25px",
@@ -215,6 +215,7 @@ export default function FarmerDashboard() {
           </div>
         ) : (
           <>
+            {/* Rest of your existing UI code stays exactly the same... */}
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
               {/* Registration Status Card */}
@@ -503,3 +504,4 @@ export default function FarmerDashboard() {
     </>
   );
 }
+                      
