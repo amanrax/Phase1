@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { safeNavigate } from '@/utils/navigation';
+import { safeNavigate } from '@/config/navigation';
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
