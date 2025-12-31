@@ -162,7 +162,7 @@ try:
             "http://13.204.83.198:8000",
         ]
         settings.CORS_ALLOW_CREDENTIALS = True
-        settings.CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        settings.CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH","OPTIONS"]
         settings.CORS_ALLOW_HEADERS = ["*"]
 except Exception:
     # If settings object is immutable or assignment fails, skip override
