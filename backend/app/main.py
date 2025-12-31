@@ -262,3 +262,4 @@ async def global_exception_handler(request: Request, exc: Exception):
             "message": str(exc) if settings.DEBUG else "An error occurred"
         }
     )
+    
