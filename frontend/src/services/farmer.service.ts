@@ -272,7 +272,7 @@ export const farmerService = {
    * Backend: GET /api/farmers/{farmer_id}/qr
    */
   getQRCode(farmerId: string): string {
-    const baseURL = api.defaults.baseURL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+    const baseURL = api.defaults.baseURL || import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
     return `${baseURL}/farmers/${farmerId}/qr`;
   },
 

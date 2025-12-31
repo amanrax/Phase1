@@ -40,5 +40,5 @@ export const getApiBaseUrl = (): string => {
     return `https://${backendUrl}`;
   }
   
-  return 'http://localhost:8000';
+  return 'http://13.204.83.198:8000';
 };

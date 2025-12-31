@@ -412,7 +412,7 @@ export default function FarmerDetails() {
               {farmer.photo_path || farmer.documents?.photo ? (
                 <div className="relative" style={{ position: "relative" }}>
                   <img
-                    src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${farmer.documents?.photo || farmer.photo_path}`}
+                    src={`${import.meta.env.VITE_API_BASE_URL || 'http://13.204.83.198:8000'}${farmer.documents?.photo || farmer.photo_path}`}
                     alt="Farmer"
                     className="w-full h-64 sm:h-80 object-cover rounded-lg"
                     style={{ width: "100%", height: "350px", objectFit: "cover", borderRadius: "12px" }}

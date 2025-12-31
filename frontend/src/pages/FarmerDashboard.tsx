@@ -66,7 +66,7 @@ export default function FarmerDashboard() {
         } else {
           console.warn('[QR] No QR code URL returned, trying fallback');
           // Fallback to direct URL construction
-          const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+          const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
           const fallbackUrl = farmerData.qr_code_url 
             ? `${baseURL}${farmerData.qr_code_url}`
             : `${baseURL}/api/farmers/${farmerData.farmer_id}/qr`;
@@ -75,7 +75,7 @@ export default function FarmerDashboard() {
       } catch (error) {
         console.error('[QR] Failed to load QR code:', error);
         // Final fallback on error
-        const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+        const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
         setQrCodeUrl(`${baseURL}/api/farmers/${farmerData.farmer_id}/qr`);
       }
     };
