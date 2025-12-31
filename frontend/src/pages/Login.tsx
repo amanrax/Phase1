@@ -1,3 +1,4 @@
+import cemLogo from "../assets/cem-logo.png";
 // src/pages/Login.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -5,22 +6,35 @@ import useAuthStore from "@/store/authStore";
 import axiosClient from "@/utils/axios";
 import { getApiBaseUrl } from "@/config/mobile";
 import { useNotification } from "@/contexts/NotificationContext";
+import { useBackButton } from '@/hooks/useBackButton';
+import { App } from '@capacitor/app';
 
 const roles = ["admin", "operator", "farmer"];
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userType, setUserType] = useState("admin");
+  const [userType, setUserType] = useState("farmer"); // Default to farmer for easier mobile login
   const [hoveredButton, setHoveredButton] = useState(false);
-  // navigation/loading redirect state removed to prevent stuck "Loading..." screen
   const [diag, setDiag] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const { login, isLoading, error, token, user } = useAuthStore();
   const { success: showSuccess, error: showError } = useNotification();
 
-  // Check if already logged in and redirect (only once on mount)
+  // Custom back button handler for login page - exit app
+  useEffect(() => {
+    const handler = App.addListener('backButton', () => {
+      console.log('[Login] Back button pressed - exiting app');
+      App.exitApp();
+    });
+
+    return () => {
+      handler.remove();
+    };
+  }, []);
+
+  // Check if already logged in and redirect
   useEffect(() => {
     if (token && user && !isLoading) {
       console.log("[Login] Already logged in, redirecting...", { user: user.email, roles: user.roles });
@@ -37,14 +51,12 @@ export default function Login() {
     }
   }, [token, user, isLoading, navigate]);
 
-  // NOTE: removed intermediate navigating screen to allow immediate navigation
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Form submitted with:", { email, password, userType, isPasswordEmpty: !password, isEmailEmpty: !email });
+    console.log("[Login] Form submitted with:", { email, password: '***', userType });
     
     if (!email || !password) {
-      showError("Please fill in all fields");
+      showError("Please fill in all fields", 4000);
       return;
     }
     
@@ -53,7 +65,6 @@ export default function Login() {
       const passwordToSend = password;
       
       console.log("[Login] Starting login process...");
-      console.log("Calling login with:", { email, password: passwordToSend, userType });
       await login(email, passwordToSend, userType);
       
       const user = useAuthStore.getState().user;
@@ -61,7 +72,6 @@ export default function Login() {
       console.log("[Login] Login successful!");
       console.log("[Login] User:", JSON.stringify(user));
       console.log("[Login] Token present:", !!token);
-      console.log("[Login] localStorage token:", !!localStorage.getItem("token"));
       console.log("[Login] User roles:", user?.roles);
       
       // Determine target route
@@ -77,18 +87,19 @@ export default function Login() {
       console.log("[Login] Target route:", targetRoute);
       
       // Show success message
-      showSuccess(`Welcome back, ${user?.email || user?.full_name || 'User'}!`);
+      const welcomeName = user?.full_name || user?.email || 'User';
+      showSuccess(`✅ Welcome back, ${welcomeName}!`, 4000);
       
-      // Use React Router navigate for both web and mobile
+      // Navigate
       console.log("[Login] Executing navigation to:", targetRoute);
       navigate(targetRoute, { replace: true });
     } catch (err: any) {
-      console.error("Login failed", err);
+      console.error("[Login] Login failed:", err);
       const errorMsg = err.response?.data?.detail || err.message || 'Invalid credentials. Please try again.';
-      console.error("Error message:", errorMsg);
-      showError(errorMsg);
+      console.error("[Login] Error message:", errorMsg);
+      showError(errorMsg, 5000);
 
-      // Simplified diagnostic info
+      // Diagnostic info for troubleshooting
       try {
         const axiosBase = axiosClient?.defaults?.baseURL || null;
         const configuredUrl = getApiBaseUrl();
@@ -97,11 +108,12 @@ export default function Login() {
           axiosBase,
           configuredUrl,
           errorResponse: err.response?.data || null,
+          status: err.response?.status || null,
         };
         setDiag(JSON.stringify(diagObj, null, 2));
         console.log('[Login DIAG]', diagObj);
       } catch (dErr) {
-        console.warn('Failed to gather diag info', dErr);
+        console.warn('[Login] Failed to gather diag info', dErr);
       }
     }
   };
@@ -129,7 +141,26 @@ export default function Login() {
           {/* Header with 3D Effect */}
           <div className="text-center mb-8 animate-float perspective-1000">
             <div className="inline-block p-4 rounded-3xl mb-4 transform transition-all duration-500 hover:rotate-y-12 preserve-3d bg-gradient-to-br from-white to-gray-100 shadow-[0_20px_50px_rgba(99,102,241,0.4),0_0_0_1px_rgba(255,255,255,0.5)] hover:shadow-[0_30px_60px_rgba(99,102,241,0.5)]" style={{ transform: 'translateZ(50px)' }}>
-              <img src="/cem-logo.svg" alt="CEM Logo" className="w-24 h-24 mx-auto" />
+              {/* CEM Logo - replace /cem-logo.svg with your actual logo */}
+              <div className="w-24 h-24 mx-auto flex items-center justify-center">
+                <img 
+                  src={cemLogo} 
+                  alt="CEM Logo" 
+                  className="w-full h-full"
+                  onError={(e) => {
+                    // Fallback if logo not found
+                    console.warn('[Login] Logo not found, using emoji fallback');
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent && !parent.querySelector('.logo-fallback')) {
+                      const fallback = document.createElement('div');
+                      fallback.className = 'logo-fallback text-6xl';
+                      fallback.textContent = '🌾';
+                      parent.appendChild(fallback);
+                    }
+                  }}
+                />
+              </div>
             </div>
             <h1 className="text-4xl font-bold mb-2 text-white" style={{ textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)' }}>
               CEM Platform
@@ -148,11 +179,18 @@ export default function Login() {
                   <button
                     key={role}
                     type="button"
-                    onClick={() => setUserType(role)}
+                    onClick={() => {
+                      setUserType(role);
+                      console.log('[Login] Role changed to:', role);
+                      // Clear form when switching roles
+                      setEmail("");
+                      setPassword("");
+                      setDiag(null);
+                    }}
                     className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all duration-300 transform ${
                       userType === role
                         ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-[0_8px_16px_rgba(99,102,241,0.4),0_4px_6px_rgba(99,102,241,0.3)] scale-105 translate-y-[-2px]'
-                        : 'text-gray-700 hover:bg-gray-200 hover:translate-y-[-1px] hover:shadow-md'
+                        : 'text-gray-700 hover:bg-gray-200 hover:translate-y-[-1px] hover:shadow-md active:scale-95'
                     }`}
                     style={{ 
                       transformStyle: 'preserve-3d',
@@ -221,18 +259,22 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Error Message */}
+              {/* Error Message - Only from useAuthStore, notifications handle the rest */}
               {error && (
-                <div className="px-4 py-3 rounded-xl border-l-4 animate-shake bg-red-50 text-red-700 border-red-500">
-                  {error}
+                <div className="px-4 py-3 rounded-xl border-l-4 animate-shake bg-red-50 text-red-700 border-red-500 flex items-start gap-2">
+                  <span className="text-lg">⚠️</span>
+                  <span>{error}</span>
                 </div>
               )}
 
-              {/* Diagnostic output (visible when provided) */}
-              {diag && (
-                <pre className="mt-4 p-3 rounded-lg bg-gray-100 text-xs text-gray-800 overflow-auto" style={{maxHeight: 200}}>
-                  {diag}
-                </pre>
+              {/* Diagnostic output (only in development/debugging) */}
+              {diag && import.meta.env.DEV && (
+                <details className="mt-4 p-3 rounded-lg bg-gray-100">
+                  <summary className="text-xs font-bold text-gray-700 cursor-pointer">Debug Info</summary>
+                  <pre className="mt-2 text-xs text-gray-800 overflow-auto" style={{maxHeight: 200}}>
+                    {diag}
+                  </pre>
+                </details>
               )}
 
               {/* Submit Button */}
@@ -258,19 +300,28 @@ export default function Login() {
                 {/* Shine effect on hover */}
                 <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform translate-x-[-100%] transition-transform duration-700 ${hoveredButton && !isLoading ? 'translate-x-[100%]' : ''}`}></div>
                 
-                <span className="text-2xl relative z-10" style={{ 
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                  transform: 'translateZ(10px)'
-                }}>
-                  {userType === "admin" ? "🚀" : userType === "operator" ? "📋" : "👨‍🌾"}
-                </span>
-                <span className="relative z-10">{isLoading ? "Logging in..." : `Login as ${userType.charAt(0).toUpperCase() + userType.slice(1)}`}</span>
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent relative z-10"></div>
+                    <span className="relative z-10">Logging in...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-2xl relative z-10" style={{ 
+                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                      transform: 'translateZ(10px)'
+                    }}>
+                      {userType === "admin" ? "🚀" : userType === "operator" ? "📋" : "👨‍🌾"}
+                    </span>
+                    <span className="relative z-10">Login as {userType.charAt(0).toUpperCase() + userType.slice(1)}</span>
+                  </>
+                )}
               </button>
             </form>
 
             {/* Footer */}
             <div className="mt-6 text-center text-sm text-gray-600">
-              <p>Secure Agricultural Management System</p>
+              <p>🔒 Secure Agricultural Management System</p>
             </div>
           </div>
         </div>
@@ -325,21 +376,6 @@ export default function Login() {
 
         .rotate-y-12:hover {
           transform: rotateY(12deg) rotateX(-5deg) translateZ(50px);
-        }
-
-        /* Enhanced depth with multiple shadows */
-        .depth-shadow {
-          box-shadow: 
-            0 1px 2px rgba(0,0,0,0.1),
-            0 2px 4px rgba(0,0,0,0.1),
-            0 4px 8px rgba(0,0,0,0.1),
-            0 8px 16px rgba(0,0,0,0.1),
-            0 16px 32px rgba(0,0,0,0.1);
-        }
-
-        /* Smooth cubic-bezier for natural motion */
-        * {
-          transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         }
       `}</style>
     </div>

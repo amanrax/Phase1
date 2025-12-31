@@ -1,3 +1,4 @@
+import cemLogo from "../assets/cem-logo.png";
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
@@ -49,7 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ navGroups, onClose }) => {
       {/* Logo Area */}
       <div className="bg-gradient-to-r from-purple-700 to-blue-600 h-16 flex items-center justify-center border-b border-purple-800 shadow-lg flex-shrink-0">
         <div className="text-center flex items-center gap-2">
-          <img src="/cem-logo.svg" alt="CEM Logo" className="w-10 h-10 drop-shadow-lg" />
+          <img src={cemLogo} alt="CEM Logo" className="w-10 h-10 drop-shadow-lg" />
           <div>
             <h1 className="text-white font-bold text-sm drop-shadow-lg">CEM</h1>
             <p className="text-xs text-gray-200">Platform</p>
