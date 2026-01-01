@@ -1,57 +1,31 @@
 // src/components/PermissionRequest.tsx
 import { useState, useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { Camera } from '@capacitor/camera';
-import { Geolocation } from '@capacitor/geolocation';
 
 interface PermissionRequestProps {
   onComplete: () => void;
 }
 
 export const PermissionRequest: React.FC<PermissionRequestProps> = ({ onComplete }) => {
-  const [permissionsGranted, setPermissionsGranted] = useState(false);
-  const [isNative, setIsNative] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
 
   useEffect(() => {
-    const checkPlatform = async () => {
-      const native = Capacitor.isNativePlatform();
-      setIsNative(native);
-
-      // Check if permissions were already requested
-      const hasRequested = localStorage.getItem('permissions_requested');
-      if (hasRequested || !native) {
-        setPermissionsGranted(true);
-        onComplete();
-      }
-    };
-
-    checkPlatform();
-  }, [onComplete]);
-
-  const requestPermissions = async () => {
-    try {
-      // Request Camera permission
-      await Camera.requestPermissions();
-
-      // Request Geolocation permission
-      await Geolocation.requestPermissions();
-
-      // Request File system permissions (handled by Capacitor automatically)
-      
-      // Mark as requested
-      localStorage.setItem('permissions_requested', 'true');
-      setPermissionsGranted(true);
-      onComplete();
-    } catch (error) {
-      console.error('Error requesting permissions:', error);
-      // Continue anyway - permissions can be requested later
-      localStorage.setItem('permissions_requested', 'true');
-      setPermissionsGranted(true);
+    // Check if permissions dialog was already shown
+    const hasShown = localStorage.getItem('permissions_dialog_shown');
+    if (!hasShown) {
+      setShowDialog(true);
+    } else {
       onComplete();
     }
+  }, [onComplete]);
+
+  const handleContinue = () => {
+    // Mark dialog as shown
+    localStorage.setItem('permissions_dialog_shown', 'true');
+    setShowDialog(false);
+    onComplete();
   };
 
-  if (!isNative || permissionsGranted) {
+  if (!showDialog) {
     return null;
   }
 
@@ -101,21 +75,15 @@ export const PermissionRequest: React.FC<PermissionRequestProps> = ({ onComplete
         </div>
 
         <button
-          onClick={requestPermissions}
+          onClick={handleContinue}
           className="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-4 rounded-lg transition active:scale-95"
         >
-          Grant Permissions
+          Got it, Continue
         </button>
 
-        <button
-          onClick={() => {
-            localStorage.setItem('permissions_requested', 'true');
-            onComplete();
-          }}
-          className="w-full mt-3 text-gray-600 hover:text-gray-800 font-medium py-2 text-sm transition"
-        >
-          Maybe Later
-        </button>
+        <p className="text-xs text-gray-500 text-center mt-3">
+          The app will request permissions when needed
+        </p>
       </div>
     </div>
   );

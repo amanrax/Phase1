@@ -17,8 +17,6 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, 'index.html'),
       },
-      // Externalize Capacitor modules so web build doesn't try to resolve native plugins
-      external: ['@capacitor/core', '@capacitor/filesystem'],
     },
     // Copy service worker to dist
     copyPublicDir: true,
