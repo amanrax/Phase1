@@ -58,7 +58,7 @@ export default function FarmerDashboard() {
     }
   }, [loadFarmerData]);
 
-  // Load QR code - FIXED: Use direct URL instead of blob
+  // Load QR code - Use blob with authentication for better mobile support
   useEffect(() => {
     const loadQRCode = async () => {
       if (!farmerData) return;
@@ -67,14 +67,32 @@ export default function FarmerDashboard() {
         console.log('[QR] Loading QR code for farmer:', farmerData.farmer_id);
         setQrError(false);
         
-        // Use direct authenticated URL (no blob)
+        // Fetch QR code with authentication
         const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
-        const directUrl = `${baseURL}/api/farmers/${farmerData.farmer_id}/qr?t=${Date.now()}`;
+        const response = await fetch(`${baseURL}/api/farmers/${farmerData.farmer_id}/qr`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`QR fetch failed: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
         
-        console.log('[QR] Setting QR URL:', directUrl);
-        setQrCodeUrl(directUrl);
+        console.log('[QR] QR code loaded successfully');
+        setQrCodeUrl(blobUrl);
+
+        // Cleanup function
+        return () => {
+          if (blobUrl) {
+            URL.revokeObjectURL(blobUrl);
+          }
+        };
       } catch (error) {
-        console.error('[QR] Failed to set QR URL:', error);
+        console.error('[QR] Failed to load QR code:', error);
         setQrError(true);
       }
     };

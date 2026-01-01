@@ -32,6 +32,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     message: string,
     duration: number = 4000
   ): string => {
+    // Prevent duplicate messages (same type and message within 1 second)
+    const isDuplicate = notifications.some(
+      n => n.type === type && n.message === message && Date.now() - parseInt(n.id.split('-')[1]) < 1000
+    );
+    
+    if (isDuplicate) {
+      console.log('[Notification] Duplicate prevented:', message);
+      return '';
+    }
+
     const id = generateId();
     const notification: Notification = { id, type, message, duration };
 
@@ -44,7 +54,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
 
     return id;
-  }, []);
+  }, [notifications]);
 
   const success = useCallback((message: string, duration?: number) => {
     return show('success', message, duration ?? 4000);

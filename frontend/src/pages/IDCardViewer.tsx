@@ -196,12 +196,6 @@ const IDCardViewer: React.FC = () => {
             >
               <span>📤</span> Share
             </button>
-            <button
-              onClick={() => navigate(-1)}
-              className="bg-gray-200 hover:bg-gray-300 active:scale-95 text-gray-800 font-semibold py-2 px-4 rounded-lg transition"
-            >
-              ← Back
-            </button>
           </div>
           
           {/* PDF Viewer */}

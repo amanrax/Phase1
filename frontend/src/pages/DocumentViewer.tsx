@@ -112,11 +112,12 @@ const DocumentViewer: React.FC = () => {
   if (!path) return null;
 
   // Construct full URL
+  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://13.204.83.198:8000';
   const src = path.startsWith('http')
     ? path
     : path.startsWith('/uploads')
-    ? `${import.meta.env.VITE_API_BASE_URL || 'http://13.204.83.198:8000'}${path}`
-    : `${import.meta.env.VITE_API_BASE_URL || 'http://13.204.83.198:8000'}/${path}`;
+    ? `${baseURL}${path}`
+    : `${baseURL}/${path}`;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -177,8 +178,9 @@ const DocumentViewer: React.FC = () => {
           ) : (
             <img 
               src={src} 
-              alt="Document" 
-              style={{ width: '100%', height: 'auto' }}
+              alt="Document"
+              crossOrigin="use-credentials"
+              style={{ width: '100%', height: 'auto', maxWidth: '100%', objectFit: 'contain' }}
               onLoad={() => {
                 console.log('[DocViewer] Image loaded successfully');
                 setLoading(false);

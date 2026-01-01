@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -7,6 +7,7 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import ToastContainer from "@/components/ToastContainer";
 import SessionTimeout from "@/components/SessionTimeout";
 import { useBackButton } from "@/hooks/useBackButton";
+import PermissionRequest from "@/components/PermissionRequest";
 
 // Pages
 import Login from "@/pages/Login";
@@ -33,6 +34,7 @@ import LogViewer from "@/pages/LogViewer";
 function App() {
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
+  const [showPermissions, setShowPermissions] = useState(false);
 
   // ✅ FIX: Only run once when token changes, using getState() to avoid dependency
   useEffect(() => {
@@ -41,6 +43,14 @@ function App() {
       useAuthStore.getState().loadUser();
     }
   }, [token]); // Only depend on token, not loadUser
+
+  // Check for first-time permissions
+  useEffect(() => {
+    const hasRequested = localStorage.getItem('permissions_requested');
+    if (!hasRequested && token) {
+      setShowPermissions(true);
+    }
+  }, [token]);
 
   // Determine dashboard route based on user role
   const getDashboardRoute = () => {
@@ -270,6 +280,9 @@ function App() {
   return (
     <NotificationProvider>
       <HashRouter>
+        {showPermissions && (
+          <PermissionRequest onComplete={() => setShowPermissions(false)} />
+        )}
         <AppContent />
       </HashRouter>
     </NotificationProvider>
