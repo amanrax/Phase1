@@ -71,7 +71,7 @@ const DocumentViewer: React.FC = () => {
 
       console.log('[DocViewer] File saved:', result.uri);
       if (downloadNotifId) dismiss(downloadNotifId);
-      showSuccess(`✅ Saved: ${filename}`, 5000);
+      showSuccess(`Saved: ${filename}`, 5000);
 
       // Optional: Share the file
       if (await Share.canShare()) {

@@ -88,7 +88,7 @@ export default function Login() {
       
       // Show success message
       const welcomeName = user?.full_name || user?.email || 'User';
-      showSuccess(`✅ Welcome back, ${welcomeName}!`, 4000);
+      showSuccess(`Welcome back, ${welcomeName}!`, 4000);
       
       // Navigate
       console.log("[Login] Executing navigation to:", targetRoute);

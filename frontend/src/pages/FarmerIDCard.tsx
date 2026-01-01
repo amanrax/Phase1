@@ -127,7 +127,7 @@ const FarmerIDCard: React.FC = () => {
             clearInterval(poll);
             console.log('[IDCard] Generation complete!');
             if (notifId) dismiss(notifId);
-            showSuccess('✅ ID card ready!', 5000);
+            showSuccess('ID card ready!', 5000);
             setGenerating(false);
           } else if (attempts >= maxAttempts) {
             clearInterval(poll);
@@ -172,9 +172,9 @@ const FarmerIDCard: React.FC = () => {
       
       if (downloadNotifId) dismiss(downloadNotifId);
       if (savedFilename) {
-        showSuccess(`✅ Saved: ${savedFilename}`, 5000);
+        showSuccess(`Saved: ${savedFilename}`, 5000);
       } else {
-        showSuccess("✅ Downloaded!", 4000);
+        showSuccess("Downloaded!", 4000);
       }
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Download failed. Generate ID first.";

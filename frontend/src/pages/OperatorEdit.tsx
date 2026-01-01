@@ -170,7 +170,7 @@ export default function OperatorEdit() {
       }
       
       await operatorService.update(operatorId, formData);
-      showSuccess("✅ Operator updated successfully");
+      showSuccess("Operator updated successfully");
       navigate("/operators/manage");
     } catch (err: unknown) {
       const errorMsg = getErrorMessage(err) || "Failed to update operator";

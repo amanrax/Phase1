@@ -70,7 +70,7 @@ const IDCardViewer: React.FC = () => {
 
         console.log('[IDCardViewer] File saved:', result.uri);
         if (downloadNotifId) dismiss(downloadNotifId);
-        showSuccess(`✅ Saved: ${filename}`, 5000);
+        showSuccess(`Saved: ${filename}`, 5000);
 
         // Optional: Share the file
         if (await Share.canShare()) {
@@ -86,7 +86,7 @@ const IDCardViewer: React.FC = () => {
         a.download = 'farmer_id_card.pdf';
         a.click();
         if (downloadNotifId) dismiss(downloadNotifId);
-        showSuccess('✅ Download started!', 4000);
+        showSuccess('Download started!', 4000);
       }
     } catch (error: any) {
       console.error('[IDCardViewer] Download failed:', error);
@@ -130,7 +130,7 @@ const IDCardViewer: React.FC = () => {
           });
         }
         if (shareNotifId) dismiss(shareNotifId);
-        showSuccess('✅ Shared successfully!', 3000);
+        showSuccess('Shared successfully!', 3000);
       } else {
         if (shareNotifId) dismiss(shareNotifId);
         showError('Sharing not supported on this device', 4000);

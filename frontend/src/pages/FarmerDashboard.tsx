@@ -116,9 +116,9 @@ export default function FarmerDashboard() {
       
       if (downloadNotifId) dismiss(downloadNotifId);
       if (saved) {
-        showSuccess(`✅ Saved: ${saved}`, 5000);
+        showSuccess(`Saved: ${saved}`, 5000);
       } else {
-        showSuccess("✅ ID Card downloaded!", 4000);
+        showSuccess("ID Card downloaded!", 4000);
       }
     } catch (error: any) {
       console.error("[Dashboard] Download failed:", error);
