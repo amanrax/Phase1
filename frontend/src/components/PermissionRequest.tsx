@@ -1,6 +1,8 @@
 // src/components/PermissionRequest.tsx
 import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { Camera } from '@capacitor/camera';
+import { Geolocation } from '@capacitor/geolocation';
 
 interface PermissionRequestProps {
   onComplete: () => void;
@@ -29,11 +31,9 @@ export const PermissionRequest: React.FC<PermissionRequestProps> = ({ onComplete
   const requestPermissions = async () => {
     try {
       // Request Camera permission
-      const { Camera } = await import('@capacitor/camera');
       await Camera.requestPermissions();
 
       // Request Geolocation permission
-      const { Geolocation } = await import('@capacitor/geolocation');
       await Geolocation.requestPermissions();
 
       // Request File system permissions (handled by Capacitor automatically)
