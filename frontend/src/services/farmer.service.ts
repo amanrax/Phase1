@@ -175,23 +175,23 @@ export const farmerService = {
         const timestamp = new Date().getTime();
         const filename = `Farmer_${farmerId}_ID_Card_${timestamp}.pdf`;
 
-        // Try to save directly to Documents directory (visible in file manager)
+        // Try to save directly to Downloads/CEM directory (visible in file manager)
         try {
           const result = await Filesystem.writeFile({
-            path: filename,
+            path: `CEM/${filename}`,
             data: base64,
-            directory: Directory.Documents,
+            directory: Directory.External,
           });
 
           console.log('✅ File saved to Documents:', (result as any).uri || filename);
           return filename;
         } catch (err) {
-          console.error('Failed to save to Documents, trying External:', err);
+          console.error('Failed to save to External/CEM, trying without subfolder:', err);
 
-          // Fallback: try External directory
+          // Fallback: try External directory without subfolder
           try {
             const result = await Filesystem.writeFile({
-              path: `Download/${filename}`,
+              path: filename,
               data: base64,
               directory: Directory.External,
             });

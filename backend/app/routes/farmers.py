@@ -49,6 +49,7 @@ import time
 from datetime import datetime
 from fastapi import UploadFile, File, HTTPException, Depends
 from app.services.logging_service import log_event, sanitize_body
+from app.services.gridfs_service import gridfs_service
 
 
 router = APIRouter(prefix="/farmers", tags=["Farmers"])
@@ -803,29 +804,29 @@ async def upload_farmer_photo(
                 detail="You can only upload your own photo"
             )
     
-    # Create upload directory
-    upload_dir = Path(settings.UPLOAD_DIR) / farmer_id / "photos"
-    upload_dir.mkdir(parents=True, exist_ok=True)
+    # Upload to GridFS
+    file_id = await gridfs_service.upload_file(
+        file_data=file_content,
+        filename=f"photo_{farmer_id}.{file_ext}",
+        farmer_id=farmer_id,
+        file_type="photo",
+        metadata={"doc_type": "photo"}
+    )
     
-    # Save file
-    file_path = upload_dir / f"photo.{file_ext}"
-    
-    with open(file_path, "wb") as f:
-        f.write(file_content)
-    
-    # Update farmer document - use documents.photo for proper nesting
-    relative_path = f"/uploads/{farmer_id}/photos/photo.{file_ext}"
-    
+    # Update farmer document with GridFS file ID
     await farmer_service.update_documents(
         farmer_id,
-        {"documents.photo": relative_path}
+        {
+            "documents.photo": f"/api/files/{file_id}",
+            "photo_file_id": file_id
+        }
     )
     
     await log_event(
         level="INFO",
         module="farmers",
         action="photo_upload_success",
-        details={"farmer_id": farmer_id, "path": relative_path},
+        details={"farmer_id": farmer_id, "file_id": file_id},
         endpoint=f"/api/farmers/{farmer_id}/upload-photo",
         user_id=current_user.get("email"),
         role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
@@ -833,7 +834,8 @@ async def upload_farmer_photo(
     return {
         "message": "Photo uploaded successfully",
         "farmer_id": farmer_id,
-        "photo_path": relative_path
+        "photo_path": f"/api/files/{file_id}",
+        "file_id": file_id
     }
 
 
@@ -1038,21 +1040,21 @@ async def upload_farmer_document(
             )
     
     try:
-        # Save file (reuse content already read for size validation)
-        upload_dir = Path("uploads/farmers/documents")
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        
-        timestamp = int(time.time())
+        # Upload to GridFS
         file_ext = Path(file.filename or "").suffix or ".pdf"
-        file_path = upload_dir / f"{farmer_id}_{doc_type}_{timestamp}{file_ext}"
-        
-        with open(file_path, "wb") as buffer:
-            buffer.write(file_content)
+        file_id = await gridfs_service.upload_file(
+            file_data=file_content,
+            filename=f"{farmer_id}_{doc_type}{file_ext}",
+            farmer_id=farmer_id,
+            file_type="document",
+            metadata={"doc_type": doc_type}
+        )
         
         # Update farmer record
         doc_data = {
             "doc_type": doc_type,
-            "file_path": str(file_path),
+            "file_path": f"/api/files/{file_id}",
+            "file_id": file_id,
             "uploaded_at": datetime.utcnow().isoformat()
         }
         
@@ -1092,7 +1094,8 @@ async def upload_farmer_document(
             status_code=200,
             content={
                 "message": f"{doc_type} uploaded successfully",
-                "file_path": str(file_path),
+                "file_path": f"/api/files/{file_id}",
+                "file_id": file_id,
                 "doc_type": doc_type
             },
             headers={

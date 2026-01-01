@@ -61,11 +61,11 @@ const DocumentViewer: React.FC = () => {
       const ext = path.endsWith('.pdf') ? 'pdf' : 'jpg';
       const filename = `document_${Date.now()}.${ext}`;
 
-      // Save to Downloads folder
+      // Save to Downloads/CEM folder
       const result = await Filesystem.writeFile({
-        path: filename,
+        path: `CEM/${filename}`,
         data: base64,
-        directory: Directory.Documents, // or Directory.External for Downloads
+        directory: Directory.External,
         recursive: true,
       });
 

@@ -59,12 +59,12 @@ const IDCardViewer: React.FC = () => {
         // Convert to base64
         const base64 = await blobToBase64(blob);
         
-        // Save to device
+        // Save to device Downloads/CEM folder
         const filename = `id_card_${Date.now()}.pdf`;
         const result = await Filesystem.writeFile({
-          path: filename,
+          path: `CEM/${filename}`,
           data: base64,
-          directory: Directory.Documents,
+          directory: Directory.External,
           recursive: true,
         });
 
