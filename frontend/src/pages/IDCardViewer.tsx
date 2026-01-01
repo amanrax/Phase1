@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
-import { useBackButton } from '@/hooks/useBackButton';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 
@@ -11,9 +10,6 @@ const IDCardViewer: React.FC = () => {
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pdfError, setPdfError] = useState(false);
-
-  // Enable hardware back button
-  useBackButton();
 
   useEffect(() => {
     const u = sessionStorage.getItem('idcard_view_url');

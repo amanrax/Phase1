@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useBackButton } from '@/hooks/useBackButton';
 import { useNotification } from '@/contexts/NotificationContext';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
@@ -11,9 +10,6 @@ const DocumentViewer: React.FC = () => {
   const [path, setPath] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
-
-  // Enable hardware back button
-  useBackButton();
 
   useEffect(() => {
     const p = sessionStorage.getItem('doc_view_path');

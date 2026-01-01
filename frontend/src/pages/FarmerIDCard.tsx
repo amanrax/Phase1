@@ -4,7 +4,6 @@ import { safeNavigate } from '@/config/navigation';
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
-import { useBackButton } from '@/hooks/useBackButton';
 
 interface Farmer {
   farmer_id: string;
@@ -51,9 +50,6 @@ const FarmerIDCard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [qrError, setQrError] = useState(false);
   const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
-
-  // Enable hardware back button
-  useBackButton();
 
   useEffect(() => {
     loadFarmerData();

@@ -1,15 +1,14 @@
 // src/hooks/useBackButton.ts
-import { useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 export const useBackButton = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const lastBackPress = useRef(0);
-  const isHandling = useRef(false);
 
   useEffect(() => {
     let removeListener: (() => void) | undefined;
+    let lastBackPress = 0;
+    let isHandling = false;
 
     const setupBackButton = async () => {
       try {
@@ -18,23 +17,22 @@ export const useBackButton = () => {
         const listener = await App.addListener('backButton', ({ canGoBack }) => {
           // Prevent rapid double-taps (debounce)
           const now = Date.now();
-          if (now - lastBackPress.current < 500) {
+          if (now - lastBackPress < 500) {
             console.log('[BackButton] Debounced - too fast');
             return;
           }
-          lastBackPress.current = now;
+          lastBackPress = now;
 
           // Prevent concurrent handling
-          if (isHandling.current) {
+          if (isHandling) {
             console.log('[BackButton] Already handling');
             return;
           }
-          isHandling.current = true;
+          isHandling = true;
 
           try {
-            // Get current path (handle HashRouter)
-            const rawPath = location.pathname !== '/' ? location.pathname : location.hash;
-            const currentPath = rawPath.startsWith('#') ? rawPath.replace('#', '') : rawPath;
+            // ✅ FIXED: For HashRouter, location.pathname is the actual route (not the hash)
+            const currentPath = location.pathname;
             
             console.log('[BackButton] Hardware back pressed');
             console.log('[BackButton] Current path:', currentPath);
@@ -80,52 +78,52 @@ export const useBackButton = () => {
             // Check if current path has a mapped destination
             if (routeMap[currentPath]) {
               console.log('[BackButton] Mapped route:', routeMap[currentPath]);
-              navigate(routeMap[currentPath], { replace: true });
+              window.location.hash = routeMap[currentPath];
               return;
             }
 
             // Handle dynamic routes (edit, details)
             if (currentPath.match(/\/farmers\/edit\/.+/)) {
               console.log('[BackButton] Edit page - going to farmers list');
-              navigate('/farmers', { replace: true });
+              window.location.hash = '/farmers';
               return;
             }
 
             if (currentPath.match(/\/farmers\/.+/) && !currentPath.includes('/create')) {
               console.log('[BackButton] Farmer detail - going to farmers list');
-              navigate('/farmers', { replace: true });
+              window.location.hash = '/farmers';
               return;
             }
 
             if (currentPath.match(/\/operators\/.+/)) {
               console.log('[BackButton] Operator page - going to operators list');
-              navigate('/operators/manage', { replace: true });
+              window.location.hash = '/operators/manage';
               return;
             }
 
             // If browser history exists, go back
             if (canGoBack && window.history.length > 1) {
               console.log('[BackButton] Going back in history');
-              navigate(-1);
+              window.history.back();
               return;
             }
 
             // Fallback: determine dashboard based on current path
             console.log('[BackButton] Fallback - determining dashboard');
             if (currentPath.startsWith('/admin')) {
-              navigate('/admin-dashboard', { replace: true });
+              window.location.hash = '/admin-dashboard';
             } else if (currentPath.startsWith('/operator')) {
-              navigate('/operator-dashboard', { replace: true });
+              window.location.hash = '/operator-dashboard';
             } else if (currentPath.startsWith('/farmer')) {
-              navigate('/farmer-dashboard', { replace: true });
+              window.location.hash = '/farmer-dashboard';
             } else {
-              navigate('/login', { replace: true });
+              window.location.hash = '/login';
             }
 
           } finally {
             // Reset handling flag after delay
             setTimeout(() => {
-              isHandling.current = false;
+              isHandling = false;
             }, 500);
           }
         });
@@ -146,7 +144,7 @@ export const useBackButton = () => {
         removeListener();
       }
     };
-  }, [navigate, location.pathname, location.hash]); // Only depend on path changes
+  }, []); // ✅ FIXED: Empty deps - listener registers ONCE and reads current location from event
 };
 
 export default useBackButton;
