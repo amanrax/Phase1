@@ -7,7 +7,7 @@ import { Share } from '@capacitor/share';
 
 const DocumentViewer: React.FC = () => {
   const navigate = useNavigate();
-  const { success: showSuccess, error: showError, info: showInfo } = useNotification();
+  const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
   const [path, setPath] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
@@ -39,7 +39,7 @@ const DocumentViewer: React.FC = () => {
     if (!path) return;
 
     try {
-      showInfo('📥 Downloading...', 0);
+      const downloadNotifId = showInfo('📥 Downloading...', 8000);
       
       // Construct full URL
       const src = path.startsWith('http')
@@ -70,6 +70,7 @@ const DocumentViewer: React.FC = () => {
       });
 
       console.log('[DocViewer] File saved:', result.uri);
+      if (downloadNotifId) dismiss(downloadNotifId);
       showSuccess(`✅ Saved: ${filename}`, 5000);
 
       // Optional: Share the file
@@ -81,6 +82,7 @@ const DocumentViewer: React.FC = () => {
       }
     } catch (error: any) {
       console.error('[DocViewer] Download failed:', error);
+      if (downloadNotifId) dismiss(downloadNotifId);
       showError('Download failed. Try again.', 4000);
     }
   };

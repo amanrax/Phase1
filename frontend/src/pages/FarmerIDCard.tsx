@@ -50,7 +50,7 @@ const FarmerIDCard: React.FC = () => {
   const [viewLoading, setViewLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qrError, setQrError] = useState(false);
-  const { success: showSuccess, error: showError, info: showInfo } = useNotification();
+  const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
 
   // Enable hardware back button
   useBackButton();
@@ -105,7 +105,7 @@ const FarmerIDCard: React.FC = () => {
       setGenerating(true);
       setError(null);
       
-      showInfo("⏳ Generating ID card...", 0);
+      const notifId = showInfo("⏳ Generating ID card...", 10000);
       console.log('[IDCard] Starting generation for:', farmer.farmer_id);
       
       const response = await farmerService.generateIDCard(farmer.farmer_id);
@@ -126,12 +126,14 @@ const FarmerIDCard: React.FC = () => {
           if (updated?.id_card_file_id || updated?.id_card_path || updated?.id_card_generated_at) {
             clearInterval(poll);
             console.log('[IDCard] Generation complete!');
+            if (notifId) dismiss(notifId);
             showSuccess('✅ ID card ready!', 5000);
             setGenerating(false);
           } else if (attempts >= maxAttempts) {
             clearInterval(poll);
             const msg = 'Generation timeout. Please try again.';
             console.error('[IDCard]', msg);
+            if (notifId) dismiss(notifId);
             setError(msg);
             showError(msg, 5000);
             setGenerating(false);
@@ -141,6 +143,7 @@ const FarmerIDCard: React.FC = () => {
           if (attempts >= maxAttempts) {
             clearInterval(poll);
             const msg = 'Generation failed. Contact support.';
+            if (notifId) dismiss(notifId);
             setError(msg);
             showError(msg, 5000);
             setGenerating(false);
@@ -149,6 +152,7 @@ const FarmerIDCard: React.FC = () => {
       }, 5000);
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Failed to generate ID card";
+      if (notifId) dismiss(notifId);
       console.error('[IDCard] Generation error:', msg);
       setError(msg);
       showError(msg, 5000);
@@ -161,11 +165,12 @@ const FarmerIDCard: React.FC = () => {
     
     try {
       setError(null);
-      showInfo("📥 Downloading...", 0);
+      const downloadNotifId = showInfo("📥 Downloading...", 8000);
       console.log('[IDCard] Downloading for:', farmer.farmer_id);
       
       const savedFilename = await farmerService.downloadIDCard(farmer.farmer_id);
       
+      if (downloadNotifId) dismiss(downloadNotifId);
       if (savedFilename) {
         showSuccess(`✅ Saved: ${savedFilename}`, 5000);
       } else {
@@ -174,6 +179,7 @@ const FarmerIDCard: React.FC = () => {
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Download failed. Generate ID first.";
       console.error('[IDCard] Download error:', msg);
+      if (downloadNotifId) dismiss(downloadNotifId);
       showError(msg, 5000);
       setError(msg);
     }
@@ -185,7 +191,7 @@ const FarmerIDCard: React.FC = () => {
     try {
       setViewLoading(true);
       setError(null);
-      showInfo("📄 Loading preview...", 0);
+      const previewNotifId = showInfo("📄 Loading preview...", 8000);
       
       console.log('[IDCard] Fetching PDF for:', farmer.farmer_id);
       const url = await farmerService.viewIDCard(farmer.farmer_id);
@@ -194,14 +200,17 @@ const FarmerIDCard: React.FC = () => {
         console.log('[IDCard] PDF URL received, storing in sessionStorage');
         sessionStorage.setItem('idcard_view_url', url);
         console.log('[IDCard] Navigating to viewer');
+        if (previewNotifId) dismiss(previewNotifId);
         safeNavigate(navigate, '/farmer/idcard-view');
       } else {
         console.error('[IDCard] No URL returned');
+        if (previewNotifId) dismiss(previewNotifId);
         showError('ID card not available. Generate it first.', 5000);
       }
     } catch (err: any) {
       console.error('[IDCard] View error:', err);
       const msg = err.response?.data?.detail || err.message || "Failed to view. Generate ID first.";
+      if (previewNotifId) dismiss(previewNotifId);
       setError(msg);
       showError(msg, 5000);
     } finally {

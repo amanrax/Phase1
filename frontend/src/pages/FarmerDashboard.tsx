@@ -11,7 +11,7 @@ import { useBackButton } from '@/hooks/useBackButton';
 export default function FarmerDashboard() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-  const { success: showSuccess, error: showError, info: showInfo } = useNotification();
+  const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
 
   // Enable hardware back button
   useBackButton();
@@ -101,6 +101,7 @@ export default function FarmerDashboard() {
   }, [farmerData]);
 
   const handleDownloadIDCard = async () => {
+    let downloadNotifId: string | undefined;
     try {
       const farmerId = farmerData?.farmer_id;
       if (!farmerId) {
@@ -108,11 +109,12 @@ export default function FarmerDashboard() {
         return;
       }
 
-      showInfo("📥 Downloading ID card...", 0);
+      downloadNotifId = showInfo("📥 Downloading ID card...", 8000);
       console.log("[Dashboard] Downloading ID card for:", farmerId);
       
       const saved = await farmerService.downloadIDCard(farmerId);
       
+      if (downloadNotifId) dismiss(downloadNotifId);
       if (saved) {
         showSuccess(`✅ Saved: ${saved}`, 5000);
       } else {
@@ -120,6 +122,7 @@ export default function FarmerDashboard() {
       }
     } catch (error: any) {
       console.error("[Dashboard] Download failed:", error);
+      if (downloadNotifId) dismiss(downloadNotifId);
       const errorMsg = error.response?.data?.detail || "ID card not available yet. Generate it first.";
       showError(errorMsg, 5000);
     }

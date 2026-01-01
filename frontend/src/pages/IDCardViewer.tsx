@@ -7,7 +7,7 @@ import { Share } from '@capacitor/share';
 
 const IDCardViewer: React.FC = () => {
   const navigate = useNavigate();
-  const { success: showSuccess, error: showError, info: showInfo } = useNotification();
+  const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pdfError, setPdfError] = useState(false);
@@ -47,7 +47,7 @@ const IDCardViewer: React.FC = () => {
     if (!url) return;
 
     try {
-      showInfo('📥 Downloading...', 0);
+      const downloadNotifId = showInfo('📥 Downloading...', 8000);
       console.log('[IDCardViewer] Starting download');
 
       // For Capacitor mobile app
@@ -69,6 +69,7 @@ const IDCardViewer: React.FC = () => {
         });
 
         console.log('[IDCardViewer] File saved:', result.uri);
+        if (downloadNotifId) dismiss(downloadNotifId);
         showSuccess(`✅ Saved: ${filename}`, 5000);
 
         // Optional: Share the file
@@ -84,10 +85,12 @@ const IDCardViewer: React.FC = () => {
         a.href = url;
         a.download = 'farmer_id_card.pdf';
         a.click();
+        if (downloadNotifId) dismiss(downloadNotifId);
         showSuccess('✅ Download started!', 4000);
       }
     } catch (error: any) {
       console.error('[IDCardViewer] Download failed:', error);
+      if (downloadNotifId) dismiss(downloadNotifId);
       showError('Download failed. Try again.', 4000);
     }
   };
@@ -96,7 +99,7 @@ const IDCardViewer: React.FC = () => {
     if (!url) return;
 
     try {
-      showInfo('📤 Preparing to share...', 0);
+      const shareNotifId = showInfo('📤 Preparing to share...', 8000);
       console.log('[IDCardViewer] Sharing ID card');
 
       if (await Share.canShare()) {
@@ -126,12 +129,15 @@ const IDCardViewer: React.FC = () => {
             url: url,
           });
         }
+        if (shareNotifId) dismiss(shareNotifId);
         showSuccess('✅ Shared successfully!', 3000);
       } else {
+        if (shareNotifId) dismiss(shareNotifId);
         showError('Sharing not supported on this device', 4000);
       }
     } catch (error: any) {
       console.error('[IDCardViewer] Share failed:', error);
+      if (shareNotifId) dismiss(shareNotifId);
       showError('Share failed. Try again.', 4000);
     }
   };
