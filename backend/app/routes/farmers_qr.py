@@ -83,19 +83,40 @@ async def download_idcard(farmer_id: str, db=Depends(get_db)):
 async def get_qr_code(farmer_id: str, db=Depends(get_db)):
     """
     Get QR code image for a farmer.
+    Supports both GridFS (new) and filesystem (legacy) storage.
     Farmers can access their own QR codes.
     """
     farmer = await db.farmers.find_one({"farmer_id": farmer_id})
     if not farmer:
         raise HTTPException(status_code=404, detail="Farmer not found")
 
-    # Check for QR code path
+    # Try GridFS first (new method)
+    qr_file_id = farmer.get("qr_code_file_id")
+    if qr_file_id:
+        try:
+            from app.services.gridfs_service import gridfs_service
+            file_data, metadata = await gridfs_service.download_file(str(qr_file_id))
+            from io import BytesIO
+            from fastapi.responses import StreamingResponse
+            return StreamingResponse(
+                BytesIO(file_data),
+                media_type="image/png",
+                headers={"Content-Disposition": f"inline; filename={farmer_id}_qr.png"}
+            )
+        except Exception as e:
+            print(f"GridFS QR lookup failed for {farmer_id}: {e}")
+    
+    # Fallback to filesystem path (legacy method)
     qr_path = farmer.get("qr_code_path")
-    if not qr_path or not os.path.exists(qr_path):
-        raise HTTPException(status_code=404, detail="QR code not generated yet. Please generate your ID card first.")
-
-    return FileResponse(
-        path=qr_path,
-        media_type="image/png",
-        filename=f"{farmer_id}_qr.png"
+    if qr_path and os.path.exists(qr_path):
+        return FileResponse(
+            path=qr_path,
+            media_type="image/png",
+            filename=f"{farmer_id}_qr.png"
+        )
+    
+    # No QR code found in either location
+    raise HTTPException(
+        status_code=404, 
+        detail="QR code not generated yet. Please generate your ID card first."
     )
