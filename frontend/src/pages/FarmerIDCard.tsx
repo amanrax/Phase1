@@ -31,12 +31,17 @@ interface Farmer {
   photos?: {
     profile?: string;
   };
+  documents?: {
+    photo?: string;
+  };
+  photo_path?: string;
   id_card_path?: string;
   id_card_file_id?: string;
   id_card_generated_at?: string;
   qr_code_path?: string;
   created_at?: string;
   status?: string;
+  registration_status?: string;
 }
 
 const FarmerIDCard: React.FC = () => {
@@ -44,11 +49,13 @@ const FarmerIDCard: React.FC = () => {
   const { user } = useAuthStore();
   const [farmer, setFarmer] = useState<Farmer | null>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [viewLoading, setViewLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qrError, setQrError] = useState(false);
+  const [photoError, setPhotoError] = useState(false);
   const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
 
   useEffect(() => {
@@ -73,17 +80,6 @@ const FarmerIDCard: React.FC = () => {
       const data = await farmerService.getFarmer(farmerId);
       setFarmer(data);
       console.log('[IDCard] Farmer data loaded');
-
-      // Load QR code - use direct URL
-      try {
-        const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
-        const directQrUrl = `${baseURL}/api/farmers/${farmerId}/qr?t=${Date.now()}`;
-        console.log('[IDCard] Setting QR URL:', directQrUrl);
-        setQrUrl(directQrUrl);
-      } catch (e) {
-        console.warn('[IDCard] Failed to set QR URL', e);
-        setQrError(true);
-      }
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Failed to load farmer data";
       console.error('[IDCard] Load error:', msg);
@@ -94,18 +90,109 @@ const FarmerIDCard: React.FC = () => {
     }
   };
 
+  // Load farmer photo as blob with authentication
+  useEffect(() => {
+    const loadPhoto = async () => {
+      if (!farmer) return;
+
+      const photoPath = farmer?.documents?.photo || farmer?.photos?.profile || farmer?.photo_path;
+      if (!photoPath) {
+        console.log('[IDCard] No photo path available');
+        return;
+      }
+
+      try {
+        console.log('[IDCard] Loading photo:', photoPath);
+        setPhotoError(false);
+        
+        const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
+        const fullUrl = photoPath.startsWith('http') ? photoPath : `${baseURL}${photoPath}`;
+        
+        const response = await fetch(fullUrl, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Photo fetch failed: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        
+        console.log('[IDCard] ✅ Photo loaded successfully');
+        setPhotoUrl(blobUrl);
+
+        // Cleanup on unmount
+        return () => {
+          if (blobUrl) {
+            URL.revokeObjectURL(blobUrl);
+          }
+        };
+      } catch (error) {
+        console.error('[IDCard] Failed to load photo:', error);
+        setPhotoError(true);
+      }
+    };
+
+    loadPhoto();
+  }, [farmer]);
+
+  // Load QR code as blob with authentication
+  useEffect(() => {
+    const loadQRCode = async () => {
+      if (!farmer) return;
+
+      try {
+        console.log('[IDCard] Loading QR code for:', farmer.farmer_id);
+        setQrError(false);
+        
+        const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
+        const response = await fetch(`${baseURL}/api/farmers/${farmer.farmer_id}/qr`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`QR fetch failed: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        
+        console.log('[IDCard] ✅ QR code loaded');
+        setQrUrl(blobUrl);
+
+        // Cleanup
+        return () => {
+          if (blobUrl) {
+            URL.revokeObjectURL(blobUrl);
+          }
+        };
+      } catch (error) {
+        console.error('[IDCard] Failed to load QR code:', error);
+        setQrError(true);
+      }
+    };
+
+    loadQRCode();
+  }, [farmer]);
+
   const handleGenerateIDCard = async () => {
     if (!farmer) return;
     
+    let notifId: string | undefined;
     try {
       setGenerating(true);
       setError(null);
       
-      const notifId = showInfo("⏳ Generating ID card...", 10000);
+      notifId = showInfo("⏳ Generating ID card...", 10000);
       console.log('[IDCard] Starting generation for:', farmer.farmer_id);
       
       const response = await farmerService.generateIDCard(farmer.farmer_id);
-      console.log('[IDCard] Generation started:', response);
+      console.log('[IDCard] Generation queued:', response);
 
       // Poll for completion
       const maxAttempts = 12;
@@ -117,13 +204,13 @@ const FarmerIDCard: React.FC = () => {
         
         try {
           const updated = await farmerService.getFarmer(farmer.farmer_id);
-          setFarmer(updated);
           
           if (updated?.id_card_file_id || updated?.id_card_path || updated?.id_card_generated_at) {
             clearInterval(poll);
-            console.log('[IDCard] Generation complete!');
+            setFarmer(updated);
+            console.log('[IDCard] ✅ Generation complete!');
             if (notifId) dismiss(notifId);
-            showSuccess('ID card ready!', 5000);
+            showSuccess('✅ ID card generated successfully!', 5000);
             setGenerating(false);
           } else if (attempts >= maxAttempts) {
             clearInterval(poll);
@@ -159,18 +246,22 @@ const FarmerIDCard: React.FC = () => {
   const handleDownloadIDCard = async () => {
     if (!farmer) return;
     
+    let downloadNotifId: string | undefined;
     try {
       setError(null);
-      const downloadNotifId = showInfo("📥 Downloading...", 8000);
+      downloadNotifId = showInfo("📥 Downloading...", 8000);
       console.log('[IDCard] Downloading for:', farmer.farmer_id);
       
-      const savedFilename = await farmerService.downloadIDCard(farmer.farmer_id);
+      const result = await farmerService.downloadIDCard(farmer.farmer_id);
       
       if (downloadNotifId) dismiss(downloadNotifId);
-      if (savedFilename) {
-        showSuccess(`Saved: ${savedFilename}`, 5000);
+      
+      if (result?.savedPath) {
+        showSuccess(`✅ Saved to:\n${result.savedPath}`, 6000);
+      } else if (result?.downloaded) {
+        showSuccess("✅ Downloaded! Check your Downloads folder.", 5000);
       } else {
-        showSuccess("Downloaded!", 4000);
+        showSuccess("✅ Download complete!", 4000);
       }
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Download failed. Generate ID first.";
@@ -184,10 +275,11 @@ const FarmerIDCard: React.FC = () => {
   const handleViewIDCard = async () => {
     if (!farmer) return;
     
+    let previewNotifId: string | undefined;
     try {
       setViewLoading(true);
       setError(null);
-      const previewNotifId = showInfo("📄 Loading preview...", 8000);
+      previewNotifId = showInfo("📄 Loading preview...", 8000);
       
       console.log('[IDCard] Fetching PDF for:', farmer.farmer_id);
       const url = await farmerService.viewIDCard(farmer.farmer_id);
@@ -195,8 +287,10 @@ const FarmerIDCard: React.FC = () => {
       if (url) {
         console.log('[IDCard] PDF URL received, storing in sessionStorage');
         sessionStorage.setItem('idcard_view_url', url);
-        console.log('[IDCard] Navigating to viewer');
+        sessionStorage.setItem('idcard_farmer_name', `${farmer.personal_info.first_name} ${farmer.personal_info.last_name}`);
+        
         if (previewNotifId) dismiss(previewNotifId);
+        console.log('[IDCard] Navigating to viewer');
         safeNavigate(navigate, '/farmer/idcard-view');
       } else {
         console.error('[IDCard] No URL returned');
@@ -228,7 +322,8 @@ const FarmerIDCard: React.FC = () => {
   };
 
   const getStatusBadgeClass = (status?: string) => {
-    switch (status?.toLowerCase()) {
+    const s = (status || farmer?.registration_status || '').toLowerCase();
+    switch (s) {
       case "verified":
       case "approved":
         return "bg-green-100 text-green-800";
@@ -279,19 +374,19 @@ const FarmerIDCard: React.FC = () => {
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => safeNavigate(navigate, "/farmer-dashboard")} 
-                className="text-green-700 hover:text-green-800 font-bold text-sm transition"
+                className="text-green-700 hover:text-green-800 font-bold text-sm transition active:scale-95"
               >
                 ← BACK
               </button>
-              <h1 className="text-2xl font-bold text-gray-800">🆔 Farmer ID Card</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">🆔 Farmer ID Card</h1>
             </div>
           </div>
         </div>
       </header>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Error Alert - Only show inline errors, not duplicates */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Error Alert */}
         {error && (
           <div className="mb-6 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500 flex items-start gap-2">
             <span className="text-lg">⚠️</span>
@@ -302,41 +397,48 @@ const FarmerIDCard: React.FC = () => {
         )}
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Column - Farmer Information */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 pb-3 border-b-4 border-green-700">
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 pb-3 border-b-4 border-green-700">
                 📋 Farmer Information
               </h2>
 
               {/* Profile Photo */}
-              {farmer?.photos?.profile && (
-                <div className="text-center mb-8">
-                  <img
-                    src={farmer.photos.profile}
-                    alt="Profile"
-                    className="w-32 h-32 rounded-full object-cover border-4 border-green-700 mx-auto shadow-lg"
-                    onError={(e) => {
-                      console.error('[IDCard] Photo failed to load');
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
+              {(photoUrl || photoError) && (
+                <div className="text-center mb-6 sm:mb-8">
+                  <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-green-700 mx-auto shadow-lg bg-gray-100 flex items-center justify-center">
+                    {photoError || !photoUrl ? (
+                      <div className="text-5xl sm:text-6xl">👨‍🌾</div>
+                    ) : (
+                      <img
+                        src={photoUrl}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                        onLoad={() => console.log('[IDCard] Photo displayed')}
+                        onError={() => {
+                          console.error('[IDCard] Photo display failed');
+                          setPhotoError(true);
+                        }}
+                      />
+                    )}
+                  </div>
                 </div>
               )}
 
               {/* Info Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Farmer ID</label>
-                  <p className="text-lg font-bold text-gray-800 mt-1 bg-gray-50 p-2 rounded border-2 border-green-700 font-mono">
+                  <p className="text-base sm:text-lg font-bold text-gray-800 mt-1 bg-gray-50 p-2 rounded border-2 border-green-700 font-mono">
                     {farmer?.farmer_id || "N/A"}
                   </p>
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Full Name</label>
-                  <p className="text-lg font-bold text-gray-800 mt-1">
+                  <p className="text-base sm:text-lg font-bold text-gray-800 mt-1">
                     {farmer?.personal_info?.first_name} {farmer?.personal_info?.last_name}
                   </p>
                 </div>
@@ -363,7 +465,7 @@ const FarmerIDCard: React.FC = () => {
                   <p className="text-gray-700 mt-1">{farmer?.address?.province_name || "N/A"}</p>
                 </div>
 
-                {farmer?.farm_info?.farm_size_hectares && (
+                {farmer?.farm_info?.farm_size_hectares !== undefined && (
                   <div>
                     <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Farm Size</label>
                     <p className="text-gray-700 mt-1">{farmer.farm_info.farm_size_hectares} hectares</p>
@@ -380,7 +482,7 @@ const FarmerIDCard: React.FC = () => {
                 <div>
                   <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Status</label>
                   <span className={`inline-block mt-1 px-3 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(farmer?.status)}`}>
-                    {farmer?.status || "Unknown"}
+                    {farmer?.status || farmer?.registration_status || "Unknown"}
                   </span>
                 </div>
 
@@ -395,10 +497,10 @@ const FarmerIDCard: React.FC = () => {
           </div>
 
           {/* Right Column - ID Card Actions */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* ID Card Status */}
-            <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition">
-              <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-orange-500">🆔 ID Card</h2>
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-orange-500">🆔 ID Card</h2>
 
               {(farmer?.id_card_file_id || farmer?.id_card_path || farmer?.id_card_generated_at) ? (
                 <div>
@@ -415,7 +517,7 @@ const FarmerIDCard: React.FC = () => {
                     <button
                       onClick={handleViewIDCard}
                       disabled={viewLoading}
-                      className={`w-full font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 ${
+                      className={`w-full font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 text-sm sm:text-base ${
                         viewLoading
                           ? "bg-gray-400 cursor-not-allowed text-white"
                           : "bg-blue-600 hover:bg-blue-700 active:scale-95 text-white"
@@ -435,7 +537,7 @@ const FarmerIDCard: React.FC = () => {
 
                     <button
                       onClick={handleDownloadIDCard}
-                      className="w-full bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+                      className="w-full bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 text-sm sm:text-base"
                     >
                       <span>📥</span> Download
                     </button>
@@ -443,7 +545,7 @@ const FarmerIDCard: React.FC = () => {
                     <button
                       onClick={handleGenerateIDCard}
                       disabled={generating}
-                      className={`w-full font-bold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2 ${
+                      className={`w-full font-bold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2 text-sm ${
                         generating
                           ? "bg-gray-400 cursor-not-allowed text-white"
                           : "bg-purple-600 hover:bg-purple-700 active:scale-95 text-white"
@@ -474,7 +576,7 @@ const FarmerIDCard: React.FC = () => {
                   <button
                     onClick={handleGenerateIDCard}
                     disabled={generating}
-                    className={`w-full font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 ${
+                    className={`w-full font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 text-sm sm:text-base ${
                       generating
                         ? "bg-gray-400 cursor-not-allowed text-white"
                         : "bg-purple-700 hover:bg-purple-800 active:scale-95 text-white"
@@ -496,15 +598,15 @@ const FarmerIDCard: React.FC = () => {
             </div>
 
             {/* QR Info */}
-            <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition">
-              <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-purple-600">📱 QR Code</h2>
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-purple-600">📱 QR Code</h2>
+              <p className="text-xs sm:text-sm text-gray-600 mb-4">
                 Your ID card contains a scannable QR code for quick verification.
               </p>
               <div className="flex justify-center mb-4">
-                <div className="p-4 bg-gray-100 rounded-lg border-2 border-green-600">
+                <div className="p-3 sm:p-4 bg-gray-100 rounded-lg border-2 border-green-600">
                   {qrError ? (
-                    <div className="w-48 h-48 flex flex-col items-center justify-center text-sm text-gray-500">
+                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex flex-col items-center justify-center text-sm text-gray-500">
                       <div className="text-4xl mb-2">📱</div>
                       <p>QR unavailable</p>
                     </div>
@@ -512,15 +614,15 @@ const FarmerIDCard: React.FC = () => {
                     <img 
                       src={qrUrl} 
                       alt="QR Code" 
-                      className="w-48 h-48"
-                      onLoad={() => console.log('[IDCard] QR loaded')}
-                      onError={(e) => {
-                        console.error('[IDCard] QR failed to load');
+                      className="w-40 h-40 sm:w-48 sm:h-48"
+                      onLoad={() => console.log('[IDCard] QR displayed')}
+                      onError={() => {
+                        console.error('[IDCard] QR display failed');
                         setQrError(true);
                       }}
                     />
                   ) : (
-                    <div className="w-48 h-48 flex items-center justify-center">
+                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex items-center justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-green-600"></div>
                     </div>
                   )}

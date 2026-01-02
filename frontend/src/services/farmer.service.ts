@@ -1,6 +1,14 @@
 // src/services/farmer.service.ts
 import api from "@/utils/axios";
 
+// Type definitions for better type safety
+export interface DownloadResult {
+  downloaded: boolean;
+  savedPath?: string;
+  filename?: string;
+  method: 'native' | 'web';
+}
+
 export const farmerService = {
   /**
    * Fetch a paginated list of farmers.
@@ -30,7 +38,7 @@ export const farmerService = {
   },
 
   /**
-   * Get a single farmer’s details.
+   * Get a single farmer's details.
    * Backend: GET /api/farmers/{farmer_id}
    */
   async getFarmer(farmerId: string) {
@@ -81,10 +89,11 @@ export const farmerService = {
   },
 
   /**
-   * Upload a farmer’s photo.
+   * Upload a farmer's photo.
    * Backend: POST /api/farmers/{farmer_id}/upload-photo
    */
   async uploadPhoto(farmerId: string, file: File): Promise<any> {
+    console.log(`[farmer.service] Uploading photo for ${farmerId}`);
     const formData = new FormData();
     formData.append("file", file);
     const response = await api.post(
@@ -92,11 +101,12 @@ export const farmerService = {
       formData,
       { headers: { "Content-Type": "multipart/form-data" } }
     );
+    console.log(`[farmer.service] ✅ Photo uploaded successfully`);
     return response.data;
   },
 
   /**
-   * Upload a farmer’s document.
+   * Upload a farmer's document.
    * Backend: POST /api/farmers/{farmer_id}/upload-document
    */
   async uploadDocument(
@@ -104,6 +114,7 @@ export const farmerService = {
     docType: "nrc" | "land_title" | "license" | "certificate",
     file: File
   ): Promise<any> {
+    console.log(`[farmer.service] Uploading ${docType} document for ${farmerId}`);
     const formData = new FormData();
     formData.append("file", file);
     const response = await api.post(
@@ -111,26 +122,31 @@ export const farmerService = {
       formData,
       { headers: { "Content-Type": "multipart/form-data" } }
     );
+    console.log(`[farmer.service] ✅ Document uploaded successfully`);
     return response.data;
   },
 
   /**
-   * Delete a farmer’s photo.
+   * Delete a farmer's photo.
    * Backend: DELETE /api/farmers/{farmer_id}/photo
    */
   async deletePhoto(farmerId: string): Promise<any> {
+    console.log(`[farmer.service] Deleting photo for ${farmerId}`);
     const response = await api.delete(`/farmers/${farmerId}/photo`);
+    console.log(`[farmer.service] ✅ Photo deleted`);
     return response.data;
   },
 
   /**
-   * Delete a farmer’s document.
+   * Delete a farmer's document.
    * Backend: DELETE /api/farmers/{farmer_id}/documents/{doc_type}
    */
   async deleteDocument(farmerId: string, docType: string): Promise<any> {
+    console.log(`[farmer.service] Deleting ${docType} document for ${farmerId}`);
     const response = await api.delete(
       `/farmers/${farmerId}/documents/${docType}`
     );
+    console.log(`[farmer.service] ✅ Document deleted`);
     return response.data;
   },
 
@@ -139,25 +155,35 @@ export const farmerService = {
    * Backend: POST /api/farmers/{farmer_id}/generate-idcard
    */
   async generateIDCard(farmerId: string): Promise<any> {
+    console.log(`[farmer.service] Generating ID card for ${farmerId}`);
     const response = await api.post(`/farmers/${farmerId}/generate-idcard`);
+    console.log(`[farmer.service] ✅ ID card generation queued:`, response.data);
     return response.data;
   },
 
   /**
    * Download an existing farmer ID card (PDF blob).
    * Backend: GET /api/farmers/{farmer_id}/download-idcard
+   * Returns: DownloadResult with download details
    */
-  async downloadIDCard(farmerId: string): Promise<string | void> {
+  async downloadIDCard(farmerId: string): Promise<DownloadResult> {
+    console.log(`[farmer.service] Downloading ID card for ${farmerId}`);
+    
     const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
       responseType: "blob",
     });
+    
     const blob = new Blob([response.data], { type: 'application/pdf' });
+    const timestamp = new Date().getTime();
+    const filename = `Farmer_${farmerId}_ID_Card_${timestamp}.pdf`;
 
     // Try native save on Capacitor
     try {
       const { Capacitor } = await import("@capacitor/core");
 
-      if (Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
+      if (Capacitor?.isNativePlatform?.()) {
+        console.log(`[farmer.service] Running on native platform, attempting native save`);
+        
         const { Filesystem, Directory } = await import("@capacitor/filesystem");
 
         const blobToBase64 = (b: Blob): Promise<string> =>
@@ -172,83 +198,134 @@ export const farmerService = {
           });
 
         const base64 = await blobToBase64(blob);
-        const timestamp = new Date().getTime();
-        const filename = `Farmer_${farmerId}_ID_Card_${timestamp}.pdf`;
 
-        // Try to save directly to Downloads/CEM directory (visible in file manager)
+        // Try Documents directory first (most reliable for Android/iOS)
         try {
           const result = await Filesystem.writeFile({
             path: `CEM/${filename}`,
             data: base64,
-            directory: Directory.External,
+            directory: Directory.Documents,
+            recursive: true, // Create CEM folder if doesn't exist
           });
 
-          console.log('✅ File saved to Documents:', (result as any).uri || filename);
-          return filename;
-        } catch (err) {
-          console.error('Failed to save to External/CEM, trying without subfolder:', err);
+          const savedPath = (result as any).uri || `Documents/CEM/${filename}`;
+          console.log(`[farmer.service] ✅ File saved to Documents/CEM:`, savedPath);
+          
+          return {
+            downloaded: true,
+            savedPath,
+            filename,
+            method: 'native'
+          };
+        } catch (docsErr) {
+          console.warn(`[farmer.service] Documents/CEM failed, trying External:`, docsErr);
 
-          // Fallback: try External directory without subfolder
+          // Fallback: External directory (Android Downloads)
           try {
             const result = await Filesystem.writeFile({
-              path: filename,
+              path: `Download/CEM/${filename}`,
               data: base64,
               directory: Directory.External,
+              recursive: true,
             });
 
-            console.log('✅ File saved to External/Download:', (result as any).uri || filename);
-            return filename;
+            const savedPath = (result as any).uri || `Download/CEM/${filename}`;
+            console.log(`[farmer.service] ✅ File saved to Download/CEM:`, savedPath);
+            
+            return {
+              downloaded: true,
+              savedPath,
+              filename,
+              method: 'native'
+            };
           } catch (extErr) {
-            console.error('External storage also failed:', extErr);
+            console.error(`[farmer.service] ❌ Both native methods failed:`, extErr);
             throw new Error('Failed to save file. Please check storage permissions.');
           }
         }
       }
-    } catch (e) {
-      console.error('❌ Native save failed:', e);
-      // Fall through to web download
+    } catch (capacitorErr) {
+      console.log(`[farmer.service] Not on native platform or Capacitor unavailable, using web download`);
     }
 
     // Web fallback: browser download
+    console.log(`[farmer.service] Using web browser download`);
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `Farmer_${farmerId}_ID_Card.pdf`);
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+    
+    console.log(`[farmer.service] ✅ Browser download triggered`);
+    
+    return {
+      downloaded: true,
+      filename,
+      method: 'web'
+    };
   },
 
+  /**
+   * View ID card in browser/viewer.
+   * Returns a blob URL or base64 data URL for displaying PDF.
+   */
   async viewIDCard(farmerId: string): Promise<string> {
-    const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
-      responseType: "blob",
-    });
-    const blob = new Blob([response.data], { type: "application/pdf" });
-
-    // For native mobile WebViews blob URLs may be unreliable in iframes.
-    // Return a base64 data URL when running on Capacitor to improve compatibility.
+    console.log(`[farmer.service] Fetching ID card for viewing: ${farmerId}`);
+    
     try {
-      const capCoreModule = "@capacitor/core";
-      const { Capacitor } = await import(capCoreModule as any);
-      if (Capacitor && (Capacitor.isNativePlatform && Capacitor.isNativePlatform())) {
-        const toBase64 = (b: Blob) =>
-          new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(b);
-          });
-
-        const dataUrl = await toBase64(blob); // already includes the data:...prefix
-        return dataUrl;
+      const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
+        responseType: "blob",
+      });
+      
+      if (!response.data) {
+        throw new Error('No data received from server');
       }
-    } catch (e) {
-      // ignore and fallback to blob URL
-    }
+      
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      console.log(`[farmer.service] PDF blob received, size: ${blob.size} bytes`);
 
-    const url = window.URL.createObjectURL(blob);
-    return url;
+      // For native mobile, use base64 data URL (more reliable in WebView)
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        
+        if (Capacitor?.isNativePlatform?.()) {
+          console.log(`[farmer.service] Native platform detected, converting to base64`);
+          
+          const toBase64 = (b: Blob) =>
+            new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(b);
+            });
+
+          const dataUrl = await toBase64(blob);
+          console.log(`[farmer.service] ✅ Base64 data URL created (${dataUrl.length} chars)`);
+          return dataUrl;
+        }
+      } catch (capacitorErr) {
+        console.log(`[farmer.service] Capacitor check failed, using blob URL`);
+      }
+
+      // Web: use blob URL
+      const url = window.URL.createObjectURL(blob);
+      console.log(`[farmer.service] ✅ Blob URL created:`, url.substring(0, 50));
+      return url;
+      
+    } catch (error: any) {
+      console.error(`[farmer.service] ❌ Failed to fetch ID card:`, error);
+      
+      if (error.response?.status === 404) {
+        throw new Error('ID card not found. Please generate it first.');
+      } else if (error.response?.status === 401) {
+        throw new Error('Unauthorized. Please login again.');
+      } else {
+        throw new Error(error.message || 'Failed to load ID card');
+      }
+    }
   },
 
   /**
@@ -268,7 +345,7 @@ export const farmerService = {
   },
 
   /**
-   * Get a farmer’s QR code URL.
+   * Get a farmer's QR code URL.
    * Backend: GET /api/farmers/{farmer_id}/qr
    */
   getQRCode(farmerId: string): string {
@@ -324,4 +401,3 @@ export const farmerService = {
 };
 
 export default farmerService;
-

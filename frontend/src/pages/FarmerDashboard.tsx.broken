@@ -15,8 +15,6 @@ export default function FarmerDashboard() {
   const [loading, setLoading] = useState(true);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [qrError, setQrError] = useState(false);
-  const [photoUrl, setPhotoUrl] = useState<string>("");
-  const [photoError, setPhotoError] = useState(false);
 
   // Use ref to track if we've already loaded data
   const hasLoadedRef = useRef(false);
@@ -53,55 +51,6 @@ export default function FarmerDashboard() {
       loadFarmerData();
     }
   }, [loadFarmerData]);
-
-  // Load farmer photo as blob with authentication
-  useEffect(() => {
-    const loadPhoto = async () => {
-      if (!farmerData) return;
-
-      const photoPath = farmerData?.documents?.photo || farmerData?.photo_path;
-      if (!photoPath) {
-        console.log('[Photo] No photo path available');
-        return;
-      }
-
-      try {
-        console.log('[Photo] Loading farmer photo:', photoPath);
-        setPhotoError(false);
-        
-        const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
-        const fullUrl = photoPath.startsWith('http') ? photoPath : `${baseURL}${photoPath}`;
-        
-        const response = await fetch(fullUrl, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Photo fetch failed: ${response.status}`);
-        }
-
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        
-        console.log('[Photo] Photo loaded successfully');
-        setPhotoUrl(blobUrl);
-
-        // Cleanup on unmount
-        return () => {
-          if (blobUrl) {
-            URL.revokeObjectURL(blobUrl);
-          }
-        };
-      } catch (error) {
-        console.error('[Photo] Failed to load photo:', error);
-        setPhotoError(true);
-      }
-    };
-
-    loadPhoto();
-  }, [farmerData]);
 
   // Load QR code - Use blob with authentication for better mobile support
   useEffect(() => {
@@ -157,18 +106,13 @@ export default function FarmerDashboard() {
       downloadNotifId = showInfo("📥 Preparing download...", 8000);
       console.log("[Dashboard] Downloading ID card for:", farmerId);
       
-      const result = await farmerService.downloadIDCard(farmerId);
+      const saved = await farmerService.downloadIDCard(farmerId);
       
       if (downloadNotifId) dismiss(downloadNotifId);
-      
-      if (result?.savedPath) {
-        // Mobile - file was saved to device
-        showSuccess(`✅ ID card saved to:\n${result.savedPath}`, 8000);
-      } else if (result?.downloaded) {
-        // Web - browser download
-        showSuccess("✅ ID card downloaded! Check your Downloads folder.", 5000);
+      if (saved) {
+        showSuccess(`✅ ID card saved to: ${saved}`, 6000);
       } else {
-        showError("Download failed. Please try again.", 4000);
+        showSuccess("✅ ID card downloaded! Check your Downloads folder.", 5000);
       }
     } catch (error: any) {
       console.error("[Dashboard] Download failed:", error);
@@ -184,19 +128,15 @@ export default function FarmerDashboard() {
       return;
     }
     
-    let viewNotifId: string | undefined;
     try {
       console.log("[Dashboard] Fetching ID card for viewing");
-      viewNotifId = showInfo("📄 Loading ID card...", 8000);
+      const viewNotifId = showInfo("📄 Loading ID card...", 8000);
       
-      const blobUrl = await farmerService.viewIDCard(farmerData.farmer_id);
+      const url = await farmerService.viewIDCard(farmerData.farmer_id);
       
-      if (blobUrl) {
-        console.log("[Dashboard] PDF blob URL received, navigating to viewer");
-        // Store blob URL in sessionStorage
-        sessionStorage.setItem('idcard_view_url', blobUrl);
-        sessionStorage.setItem('idcard_farmer_name', `${farmerData?.personal_info?.first_name} ${farmerData?.personal_info?.last_name}`);
-        
+      if (url) {
+        console.log("[Dashboard] PDF URL received, navigating to viewer");
+        sessionStorage.setItem('idcard_view_url', url);
         if (viewNotifId) dismiss(viewNotifId);
         safeNavigate(navigate, '/farmer/idcard-view');
       } else {
@@ -206,7 +146,6 @@ export default function FarmerDashboard() {
       }
     } catch (err: any) {
       console.error("[Dashboard] View ID card error:", err);
-      if (viewNotifId) dismiss(viewNotifId);
       const msg = err.response?.data?.detail || err.message || "Failed to view ID card. Generate it first.";
       showError(msg, 5000);
     }
@@ -222,7 +161,7 @@ export default function FarmerDashboard() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
         <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
+          <div 
           <p className="text-lg sm:text-xl">Loading your profile...</p>
         </div>
       </div>
@@ -231,6 +170,17 @@ export default function FarmerDashboard() {
 
   return (
     <>
+      {/* ID Card Preview Modal */}
+      {showIDCardPreview && farmerData && (
+        <FarmerIDCardPreview
+          farmer={farmerData}
+          onClose={() => {
+            console.log("[Dashboard] Closing ID card preview");
+            setShowIDCardPreview(false);
+          }}
+        />
+      )}
+
       <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 pb-8">
         {/* Header */}
         <div className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4">
@@ -352,19 +302,18 @@ export default function FarmerDashboard() {
                         alignItems: "center",
                         justifyContent: "center"
                       }}>
-                        {photoError || !photoUrl ? (
-                          <div style={{ fontSize: "4rem" }}>👨‍🌾</div>
-                        ) : (
+                        {(farmerData?.documents?.photo || farmerData?.photo_path) ? (
                           <img
-                            src={photoUrl}
+                            src={`${import.meta.env.VITE_API_BASE_URL}${farmerData?.documents?.photo || farmerData?.photo_path}`}
                             alt="Farmer"
                             style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                            onLoad={() => console.log("[Photo] Image displayed successfully")}
                             onError={(e) => {
-                              console.error("[Photo] Failed to display image");
-                              setPhotoError(true);
+                              console.error("[Dashboard] Photo failed to load:", farmerData?.documents?.photo || farmerData?.photo_path);
+                              e.currentTarget.style.display = 'none';
                             }}
                           />
+                        ) : (
+                          <div style={{ fontSize: "4rem" }}>👨‍🌾</div>
                         )}
                       </div>
                       <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#333", marginBottom: "5px" }}>
@@ -536,7 +485,7 @@ export default function FarmerDashboard() {
                 </div>
               </div>
 
-              {/* QR Code Section */}
+              {/* QR Code Section - FIXED */}
               <div className="bg-white rounded-xl shadow-xl p-4 sm:p-8 text-center mt-6">
                 <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6">🔐 Your QR Code</h3>
                 <div style={{ 
@@ -568,7 +517,7 @@ export default function FarmerDashboard() {
                       }}
                       onLoad={() => console.log('[QR] Image loaded successfully')}
                       onError={(e) => {
-                        console.error('[QR] Image failed to load');
+                        console.error('[QR] Image failed to load from:', qrCodeUrl);
                         setQrError(true);
                       }}
                     />
@@ -583,6 +532,14 @@ export default function FarmerDashboard() {
             </>
           )}
         </div>
+
+        {/* Add spin animation */}
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     </>
   );

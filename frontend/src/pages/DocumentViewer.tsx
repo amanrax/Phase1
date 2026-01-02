@@ -1,99 +1,166 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
 
 const DocumentViewer: React.FC = () => {
   const navigate = useNavigate();
   const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
   const [path, setPath] = useState<string | null>(null);
+  const [docTitle, setDocTitle] = useState<string>('Document');
   const [loading, setLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const [fullUrl, setFullUrl] = useState<string>('');
 
   useEffect(() => {
-    const p = sessionStorage.getItem('doc_view_path');
-    console.log('[DocViewer] Loading document path:', p);
+    console.log('[DocViewer] Component mounted');
     
-    if (!p) {
+    const storedPath = sessionStorage.getItem('doc_view_path');
+    const storedTitle = sessionStorage.getItem('doc_view_title');
+    
+    console.log('[DocViewer] Path from sessionStorage:', storedPath);
+    console.log('[DocViewer] Title:', storedTitle);
+
+    if (!storedPath) {
       console.error('[DocViewer] No document path found');
       showError('No document to display', 3000);
-      navigate(-1);
+      setTimeout(() => navigate(-1), 1500);
       return;
     }
     
-    setPath(p);
+    setPath(storedPath);
+    if (storedTitle) setDocTitle(storedTitle);
+
+    // Construct full URL
+    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://13.204.83.198:8000';
+    const url = storedPath.startsWith('http')
+      ? storedPath
+      : storedPath.startsWith('/uploads') || storedPath.startsWith('/api')
+      ? `${baseURL}${storedPath}`
+      : `${baseURL}/${storedPath}`;
+    
+    console.log('[DocViewer] Full URL:', url);
+    setFullUrl(url);
     setLoading(false);
 
-    // Cleanup on unmount only
+    // Cleanup on unmount
     return () => {
+      console.log('[DocViewer] Component unmounting');
       sessionStorage.removeItem('doc_view_path');
+      sessionStorage.removeItem('doc_view_title');
     };
   }, [navigate, showError]);
 
   const handleDownload = async () => {
-    if (!path) return;
+    if (!fullUrl) {
+      showError('No document to download', 3000);
+      return;
+    }
 
+    let downloadNotifId: string | undefined;
     try {
-      const downloadNotifId = showInfo('📥 Downloading...', 8000);
-      
-      // Construct full URL
-      const src = path.startsWith('http')
-        ? path
-        : path.startsWith('/uploads')
-        ? `${import.meta.env.VITE_API_BASE_URL || 'http://13.204.83.198:8000'}${path}`
-        : `${import.meta.env.VITE_API_BASE_URL || 'http://13.204.83.198:8000'}/${path}`;
+      downloadNotifId = showInfo('📥 Downloading...', 8000);
+      console.log('[DocViewer] Downloading from:', fullUrl);
 
-      console.log('[DocViewer] Downloading from:', src);
+      // Check if Capacitor is available
+      let isCapacitor = false;
+      try {
+        const { Capacitor } = await import('@capacitor/core');
+        isCapacitor = Capacitor?.isNativePlatform?.() || false;
+      } catch (e) {
+        console.log('[DocViewer] Capacitor not available');
+      }
 
-      // Fetch the file
-      const response = await fetch(src);
-      if (!response.ok) throw new Error('Download failed');
-
-      const blob = await response.blob();
-      const base64 = await blobToBase64(blob);
-
-      // Determine file extension
-      const ext = path.endsWith('.pdf') ? 'pdf' : 'jpg';
-      const filename = `document_${Date.now()}.${ext}`;
-
-      // Save to Downloads/CEM folder
-      const result = await Filesystem.writeFile({
-        path: `CEM/${filename}`,
-        data: base64,
-        directory: Directory.External,
-        recursive: true,
+      // Fetch with authentication
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(fullUrl, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
       });
 
-      console.log('[DocViewer] File saved:', result.uri);
-      if (downloadNotifId) dismiss(downloadNotifId);
-      showSuccess(`Saved: ${filename}`, 5000);
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+      }
 
-      // Optional: Share the file
-      if (await Share.canShare()) {
-        await Share.share({
-          title: 'Document',
-          url: result.uri,
+      const blob = await response.blob();
+      console.log('[DocViewer] Blob received, size:', blob.size);
+
+      if (isCapacitor) {
+        // Mobile download
+        const { Filesystem, Directory } = await import('@capacitor/filesystem');
+        
+        // Convert to base64
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            resolve(result.split(',')[1]);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
         });
+
+        // Determine file extension
+        const ext = fullUrl.match(/\.(pdf|jpg|jpeg|png|gif|doc|docx)$/i)?.[1] || 'jpg';
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `${docTitle.replace(/\s+/g, '_')}_${timestamp}.${ext}`;
+
+        try {
+          const result = await Filesystem.writeFile({
+            path: `CEM/${filename}`,
+            data: base64,
+            directory: Directory.Documents,
+            recursive: true,
+          });
+
+          const savedPath = (result as any).uri || `Documents/CEM/${filename}`;
+          console.log('[DocViewer] ✅ File saved:', savedPath);
+          
+          if (downloadNotifId) dismiss(downloadNotifId);
+          showSuccess(`✅ Saved to:\n${savedPath}`, 6000);
+
+          // Try to share
+          try {
+            const { Share } = await import('@capacitor/share');
+            if (await Share.canShare()) {
+              await Share.share({
+                title: docTitle,
+                url: result.uri,
+              });
+            }
+          } catch (shareErr) {
+            console.log('[DocViewer] Share not available');
+          }
+        } catch (fsErr) {
+          console.error('[DocViewer] Filesystem error:', fsErr);
+          throw new Error('Failed to save file. Check storage permissions.');
+        }
+      } else {
+        // Web download
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `${docTitle.replace(/\s+/g, '_')}.${fullUrl.match(/\.(pdf|jpg|jpeg|png)$/i)?.[1] || 'jpg'}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        
+        if (downloadNotifId) dismiss(downloadNotifId);
+        showSuccess('✅ Download started!', 4000);
+        console.log('[DocViewer] ✅ Web download completed');
       }
     } catch (error: any) {
-      console.error('[DocViewer] Download failed:', error);
+      console.error('[DocViewer] ❌ Download failed:', error);
       if (downloadNotifId) dismiss(downloadNotifId);
-      showError('Download failed. Try again.', 4000);
+      showError(error.message || 'Download failed. Please try again.', 5000);
     }
   };
 
-  // Helper: Convert blob to base64
-  const blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        resolve(base64.split(',')[1]); // Remove data:image/jpeg;base64, prefix
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+  const handleRetry = () => {
+    console.log('[DocViewer] Retrying...');
+    setImageError(false);
+    setLoading(true);
+    setTimeout(() => setLoading(false), 500);
   };
 
   if (loading) {
@@ -107,29 +174,23 @@ const DocumentViewer: React.FC = () => {
     );
   }
 
-  if (!path) return null;
+  if (!fullUrl) return null;
 
-  // Construct full URL
-  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://13.204.83.198:8000';
-  const src = path.startsWith('http')
-    ? path
-    : path.startsWith('/uploads')
-    ? `${baseURL}${path}`
-    : `${baseURL}/${path}`;
+  const isPDF = fullUrl.toLowerCase().endsWith('.pdf');
 
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => navigate(-1)} 
-                className="text-green-700 hover:text-green-800 font-bold text-sm transition"
+                className="text-green-700 hover:text-green-800 font-bold text-sm transition active:scale-95"
               >
                 ← BACK
               </button>
-              <h1 className="text-2xl font-bold text-gray-800">Document Viewer</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">{docTitle}</h1>
             </div>
             <button
               onClick={handleDownload}
@@ -141,55 +202,54 @@ const DocumentViewer: React.FC = () => {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition">
-          {src.endsWith('.pdf') ? (
-            <object 
-              data={src} 
-              type="application/pdf" 
-              width="100%" 
-              height="800px"
-              onLoad={() => console.log('[DocViewer] PDF loaded')}
-            >
-              <iframe 
-                src={src} 
-                title="Document" 
-                width="100%" 
-                height="800px"
-                onLoad={() => console.log('[DocViewer] PDF iframe loaded')}
-              />
-            </object>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
+          {isPDF ? (
+            <iframe 
+              src={fullUrl} 
+              title="Document" 
+              style={{ width: '100%', height: '75vh', minHeight: '500px', border: 'none', borderRadius: '8px' }}
+              onLoad={() => console.log('[DocViewer] ✅ PDF loaded')}
+              onError={() => {
+                console.error('[DocViewer] ❌ PDF failed to load');
+                showError('Failed to load PDF', 4000);
+              }}
+            />
           ) : imageError ? (
             <div className="text-center py-20">
               <div className="text-6xl mb-4">📄</div>
-              <p className="text-gray-600 mb-4">Failed to load image</p>
-              <button
-                onClick={() => {
-                  setImageError(false);
-                  window.location.reload();
-                }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-              >
-                Retry
-              </button>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Failed to Load Image</h3>
+              <p className="text-gray-600 mb-6">The document could not be displayed</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={handleRetry}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition active:scale-95"
+                >
+                  🔄 Retry
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition active:scale-95"
+                >
+                  📥 Download Instead
+                </button>
+              </div>
             </div>
           ) : (
-            <img 
-              src={src} 
-              alt="Document"
-              crossOrigin="use-credentials"
-              style={{ width: '100%', height: 'auto', maxWidth: '100%', objectFit: 'contain' }}
-              onLoad={() => {
-                console.log('[DocViewer] Image loaded successfully');
-                setLoading(false);
-              }}
-              onError={(e) => {
-                console.error('[DocViewer] Image failed to load:', src);
-                console.error('[DocViewer] Error event:', e);
-                setImageError(true);
-                showError('Failed to load image', 4000);
-              }}
-            />
+            <div className="flex justify-center">
+              <img 
+                src={fullUrl} 
+                alt={docTitle}
+                style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px' }}
+                onLoad={() => {
+                  console.log('[DocViewer] ✅ Image loaded successfully');
+                }}
+                onError={(e) => {
+                  console.error('[DocViewer] ❌ Image failed to load:', fullUrl);
+                  setImageError(true);
+                }}
+              />
+            </div>
           )}
         </div>
       </div>
