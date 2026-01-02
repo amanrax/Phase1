@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { safeNavigate } from '@/config/navigation';
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
-import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
 import { useNotification } from "@/contexts/NotificationContext";
 
 export default function FarmerDashboard() {
@@ -15,7 +14,6 @@ export default function FarmerDashboard() {
   const [farmerData, setFarmerData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
-  const [showIDCardPreview, setShowIDCardPreview] = useState(false);
   const [qrError, setQrError] = useState(false);
 
   // Use ref to track if we've already loaded data
@@ -105,16 +103,16 @@ export default function FarmerDashboard() {
         return;
       }
 
-      downloadNotifId = showInfo("📥 Downloading ID card...", 8000);
+      downloadNotifId = showInfo("📥 Preparing download...", 8000);
       console.log("[Dashboard] Downloading ID card for:", farmerId);
       
       const saved = await farmerService.downloadIDCard(farmerId);
       
       if (downloadNotifId) dismiss(downloadNotifId);
       if (saved) {
-        showSuccess(`Saved: ${saved}`, 5000);
+        showSuccess(`✅ ID card saved to: ${saved}`, 6000);
       } else {
-        showSuccess("ID Card downloaded!", 4000);
+        showSuccess("✅ ID card downloaded! Check your Downloads folder.", 5000);
       }
     } catch (error: any) {
       console.error("[Dashboard] Download failed:", error);
@@ -124,13 +122,33 @@ export default function FarmerDashboard() {
     }
   };
 
-  const handleViewIDCard = () => {
+  const handleViewIDCard = async () => {
     if (!farmerData?.farmer_id) {
       showError("Farmer ID not available", 4000);
       return;
     }
-    console.log("[Dashboard] Opening ID card preview");
-    setShowIDCardPreview(true);
+    
+    try {
+      console.log("[Dashboard] Fetching ID card for viewing");
+      const viewNotifId = showInfo("📄 Loading ID card...", 8000);
+      
+      const url = await farmerService.viewIDCard(farmerData.farmer_id);
+      
+      if (url) {
+        console.log("[Dashboard] PDF URL received, navigating to viewer");
+        sessionStorage.setItem('idcard_view_url', url);
+        if (viewNotifId) dismiss(viewNotifId);
+        safeNavigate(navigate, '/farmer/idcard-view');
+      } else {
+        console.error("[Dashboard] No URL returned");
+        if (viewNotifId) dismiss(viewNotifId);
+        showError('ID card not available. Generate it first.', 5000);
+      }
+    } catch (err: any) {
+      console.error("[Dashboard] View ID card error:", err);
+      const msg = err.response?.data?.detail || err.message || "Failed to view ID card. Generate it first.";
+      showError(msg, 5000);
+    }
   };
 
   const handleRetry = () => {
@@ -144,17 +162,6 @@ export default function FarmerDashboard() {
       <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
         <div className="text-center text-white">
           <div 
-            className="border-4 border-white/30 border-t-white rounded-full w-16 h-16 animate-spin mx-auto mb-5"
-            style={{
-              border: "4px solid rgba(255,255,255,0.3)",
-              borderTop: "4px solid white",
-              borderRadius: "50%",
-              width: "64px",
-              height: "64px",
-              animation: "spin 1s linear infinite",
-              margin: "0 auto 20px"
-            }}
-          ></div>
           <p className="text-lg sm:text-xl">Loading your profile...</p>
         </div>
       </div>
@@ -297,11 +304,11 @@ export default function FarmerDashboard() {
                       }}>
                         {(farmerData?.documents?.photo || farmerData?.photo_path) ? (
                           <img
-                            src={farmerData?.documents?.photo || farmerData?.photo_path}
+                            src={`${import.meta.env.VITE_API_BASE_URL}${farmerData?.documents?.photo || farmerData?.photo_path}`}
                             alt="Farmer"
                             style={{ width: "100%", height: "100%", objectFit: "cover" }}
                             onError={(e) => {
-                              console.error("[Dashboard] Photo failed to load");
+                              console.error("[Dashboard] Photo failed to load:", farmerData?.documents?.photo || farmerData?.photo_path);
                               e.currentTarget.style.display = 'none';
                             }}
                           />
