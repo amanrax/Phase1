@@ -16,15 +16,8 @@ services:
     depends_on:
       farmer-redis:
         condition: service_healthy
-    environment:
-      - MONGODB_URL=${MONGODB_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - SECRET_KEY=${SECRET_KEY}
-      - SEED_ADMIN_EMAIL=${SEED_ADMIN_EMAIL}
-      - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD}
-      - REDIS_URL=redis://farmer-redis:6379
-      - ENVIRONMENT=production
-
+    env_file:
+      - .env.production
     volumes:
       - ./uploads:/app/uploads
     restart: always
@@ -33,6 +26,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
 
 
   # ===============================
@@ -48,11 +42,8 @@ services:
     depends_on:
       farmer-redis:
         condition: service_healthy
-    environment:
-      - MONGO_URI=${MONGO_URI}
-      - JWT_SECRET=${JWT_SECRET}
-      - REDIS_URL=redis://farmer-redis:6379
-      - ENVIRONMENT=production
+    env_file:
+      - .env.production
     volumes:
       - ./uploads:/app/uploads
     restart: always
@@ -90,3 +81,4 @@ volumes:
     driver: local
   uploads:
     driver: local
+    
