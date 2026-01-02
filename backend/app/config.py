@@ -154,18 +154,14 @@ def get_settings() -> Settings:
 # Global settings instance
 settings = get_settings()
 
-# Production override: if running in production, restrict CORS to the EC2 host only.
-# IMPORTANT: remove or refine this to your production domains before long-term use.
+# Production override: Allow all origins for mobile app
 try:
     if settings.ENVIRONMENT == "production":
-        settings.CORS_ORIGINS = [
-            "http://13.204.83.198:8000",
-        ]
-        settings.CORS_ALLOW_CREDENTIALS = True
-        settings.CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH","OPTIONS"]
+        # Mobile apps don't send standard web origins, so allow all
+        settings.CORS_ALLOW_CREDENTIALS = False  # Must be False when using "*"
+        settings.CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
         settings.CORS_ALLOW_HEADERS = ["*"]
 except Exception:
-    # If settings object is immutable or assignment fails, skip override
     pass
 
 # Usage:

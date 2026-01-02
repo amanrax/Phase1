@@ -96,13 +96,13 @@ if frontend_origin_env and frontend_origin_env not in allowed_origins:
 allow_origin_regex = r"^https:\/\/[\-a-z0-9]+-(?:5173|8000|3000)\.app\.github\.dev$"
 
 cors_kwargs = dict(
-    allow_origins=allowed_origins, # Now contains explicit origins + frontend_origin_env
-    allow_origin_regex=allow_origin_regex, # Also consider regex for dynamic Codespaces origins
-    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_origins=["*"] if settings.ENVIRONMENT == "production" else allowed_origins,
+    allow_origin_regex=allow_origin_regex if settings.ENVIRONMENT != "production" else None,
+    allow_credentials=False if settings.ENVIRONMENT == "production" else settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=settings.CORS_ALLOW_METHODS,
     allow_headers=settings.CORS_ALLOW_HEADERS,
     expose_headers=["Content-Length", "Content-Type", "Authorization"],
-    max_age=3600,  # Cache preflight requests for 1 hour
+    max_age=3600,
 )
 # NOTE: CORSMiddleware is added after the PreflightMiddleware below so
 # the PreflightMiddleware can short-circuit OPTIONS requests even when
