@@ -161,7 +161,7 @@ export default function FarmerDashboard() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
         <div className="text-center text-white">
-          <div 
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
           <p className="text-lg sm:text-xl">Loading your profile...</p>
         </div>
       </div>
@@ -170,17 +170,6 @@ export default function FarmerDashboard() {
 
   return (
     <>
-      {/* ID Card Preview Modal */}
-      {showIDCardPreview && farmerData && (
-        <FarmerIDCardPreview
-          farmer={farmerData}
-          onClose={() => {
-            console.log("[Dashboard] Closing ID card preview");
-            setShowIDCardPreview(false);
-          }}
-        />
-      )}
-
       <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 pb-8">
         {/* Header */}
         <div className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4">
