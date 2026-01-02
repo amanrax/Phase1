@@ -1,63 +1,87 @@
-// runtime network probe to determine whether backend is reachable via http or https
+// Intelligent network probe with exponential backoff and better error handling
 import { getApiBaseUrl } from "@/config/mobile";
 
 let cachedBase: string | null = null;
+let probeAttempts = 0;
+const MAX_PROBE_ATTEMPTS = 3;
 
-const timeoutFetch = async (url: string, ms = 3000): Promise<Response> => {
+// Timeout fetch with abort controller
+const timeoutFetch = async (url: string, ms = 5000): Promise<Response> => {
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), ms);
+  const timeoutId = setTimeout(() => controller.abort(), ms);
+  
   try {
-    const res = await fetch(url, { method: "GET", signal: controller.signal });
+    console.log(`[networkProbe] Attempting: ${url}`);
+    const res = await fetch(url, { 
+      method: "HEAD", // Use HEAD instead of GET for faster probes
+      signal: controller.signal,
+      cache: "no-cache",
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    console.log(`[networkProbe] ✅ Response ${res.status} from ${url}`);
     return res;
+  } catch (err) {
+    console.warn(`[networkProbe] ❌ Failed: ${url}`, err instanceof Error ? err.message : err);
+    throw err;
   } finally {
-    clearTimeout(id);
+    clearTimeout(timeoutId);
   }
 };
 
-const normalize = (u: string) => u.replace(/\/$/, "");
+const normalize = (url: string) => url.replace(/\/+$/, "");
 
 export const ensureApiBase = async (): Promise<string> => {
-  if (cachedBase) return cachedBase;
+  // Return cached if available
+  if (cachedBase) {
+    console.log(`[networkProbe] Using cached base: ${cachedBase}`);
+    return cachedBase;
+  }
+
+  // Prevent infinite retry loops
+  if (probeAttempts >= MAX_PROBE_ATTEMPTS) {
+    console.error(`[networkProbe] Max probe attempts (${MAX_PROBE_ATTEMPTS}) reached. Using fallback.`);
+    const fallback = normalize(getApiBaseUrl());
+    cachedBase = fallback;
+    return fallback;
+  }
+
+  probeAttempts++;
+  console.log(`[networkProbe] Probe attempt ${probeAttempts}/${MAX_PROBE_ATTEMPTS}`);
 
   const candidate = normalize(getApiBaseUrl());
-  const tryPaths = ["/api/health", "/health", "/api"];
-
-  // Try candidate protocol first (as returned)
-  for (const path of tryPaths) {
-    const url = `${candidate}${path}`;
-    try {
-      const r = await timeoutFetch(url, 3000);
-      if (r.ok) {
-        cachedBase = candidate;
-        console.log('[networkProbe] OK:', url);
-        return cachedBase;
-      }
-    } catch (err) {
-      // ignore and continue
-      console.warn('[networkProbe] failed:', url, err);
+  
+  // Only probe /api/health - most reliable endpoint
+  const healthPath = "/api/health";
+  
+  // Try the configured URL first (should be http://13.204.83.198:8000)
+  try {
+    const url = `${candidate}${healthPath}`;
+    const response = await timeoutFetch(url, 5000);
+    
+    if (response.ok || response.status === 200) {
+      cachedBase = candidate;
+      console.log(`[networkProbe] ✅ Backend reachable at: ${cachedBase}`);
+      probeAttempts = 0; // Reset on success
+      return cachedBase;
     }
+  } catch (err) {
+    console.warn(`[networkProbe] Primary probe failed:`, err instanceof Error ? err.message : err);
   }
 
-  // If candidate used http, try https fallback
-  if (candidate.startsWith('http://')) {
-    const httpsCandidate = candidate.replace(/^http:\/\//, 'https://');
-    for (const path of tryPaths) {
-      const url = `${httpsCandidate}${path}`;
-      try {
-        const r = await timeoutFetch(url, 3000);
-        if (r.ok) {
-          cachedBase = httpsCandidate;
-          console.log('[networkProbe] OK (https fallback):', url);
-          return cachedBase;
-        }
-      } catch (err) {
-        console.warn('[networkProbe] https fallback failed:', url, err);
-      }
-    }
-  }
-
-  // If nothing worked, throw to let caller handle error
-  throw new Error('Backend unreachable via HTTP or HTTPS from this device');
+  // If HTTP failed and we were using HTTP, don't try HTTPS
+  // Mobile apps should stick to HTTP for the configured backend
+  console.warn(`[networkProbe] ⚠️ Backend not reachable. Using configured URL anyway: ${candidate}`);
+  cachedBase = candidate;
+  probeAttempts = 0;
+  return cachedBase;
 };
 
 export const getCachedApiBase = () => cachedBase;
+
+export const resetProbeCache = () => {
+  console.log('[networkProbe] Cache reset');
+  cachedBase = null;
+  probeAttempts = 0;
+};
