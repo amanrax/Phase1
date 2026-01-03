@@ -1,4 +1,4 @@
-// src/components/DocumentViewer.tsx
+// src/pages/DocumentViewer.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
@@ -39,15 +39,12 @@ const DocumentViewer: React.FC = () => {
       return;
     }
     
-    // Use the blob URL directly (already created by FarmerIDCard)
     setDocUrl(storedUrl);
     if (storedTitle) setDocTitle(storedTitle);
     setLoading(false);
 
-    // Cleanup on unmount
     return () => {
       console.log('[DocViewer] Component unmounting');
-      // Revoke blob URL if it's a blob
       if (storedUrl && storedUrl.startsWith('blob:')) {
         try {
           URL.revokeObjectURL(storedUrl);
@@ -61,66 +58,6 @@ const DocumentViewer: React.FC = () => {
     };
   }, [navigate, showError]);
 
-  const openInNativeApp = async () => {
-    if (!docUrl) return;
-
-    let notifId: string | undefined;
-    try {
-      notifId = showInfo('📱 Opening in external viewer...', 5000);
-      
-      const { Filesystem, Directory } = await import('@capacitor/filesystem');
-      const { FileOpener } = await import('@capacitor-community/file-opener');
-      
-      // Fetch blob data
-      const response = await fetch(docUrl);
-      const blob = await response.blob();
-      
-      // Determine content type
-      const contentType = blob.type || 'application/octet-stream';
-      
-      // Convert to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          resolve(result.split(',')[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-      
-      // Determine extension
-      const ext = contentType.includes('pdf') ? 'pdf' 
-        : contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg'
-        : contentType.includes('png') ? 'png'
-        : contentType.includes('gif') ? 'gif'
-        : 'file';
-      
-      // Save temp file
-      const filename = `${docTitle.replace(/\s+/g, '_')}_${Date.now()}.${ext}`;
-      const result = await Filesystem.writeFile({
-        path: filename,
-        data: base64,
-        directory: Directory.Cache,
-      });
-      
-      console.log('[DocViewer] Temp file saved, opening...');
-      
-      // Open with native app
-      await FileOpener.open({
-        filePath: result.uri,
-        contentType: contentType,
-      });
-      
-      if (notifId) dismiss(notifId);
-      console.log('[DocViewer] ✅ Opened in native app');
-    } catch (error: any) {
-      console.error('[DocViewer] Failed to open in native app:', error);
-      if (notifId) dismiss(notifId);
-      showError('Failed to open in external viewer. Try downloading instead.', 5000);
-    }
-  };
-
   const handleDownload = async () => {
     if (!docUrl) {
       showError('No document to download', 3000);
@@ -133,14 +70,12 @@ const DocumentViewer: React.FC = () => {
       console.log('[DocViewer] Starting download');
 
       if (isNative) {
-        // Mobile download
+        // Mobile download - save to Documents/CEM folder
         const { Filesystem, Directory } = await import('@capacitor/filesystem');
         
-        // Fetch blob data
         const response = await fetch(docUrl);
         const blob = await response.blob();
         
-        // Convert to base64
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onloadend = () => {
@@ -163,6 +98,7 @@ const DocumentViewer: React.FC = () => {
         const filename = `${docTitle.replace(/\s+/g, '_')}_${timestamp}.${ext}`;
 
         try {
+          // Save to Documents/CEM folder
           const result = await Filesystem.writeFile({
             path: `CEM/${filename}`,
             data: base64,
@@ -176,18 +112,6 @@ const DocumentViewer: React.FC = () => {
           if (downloadNotifId) dismiss(downloadNotifId);
           showSuccess(`✅ Saved to:\n${savedPath}`, 6000);
 
-          // Try to open with native app
-          try {
-            const { FileOpener } = await import('@capacitor-community/file-opener');
-            const openNotif = showInfo('📱 Opening file...', 3000);
-            await FileOpener.open({
-              filePath: result.uri,
-              contentType: contentType || 'application/octet-stream',
-            });
-            dismiss(openNotif);
-          } catch (openErr) {
-            console.log('[DocViewer] Could not auto-open file');
-          }
         } catch (fsErr) {
           console.error('[DocViewer] Filesystem error:', fsErr);
           throw new Error('Failed to save file. Check storage permissions.');
@@ -246,7 +170,6 @@ const DocumentViewer: React.FC = () => {
   if (!docUrl) return null;
 
   const isPDF = docUrl.includes('pdf') || docUrl.toLowerCase().includes('application/pdf');
-  const isImage = docUrl.includes('image/') || /\.(jpg|jpeg|png|gif)$/i.test(docUrl);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -262,22 +185,12 @@ const DocumentViewer: React.FC = () => {
               </button>
               <h1 className="text-xl sm:text-2xl font-bold text-gray-800">{docTitle}</h1>
             </div>
-            <div className="flex gap-2">
-              {isNative && (
-                <button
-                  onClick={openInNativeApp}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold transition active:scale-95"
-                >
-                  📱 Open
-                </button>
-              )}
-              <button
-                onClick={handleDownload}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition active:scale-95"
-              >
-                📥 Download
-              </button>
-            </div>
+            <button
+              onClick={handleDownload}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition active:scale-95"
+            >
+              📥 Download
+            </button>
           </div>
         </div>
       </header>
@@ -296,14 +209,6 @@ const DocumentViewer: React.FC = () => {
                 >
                   🔄 Retry
                 </button>
-                {isNative && (
-                  <button
-                    onClick={openInNativeApp}
-                    className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition active:scale-95"
-                  >
-                    📱 Open in App
-                  </button>
-                )}
                 <button
                   onClick={handleDownload}
                   className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition active:scale-95"
@@ -339,22 +244,19 @@ const DocumentViewer: React.FC = () => {
                 src={docUrl} 
                 alt={docTitle}
                 style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px' }}
-                onLoad={() => {
-                  console.log('[DocViewer] ✅ Image loaded successfully');
-                }}
-                onError={(e) => {
-                  console.error('[DocViewer] ❌ Image failed to load:', docUrl);
+                onLoad={() => console.log('[DocViewer] ✅ Image loaded')}
+                onError={() => {
+                  console.error('[DocViewer] ❌ Image failed to load');
                   setViewError(true);
                 }}
               />
             </div>
           )}
           
-          {/* Help Text */}
           <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4">
             <p className="text-sm text-blue-800">
               <strong>💡 Tip:</strong> {isNative 
-                ? 'If the document doesn\'t display, use "Open in App" or "Download" buttons above.'
+                ? 'Files are saved to Documents/CEM folder. Click "Download" to save this document.'
                 : 'If the document doesn\'t display, click "Download" to save it to your device.'
               }
             </p>
