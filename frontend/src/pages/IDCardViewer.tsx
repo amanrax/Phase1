@@ -1,3 +1,4 @@
+// src/pages/IDCardViewer.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
@@ -42,7 +43,6 @@ const IDCardViewer: React.FC = () => {
     if (storedName) setFarmerName(storedName);
     setLoading(false);
 
-    // Cleanup on unmount
     return () => {
       console.log('[IDCardViewer] Component unmounting, cleaning up');
       const u = sessionStorage.getItem('idcard_view_url');
@@ -59,57 +59,6 @@ const IDCardViewer: React.FC = () => {
     };
   }, [navigate, showError]);
 
-  const openInNativeApp = async () => {
-    if (!url) return;
-
-    let notifId: string | undefined;
-    try {
-      notifId = showInfo('📱 Opening in external viewer...', 5000);
-      
-      // Save to temp file first
-      const { Filesystem, Directory } = await import('@capacitor/filesystem');
-      const { FileOpener } = await import('@capacitor-community/file-opener');
-      
-      // Fetch blob data
-      const response = await fetch(url);
-      const blob = await response.blob();
-      
-      // Convert to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          resolve(result.split(',')[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-      
-      // Save temp file
-      const filename = `ID_Card_${Date.now()}.pdf`;
-      const result = await Filesystem.writeFile({
-        path: filename,
-        data: base64,
-        directory: Directory.Cache,
-      });
-      
-      console.log('[IDCardViewer] Temp file saved, opening...');
-      
-      // Open with native app
-      await FileOpener.open({
-        filePath: result.uri,
-        contentType: 'application/pdf',
-      });
-      
-      if (notifId) dismiss(notifId);
-      console.log('[IDCardViewer] ✅ Opened in native app');
-    } catch (error: any) {
-      console.error('[IDCardViewer] Failed to open in native app:', error);
-      if (notifId) dismiss(notifId);
-      showError('Failed to open in external viewer. Try downloading instead.', 5000);
-    }
-  };
-
   const handleDownload = async () => {
     if (!url) {
       showError('No PDF to download', 3000);
@@ -122,14 +71,11 @@ const IDCardViewer: React.FC = () => {
       console.log('[IDCardViewer] Starting download');
 
       if (isNative) {
-        // Mobile download with Filesystem
         const { Filesystem, Directory } = await import('@capacitor/filesystem');
         
-        // Fetch blob data
         const response = await fetch(url);
         const blob = await response.blob();
         
-        // Convert to base64
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onloadend = () => {
@@ -140,7 +86,6 @@ const IDCardViewer: React.FC = () => {
           reader.readAsDataURL(blob);
         });
         
-        // Save to Documents/CEM folder
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const filename = `ID_Card_${farmerName.replace(/\s+/g, '_')}_${timestamp}.pdf`;
         
@@ -158,24 +103,11 @@ const IDCardViewer: React.FC = () => {
           if (downloadNotifId) dismiss(downloadNotifId);
           showSuccess(`✅ Saved to:\n${savedPath}`, 6000);
 
-          // Try to open with native app
-          try {
-            const { FileOpener } = await import('@capacitor-community/file-opener');
-            const openNotif = showInfo('📱 Opening file...', 3000);
-            await FileOpener.open({
-              filePath: result.uri,
-              contentType: 'application/pdf',
-            });
-            dismiss(openNotif);
-          } catch (openErr) {
-            console.log('[IDCardViewer] Could not auto-open file');
-          }
         } catch (fsErr) {
           console.error('[IDCardViewer] Filesystem write failed:', fsErr);
           throw new Error('Failed to save file. Check storage permissions.');
         }
       } else {
-        // Web download
         const response = await fetch(url);
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
@@ -238,7 +170,6 @@ const IDCardViewer: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
@@ -253,27 +184,16 @@ const IDCardViewer: React.FC = () => {
                 🆔 {farmerName}'s ID Card
               </h1>
             </div>
-            <div className="flex gap-2">
-              {isNative && (
-                <button
-                  onClick={openInNativeApp}
-                  className="bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center gap-2 transition text-sm"
-                >
-                  <span>📱</span> Open
-                </button>
-              )}
-              <button
-                onClick={handleDownload}
-                className="bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center gap-2 transition text-sm"
-              >
-                <span>📥</span> Download
-              </button>
-            </div>
+            <button
+              onClick={handleDownload}
+              className="bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center gap-2 transition text-sm sm:text-base"
+            >
+              <span>📥</span> Download
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
           {pdfError ? (
@@ -288,14 +208,6 @@ const IDCardViewer: React.FC = () => {
                 >
                   🔄 Retry
                 </button>
-                {isNative && (
-                  <button
-                    onClick={openInNativeApp}
-                    className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition active:scale-95"
-                  >
-                    📱 Open in App
-                  </button>
-                )}
                 <button
                   onClick={handleDownload}
                   className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition active:scale-95"
@@ -342,11 +254,10 @@ const IDCardViewer: React.FC = () => {
             </div>
           )}
           
-          {/* Help Text */}
           <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4">
             <p className="text-sm text-blue-800">
               <strong>💡 Tip:</strong> {isNative 
-                ? 'If the PDF doesn\'t display, use "Open in App" or "Download" buttons above.'
+                ? 'Files are saved to Documents/CEM folder. If the PDF doesn\'t display, click "Download" to save it.'
                 : 'If the PDF doesn\'t display, click "Download" to save it to your device.'
               }
             </p>
