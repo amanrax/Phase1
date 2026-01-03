@@ -66,6 +66,7 @@ const FarmerIDCard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [qrError, setQrError] = useState(false);
   const [photoError, setPhotoError] = useState(false);
+  const [docsLoading, setDocsLoading] = useState(false);
   const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
 
   // Document URLs
@@ -110,9 +111,9 @@ const FarmerIDCard: React.FC = () => {
 
   // Load farmer photo
   useEffect(() => {
-    const loadPhoto = async () => {
-      if (!farmer) return;
+    if (!farmer) return;
 
+    const loadPhoto = async () => {
       try {
         console.log('[IDCard] Loading photo for:', farmer.farmer_id);
         setPhotoError(false);
@@ -132,18 +133,20 @@ const FarmerIDCard: React.FC = () => {
 
     loadPhoto();
 
+    // Cleanup on unmount
     return () => {
       if (photoUrl && photoUrl.startsWith('blob:')) {
         URL.revokeObjectURL(photoUrl);
+        console.log('[IDCard] Photo blob URL revoked');
       }
     };
-  }, [farmer]);
+  }, [farmer?.farmer_id]); // ✅ Only depend on farmer_id
 
   // Load QR code
   useEffect(() => {
-    const loadQRCode = async () => {
-      if (!farmer) return;
+    if (!farmer) return;
 
+    const loadQRCode = async () => {
       try {
         console.log('[IDCard] Loading QR code for:', farmer.farmer_id);
         setQrError(false);
@@ -163,17 +166,25 @@ const FarmerIDCard: React.FC = () => {
 
     loadQRCode();
 
+    // Cleanup on unmount
     return () => {
       if (qrUrl && qrUrl.startsWith('blob:')) {
         URL.revokeObjectURL(qrUrl);
+        console.log('[IDCard] QR blob URL revoked');
       }
     };
-  }, [farmer]);
+  }, [farmer?.farmer_id]); // ✅ Only depend on farmer_id
 
   // Load documents
   useEffect(() => {
+    if (!farmer?.documents) {
+      console.log('[IDCard] No documents object in farmer data');
+      return;
+    }
+
     const loadDocuments = async () => {
-      if (!farmer?.documents) return;
+      setDocsLoading(true);
+      console.log('[IDCard] Loading documents...');
 
       const docTypes: Array<'nrc' | 'land_title' | 'license' | 'certificate'> = [
         'nrc',
@@ -190,27 +201,32 @@ const FarmerIDCard: React.FC = () => {
           urls[docType] = url;
           if (url) {
             console.log(`[IDCard] ✅ ${docType} loaded`);
+          } else {
+            console.log(`[IDCard] ⚠️ ${docType} not available`);
           }
         } catch (error) {
-          console.error(`[IDCard] Failed to load ${docType}:`, error);
+          console.error(`[IDCard] ❌ Failed to load ${docType}:`, error);
           urls[docType] = null;
         }
       }
 
       setDocumentUrls(urls);
+      setDocsLoading(false);
+      console.log('[IDCard] All documents loaded:', urls);
     };
 
     loadDocuments();
 
+    // Cleanup on unmount only
     return () => {
-      // Cleanup blob URLs
-      Object.values(documentUrls).forEach(url => {
+      Object.entries(documentUrls).forEach(([key, url]) => {
         if (url && url.startsWith('blob:')) {
           URL.revokeObjectURL(url);
+          console.log(`[IDCard] ${key} blob URL revoked`);
         }
       });
     };
-  }, [farmer]);
+  }, [farmer?.farmer_id]); // ✅ Only depend on farmer_id
 
   const handleGenerateIDCard = async () => {
     if (!farmer) return;
@@ -353,6 +369,7 @@ const FarmerIDCard: React.FC = () => {
       certificate: 'Certificate',
     };
 
+    console.log(`[IDCard] Viewing ${docType}, URL:`, docUrl.substring(0, 50));
     sessionStorage.setItem('doc_view_path', docUrl);
     sessionStorage.setItem('doc_view_title', titles[docType] || 'Document');
     safeNavigate(navigate, '/document-viewer');
@@ -548,87 +565,110 @@ const FarmerIDCard: React.FC = () => {
             <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
               <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-indigo-600">📄 Documents</h2>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* NRC Document */}
-                <div className="border-2 border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-gray-800">🆔 NRC</span>
+              {docsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-indigo-600 mx-auto mb-3"></div>
+                  <p className="text-sm text-gray-600">Loading documents...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* NRC Document */}
+                  <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-gray-800">🆔 NRC</span>
+                      {documentUrls.nrc ? (
+                        <span className="text-green-600 text-xs font-semibold">✓ Available</span>
+                      ) : (
+                        <span className="text-gray-400 text-xs">Not uploaded</span>
+                      )}
+                    </div>
                     {documentUrls.nrc ? (
-                      <span className="text-green-600 text-xs">✓ Available</span>
+                      <button
+                        onClick={() => handleViewDocument('nrc', documentUrls.nrc)}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
+                      >
+                        👁️ View
+                      </button>
                     ) : (
-                      <span className="text-gray-400 text-xs">Not uploaded</span>
+                      <div className="w-full bg-gray-100 text-gray-400 text-sm font-semibold py-2 rounded text-center cursor-not-allowed">
+                        Not available
+                      </div>
                     )}
                   </div>
-                  {documentUrls.nrc && (
-                    <button
-                      onClick={() => handleViewDocument('nrc', documentUrls.nrc)}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
-                    >
-                      👁️ View
-                    </button>
-                  )}
-                </div>
 
-                {/* Land Title */}
-                <div className="border-2 border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-gray-800">📜 Land Title</span>
+                  {/* Land Title */}
+                  <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-gray-800">📜 Land Title</span>
+                      {documentUrls.land_title ? (
+                        <span className="text-green-600 text-xs font-semibold">✓ Available</span>
+                      ) : (
+                        <span className="text-gray-400 text-xs">Not uploaded</span>
+                      )}
+                    </div>
                     {documentUrls.land_title ? (
-                      <span className="text-green-600 text-xs">✓ Available</span>
+                      <button
+                        onClick={() => handleViewDocument('land_title', documentUrls.land_title)}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
+                      >
+                        👁️ View
+                      </button>
                     ) : (
-                      <span className="text-gray-400 text-xs">Not uploaded</span>
+                      <div className="w-full bg-gray-100 text-gray-400 text-sm font-semibold py-2 rounded text-center cursor-not-allowed">
+                        Not available
+                      </div>
                     )}
                   </div>
-                  {documentUrls.land_title && (
-                    <button
-                      onClick={() => handleViewDocument('land_title', documentUrls.land_title)}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
-                    >
-                      👁️ View
-                    </button>
-                  )}
-                </div>
 
-                {/* License */}
-                <div className="border-2 border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-gray-800">📋 License</span>
+                  {/* License */}
+                  <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-gray-800">📋 License</span>
+                      {documentUrls.license ? (
+                        <span className="text-green-600 text-xs font-semibold">✓ Available</span>
+                      ) : (
+                        <span className="text-gray-400 text-xs">Not uploaded</span>
+                      )}
+                    </div>
                     {documentUrls.license ? (
-                      <span className="text-green-600 text-xs">✓ Available</span>
+                      <button
+                        onClick={() => handleViewDocument('license', documentUrls.license)}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
+                      >
+                        👁️ View
+                      </button>
                     ) : (
-                      <span className="text-gray-400 text-xs">Not uploaded</span>
+                      <div className="w-full bg-gray-100 text-gray-400 text-sm font-semibold py-2 rounded text-center cursor-not-allowed">
+                        Not available
+                      </div>
                     )}
                   </div>
-                  {documentUrls.license && (
-                    <button
-                      onClick={() => handleViewDocument('license', documentUrls.license)}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
-                    >
-                      👁️ View
-                    </button>
-                  )}
-                </div>
 
-                {/* Certificate */}
-                <div className="border-2 border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-gray-800">🎓 Certificate</span>
+                  {/* Certificate */}
+                  <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-gray-800">🎓 Certificate</span>
+                      {documentUrls.certificate ? (
+                        <span className="text-green-600 text-xs font-semibold">✓ Available</span>
+                      ) : (
+                        <span className="text-gray-400 text-xs">Not uploaded</span>
+                      )}
+                    </div>
                     {documentUrls.certificate ? (
-                      <span className="text-green-600 text-xs">✓ Available</span>
+                      <button
+                        onClick={() => handleViewDocument('certificate', documentUrls.certificate)}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
+                      >
+                        👁️ View
+                      </button>
                     ) : (
-                      <span className="text-gray-400 text-xs">Not uploaded</span>
+                      <div className="w-full bg-gray-100 text-gray-400 text-sm font-semibold py-2 rounded text-center cursor-not-allowed">
+                        Not available
+                      </div>
                     )}
                   </div>
-                  {documentUrls.certificate && (
-                    <button
-                      onClick={() => handleViewDocument('certificate', documentUrls.certificate)}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
-                    >
-                      👁️ View
-                    </button>
-                  )}
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -733,20 +773,18 @@ const FarmerIDCard: React.FC = () => {
               )}
             </div>
 
-            {/* QR Info */}
+            {/* QR Code Card - Shows QR if ID card is generated */}
             <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
               <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-purple-600">📱 QR Code</h2>
               <p className="text-xs sm:text-sm text-gray-600 mb-4">
-                Your ID card contains a scannable QR code for quick verification.
+                {(farmer?.id_card_file_id || farmer?.qr_code_file_id || qrUrl) 
+                  ? "Your ID card contains this QR code for quick verification."
+                  : "Generate your ID card to get a QR code."
+                }
               </p>
               <div className="flex justify-center mb-4">
-                <div className="p-3 sm:p-4 bg-gray-100 rounded-lg border-2 border-green-600">
-                  {qrError ? (
-                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex flex-col items-center justify-center text-sm text-gray-500">
-                      <div className="text-4xl mb-2">📱</div>
-                      <p>QR unavailable</p>
-                    </div>
-                  ) : qrUrl ? (
+                <div className="p-3 sm:p-4 bg-gray-100 rounded-lg border-2 border-purple-600">
+                  {(farmer?.id_card_file_id || farmer?.qr_code_file_id) && qrUrl ? (
                     <img 
                       src={qrUrl} 
                       alt="QR Code" 
@@ -757,9 +795,17 @@ const FarmerIDCard: React.FC = () => {
                         setQrError(true);
                       }}
                     />
+                  ) : qrError ? (
+                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex flex-col items-center justify-center text-sm text-gray-500">
+                      <div className="text-4xl mb-2">📱</div>
+                      <p>QR unavailable</p>
+                      <p className="text-xs mt-1">Generate ID card</p>
+                    </div>
                   ) : (
-                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-green-600"></div>
+                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex flex-col items-center justify-center text-sm text-gray-500">
+                      <div className="text-4xl mb-2">📱</div>
+                      <p>No QR code yet</p>
+                      <p className="text-xs mt-1">Generate ID card first</p>
                     </div>
                   )}
                 </div>

@@ -70,7 +70,6 @@ const DocumentViewer: React.FC = () => {
       console.log('[DocViewer] Starting download');
 
       if (isNative) {
-        // Mobile download - save to Documents/CEM folder
         const { Filesystem, Directory } = await import('@capacitor/filesystem');
         
         const response = await fetch(docUrl);
@@ -98,26 +97,63 @@ const DocumentViewer: React.FC = () => {
         const filename = `${docTitle.replace(/\s+/g, '_')}_${timestamp}.${ext}`;
 
         try {
-          // Save to Documents/CEM folder
+          // ✅ TRY 1: External storage (Downloads folder) - Most user-friendly
+          console.log('[DocViewer] Attempting to save to Downloads folder...');
           const result = await Filesystem.writeFile({
-            path: `CEM/${filename}`,
+            path: filename, // No subdirectory for Downloads
             data: base64,
-            directory: Directory.Documents,
-            recursive: true,
+            directory: Directory.External,
+            recursive: false,
           });
 
-          const savedPath = (result as any).uri || `Documents/CEM/${filename}`;
-          console.log('[DocViewer] ✅ File saved:', savedPath);
+          const savedPath = (result as any).uri || `Downloads/${filename}`;
+          console.log('[DocViewer] ✅ File saved to Downloads:', savedPath);
           
           if (downloadNotifId) dismiss(downloadNotifId);
-          showSuccess(`✅ Saved to:\n${savedPath}`, 6000);
+          showSuccess(
+            `✅ Document Downloaded!\n\n📂 Location: Downloads folder\n📄 File: ${filename}\n\n💡 Open your File Manager app to view it.`,
+            8000
+          );
 
-        } catch (fsErr) {
-          console.error('[DocViewer] Filesystem error:', fsErr);
-          throw new Error('Failed to save file. Check storage permissions.');
+        } catch (fsErr: any) {
+          console.error('[DocViewer] External storage write failed:', fsErr);
+          
+          // ✅ TRY 2: Documents/CEM folder - Fallback
+          try {
+            console.log('[DocViewer] Trying Documents folder as fallback...');
+            const fallbackResult = await Filesystem.writeFile({
+              path: `CEM/${filename}`,
+              data: base64,
+              directory: Directory.Documents,
+              recursive: true,
+            });
+            
+            const fallbackPath = (fallbackResult as any).uri || `Documents/CEM/${filename}`;
+            console.log('[DocViewer] ✅ Saved to Documents folder:', fallbackPath);
+            
+            if (downloadNotifId) dismiss(downloadNotifId);
+            showSuccess(
+              `✅ Document Saved!\n\n📂 Location: Documents/CEM/${filename}\n\n💡 Open "Files" app > Documents > CEM folder`,
+              8000
+            );
+          } catch (docErr: any) {
+            console.error('[DocViewer] Both External and Documents failed:', docErr);
+            if (downloadNotifId) dismiss(downloadNotifId);
+            
+            // Show helpful error message
+            const errorMsg = docErr.message || 'Storage access denied';
+            if (errorMsg.includes('permission') || errorMsg.includes('denied')) {
+              showError(
+                '❌ Storage Permission Required\n\nGo to: Settings > Apps > CEM > Permissions > Storage\nEnable "Files and Media" access.',
+                10000
+              );
+            } else {
+              showError(`Failed to save file: ${errorMsg}`, 5000);
+            }
+          }
         }
       } else {
-        // Web download
+        // Web browser download
         const response = await fetch(docUrl);
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
@@ -139,7 +175,7 @@ const DocumentViewer: React.FC = () => {
         setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
         
         if (downloadNotifId) dismiss(downloadNotifId);
-        showSuccess('✅ Download started!', 4000);
+        showSuccess('✅ Download started! Check your Downloads folder.', 4000);
         console.log('[DocViewer] ✅ Web download completed');
       }
     } catch (error: any) {
@@ -256,7 +292,7 @@ const DocumentViewer: React.FC = () => {
           <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4">
             <p className="text-sm text-blue-800">
               <strong>💡 Tip:</strong> {isNative 
-                ? 'Files are saved to Documents/CEM folder. Click "Download" to save this document.'
+                ? 'On mobile, files are saved to your Downloads folder. Open your File Manager app to access downloaded documents.'
                 : 'If the document doesn\'t display, click "Download" to save it to your device.'
               }
             </p>

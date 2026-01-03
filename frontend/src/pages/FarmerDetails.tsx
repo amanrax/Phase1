@@ -1,6 +1,7 @@
 // src/pages/FarmerDetails.tsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { safeNavigate } from '@/config/navigation';
 import { farmerService } from "@/services/farmer.service";
 import useAuthStore from "@/store/authStore";
 import { useNotification } from "@/contexts/NotificationContext";
@@ -49,7 +50,7 @@ interface Farmer {
   farm_info?: {
     farm_size_hectares?: number;
     crops_grown?: string[];
-    livestock?: string[];
+    livestock?: string[]
     livestock_types?: string[];
     has_irrigation?: boolean;
     farming_experience_years?: number;
@@ -61,6 +62,7 @@ interface Farmer {
     primary_income_source?: string;
   };
   photo_path?: string;
+  photo_file_id?: string;
   registration_status?: string;
   identification_documents?: Array<{
     doc_type: string;
@@ -70,10 +72,15 @@ interface Farmer {
   nrc_number?: string;
   documents?: {
     photo?: string;
+    nrc?: string;
     nrc_card?: string;
     land_title?: string;
     license?: string;
     certificate?: string;
+    nrc_file_id?: string;
+    land_title_file_id?: string;
+    license_file_id?: string;
+    certificate_file_id?: string;
   };
   review_notes?: string;
   reviewed_by?: string;
@@ -100,12 +107,21 @@ export default function FarmerDetails() {
   const [farmer, setFarmer] = useState<Farmer | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
+  
+  // ✅ Add state for GridFS blob URLs
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState(false);
+  const [documentUrls, setDocumentUrls] = useState<Record<string, string | null>>({
+    nrc: null,
+    land_title: null,
+    license: null,
+    certificate: null,
+  });
 
   useEffect(() => {
     if (farmerId) {
       loadFarmerData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [farmerId]);
 
   const loadFarmerData = async () => {
@@ -113,6 +129,7 @@ export default function FarmerDetails() {
       setLoading(true);
       const data = await farmerService.getFarmer(farmerId!);
       setFarmer(data);
+      console.log('[FarmerDetails] Loaded:', data);
     } catch (err: unknown) {
       const errorMsg = getErrorMessage(err) || "Failed to load farmer details";
       showError(errorMsg, 5000);
@@ -120,6 +137,81 @@ export default function FarmerDetails() {
       setLoading(false);
     }
   };
+
+  // ✅ Load farmer photo using GridFS
+  useEffect(() => {
+    if (!farmer) return;
+
+    const loadPhoto = async () => {
+      try {
+        console.log('[FarmerDetails] Loading photo...');
+        setPhotoError(false);
+        const url = await farmerService.getPhotoUrl(farmer);
+        if (url) {
+          setPhotoUrl(url);
+          console.log('[FarmerDetails] ✅ Photo loaded');
+        } else {
+          console.log('[FarmerDetails] No photo available');
+          setPhotoError(true);
+        }
+      } catch (error) {
+        console.error('[FarmerDetails] Photo load failed:', error);
+        setPhotoError(true);
+      }
+    };
+
+    loadPhoto();
+
+    return () => {
+      if (photoUrl && photoUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(photoUrl);
+        console.log('[FarmerDetails] Photo blob URL revoked');
+      }
+    };
+  }, [farmer?.farmer_id]);
+
+  // ✅ Load documents using GridFS
+  useEffect(() => {
+    if (!farmer) return;
+
+    const loadDocuments = async () => {
+      console.log('[FarmerDetails] Loading documents...');
+      const docTypes: Array<'nrc' | 'land_title' | 'license' | 'certificate'> = [
+        'nrc',
+        'land_title',
+        'license',
+        'certificate',
+      ];
+
+      const urls: Record<string, string | null> = {};
+
+      for (const docType of docTypes) {
+        try {
+          const url = await farmerService.getDocumentUrl(farmer, docType);
+          urls[docType] = url;
+          if (url) {
+            console.log(`[FarmerDetails] ✅ ${docType} loaded`);
+          }
+        } catch (error) {
+          console.error(`[FarmerDetails] Failed to load ${docType}:`, error);
+          urls[docType] = null;
+        }
+      }
+
+      setDocumentUrls(urls);
+    };
+
+    loadDocuments();
+
+    return () => {
+      Object.entries(documentUrls).forEach(([key, url]) => {
+        if (url && url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+          console.log(`[FarmerDetails] ${key} blob URL revoked`);
+        }
+      });
+    };
+  }, [farmer?.farmer_id]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -177,11 +269,13 @@ export default function FarmerDetails() {
 
   const handleDownloadIDCard = async () => {
     try {
-      const saved = await farmerService.downloadIDCard(farmerId!);
-      if (saved) {
-        showSuccess(`Saved: ${saved}`, 5000);
-      } else {
+      const result = await farmerService.downloadIDCard(farmerId!);
+      if (result?.savedPath) {
+        showSuccess(`✅ Saved to:\n${result.savedPath}`, 6000);
+      } else if (result?.downloaded) {
         showSuccess("✓ ID card downloaded!", 4000);
+      } else {
+        showSuccess("✓ Download complete!", 4000);
       }
     } catch (err: unknown) {
       showError(getErrorMessage(err) || "ID card not ready yet.", 5000);
@@ -249,14 +343,6 @@ export default function FarmerDetails() {
               cursor: "pointer",
               transition: "all 0.3s"
             }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.2)";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "none";
-            }}
           >
             ← Back
           </button>
@@ -309,14 +395,6 @@ export default function FarmerDetails() {
               cursor: "pointer",
               transition: "all 0.3s"
             }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "none";
-            }}
           >
             ← Back
           </button>
@@ -336,14 +414,6 @@ export default function FarmerDetails() {
                 cursor: "pointer",
                 transition: "all 0.3s"
               }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = "#065f46";
-                e.currentTarget.style.transform = "translateY(-2px)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = "#047857";
-                e.currentTarget.style.transform = "translateY(0)";
-              }}
             >
               🎴 Generate ID Card
             </button>
@@ -361,14 +431,6 @@ export default function FarmerDetails() {
                 fontWeight: "600",
                 cursor: "pointer",
                 transition: "all 0.3s"
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = "#1d4ed8";
-                e.currentTarget.style.transform = "translateY(-2px)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = "#2563eb";
-                e.currentTarget.style.transform = "translateY(0)";
               }}
             >
               ⬇️ Download ID
@@ -388,14 +450,6 @@ export default function FarmerDetails() {
                 cursor: "pointer",
                 transition: "all 0.3s"
               }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = "#4338ca";
-                e.currentTarget.style.transform = "translateY(-2px)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = "#4f46e5";
-                e.currentTarget.style.transform = "translateY(0)";
-              }}
             >
               ✏️ Edit Farmer
             </button>
@@ -409,15 +463,21 @@ export default function FarmerDetails() {
             <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#1f2937" }}>📸 Farmer Photo</h2>
 
             <div className="mb-6" style={{ marginBottom: "20px" }}>
-              {farmer.photo_path || farmer.documents?.photo ? (
+              {photoError || !photoUrl ? (
+                <div className="w-full h-64 sm:h-80 bg-gray-200 rounded-lg flex items-center justify-center" style={{ width: "100%", height: "350px", background: "#f0f0f0", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span className="text-6xl sm:text-8xl" style={{ fontSize: "120px" }}>👤</span>
+                </div>
+              ) : (
                 <div className="relative" style={{ position: "relative" }}>
                   <img
-                    src={`${import.meta.env.VITE_API_BASE_URL || 'http://13.204.83.198:8000'}${farmer.documents?.photo || farmer.photo_path}`}
+                    src={photoUrl}
                     alt="Farmer"
                     className="w-full h-64 sm:h-80 object-cover rounded-lg"
                     style={{ width: "100%", height: "350px", objectFit: "cover", borderRadius: "12px" }}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Ctext x="50%25" y="50%25" font-size="100" text-anchor="middle" dy=".3em"%3E👤%3C/text%3E%3C/svg%3E';
+                    onLoad={() => console.log('[FarmerDetails] Photo displayed')}
+                    onError={() => {
+                      console.error('[FarmerDetails] Photo display failed');
+                      setPhotoError(true);
                     }}
                   />
                   <button
@@ -438,19 +498,9 @@ export default function FarmerDetails() {
                       cursor: "pointer",
                       transition: "all 0.3s"
                     }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = "#c82333";
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = "#dc3545";
-                    }}
                   >
                     🗑️
                   </button>
-                </div>
-              ) : (
-                <div className="w-full h-64 sm:h-80 bg-gray-200 rounded-lg flex items-center justify-center" style={{ width: "100%", height: "350px", background: "#f0f0f0", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="text-6xl sm:text-8xl" style={{ fontSize: "120px" }}>👤</span>
                 </div>
               )}
             </div>
@@ -477,12 +527,6 @@ export default function FarmerDetails() {
                 background: uploading === "photo" ? "#6b7280" : "#2563eb",
                 color: "white",
                 transition: "all 0.3s"
-              }}
-              onMouseOver={(e) => {
-                if (uploading !== "photo") e.currentTarget.style.background = "#1d4ed8";
-              }}
-              onMouseOut={(e) => {
-                if (uploading !== "photo") e.currentTarget.style.background = "#2563eb";
               }}
             >
               {uploading === "photo" ? "⏳ Uploading..." : "📸 Upload / Replace Photo"}
@@ -694,52 +738,44 @@ export default function FarmerDetails() {
               <DocumentSection
                 title="NRC Card"
                 docType="nrc"
-                docPath={
-                  farmer.documents?.nrc_card || 
-                  farmer.identification_documents?.find((doc: {doc_type: string}) => doc.doc_type === "nrc")?.file_path
-                }
+                docUrl={documentUrls.nrc}
                 uploading={uploading}
                 onUpload={handleDocumentUpload}
                 onDelete={handleDeleteDocument}
+                navigate={navigate}
               />
 
               {/* Land Title */}
               <DocumentSection
                 title="Land Title"
                 docType="land_title"
-                docPath={
-                  farmer.documents?.land_title || 
-                  farmer.identification_documents?.find((doc: {doc_type: string}) => doc.doc_type === "land_title")?.file_path
-                }
+                docUrl={documentUrls.land_title}
                 uploading={uploading}
                 onUpload={handleDocumentUpload}
                 onDelete={handleDeleteDocument}
+                navigate={navigate}
               />
 
               {/* Farming License */}
               <DocumentSection
                 title="Farming License"
                 docType="license"
-                docPath={
-                  farmer.documents?.license || 
-                  farmer.identification_documents?.find((doc: {doc_type: string}) => doc.doc_type === "license")?.file_path
-                }
+                docUrl={documentUrls.license}
                 uploading={uploading}
                 onUpload={handleDocumentUpload}
                 onDelete={handleDeleteDocument}
+                navigate={navigate}
               />
 
               {/* Certificate */}
               <DocumentSection
                 title="Certificate"
                 docType="certificate"
-                docPath={
-                  farmer.documents?.certificate || 
-                  farmer.identification_documents?.find((doc: {doc_type: string}) => doc.doc_type === "certificate")?.file_path
-                }
+                docUrl={documentUrls.certificate}
                 uploading={uploading}
                 onUpload={handleDocumentUpload}
                 onDelete={handleDeleteDocument}
+                navigate={navigate}
               />
             </div>
           </div>
@@ -758,48 +794,59 @@ export default function FarmerDetails() {
 interface DocumentSectionProps {
   title: string;
   docType: "nrc" | "land_title" | "license" | "certificate";
-  docPath?: string;
+  docUrl: string | null;
   uploading: string | null;
   onUpload: (e: React.ChangeEvent<HTMLInputElement>, docType: "nrc" | "land_title" | "license" | "certificate") => void;
   onDelete: (docType: string) => void;
+  navigate: ReturnType<typeof useNavigate>;
 }
 
-function DocumentSection({ title, docType, docPath, uploading, onUpload, onDelete }: DocumentSectionProps) {
+function DocumentSection({ title, docType, docUrl, uploading, onUpload, onDelete, navigate }: DocumentSectionProps) {
   const uploadInputId = `doc-upload-${docType}`;
   const replaceInputId = `doc-replace-${docType}`;
   const isUploading = uploading === docType;
+
+  const handleViewDocument = () => {
+    if (!docUrl) return;
+    
+    const titles: Record<string, string> = {
+      nrc: 'NRC Document',
+      land_title: 'Land Title',
+      license: 'License',
+      certificate: 'Certificate',
+    };
+
+    console.log(`[FarmerDetails] Viewing ${docType}`);
+    sessionStorage.setItem('doc_view_path', docUrl);
+    sessionStorage.setItem('doc_view_title', titles[docType] || 'Document');
+    safeNavigate(navigate, '/document-viewer');
+  };
 
   return (
     <div className="border border-gray-300 rounded-lg p-4 sm:p-6 bg-gray-50 hover:shadow-md transition-shadow" style={{ border: "1px solid #e0e0e0", borderRadius: "10px", padding: "20px", background: "#fafafa" }}>
       <h3 className="text-base sm:text-lg font-bold mb-4 text-gray-800" style={{ fontSize: "16px", fontWeight: "700", marginBottom: "15px", color: "#333" }}>{title}</h3>
       
-      {docPath ? (
+      {docUrl ? (
         <div>
           <div className="text-green-600 text-sm sm:text-base font-semibold mb-3 flex items-center gap-2" style={{ color: "#28a745", fontSize: "14px", fontWeight: "600", marginBottom: "10px", display: "flex", alignItems: "center", gap: "5px" }}>
             ✓ Uploaded
           </div>
           <button
-            onClick={() => {
-              // Store the document path and navigate into the in-app document viewer
-              try {
-                sessionStorage.setItem('doc_view_path', docPath);
-              } catch (e) {
-                console.warn('Failed to store doc path', e);
-              }
-              window.location.hash = '#/document-view';
-            }}
+            onClick={handleViewDocument}
             className="w-full block p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg mb-3 text-sm text-center font-semibold transition-all"
             style={{
               display: "block",
+              width: "100%",
               padding: "10px",
               background: "#007bff",
               color: "white",
-              textDecoration: "none",
+              border: "none",
               borderRadius: "6px",
               marginBottom: "10px",
               fontSize: "14px",
               textAlign: "center",
               fontWeight: "600",
+              cursor: "pointer",
               transition: "all 0.3s"
             }}
           >
@@ -831,12 +878,6 @@ function DocumentSection({ title, docType, docPath, uploading, onUpload, onDelet
               transition: "all 0.3s",
               marginBottom: "10px"
             }}
-            onMouseOver={(e) => {
-              if (uploading === null) e.currentTarget.style.background = "#e8590c";
-            }}
-            onMouseOut={(e) => {
-              if (!isUploading && uploading === null) e.currentTarget.style.background = "#fd7e14";
-            }}
           >
             {isUploading ? "⏳ Replacing..." : "🔄 Replace"}
           </label>
@@ -855,12 +896,6 @@ function DocumentSection({ title, docType, docPath, uploading, onUpload, onDelet
               fontWeight: "600",
               cursor: "pointer",
               transition: "all 0.3s"
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = "#c82333";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = "#dc3545";
             }}
           >
             🗑️ Delete
@@ -893,12 +928,6 @@ function DocumentSection({ title, docType, docPath, uploading, onUpload, onDelet
               background: isUploading ? "#6c757d" : "#007bff",
               color: "white",
               transition: "all 0.3s"
-            }}
-            onMouseOver={(e) => {
-              if (uploading === null) e.currentTarget.style.background = "#0056b3";
-            }}
-            onMouseOut={(e) => {
-              if (!isUploading && uploading === null) e.currentTarget.style.background = "#007bff";
             }}
           >
             {isUploading ? "⏳ Uploading..." : "📎 Choose File"}

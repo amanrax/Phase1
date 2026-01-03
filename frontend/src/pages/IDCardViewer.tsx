@@ -90,24 +90,63 @@ const IDCardViewer: React.FC = () => {
         const filename = `ID_Card_${farmerName.replace(/\s+/g, '_')}_${timestamp}.pdf`;
         
         try {
+          // ✅ NEW: Try to save to External storage (Downloads folder) first
+          console.log('[IDCardViewer] Attempting to save to Downloads folder...');
           const result = await Filesystem.writeFile({
-            path: `CEM/${filename}`,
+            path: filename, // No subdirectory for Downloads
             data: base64,
-            directory: Directory.Documents,
-            recursive: true,
+            directory: Directory.External, // Public Downloads folder
+            recursive: false,
           });
 
-          const savedPath = (result as any).uri || `Documents/CEM/${filename}`;
-          console.log('[IDCardViewer] ✅ File saved:', savedPath);
+          const savedPath = (result as any).uri || `Downloads/${filename}`;
+          console.log('[IDCardViewer] ✅ File saved to Downloads:', savedPath);
           
           if (downloadNotifId) dismiss(downloadNotifId);
-          showSuccess(`✅ Saved to:\n${savedPath}`, 6000);
+          showSuccess(
+            `✅ ID Card Downloaded!\n\n📂 Location: Downloads folder\n📄 File: ${filename}\n\n💡 Open your File Manager app to view it.`,
+            8000
+          );
 
-        } catch (fsErr) {
-          console.error('[IDCardViewer] Filesystem write failed:', fsErr);
-          throw new Error('Failed to save file. Check storage permissions.');
+        } catch (fsErr: any) {
+          console.error('[IDCardViewer] External storage write failed:', fsErr);
+          
+          // ✅ FALLBACK: Try Documents folder if External fails
+          try {
+            console.log('[IDCardViewer] Trying Documents folder as fallback...');
+            const fallbackResult = await Filesystem.writeFile({
+              path: `CEM/${filename}`,
+              data: base64,
+              directory: Directory.Documents,
+              recursive: true,
+            });
+            
+            const fallbackPath = (fallbackResult as any).uri || `Documents/CEM/${filename}`;
+            console.log('[IDCardViewer] ✅ Saved to Documents folder:', fallbackPath);
+            
+            if (downloadNotifId) dismiss(downloadNotifId);
+            showSuccess(
+              `✅ ID Card Saved!\n\n📂 Location: Documents/CEM/${filename}\n\n💡 Open "Files" app > Documents > CEM folder`,
+              8000
+            );
+          } catch (docErr: any) {
+            console.error('[IDCardViewer] Both External and Documents failed:', docErr);
+            if (downloadNotifId) dismiss(downloadNotifId);
+            
+            // Show helpful error message
+            const errorMsg = docErr.message || 'Storage access denied';
+            if (errorMsg.includes('permission') || errorMsg.includes('denied')) {
+              showError(
+                '❌ Storage Permission Required\n\nGo to: Settings > Apps > CEM > Permissions > Storage\nEnable "Files and Media" access.',
+                10000
+              );
+            } else {
+              showError(`Failed to save file: ${errorMsg}`, 5000);
+            }
+          }
         }
       } else {
+        // Web browser download
         const response = await fetch(url);
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
@@ -257,7 +296,7 @@ const IDCardViewer: React.FC = () => {
           <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4">
             <p className="text-sm text-blue-800">
               <strong>💡 Tip:</strong> {isNative 
-                ? 'Files are saved to Documents/CEM folder. If the PDF doesn\'t display, click "Download" to save it.'
+                ? 'On mobile, files are saved to your Downloads folder. Open your File Manager app to access downloaded ID cards.'
                 : 'If the PDF doesn\'t display, click "Download" to save it to your device.'
               }
             </p>
