@@ -5,6 +5,7 @@ import { safeNavigate } from '@/config/navigation';
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
+import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
 
 export default function FarmerDashboard() {
   const { user, logout } = useAuthStore();
@@ -17,6 +18,7 @@ export default function FarmerDashboard() {
   const [qrError, setQrError] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [photoError, setPhotoError] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Use ref to track if we've already loaded data
   const hasLoadedRef = useRef(false);
@@ -178,38 +180,14 @@ export default function FarmerDashboard() {
     }
   };
 
-  const handleViewIDCard = async () => {
+  const handleViewIDCard = () => {
     if (!farmerData?.farmer_id) {
       showError("Farmer ID not available", 4000);
       return;
     }
     
-    let viewNotifId: string | undefined;
-    try {
-      console.log("[Dashboard] Fetching ID card for viewing");
-      viewNotifId = showInfo("📄 Loading ID card...", 8000);
-      
-      const blobUrl = await farmerService.viewIDCard(farmerData.farmer_id);
-      
-      if (blobUrl) {
-        console.log("[Dashboard] PDF blob URL received, navigating to viewer");
-        // Store blob URL in sessionStorage
-        sessionStorage.setItem('idcard_view_url', blobUrl);
-        sessionStorage.setItem('idcard_farmer_name', `${farmerData?.personal_info?.first_name} ${farmerData?.personal_info?.last_name}`);
-        
-        if (viewNotifId) dismiss(viewNotifId);
-        safeNavigate(navigate, '/farmer/idcard-view');
-      } else {
-        console.error("[Dashboard] No URL returned");
-        if (viewNotifId) dismiss(viewNotifId);
-        showError('ID card not available. Generate it first.', 5000);
-      }
-    } catch (err: any) {
-      console.error("[Dashboard] View ID card error:", err);
-      if (viewNotifId) dismiss(viewNotifId);
-      const msg = err.response?.data?.detail || err.message || "Failed to view ID card. Generate it first.";
-      showError(msg, 5000);
-    }
+    console.log("[Dashboard] Opening ID card preview");
+    setShowPreview(true);
   };
 
   const handleRetry = () => {
@@ -316,9 +294,9 @@ export default function FarmerDashboard() {
                     </button>
                     <button
                       onClick={handleViewIDCard}
-                      className="px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
+                      className="px-3 sm:px-4 py-2 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
                     >
-                      👁️ View ID
+                      👁️ Preview ID
                     </button>
                     <button
                       onClick={handleDownloadIDCard}
@@ -584,6 +562,14 @@ export default function FarmerDashboard() {
           )}
         </div>
       </div>
+
+      {/* ID Card Preview Modal */}
+      {showPreview && farmerData && (
+        <FarmerIDCardPreview 
+          farmer={farmerData}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
     </>
   );
 }

@@ -36,13 +36,12 @@ function App() {
   const user = useAuthStore((state) => state.user);
   const [showPermissions, setShowPermissions] = useState(false);
 
-  // ✅ FIX: Only run once when token changes, using getState() to avoid dependency
+  // ✅ Load user when token is available
   useEffect(() => {
     if (token && !user) {
-      // Call loadUser directly from store without adding it to dependencies
       useAuthStore.getState().loadUser();
     }
-  }, [token]); // Only depend on token, not loadUser
+  }, [token, user]);
 
   // Check for first-time permissions
   useEffect(() => {
@@ -63,7 +62,7 @@ function App() {
   };
 
   const AppContent = () => {
-    // Handle Android back button
+    // ✅ Handle Android back button
     useBackButton();
 
     return (
@@ -241,8 +240,9 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* ✅ FIXED: Changed from /document-view to /document-viewer */}
           <Route
-            path="/document-view"
+            path="/document-viewer"
             element={
               <ProtectedRoute>
                 <DocumentViewer />

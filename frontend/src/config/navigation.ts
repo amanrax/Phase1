@@ -14,7 +14,7 @@ export const safeNavigate = (
 ) => {
   // If already navigating, ignore
   if (isNavigating) {
-    console.warn('[SafeNavigate] Blocked - already navigating to another page');
+    console.warn('[SafeNavigate] Blocked - already navigating');
     return;
   }
 
@@ -38,7 +38,6 @@ export const safeNavigate = (
   navigationTimeout = setTimeout(() => {
     isNavigating = false;
     navigationTimeout = null;
-    console.log('[SafeNavigate] Ready for next navigation');
   }, 400);
 };
 
@@ -46,6 +45,7 @@ export const safeNavigate = (
  * Safe back navigation
  */
 export const safeGoBack = (navigate: NavigateFunction) => {
+  console.log('[SafeGoBack] Going back');
   safeNavigate(navigate, -1);
 };
 

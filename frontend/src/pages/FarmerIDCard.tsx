@@ -33,12 +33,22 @@ interface Farmer {
   };
   documents?: {
     photo?: string;
+    nrc?: string;
+    land_title?: string;
+    license?: string;
+    certificate?: string;
+    nrc_file_id?: string;
+    land_title_file_id?: string;
+    license_file_id?: string;
+    certificate_file_id?: string;
   };
   photo_path?: string;
+  photo_file_id?: string;
   id_card_path?: string;
   id_card_file_id?: string;
   id_card_generated_at?: string;
   qr_code_path?: string;
+  qr_code_file_id?: string;
   created_at?: string;
   status?: string;
   registration_status?: string;
@@ -57,6 +67,14 @@ const FarmerIDCard: React.FC = () => {
   const [qrError, setQrError] = useState(false);
   const [photoError, setPhotoError] = useState(false);
   const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
+
+  // Document URLs
+  const [documentUrls, setDocumentUrls] = useState<Record<string, string | null>>({
+    nrc: null,
+    land_title: null,
+    license: null,
+    certificate: null,
+  });
 
   useEffect(() => {
     loadFarmerData();
@@ -79,7 +97,7 @@ const FarmerIDCard: React.FC = () => {
       console.log('[IDCard] Loading farmer data for:', farmerId);
       const data = await farmerService.getFarmer(farmerId);
       setFarmer(data);
-      console.log('[IDCard] Farmer data loaded');
+      console.log('[IDCard] Farmer data loaded:', data);
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Failed to load farmer data";
       console.error('[IDCard] Load error:', msg);
@@ -90,46 +108,22 @@ const FarmerIDCard: React.FC = () => {
     }
   };
 
-  // Load farmer photo as blob with authentication
+  // Load farmer photo
   useEffect(() => {
     const loadPhoto = async () => {
       if (!farmer) return;
 
-      const photoPath = farmer?.documents?.photo || farmer?.photos?.profile || farmer?.photo_path;
-      if (!photoPath) {
-        console.log('[IDCard] No photo path available');
-        return;
-      }
-
       try {
-        console.log('[IDCard] Loading photo:', photoPath);
+        console.log('[IDCard] Loading photo for:', farmer.farmer_id);
         setPhotoError(false);
-        
-        const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
-        const fullUrl = photoPath.startsWith('http') ? photoPath : `${baseURL}${photoPath}`;
-        
-        const response = await fetch(fullUrl, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Photo fetch failed: ${response.status}`);
+        const url = await farmerService.getPhotoUrl(farmer);
+        if (url) {
+          setPhotoUrl(url);
+          console.log('[IDCard] ✅ Photo loaded');
+        } else {
+          console.log('[IDCard] No photo available');
+          setPhotoError(true);
         }
-
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        
-        console.log('[IDCard] ✅ Photo loaded successfully');
-        setPhotoUrl(blobUrl);
-
-        // Cleanup on unmount
-        return () => {
-          if (blobUrl) {
-            URL.revokeObjectURL(blobUrl);
-          }
-        };
       } catch (error) {
         console.error('[IDCard] Failed to load photo:', error);
         setPhotoError(true);
@@ -137,9 +131,15 @@ const FarmerIDCard: React.FC = () => {
     };
 
     loadPhoto();
+
+    return () => {
+      if (photoUrl && photoUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(photoUrl);
+      }
+    };
   }, [farmer]);
 
-  // Load QR code as blob with authentication
+  // Load QR code
   useEffect(() => {
     const loadQRCode = async () => {
       if (!farmer) return;
@@ -147,30 +147,14 @@ const FarmerIDCard: React.FC = () => {
       try {
         console.log('[IDCard] Loading QR code for:', farmer.farmer_id);
         setQrError(false);
-        
-        const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
-        const response = await fetch(`${baseURL}/api/farmers/${farmer.farmer_id}/qr`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`QR fetch failed: ${response.status}`);
+        const url = await farmerService.getQRCodeBlobUrl(farmer);
+        if (url) {
+          setQrUrl(url);
+          console.log('[IDCard] ✅ QR code loaded');
+        } else {
+          console.log('[IDCard] No QR code available');
+          setQrError(true);
         }
-
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        
-        console.log('[IDCard] ✅ QR code loaded');
-        setQrUrl(blobUrl);
-
-        // Cleanup
-        return () => {
-          if (blobUrl) {
-            URL.revokeObjectURL(blobUrl);
-          }
-        };
       } catch (error) {
         console.error('[IDCard] Failed to load QR code:', error);
         setQrError(true);
@@ -178,6 +162,54 @@ const FarmerIDCard: React.FC = () => {
     };
 
     loadQRCode();
+
+    return () => {
+      if (qrUrl && qrUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(qrUrl);
+      }
+    };
+  }, [farmer]);
+
+  // Load documents
+  useEffect(() => {
+    const loadDocuments = async () => {
+      if (!farmer?.documents) return;
+
+      const docTypes: Array<'nrc' | 'land_title' | 'license' | 'certificate'> = [
+        'nrc',
+        'land_title',
+        'license',
+        'certificate',
+      ];
+
+      const urls: Record<string, string | null> = {};
+
+      for (const docType of docTypes) {
+        try {
+          const url = await farmerService.getDocumentUrl(farmer, docType);
+          urls[docType] = url;
+          if (url) {
+            console.log(`[IDCard] ✅ ${docType} loaded`);
+          }
+        } catch (error) {
+          console.error(`[IDCard] Failed to load ${docType}:`, error);
+          urls[docType] = null;
+        }
+      }
+
+      setDocumentUrls(urls);
+    };
+
+    loadDocuments();
+
+    return () => {
+      // Cleanup blob URLs
+      Object.values(documentUrls).forEach(url => {
+        if (url && url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
   }, [farmer]);
 
   const handleGenerateIDCard = async () => {
@@ -308,6 +340,24 @@ const FarmerIDCard: React.FC = () => {
     }
   };
 
+  const handleViewDocument = (docType: string, docUrl: string | null) => {
+    if (!docUrl) {
+      showError('Document not available', 3000);
+      return;
+    }
+
+    const titles: Record<string, string> = {
+      nrc: 'NRC Document',
+      land_title: 'Land Title',
+      license: 'License',
+      certificate: 'Certificate',
+    };
+
+    sessionStorage.setItem('doc_view_path', docUrl);
+    sessionStorage.setItem('doc_view_title', titles[docType] || 'Document');
+    safeNavigate(navigate, '/document-viewer');
+  };
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return "N/A";
     try {
@@ -378,7 +428,7 @@ const FarmerIDCard: React.FC = () => {
               >
                 ← BACK
               </button>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">🆔 Farmer ID Card</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">🆔 Farmer ID Card & Documents</h1>
             </div>
           </div>
         </div>
@@ -399,33 +449,32 @@ const FarmerIDCard: React.FC = () => {
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Column - Farmer Information */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
+            {/* Farmer Info Card */}
             <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 pb-3 border-b-4 border-green-700">
                 📋 Farmer Information
               </h2>
 
               {/* Profile Photo */}
-              {(photoUrl || photoError) && (
-                <div className="text-center mb-6 sm:mb-8">
-                  <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-green-700 mx-auto shadow-lg bg-gray-100 flex items-center justify-center">
-                    {photoError || !photoUrl ? (
-                      <div className="text-5xl sm:text-6xl">👨‍🌾</div>
-                    ) : (
-                      <img
-                        src={photoUrl}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                        onLoad={() => console.log('[IDCard] Photo displayed')}
-                        onError={() => {
-                          console.error('[IDCard] Photo display failed');
-                          setPhotoError(true);
-                        }}
-                      />
-                    )}
-                  </div>
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-green-700 mx-auto shadow-lg bg-gray-100 flex items-center justify-center">
+                  {photoError || !photoUrl ? (
+                    <div className="text-5xl sm:text-6xl">👨‍🌾</div>
+                  ) : (
+                    <img
+                      src={photoUrl}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                      onLoad={() => console.log('[IDCard] Photo displayed')}
+                      onError={() => {
+                        console.error('[IDCard] Photo display failed');
+                        setPhotoError(true);
+                      }}
+                    />
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Info Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -494,9 +543,96 @@ const FarmerIDCard: React.FC = () => {
                 )}
               </div>
             </div>
+
+            {/* Documents Card */}
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-indigo-600">📄 Documents</h2>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* NRC Document */}
+                <div className="border-2 border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-gray-800">🆔 NRC</span>
+                    {documentUrls.nrc ? (
+                      <span className="text-green-600 text-xs">✓ Available</span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">Not uploaded</span>
+                    )}
+                  </div>
+                  {documentUrls.nrc && (
+                    <button
+                      onClick={() => handleViewDocument('nrc', documentUrls.nrc)}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
+                    >
+                      👁️ View
+                    </button>
+                  )}
+                </div>
+
+                {/* Land Title */}
+                <div className="border-2 border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-gray-800">📜 Land Title</span>
+                    {documentUrls.land_title ? (
+                      <span className="text-green-600 text-xs">✓ Available</span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">Not uploaded</span>
+                    )}
+                  </div>
+                  {documentUrls.land_title && (
+                    <button
+                      onClick={() => handleViewDocument('land_title', documentUrls.land_title)}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
+                    >
+                      👁️ View
+                    </button>
+                  )}
+                </div>
+
+                {/* License */}
+                <div className="border-2 border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-gray-800">📋 License</span>
+                    {documentUrls.license ? (
+                      <span className="text-green-600 text-xs">✓ Available</span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">Not uploaded</span>
+                    )}
+                  </div>
+                  {documentUrls.license && (
+                    <button
+                      onClick={() => handleViewDocument('license', documentUrls.license)}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
+                    >
+                      👁️ View
+                    </button>
+                  )}
+                </div>
+
+                {/* Certificate */}
+                <div className="border-2 border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-gray-800">🎓 Certificate</span>
+                    {documentUrls.certificate ? (
+                      <span className="text-green-600 text-xs">✓ Available</span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">Not uploaded</span>
+                    )}
+                  </div>
+                  {documentUrls.certificate && (
+                    <button
+                      onClick={() => handleViewDocument('certificate', documentUrls.certificate)}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
+                    >
+                      👁️ View
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Right Column - ID Card Actions */}
+          {/* Right Column - ID Card Actions & QR */}
           <div className="space-y-4 sm:space-y-6">
             {/* ID Card Status */}
             <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">

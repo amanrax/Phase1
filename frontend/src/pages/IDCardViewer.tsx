@@ -9,9 +9,21 @@ const IDCardViewer: React.FC = () => {
   const [farmerName, setFarmerName] = useState<string>('Farmer');
   const [loading, setLoading] = useState(true);
   const [pdfError, setPdfError] = useState(false);
+  const [isNative, setIsNative] = useState(false);
 
   useEffect(() => {
     console.log('[IDCardViewer] Component mounted');
+    
+    const checkPlatform = async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core');
+        setIsNative(Capacitor?.isNativePlatform?.() || false);
+      } catch (e) {
+        setIsNative(false);
+      }
+    };
+    
+    checkPlatform();
     
     const storedUrl = sessionStorage.getItem('idcard_view_url');
     const storedName = sessionStorage.getItem('idcard_farmer_name');
@@ -47,6 +59,57 @@ const IDCardViewer: React.FC = () => {
     };
   }, [navigate, showError]);
 
+  const openInNativeApp = async () => {
+    if (!url) return;
+
+    let notifId: string | undefined;
+    try {
+      notifId = showInfo('📱 Opening in external viewer...', 5000);
+      
+      // Save to temp file first
+      const { Filesystem, Directory } = await import('@capacitor/filesystem');
+      const { FileOpener } = await import('@capacitor-community/file-opener');
+      
+      // Fetch blob data
+      const response = await fetch(url);
+      const blob = await response.blob();
+      
+      // Convert to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      
+      // Save temp file
+      const filename = `ID_Card_${Date.now()}.pdf`;
+      const result = await Filesystem.writeFile({
+        path: filename,
+        data: base64,
+        directory: Directory.Cache,
+      });
+      
+      console.log('[IDCardViewer] Temp file saved, opening...');
+      
+      // Open with native app
+      await FileOpener.open({
+        filePath: result.uri,
+        contentType: 'application/pdf',
+      });
+      
+      if (notifId) dismiss(notifId);
+      console.log('[IDCardViewer] ✅ Opened in native app');
+    } catch (error: any) {
+      console.error('[IDCardViewer] Failed to open in native app:', error);
+      if (notifId) dismiss(notifId);
+      showError('Failed to open in external viewer. Try downloading instead.', 5000);
+    }
+  };
+
   const handleDownload = async () => {
     if (!url) {
       showError('No PDF to download', 3000);
@@ -58,16 +121,7 @@ const IDCardViewer: React.FC = () => {
       downloadNotifId = showInfo('📥 Downloading...', 8000);
       console.log('[IDCardViewer] Starting download');
 
-      // Check if Capacitor is available (mobile)
-      let isCapacitor = false;
-      try {
-        const { Capacitor } = await import('@capacitor/core');
-        isCapacitor = Capacitor?.isNativePlatform?.() || false;
-      } catch (e) {
-        console.log('[IDCardViewer] Capacitor not available, using web download');
-      }
-
-      if (isCapacitor) {
+      if (isNative) {
         // Mobile download with Filesystem
         const { Filesystem, Directory } = await import('@capacitor/filesystem');
         
@@ -80,13 +134,13 @@ const IDCardViewer: React.FC = () => {
           const reader = new FileReader();
           reader.onloadend = () => {
             const result = reader.result as string;
-            resolve(result.split(',')[1]); // Remove data:application/pdf;base64, prefix
+            resolve(result.split(',')[1]);
           };
           reader.onerror = reject;
           reader.readAsDataURL(blob);
         });
         
-        // Save to Downloads/CEM folder
+        // Save to Documents/CEM folder
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const filename = `ID_Card_${farmerName.replace(/\s+/g, '_')}_${timestamp}.pdf`;
         
@@ -104,18 +158,17 @@ const IDCardViewer: React.FC = () => {
           if (downloadNotifId) dismiss(downloadNotifId);
           showSuccess(`✅ Saved to:\n${savedPath}`, 6000);
 
-          // Try to share
+          // Try to open with native app
           try {
-            const { Share } = await import('@capacitor/share');
-            if (await Share.canShare()) {
-              await Share.share({
-                title: `${farmerName} - ID Card`,
-                text: 'Farmer ID Card PDF',
-                url: result.uri,
-              });
-            }
-          } catch (shareErr) {
-            console.log('[IDCardViewer] Share not available:', shareErr);
+            const { FileOpener } = await import('@capacitor-community/file-opener');
+            const openNotif = showInfo('📱 Opening file...', 3000);
+            await FileOpener.open({
+              filePath: result.uri,
+              contentType: 'application/pdf',
+            });
+            dismiss(openNotif);
+          } catch (openErr) {
+            console.log('[IDCardViewer] Could not auto-open file');
           }
         } catch (fsErr) {
           console.error('[IDCardViewer] Filesystem write failed:', fsErr);
@@ -134,7 +187,6 @@ const IDCardViewer: React.FC = () => {
         link.click();
         document.body.removeChild(link);
         
-        // Cleanup
         setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
         
         if (downloadNotifId) dismiss(downloadNotifId);
@@ -152,11 +204,7 @@ const IDCardViewer: React.FC = () => {
     console.log('[IDCardViewer] Retrying...');
     setPdfError(false);
     setLoading(true);
-    
-    // Reload the component
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
+    setTimeout(() => setLoading(false), 500);
   };
 
   if (loading) {
@@ -205,12 +253,22 @@ const IDCardViewer: React.FC = () => {
                 🆔 {farmerName}'s ID Card
               </h1>
             </div>
-            <button
-              onClick={handleDownload}
-              className="bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center gap-2 transition text-sm sm:text-base"
-            >
-              <span>📥</span> Download
-            </button>
+            <div className="flex gap-2">
+              {isNative && (
+                <button
+                  onClick={openInNativeApp}
+                  className="bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center gap-2 transition text-sm"
+                >
+                  <span>📱</span> Open
+                </button>
+              )}
+              <button
+                onClick={handleDownload}
+                className="bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center gap-2 transition text-sm"
+              >
+                <span>📥</span> Download
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -230,6 +288,14 @@ const IDCardViewer: React.FC = () => {
                 >
                   🔄 Retry
                 </button>
+                {isNative && (
+                  <button
+                    onClick={openInNativeApp}
+                    className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition active:scale-95"
+                  >
+                    📱 Open in App
+                  </button>
+                )}
                 <button
                   onClick={handleDownload}
                   className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition active:scale-95"
@@ -249,7 +315,6 @@ const IDCardViewer: React.FC = () => {
               backgroundColor: '#f9fafb'
             }}>
               {url.startsWith('data:') ? (
-                // For base64 data URLs (better for mobile WebView)
                 <embed
                   src={url}
                   type="application/pdf"
@@ -263,7 +328,6 @@ const IDCardViewer: React.FC = () => {
                   }}
                 />
               ) : (
-                // For blob URLs (web)
                 <iframe
                   src={`${url}#toolbar=1&navpanes=0&scrollbar=1`}
                   title="ID Card PDF"
@@ -281,7 +345,10 @@ const IDCardViewer: React.FC = () => {
           {/* Help Text */}
           <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4">
             <p className="text-sm text-blue-800">
-              <strong>💡 Tip:</strong> If the PDF doesn't display, click "Download" to save it to your device.
+              <strong>💡 Tip:</strong> {isNative 
+                ? 'If the PDF doesn\'t display, use "Open in App" or "Download" buttons above.'
+                : 'If the PDF doesn\'t display, click "Download" to save it to your device.'
+              }
             </p>
           </div>
         </div>

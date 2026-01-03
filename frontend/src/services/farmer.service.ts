@@ -9,6 +9,50 @@ export interface DownloadResult {
   method: 'native' | 'web';
 }
 
+/**
+ * Helper: Fetch GridFS file as blob with authentication
+ * Use this for photos, documents, and QR codes stored in GridFS
+ */
+async function fetchGridFSFile(fileIdOrPath: string): Promise<string | null> {
+  try {
+    console.log('[GridFS] Fetching file:', fileIdOrPath);
+    
+    const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
+    
+    // If it's a file ID (MongoDB ObjectId format)
+    let url: string;
+    if (fileIdOrPath.match(/^[a-f0-9]{24}$/i)) {
+      url = `${baseURL}/api/files/${fileIdOrPath}`;
+    } else if (fileIdOrPath.startsWith('http')) {
+      url = fileIdOrPath;
+    } else {
+      url = fileIdOrPath.startsWith('/') ? `${baseURL}${fileIdOrPath}` : `${baseURL}/${fileIdOrPath}`;
+    }
+    
+    console.log('[GridFS] Fetching from:', url);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error('[GridFS] Fetch failed:', response.status);
+      return null;
+    }
+
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    
+    console.log('[GridFS] ✅ File loaded, blob URL created');
+    return blobUrl;
+  } catch (error) {
+    console.error('[GridFS] Error fetching file:', error);
+    return null;
+  }
+}
+
 export const farmerService = {
   /**
    * Fetch a paginated list of farmers.
@@ -326,6 +370,92 @@ export const farmerService = {
         throw new Error(error.message || 'Failed to load ID card');
       }
     }
+  },
+
+  /**
+   * Get photo URL (handles GridFS files)
+   */
+  async getPhotoUrl(farmer: any): Promise<string | null> {
+    if (!farmer) return null;
+
+    // Try different photo field locations
+    const photoPath = farmer.documents?.photo || farmer.photos?.profile || farmer.photo_path;
+    const photoFileId = farmer.photo_file_id || farmer.documents?.photo_file_id;
+
+    if (photoFileId) {
+      console.log('[Photo] Loading from GridFS file_id:', photoFileId);
+      return await fetchGridFSFile(photoFileId);
+    }
+
+    if (photoPath) {
+      console.log('[Photo] Loading from path:', photoPath);
+      return await fetchGridFSFile(photoPath);
+    }
+
+    console.log('[Photo] No photo available');
+    return null;
+  },
+
+  /**
+   * Get QR code URL (handles GridFS files)
+   */
+  async getQRCodeBlobUrl(farmer: any): Promise<string | null> {
+    if (!farmer) return null;
+
+    const qrFileId = farmer.qr_code_file_id;
+    const qrPath = farmer.qr_code_path || farmer.qr_code_url;
+
+    if (qrFileId) {
+      console.log('[QR] Loading from GridFS file_id:', qrFileId);
+      return await fetchGridFSFile(qrFileId);
+    }
+
+    if (qrPath) {
+      console.log('[QR] Loading from path:', qrPath);
+      return await fetchGridFSFile(qrPath);
+    }
+
+    // Fallback: try direct API endpoint
+    if (farmer.farmer_id) {
+      console.log('[QR] Using API endpoint for:', farmer.farmer_id);
+      const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
+      return await fetchGridFSFile(`${baseURL}/api/farmers/${farmer.farmer_id}/qr`);
+    }
+
+    console.log('[QR] No QR code available');
+    return null;
+  },
+
+  /**
+   * Get document URL (handles GridFS files)
+   */
+  async getDocumentUrl(farmer: any, docType: 'nrc' | 'land_title' | 'license' | 'certificate'): Promise<string | null> {
+    if (!farmer?.documents) return null;
+
+    const docFileId = farmer.documents[`${docType}_file_id`];
+    const docPath = farmer.documents[docType];
+
+    if (docFileId) {
+      console.log(`[Document] Loading ${docType} from GridFS:`, docFileId);
+      return await fetchGridFSFile(docFileId);
+    }
+
+    if (docPath) {
+      console.log(`[Document] Loading ${docType} from path:`, docPath);
+      return await fetchGridFSFile(docPath);
+    }
+
+    console.log(`[Document] No ${docType} document available`);
+    return null;
+  },
+
+  /**
+   * View document in viewer
+   */
+  async viewDocument(docUrl: string, docTitle: string, navigate: any) {
+    sessionStorage.setItem('doc_view_path', docUrl);
+    sessionStorage.setItem('doc_view_title', docTitle);
+    navigate('/document-viewer');
   },
 
   /**

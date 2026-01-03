@@ -1,3 +1,4 @@
+// src/components/DocumentViewer.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
@@ -5,53 +6,123 @@ import { useNotification } from '@/contexts/NotificationContext';
 const DocumentViewer: React.FC = () => {
   const navigate = useNavigate();
   const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
-  const [path, setPath] = useState<string | null>(null);
+  const [docUrl, setDocUrl] = useState<string | null>(null);
   const [docTitle, setDocTitle] = useState<string>('Document');
   const [loading, setLoading] = useState(true);
-  const [imageError, setImageError] = useState(false);
-  const [fullUrl, setFullUrl] = useState<string>('');
+  const [viewError, setViewError] = useState(false);
+  const [isNative, setIsNative] = useState(false);
 
   useEffect(() => {
     console.log('[DocViewer] Component mounted');
     
-    const storedPath = sessionStorage.getItem('doc_view_path');
+    const checkPlatform = async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core');
+        setIsNative(Capacitor?.isNativePlatform?.() || false);
+      } catch (e) {
+        setIsNative(false);
+      }
+    };
+    
+    checkPlatform();
+    
+    const storedUrl = sessionStorage.getItem('doc_view_path');
     const storedTitle = sessionStorage.getItem('doc_view_title');
     
-    console.log('[DocViewer] Path from sessionStorage:', storedPath);
+    console.log('[DocViewer] URL from sessionStorage:', storedUrl?.substring(0, 50));
     console.log('[DocViewer] Title:', storedTitle);
 
-    if (!storedPath) {
-      console.error('[DocViewer] No document path found');
+    if (!storedUrl) {
+      console.error('[DocViewer] No document URL found');
       showError('No document to display', 3000);
       setTimeout(() => navigate(-1), 1500);
       return;
     }
     
-    setPath(storedPath);
+    // Use the blob URL directly (already created by FarmerIDCard)
+    setDocUrl(storedUrl);
     if (storedTitle) setDocTitle(storedTitle);
-
-    // Construct full URL
-    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://13.204.83.198:8000';
-    const url = storedPath.startsWith('http')
-      ? storedPath
-      : storedPath.startsWith('/uploads') || storedPath.startsWith('/api')
-      ? `${baseURL}${storedPath}`
-      : `${baseURL}/${storedPath}`;
-    
-    console.log('[DocViewer] Full URL:', url);
-    setFullUrl(url);
     setLoading(false);
 
     // Cleanup on unmount
     return () => {
       console.log('[DocViewer] Component unmounting');
+      // Revoke blob URL if it's a blob
+      if (storedUrl && storedUrl.startsWith('blob:')) {
+        try {
+          URL.revokeObjectURL(storedUrl);
+          console.log('[DocViewer] Blob URL revoked');
+        } catch (e) {
+          console.warn('[DocViewer] Failed to revoke URL:', e);
+        }
+      }
       sessionStorage.removeItem('doc_view_path');
       sessionStorage.removeItem('doc_view_title');
     };
   }, [navigate, showError]);
 
+  const openInNativeApp = async () => {
+    if (!docUrl) return;
+
+    let notifId: string | undefined;
+    try {
+      notifId = showInfo('📱 Opening in external viewer...', 5000);
+      
+      const { Filesystem, Directory } = await import('@capacitor/filesystem');
+      const { FileOpener } = await import('@capacitor-community/file-opener');
+      
+      // Fetch blob data
+      const response = await fetch(docUrl);
+      const blob = await response.blob();
+      
+      // Determine content type
+      const contentType = blob.type || 'application/octet-stream';
+      
+      // Convert to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      
+      // Determine extension
+      const ext = contentType.includes('pdf') ? 'pdf' 
+        : contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg'
+        : contentType.includes('png') ? 'png'
+        : contentType.includes('gif') ? 'gif'
+        : 'file';
+      
+      // Save temp file
+      const filename = `${docTitle.replace(/\s+/g, '_')}_${Date.now()}.${ext}`;
+      const result = await Filesystem.writeFile({
+        path: filename,
+        data: base64,
+        directory: Directory.Cache,
+      });
+      
+      console.log('[DocViewer] Temp file saved, opening...');
+      
+      // Open with native app
+      await FileOpener.open({
+        filePath: result.uri,
+        contentType: contentType,
+      });
+      
+      if (notifId) dismiss(notifId);
+      console.log('[DocViewer] ✅ Opened in native app');
+    } catch (error: any) {
+      console.error('[DocViewer] Failed to open in native app:', error);
+      if (notifId) dismiss(notifId);
+      showError('Failed to open in external viewer. Try downloading instead.', 5000);
+    }
+  };
+
   const handleDownload = async () => {
-    if (!fullUrl) {
+    if (!docUrl) {
       showError('No document to download', 3000);
       return;
     }
@@ -59,33 +130,15 @@ const DocumentViewer: React.FC = () => {
     let downloadNotifId: string | undefined;
     try {
       downloadNotifId = showInfo('📥 Downloading...', 8000);
-      console.log('[DocViewer] Downloading from:', fullUrl);
+      console.log('[DocViewer] Starting download');
 
-      // Check if Capacitor is available
-      let isCapacitor = false;
-      try {
-        const { Capacitor } = await import('@capacitor/core');
-        isCapacitor = Capacitor?.isNativePlatform?.() || false;
-      } catch (e) {
-        console.log('[DocViewer] Capacitor not available');
-      }
-
-      // Fetch with authentication
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(fullUrl, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-      });
-
-      if (!response.ok) {
-        throw new Error(`Download failed: ${response.status} ${response.statusText}`);
-      }
-
-      const blob = await response.blob();
-      console.log('[DocViewer] Blob received, size:', blob.size);
-
-      if (isCapacitor) {
+      if (isNative) {
         // Mobile download
         const { Filesystem, Directory } = await import('@capacitor/filesystem');
+        
+        // Fetch blob data
+        const response = await fetch(docUrl);
+        const blob = await response.blob();
         
         // Convert to base64
         const base64 = await new Promise<string>((resolve, reject) => {
@@ -98,8 +151,14 @@ const DocumentViewer: React.FC = () => {
           reader.readAsDataURL(blob);
         });
 
-        // Determine file extension
-        const ext = fullUrl.match(/\.(pdf|jpg|jpeg|png|gif|doc|docx)$/i)?.[1] || 'jpg';
+        // Determine file extension from blob type
+        const contentType = blob.type || '';
+        const ext = contentType.includes('pdf') ? 'pdf' 
+          : contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg'
+          : contentType.includes('png') ? 'png'
+          : contentType.includes('gif') ? 'gif'
+          : 'file';
+        
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const filename = `${docTitle.replace(/\s+/g, '_')}_${timestamp}.${ext}`;
 
@@ -117,17 +176,17 @@ const DocumentViewer: React.FC = () => {
           if (downloadNotifId) dismiss(downloadNotifId);
           showSuccess(`✅ Saved to:\n${savedPath}`, 6000);
 
-          // Try to share
+          // Try to open with native app
           try {
-            const { Share } = await import('@capacitor/share');
-            if (await Share.canShare()) {
-              await Share.share({
-                title: docTitle,
-                url: result.uri,
-              });
-            }
-          } catch (shareErr) {
-            console.log('[DocViewer] Share not available');
+            const { FileOpener } = await import('@capacitor-community/file-opener');
+            const openNotif = showInfo('📱 Opening file...', 3000);
+            await FileOpener.open({
+              filePath: result.uri,
+              contentType: contentType || 'application/octet-stream',
+            });
+            dismiss(openNotif);
+          } catch (openErr) {
+            console.log('[DocViewer] Could not auto-open file');
           }
         } catch (fsErr) {
           console.error('[DocViewer] Filesystem error:', fsErr);
@@ -135,10 +194,20 @@ const DocumentViewer: React.FC = () => {
         }
       } else {
         // Web download
+        const response = await fetch(docUrl);
+        const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
+        
+        // Determine extension
+        const contentType = blob.type || '';
+        const ext = contentType.includes('pdf') ? 'pdf' 
+          : contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg'
+          : contentType.includes('png') ? 'png'
+          : 'file';
+        
         const link = document.createElement('a');
         link.href = blobUrl;
-        link.download = `${docTitle.replace(/\s+/g, '_')}.${fullUrl.match(/\.(pdf|jpg|jpeg|png)$/i)?.[1] || 'jpg'}`;
+        link.download = `${docTitle.replace(/\s+/g, '_')}.${ext}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -158,7 +227,7 @@ const DocumentViewer: React.FC = () => {
 
   const handleRetry = () => {
     console.log('[DocViewer] Retrying...');
-    setImageError(false);
+    setViewError(false);
     setLoading(true);
     setTimeout(() => setLoading(false), 500);
   };
@@ -174,9 +243,10 @@ const DocumentViewer: React.FC = () => {
     );
   }
 
-  if (!fullUrl) return null;
+  if (!docUrl) return null;
 
-  const isPDF = fullUrl.toLowerCase().endsWith('.pdf');
+  const isPDF = docUrl.includes('pdf') || docUrl.toLowerCase().includes('application/pdf');
+  const isImage = docUrl.includes('image/') || /\.(jpg|jpeg|png|gif)$/i.test(docUrl);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -192,33 +262,32 @@ const DocumentViewer: React.FC = () => {
               </button>
               <h1 className="text-xl sm:text-2xl font-bold text-gray-800">{docTitle}</h1>
             </div>
-            <button
-              onClick={handleDownload}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition active:scale-95"
-            >
-              📥 Download
-            </button>
+            <div className="flex gap-2">
+              {isNative && (
+                <button
+                  onClick={openInNativeApp}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold transition active:scale-95"
+                >
+                  📱 Open
+                </button>
+              )}
+              <button
+                onClick={handleDownload}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition active:scale-95"
+              >
+                📥 Download
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
-          {isPDF ? (
-            <iframe 
-              src={fullUrl} 
-              title="Document" 
-              style={{ width: '100%', height: '75vh', minHeight: '500px', border: 'none', borderRadius: '8px' }}
-              onLoad={() => console.log('[DocViewer] ✅ PDF loaded')}
-              onError={() => {
-                console.error('[DocViewer] ❌ PDF failed to load');
-                showError('Failed to load PDF', 4000);
-              }}
-            />
-          ) : imageError ? (
+          {viewError ? (
             <div className="text-center py-20">
               <div className="text-6xl mb-4">📄</div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Failed to Load Image</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Failed to Load Document</h3>
               <p className="text-gray-600 mb-6">The document could not be displayed</p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
@@ -227,6 +296,14 @@ const DocumentViewer: React.FC = () => {
                 >
                   🔄 Retry
                 </button>
+                {isNative && (
+                  <button
+                    onClick={openInNativeApp}
+                    className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition active:scale-95"
+                  >
+                    📱 Open in App
+                  </button>
+                )}
                 <button
                   onClick={handleDownload}
                   className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition active:scale-95"
@@ -235,22 +312,53 @@ const DocumentViewer: React.FC = () => {
                 </button>
               </div>
             </div>
+          ) : isPDF ? (
+            <div style={{ 
+              width: '100%', 
+              height: '75vh', 
+              minHeight: '500px',
+              border: '1px solid #e5e7eb', 
+              borderRadius: '8px', 
+              overflow: 'hidden',
+              backgroundColor: '#f9fafb'
+            }}>
+              <iframe 
+                src={`${docUrl}#toolbar=1&navpanes=0&scrollbar=1`}
+                title="Document" 
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                onLoad={() => console.log('[DocViewer] ✅ PDF loaded')}
+                onError={() => {
+                  console.error('[DocViewer] ❌ PDF failed to load');
+                  setViewError(true);
+                }}
+              />
+            </div>
           ) : (
             <div className="flex justify-center">
               <img 
-                src={fullUrl} 
+                src={docUrl} 
                 alt={docTitle}
                 style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px' }}
                 onLoad={() => {
                   console.log('[DocViewer] ✅ Image loaded successfully');
                 }}
                 onError={(e) => {
-                  console.error('[DocViewer] ❌ Image failed to load:', fullUrl);
-                  setImageError(true);
+                  console.error('[DocViewer] ❌ Image failed to load:', docUrl);
+                  setViewError(true);
                 }}
               />
             </div>
           )}
+          
+          {/* Help Text */}
+          <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4">
+            <p className="text-sm text-blue-800">
+              <strong>💡 Tip:</strong> {isNative 
+                ? 'If the document doesn\'t display, use "Open in App" or "Download" buttons above.'
+                : 'If the document doesn\'t display, click "Download" to save it to your device.'
+              }
+            </p>
+          </div>
         </div>
       </div>
     </div>

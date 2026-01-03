@@ -1,973 +1,916 @@
-Purpose
-Concise, actionable guidance for AI coding agents working in this repository (frontend + backend) with strict UI/UX consistency requirements.
-
-Big Picture
-Backend: FastAPI app in backend/app (entry backend/app/main.py). MongoDB is the primary datastore; request handlers use the async motor client (backend/app/database.py). Background processing uses Celery + Redis with worker tasks under backend/app/tasks/ (worker tasks intentionally use a sync pymongo client).
-
-Frontend: React + TypeScript + Vite (entry frontend/src/main.tsx). Network calls go through frontend/src/utils/axios.ts and the domain service layer in frontend/src/services/* (prefer these services over ad-hoc axios calls in components).
-
-Orchestration: docker-compose.yml runs backend, Celery worker, MongoDB and Redis for full-stack development.
-
-UI/UX Design System (Non-Negotiable)
-All frontend components must adhere to the following design patterns extracted from the reference files:
-
-Color Palette & Branding
-css
-:root {
-  --zam-green: #15803d;      /* Primary action color */
-  --zam-dark: #14532d;       /* Dark green accent */
-  --zam-copper: #c2410c;     /* Secondary/alert color (orange) */
-  --bg-main: #f8fafc;        /* Page background */
-  --bg-card: #ffffff;        /* Card/container background */
-}
-Usage Rules:
-
-Primary buttons: bg-green-700 hover:bg-green-800 text-white
-
-Secondary actions: text-green-600 hover:text-green-700
-
-Alerts/notifications: bg-orange-600 or border-orange-500
-
-Status badges: Green (verified/active), Yellow (pending), Red (rejected/inactive)
-
-Backgrounds: Body bg-slate-50 or bg-gray-50, cards bg-white
-
-Typography
-css
-body { 
-  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; 
-}
-Heading Hierarchy:
-
-Page titles: text-xl font-bold text-gray-800 or text-2xl font-bold text-gray-800
-
-Section headers: text-lg font-bold text-gray-800
-
-Subsections: text-sm font-bold text-gray-700 uppercase tracking-wider
-
-Labels: text-xs font-bold text-gray-600 uppercase
-
-Body text: text-sm text-gray-600 or text-gray-700
-
-Layout Structure
-Sidebar Navigation (Fixed Left):
-
-css
-/* Width: 16rem (w-64) */
-/* Background: bg-gray-900 */
-/* Logo area: bg-green-800 h-16 */
-Navigation Items:
-
-css
-.nav-item { 
-  @apply flex items-center px-4 py-3 text-gray-300 
-  hover:bg-green-900 hover:text-white transition-all cursor-pointer 
-  border-l-4 border-transparent; 
-}
-.nav-item.active { 
-  @apply bg-green-900 text-white border-orange-500; 
-}
-Group Navigation by Sections:
-
-css
-.nav-group-title { 
-  @apply px-4 mt-6 mb-2 text-xs font-bold 
-  text-gray-500 uppercase tracking-wider; 
-}
-Top Header Bar:
-
-Height: h-16
-
-Background: bg-white shadow-sm
-
-Contains: page title (left), search bar + notifications (right)
-
-Search input: bg-gray-100 rounded-full focus:bg-white focus:ring-2 focus:ring-green-500
-
-Form Components
-Input Fields:
-
-xml
-<input 
-  class="w-full p-3 border border-gray-300 rounded-lg mt-1 
-  focus:ring-2 focus:ring-green-500 outline-none"
-  type="text"
-/>
-Select Dropdowns:
-
-xml
-<select 
-  class="w-full p-3 border border-gray-300 rounded-lg mt-1 
-  focus:ring-2 focus:ring-green-500 outline-none"
->
-  <option>...</option>
-</select>
-Buttons:
-
-Primary: bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg
-
-Secondary: bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 py-2 px-4 rounded-lg
-
-Icon buttons: text-gray-500 hover:text-gray-700 p-2
-
-Labels:
-
-xml
-<label class="text-xs font-bold text-gray-600 uppercase">Field Name</label>
-Cards & Containers
-Standard Card:
-
-xml
-<div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition">
-  <!-- content -->
-</div>
-Stat Cards (Dashboard):
-
-xml
-<div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-600 hover:shadow-md transition">
-  <div class="flex justify-between">
-    <div>
-      <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Label</p>
-      <h3 class="text-2xl font-bold text-gray-800 mt-1">1,240</h3>
-    </div>
-    <div class="bg-green-50 p-3 rounded-lg text-green-600">
-      <i class="fa-solid fa-users text-xl"></i>
-    </div>
-  </div>
-</div>
-Border colors for stat cards:
-
-Green: border-green-600 (primary metrics)
-
-Orange: border-orange-500 (alerts/pending)
-
-Blue: border-blue-600 (secondary info)
-
-Purple: border-purple-600 (user/admin metrics)
-
-Tables
-Structure:
-
-xml
-<div class="bg-white rounded-xl shadow-sm overflow-hidden">
-  <!-- Toolbar -->
-  <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-    <h3 class="font-bold text-lg">Table Title</h3>
-    <button class="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg">
-      <i class="fa-solid fa-plus mr-2"></i> Add Item
-    </button>
-  </div>
-  
-  <!-- Table -->
-  <table class="w-full text-left text-sm text-gray-600">
-    <thead class="bg-gray-100 text-gray-700 font-bold uppercase text-xs">
-      <tr>
-        <th class="px-6 py-3">Column</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-200">
-      <tr class="hover:bg-green-50 transition">
-        <td class="px-6 py-4">Data</td>
-      </tr>
-    </tbody>
-  </table>
-  
-  <!-- Pagination -->
-  <div class="p-4 border-t border-gray-200 bg-gray-50 text-xs text-gray-500 flex justify-between">
-    <span>Showing 1-10 of 1,240</span>
-    <div class="flex gap-1">
-      <button class="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100">Prev</button>
-      <button class="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100">Next</button>
-    </div>
-  </div>
-</div>
-Status Badges
-css
-.badge { @apply px-2 py-1 text-xs font-semibold rounded-full; }
-.badge-green { @apply bg-green-100 text-green-800; }
-.badge-yellow { @apply bg-yellow-100 text-yellow-800; }
-.badge-red { @apply bg-red-100 text-red-800; }
-Form Wizard (Multi-Step Forms)
-Step Indicators:
-
-css
-.wizard-step { 
-  @apply flex items-center justify-center w-8 h-8 
-  rounded-full border-2 font-bold text-sm transition-colors; 
-}
-.wizard-active { @apply bg-green-700 text-white border-green-700; }
-.wizard-done { @apply bg-green-900 text-white border-green-900; }
-.wizard-pending { @apply text-gray-400 border-gray-300; }
-Structure:
-
-xml
-<div class="flex justify-between items-center mb-8 px-8">
-  <div class="flex flex-col items-center">
-    <div class="wizard-step wizard-active">1</div>
-    <span class="text-xs mt-2 font-bold text-green-800">Step Name</span>
-  </div>
-  <div class="h-1 bg-gray-300 flex-1 mx-2 mt-[-20px]"></div>
-  <div class="flex flex-col items-center">
-    <div class="wizard-step wizard-pending">2</div>
-    <span class="text-xs mt-2 text-gray-500">Next Step</span>
-  </div>
-</div>
-Animations
-Fade In (Page Transitions):
-
-css
-.fade-in { animation: fadeIn 0.4s ease-out forwards; }
-@keyframes fadeIn { 
-  from { opacity: 0; transform: translateY(10px); } 
-  to { opacity: 1; transform: translateY(0); } 
-}
-Apply to views: Add fade-in class to main content sections.
-
-Custom Scrollbar
-css
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f1f1f1; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-Icons
-Font Awesome 6.4.0: Include via CDN:
-
-xml
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-Common Icons:
-
-Users: fa-solid fa-users
-
-Add user: fa-solid fa-user-plus
-
-Dashboard: fa-solid fa-chart-line
-
-Settings: fa-solid fa-gear
-
-Logout: fa-solid fa-right-from-bracket
-
-Save/Submit: fa-solid fa-check
-
-Agriculture: fa-solid fa-wheat-awn
-
-Login Screen
-Structure:
-
-xml
-<div class="fixed inset-0 bg-gray-900 z-50 flex items-center justify-center 
-  bg-[url('...')] bg-cover bg-center">
-  <div class="absolute inset-0 bg-green-900/80 backdrop-blur-sm"></div>
-  <div class="relative bg-white p-8 rounded-2xl shadow-2xl w-96 fade-in">
-    <div class="text-center mb-8">
-      <i class="fa-solid fa-wheat-awn text-5xl text-green-700 mb-2"></i>
-      <h1 class="text-2xl font-bold text-gray-800">ZIAMIS Pro</h1>
-      <p class="text-gray-500 text-sm">Ministry of Agriculture</p>
-    </div>
-    <!-- Login form -->
-  </div>
-</div>
-React Component Implementation Rules
-Use Tailwind CSS Classes
-Never write inline styles or custom CSS files unless creating global animations
-
-All styling must use Tailwind utility classes matching the patterns above
-
-Component Structure
-tsx
-// Example: StatCard.tsx
-interface StatCardProps {
-  label: string;
-  value: string | number;
-  icon: string;
-  borderColor: 'green' | 'orange' | 'blue' | 'purple';
-  trend?: string;
-}
-
-export const StatCard: React.FC<StatCardProps> = ({ 
-  label, value, icon, borderColor, trend 
-}) => {
-  const borderClass = `border-${borderColor}-600`;
-  const bgClass = `bg-${borderColor}-50`;
-  const textClass = `text-${borderColor}-600`;
-  
-  return (
-    <div className={`bg-white p-6 rounded-xl shadow-sm border-l-4 ${borderClass} hover:shadow-md transition`}>
-      <div className="flex justify-between">
-        <div>
-          <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">{label}</p>
-          <h3 className="text-2xl font-bold text-gray-800 mt-1">{value}</h3>
-        </div>
-        <div className={`${bgClass} p-3 rounded-lg ${textClass}`}>
-          <i className={`${icon} text-xl`}></i>
-        </div>
-      </div>
-      {trend && (
-        <div className="mt-4 flex items-center text-xs text-green-600 font-semibold">
-          <i className="fa-solid fa-arrow-trend-up mr-1"></i> {trend}
-        </div>
-      )}
-    </div>
-  );
-};
-Form Components
-tsx
-// Example: FormInput.tsx
-interface FormInputProps {
-  label: string;
-  type?: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  required?: boolean;
-}
-
-export const FormInput: React.FC<FormInputProps> = ({
-  label, type = 'text', value, onChange, placeholder, required
-}) => {
-  return (
-    <div>
-      <label className="text-xs font-bold text-gray-600 uppercase">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
-      />
-    </div>
-  );
-};
-Button Components
-tsx
-// Example: Button.tsx
-interface ButtonProps {
-  variant?: 'primary' | 'secondary' | 'danger';
-  icon?: string;
-  children: React.ReactNode;
-  onClick?: () => void;
-  type?: 'button' | 'submit' | 'reset';
-  disabled?: boolean;
-}
-
-export const Button: React.FC<ButtonProps> = ({
-  variant = 'primary',
-  icon,
-  children,
-  onClick,
-  type = 'button',
-  disabled
-}) => {
-  const baseClass = "font-bold py-3 px-4 rounded-lg transition shadow-lg";
-  const variantClass = {
-    primary: "bg-green-700 hover:bg-green-800 text-white",
-    secondary: "bg-white border border-gray-300 hover:bg-gray-100 text-gray-700",
-    danger: "bg-red-600 hover:bg-red-700 text-white"
-  }[variant];
-  
-  return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={`${baseClass} ${variantClass} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-    >
-      {icon && <i className={`${icon} mr-2`}></i>}
-      {children}
-    </button>
-  );
-};
-Data Flow (Short)
-UI → frontend/src/services/* → frontend/src/utils/axios.ts → backend/app/routes/* → backend/app/services/* → backend/app/database.py → MongoDB
-
-Background work: routes/services enqueue Celery tasks (backend/app/tasks/*) → worker reads/writes via pymongo
-
-Key Files & Examples
-backend/app/config.py — pydantic-backed env config; missing fields will raise on startup
-
-backend/app/database.py — async motor client used by request handlers
-
-backend/app/tasks/id_card_task.py — canonical Celery task; uses pymongo (sync)
-
-frontend/src/utils/axios.ts — central axios instance; implements token attach + single refresh then logout flow
-
-frontend/src/store/authStore.ts — Zustand store that mirrors tokens to localStorage
-
-Project-Specific Patterns & Constraints
-Backend
-Keep the motor (async) vs pymongo (sync) split. Do not replace pymongo in Celery tasks with motor without re-evaluating worker lifecycle
-
-Keep routes thin: move logic into backend/app/services/* to promote reuse and easier testing
-
-Frontend
-Auth flow: Axios interceptor attempts exactly one refresh (POST /auth/refresh) and then logs out on failure — update both frontend/src/utils/axios.ts and frontend/src/store/authStore.ts together if changing this
-
-Strict TypeScript: tsconfig.json uses strict: true; avoid as any and add/adjust types in services rather than components where possible
-
-UI Consistency: All new components must follow the design system patterns above. Do not deviate from color scheme, spacing, typography, or component structure
-
-Developer Workflows & Useful Commands
-Full stack (recommended):
-
-bash
-docker-compose up --build
-Backend only (local dev):
-
-bash
-cd backend
-python -m pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-Frontend only:
-
-bash
+# CEM (Chiefdom Empowerment Model) – AI Agent Instructions
+**For Copilot, Gemini, Perplexity – EC2 Backend + Mobile APK Architecture**
+
+Last Updated: Jan 3, 2026 | Status: Production Ready
+
+---
+
+## 🎯 YOUR ACTUAL DEPLOYMENT ARCHITECTURE
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    GITHUB CODESPACES                    │
+│                                                         │
+│  Frontend (React + Vite)  ← Build APK + Development   │
+│  - npm run build:mobile → Android APK                 │
+│  - GitHub Actions CI/CD                               │
+└─────────────────────────────────────────────────────────┘
+                           ↓ (HTTPS API calls)
+┌─────────────────────────────────────────────────────────┐
+│                  AWS EC2 (t3.micro)                     │
+│                   Single Instance                       │
+│                                                         │
+│  ┌─── Docker Container 1: FastAPI (port 8000) ───┐    │
+│  │  - All routes (auth, farmers, reports, etc.)   │    │
+│  │  - Motor (async) → MongoDB Atlas              │    │
+│  │  - CORS enabled for mobile + APK              │    │
+│  └─────────────────────────────────────────────────┘    │
+│                                                         │
+│  ┌─── Docker Container 2: Celery Worker ─────────┐    │
+│  │  - ID card generation (async tasks)           │    │
+│  │  - PyMongo (sync) → MongoDB Atlas             │    │
+│  │  - Log cleanup tasks (daily)                  │    │
+│  └─────────────────────────────────────────────────┘    │
+│                                                         │
+│  ┌─── Docker Container 3: Redis (port 6379) ────┐    │
+│  │  - Celery broker (task queue)                 │    │
+│  │  - Cache layer (if needed)                    │    │
+│  └─────────────────────────────────────────────────┘    │
+│                                                         │
+│  ┌─── NGINX Reverse Proxy (port 80/443) ────────┐    │
+│  │  - Routes traffic to FastAPI:8000            │    │
+│  │  - SSL/TLS (Let's Encrypt)                   │    │
+│  │  - CORS headers for APK                      │    │
+│  └─────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────┘
+                           ↓ (TCP connection)
+┌─────────────────────────────────────────────────────────┐
+│            MongoDB Atlas (Cloud Database)               │
+│                                                         │
+│  - Farmers collection                                  │
+│  - Users collection                                    │
+│  - ID cards collection                                 │
+│  - GridFS (file storage: photos, PDFs)                 │
+│  - system_logs collection                              │
+│  - All backup & replication handled by Atlas           │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│            Mobile APK (Android Device)                  │
+│                                                         │
+│  - Built via: frontend/build-mobile.sh                 │
+│  - Uses Capacitor + Gradle                             │
+│  - Connects to EC2 backend via HTTPS                   │
+│  - API_BASE_URL = https://your-ec2-ip.com             │
+│  - Stores JWT tokens in localStorage                   │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 1. PROJECT STRUCTURE (From Your Files)
+
+### Backend (EC2-Ready Docker)
+```
+backend/
+├── app/
+│   ├── main.py                    # FastAPI (includes CORS for mobile APK)
+│   ├── config.py                  # Pydantic config (MONGO_URI, REDIS_URL required)
+│   ├── database.py                # Motor async client
+│   ├── routes/                    # All REST endpoints
+│   │   ├── auth.py               # Login, refresh, logout
+│   │   ├── farmers.py            # CRUD, status
+│   │   ├── farmer_idcards.py     # Generate, download ID cards
+│   │   ├── farmer_photos.py      # Photo uploads
+│   │   ├── farmers_qr.py         # QR codes
+│   │   ├── dashboard.py          # Metrics
+│   │   ├── operators.py          # Operator management
+│   │   ├── reports.py            # System reports
+│   │   ├── supplies.py           # Supply requests
+│   │   ├── geo.py                # Location data
+│   │   ├── logs.py               # Log retrieval
+│   │   ├── health.py             # Health check endpoint
+│   │   └── ... (more routes)
+│   ├── services/                  # Business logic
+│   │   ├── farmer_service.py     # Farmer operations
+│   │   ├── idcard_service.py     # ID card logic
+│   │   ├── photo_service.py      # Photo handling
+│   │   ├── gridfs_service.py     # GridFS file storage
+│   │   ├── logging_service.py    # Async logging
+│   │   └── ... (more services)
+│   ├── tasks/                     # Celery background jobs
+│   │   ├── celery_app.py         # Celery + Redis config
+│   │   ├── id_card_task.py       # Async ID card generation
+│   │   ├── log_cleanup_task.py   # Daily log cleanup
+│   │   └── sync_tasks.py         # Data sync tasks
+│   └── ... (middleware, models, utils)
+├── Dockerfile                     # Multi-stage production image
+├── requirements.txt               # FastAPI, motor, pymongo, celery, redis-py
+└── docker-compose.yml             # Local dev only (NOT for EC2)
+```
+
+### Frontend (Mobile APK Build)
+```
+frontend/
+├── src/
+│   ├── pages/                     # All full pages
+│   │   ├── Login.tsx
+│   │   ├── FarmerDashboard.tsx
+│   │   ├── FarmerIDCard.tsx       # ← Uses blob + auth headers
+│   │   ├── FarmerRegistration/    # Multi-step form
+│   │   └── ... (more pages)
+│   ├── services/                  # API layer (service layer only)
+│   │   ├── auth.service.ts       # POST /auth/login, /auth/refresh
+│   │   ├── farmer.service.ts     # Farmer CRUD, ID card ops
+│   │   ├── geo.service.ts        # Location data
+│   │   └── ... (more services)
+│   ├── utils/
+│   │   └── axios.ts              # Pre-configured with auth interceptor
+│   ├── store/
+│   │   └── authStore.ts          # Zustand: tokens + user
+│   └── ... (components, types, config)
+├── android/                       # Gradle + Capacitor
+│   ├── build.gradle
+│   ├── app/build.gradle
+│   └── ... (Android project)
+├── capacitor.config.ts            # Mobile config
+├── build-mobile.sh                # Script to build APK
+├── vite.config.ts                 # Bundler config
+└── package.json                   # Dependencies
+```
+
+### AWS Deployment (EC2)
+```
+aws-deployment/
+├── 00-preflight-check.sh         # Validate AWS setup
+├── 01-cleanup-aws.sh             # Remove old resources
+├── 02-setup-aws-infrastructure.sh # Create VPC, Security Groups, etc.
+├── 03-create-secrets.sh          # Store secrets in AWS Secrets Manager
+├── 04-create-iam-roles.sh        # IAM roles for EC2
+├── 05-build-and-push.sh          # Build Docker, push to ECR (optional)
+├── 06-deploy-ecs-service.sh      # Deploy to ECS (alternative)
+├── deploy-all.sh                 # Run all scripts
+├── Dockerfile                    # Backend Docker image
+├── docker-compose.yml            # Production stack on EC2
+└── README.md                      # Deployment guide
+```
+
+---
+
+## 2. ENVIRONMENT CONFIGURATION
+
+### Backend .env (On EC2)
+```ini
+# MongoDB Atlas (required)
+MONGO_URI=mongodb+srv://user:password@cluster.mongodb.net/cem_db?retryWrites=true&w=majority
+
+# Redis (on EC2, internal Docker)
+REDIS_URL=redis://localhost:6379/0
+
+# JWT (required, random 32+ chars)
+JWT_SECRET=your-super-secret-key-min-32-chars-long
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION_HOURS=24
+
+# Environment
+ENVIRONMENT=production
+LOG_LEVEL=info
+
+# CORS (for mobile APK + web)
+ALLOW_ORIGINS=http://localhost:5173,https://your-ec2-ip.com,http://your-ec2-ip.com
+
+# Upload paths (EC2 local storage)
+UPLOAD_DIR=/home/ec2-user/uploads
+MAX_UPLOAD_SIZE_MB=10
+
+# Optional: Email notifications
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+```
+
+### Frontend .env (For APK Build)
+```ini
+# Development (local testing)
+VITE_API_BASE_URL=http://localhost:8000
+VITE_LOG_LEVEL=debug
+
+# OR Production (for APK)
+VITE_API_BASE_URL=https://your-ec2-ip.com   # Your EC2 public IP or domain
+VITE_LOG_LEVEL=info
+```
+
+**To generate APK with production backend:**
+```bash
 cd frontend
-npm install
-npm run dev
-Run Celery worker manually (backend venv):
 
-bash
+# Update .env.production
+echo 'VITE_API_BASE_URL=https://your-ec2-ip.com' > .env.production
+
+# Build APK
+npm run build:mobile
+# Output: android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+---
+
+## 3. EC2 DEPLOYMENT STEPS
+
+### Prerequisites
+- ✅ AWS account with free tier EC2 (t3.micro)
+- ✅ MongoDB Atlas cluster (free tier)
+- ✅ GitHub repository with code
+
+### Step 1: Launch EC2 Instance
+```bash
+# From aws-deployment/
+./00-preflight-check.sh          # Validate AWS setup
+./01-cleanup-aws.sh              # Optional: remove old resources
+./02-setup-aws-infrastructure.sh # Create VPC, security groups
+```
+
+Or manually:
+```bash
+aws ec2 run-instances \
+  --image-id ami-0c55b159cbfafe1f0 \
+  --instance-type t3.micro \
+  --key-name your-key-pair \
+  --security-groups cem-backend \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=cem-backend}]'
+```
+
+### Step 2: Connect & Install Docker
+```bash
+# SSH into EC2
+ssh -i your-key.pem ec2-user@your-ec2-ip
+
+# Install Docker + Docker Compose
+curl get.docker.com | bash
+sudo usermod -aG docker ec2-user
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+```
+
+### Step 3: Clone Repo & Set Secrets
+```bash
+# Clone your repo
+git clone https://github.com/yourusername/cem.git
+cd cem
+
+# Create .env.production with MongoDB Atlas URI + JWT secret
+cat > .env.production << EOF
+MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/cem_db
+REDIS_URL=redis://localhost:6379/0
+JWT_SECRET=your-super-secret-key
+ENVIRONMENT=production
+ALLOW_ORIGINS=https://your-ec2-ip.com,http://your-ec2-ip.com
+EOF
+
+# ⚠️ DO NOT COMMIT .env.production to Git
+echo ".env.production" >> .gitignore
+```
+
+### Step 4: Deploy with Docker
+```bash
+# Build and start all services
 cd backend
-celery -A app.tasks.celery_app worker --loglevel=info
-Seeds & Helpers
-backend/scripts/ contains utility scripts (e.g. seed_admin.py, create_test_users.py, seed_geo_from_csv.py) for seeding and repairing data.
+docker build -t cem-backend:latest .
+cd ..
 
-Common Issues to Watch For
-Backend
-Env mismatch: docker-compose.yml sets VITE_API_URL while frontend expects VITE_API_BASE_URL (frontend/src/utils/axios.ts). Prefer setting VITE_API_BASE_URL=http://host.docker.internal:8000 or http://localhost:8000 in docker-compose.yml
+# Use docker-compose.yml to run backend + celery + redis
+docker-compose up -d
 
-Backup files (e.g., .bak, frontend_backup/) are present — avoid editing them; consider removing stale backups with project maintainers
+# Verify services are running
+docker ps
+docker-compose logs -f backend
 
-Frontend
-Hard-coded remote URLs and console.log calls in vite.config.ts and frontend/src/utils/axios.ts — gate logs with import.meta.env.DEV and replace remote fallbacks with env-driven defaults
+# Test health check
+curl http://localhost:8000/health
+```
 
-Inconsistent UI: Frequently check that components match the design system. Use component libraries/shared components to avoid drift
+### docker-compose.yml (For EC2)
+```yaml
+version: '3.8'
 
-Where to Add Changes (Practical Rules)
-Backend
-New REST endpoint: add under backend/app/routes/ and implement business logic in backend/app/services/
+services:
+  backend:
+    build: ./backend
+    container_name: cem-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENVIRONMENT=production
+      - ALLOW_ORIGINS=${ALLOW_ORIGINS}
+    depends_on:
+      - redis
+    volumes:
+      - ./uploads:/app/uploads
+    restart: always
 
-New DB helper: add to backend/app/services/* and use backend/app/database.py for async access
+  redis:
+    image: redis:7-alpine
+    container_name: cem-redis
+    ports:
+      - "6379:6379"
+    restart: always
 
-New background job: add a Celery task under backend/app/tasks/ and use pymongo inside the task to match existing worker patterns
+  celery-worker:
+    build: ./backend
+    container_name: cem-celery
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - redis
+    restart: always
 
-Frontend
-New page/view: Create under frontend/src/pages/ or frontend/src/components/
+  # Optional: Celery Beat (for scheduled tasks)
+  celery-beat:
+    build: ./backend
+    container_name: cem-celery-beat
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - REDIS_URL=${REDIS_URL}
+    depends_on:
+      - redis
+    restart: always
+```
 
-New reusable UI component: Create under frontend/src/components/ui/ following the design system patterns above
+### Step 5: Set Up NGINX (Optional but Recommended)
+```bash
+# Install NGINX
+sudo yum install nginx -y
 
-New service: Add to frontend/src/services/* (e.g., farmer.service.ts, auth.service.ts)
-
-Global styles: Add animations or scrollbar customizations to frontend/src/index.css (use Tailwind @layer directives)
-
-Tips for AI Agents (Concise)
-Read backend/app/config.py early — many env fields are required
-
-Preserve async vs sync DB client boundaries; changing them is non-trivial
-
-Update axios + auth store together when touching auth flows
-
-Prefer modifying/adding services rather than spreading axios calls across components
-
-Always reference the design system above before creating new UI components
-
-Use Font Awesome icons consistently across the project
-
-Test responsive behavior (mobile, tablet, desktop) when adding new layouts
-
-Keep form wizards consistent with the step indicator pattern shown above
-
-
-
-CEM (Chiefdom Empowerment Model) – Complete Copilot Instructions
-For Backend, Frontend, Deployment, and Mobile Readiness
-1. Project Overview
-Goal: Deploy a mobile-first farmer management system (CEM) for Zambian smallholder farmers with production-ready backend, responsive frontend, and APK capability.
-
-Current Status:
-
-Backend: FastAPI + MongoDB Atlas + Celery + Redis ✓ (working locally)
-
-Frontend: React + TypeScript + Vite + Tailwind CSS ✓ (working locally)
-
-Infrastructure: New AWS account (free tier credits $135.57 remaining until 11/20/2026)
-
-Deployment: Mobile APK is primary; web frontend is optional
-
-Design System: Zambian green theme (#15803d) with Tailwind CSS
-
-Team: Single full-stack developer using GitHub Codespaces, AWS, and GitHub Student pack
-
-2. Directory Structure & Key Files
-text
-
-3. Database & Infrastructure
-MongoDB
-Current: MongoDB Atlas free tier (in-use)
-
-Retention: Keep as-is; no migration needed for production
-
-Collections: farmers, operators, admins, logs, system_logs, id_cards, supply_requests, documents and there may  be more
-
-Redis
-Current: AWS ElastiCache (limited free tier) or local Redis in docker-compose
-
-Purpose: Celery broker + caching
-
-Retention: For MVP, free ElastiCache or local Docker Redis is fine
-
-AWS Services for Deployment
-EC2 (t3.micro): Free tier; run Docker containers here
-
-Secrets Manager: Store Mongo URI, Redis URL, JWT secrets, API keys
-
-VPC + Security Groups: Control inbound/outbound traffic
-
-CloudWatch Logs: Centralize container logs
-
-4. Backend Patterns & Constraints
-Async vs Sync Database Access
-text
-Request handlers (routes/):
-  ✓ Use motor (async) via database.py
-  
-Celery tasks (tasks/):
-  ✓ Use pymongo (sync) directly
-  ✗ Do NOT use motor in tasks; it breaks task lifecycle
-Key Services (Business Logic)
-Farmer CRUD, status updates
-
- Token refresh, logout, password reset
-
- Structured logging to MongoDB
-
- ID card generation (sync, calls Celery task)
- Email/SMS stubs for alerts
-
-Celery Tasks (background jobs)
-Generate and store ID cards (uses GridFS)
-
- Aggregate reports asynchronously
- Periodic log cleanup (keep 7 days)
-
-Config Expectations
-MONGO_URI – MongoDB Atlas connection string (required)
-
-REDIS_URL – Redis connection (e.g., redis://localhost:6379)
-
-JWT_SECRET – Signing key for tokens (required)
-
-VITE_API_BASE_URL – Frontend-facing API URL (e.g., http://localhost:8000)
-
-LOG_LEVEL – Info, Debug, Error (default: Info)
-
-ENVIRONMENT – local, staging, production
-
-5. Frontend Design System (Non-Negotiable)
-Color Palette
-css
-:root {
-  /* Primary Zambia Green */
-  --zam-green-700: #15803d;
-  --zam-green-800: #166534;
-  --zam-green-900: #14532d;
-  
-  /* Secondary Orange (alerts, warnings) */
-  --zam-orange: #c2410c;
-  
-  /* Neutral */
-  --bg-main: #f8fafc;
-  --bg-card: #ffffff;
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --border-color: #e5e7eb;
+# Create config (reverse proxy to FastAPI)
+sudo tee /etc/nginx/conf.d/cem-backend.conf > /dev/null << EOF
+upstream fastapi {
+    server 127.0.0.1:8000;
 }
-Typography
-Body Font: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif
 
-Page Title: text-2xl font-bold text-gray-800
+server {
+    listen 80;
+    server_name _;
 
-Section Header: text-lg font-bold text-gray-800
+    client_max_body_size 10M;
 
-Label: text-xs font-bold text-gray-600 uppercase tracking-wider
+    location / {
+        proxy_pass http://fastapi;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        
+        # CORS headers (important for mobile APK)
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET,POST,PUT,DELETE,OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization' always;
+    }
+}
+EOF
 
-Body: text-sm text-gray-600
+# Start NGINX
+sudo systemctl start nginx
+sudo systemctl enable nginx
 
-Component Patterns
-Buttons:
+# Test
+curl http://your-ec2-ip/health
+```
 
-tsx
-// Primary (green)
-<button className="bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition">
-  Action
-</button>
+### Step 6: Enable SSL (Let's Encrypt)
+```bash
+# Install Certbot
+sudo yum install certbot python3-certbot-nginx -y
 
-// Secondary (white outline)
-<button className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 py-2 px-4 rounded-lg">
-  Cancel
-</button>
-Form Inputs:
+# Get certificate (replace with your domain or use IP)
+sudo certbot certonly --standalone -d your-domain.com
 
-tsx
-<input 
-  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
-  type="text"
-/>
-Cards:
+# Update NGINX to use SSL
+sudo certbot --nginx -d your-domain.com
 
-tsx
-<div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition border border-gray-200">
-  {/* content */}
-</div>
-Stat Cards (Dashboard):
+# Auto-renew
+sudo systemctl enable certbot-renew.timer
+```
 
-tsx
-<div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-600 hover:shadow-md transition">
-  <div className="flex justify-between">
-    <div>
-      <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Farmers Registered</p>
-      <h3 className="text-2xl font-bold text-gray-800 mt-1">1,240</h3>
-    </div>
-    <div className="bg-green-50 p-3 rounded-lg text-green-600">
-      <i className="fa-solid fa-users text-xl"></i>
-    </div>
-  </div>
-</div>
-Tables:
+---
 
-tsx
-<div className="bg-white rounded-xl shadow-sm overflow-hidden">
-  <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-    <h3 className="font-bold text-lg">Farmers List</h3>
-    <button className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg">
-      <i className="fa-solid fa-plus mr-2"></i> Add Farmer
-    </button>
-  </div>
-  <table className="w-full text-left text-sm text-gray-600">
-    <thead className="bg-gray-100 text-gray-700 font-bold uppercase text-xs">
-      <tr>
-        <th className="px-6 py-3">Name</th>
-        <th className="px-6 py-3">Status</th>
-      </tr>
-    </thead>
-    <tbody className="divide-y divide-gray-200">
-      <tr className="hover:bg-green-50 transition">
-        <td className="px-6 py-4">John Doe</td>
-        <td className="px-6 py-4">
-          <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-semibold rounded-full">
-            Active
-          </span>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-Status Badges:
+## 4. MOBILE APK BUILD & DEPLOYMENT
 
-Active: bg-green-100 text-green-800
-
-Pending: bg-yellow-100 text-yellow-800
-
-Rejected: bg-red-100 text-red-800
-
-Icons
-Use Font Awesome 6.4.0 (included via CDN)
-
-Common: fa-solid fa-users, fa-solid fa-chart-line, fa-solid fa-gear, fa-solid fa-wheat-awn
-
-6. Frontend Data Flow
-text
-Component
-  ↓
-  Hook (useState, useContext)
-  ↓
-  Service Layer (frontend/src/services/farmer.service.ts)
-  ↓
-  Axios (frontend/src/utils/axios.ts)
-  ↓
-  Backend API
-  ↓
-  Backend Service (business logic)
-  ↓
-  MongoDB (motor async)
-Key Rules:
-
-Never call axios directly in components; use *.service.ts files
-
-Auth Store (Zustand) syncs tokens to localStorage; axios interceptor refreshes on 401
-
-Refresh flow: Attempt one POST /auth/refresh, then logout on failure
-
-7. Development Workflow
-Full Stack (Local)
-bash
-docker-compose up --build
-# Launches: backend (8000), frontend (5173), mongo, redis, celery worker
-Backend Only
-bash
-cd backend
-python -m pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-Frontend Only
-bash
+### Build APK Locally (In GitHub Codespaces)
+```bash
 cd frontend
-npm install
-npm run dev
-Run Celery Worker
-bash
-cd backend
-celery -A app.tasks.celery_app worker --loglevel=info
-8. Common Task Instructions for Copilot
-A. Add a New Backend Endpoint
-Instruction to Copilot:
-
-text
-Create a new REST endpoint GET /api/farmers/{farmer_id}/stats
-
-Requirements:
-- Route: backend/app/routes/farmers.py
-- Service: backend/app/services/farmer_service.py (new or add to existing)
-- Database: Use motor async client from backend/app/database.py
-- Auth: Require JWT; extract user from request (admin or operator role)
-- Logging: Log the request start, response time, and any errors using backend/app/services/logging_service.py
-- Response schema: Use Pydantic model FarmerStatsResponse in backend/app/schemas/
-- Error handling: Return 404 if farmer not found, 403 if unauthorized, 500 if DB error
-- No hardcoded values; all config from backend/app/config.py
-
-Do NOT change existing auth flow, database client, or logging patterns.
-B. Add a New Frontend Page
-Instruction to Copilot:
-
-text
-Create a new page "Reports" for admins to view aggregated farmer stats.
-
-Requirements:
-- File: frontend/src/pages/Reports.tsx
-- Service: frontend/src/services/reports.service.ts (fetch /api/reports)
-- State: Use Zustand store for report filters (role, date range)
-- Design: Follow the dashboard design system:
-  - Stat cards with green borders (border-l-4 border-green-600)
-  - Table with pagination
-  - Search/filter inputs using the form input pattern
-  - Loading spinner while fetching
-  - Error notification using notification service
-- Icons: Font Awesome (fa-solid fa-chart-bar, fa-solid fa-download)
-- Responsive: mobile-first (sm:, md:, lg: prefixes)
-- Error handling: Show error toast if API fails; show empty state if no data
-- TypeScript strict: No 'as any'
-
-Do NOT hardcode any API URLs; use service layer.
-Do NOT change existing auth flow or axios interceptor.
-C. Add Error Handling & Notifications
-Instruction to Copilot:
-
-text
-Audit and fix error handling across all pages:
-
-Requirements:
-- All API calls must have try-catch
-- On error:
-  - Log to console (dev) and backend (prod)
-  - Show user-friendly toast/notification
-  - Do NOT expose internal error messages to users
-- Notification service: Use a centralized toast/notification component
-- Types: 'success', 'error', 'warning', 'info'
-- Duration: 3–5 seconds auto-dismiss
-- Styling: Match design system (green for success, red for error, yellow for warning)
-- Examples:
-  - 401 → "Session expired. Please log in again."
-  - 404 → "Resource not found."
-  - 500 → "Something went wrong. Please try again later."
-
-Do NOT change component logic or business rules; only add error handling UI.
-D. Prepare for Mobile (PWA + Capacitor)
-Instruction to Copilot:
-
-text
-Make the frontend ready for mobile deployment:
-
-Requirements:
-1. Manifest & PWA:
-   - Create public/manifest.json
-   - App name: "CEM"
-   - Icons: 192x192, 512x512 PNG (use your logo)
-   - Display: standalone
-   - Theme color: #15803d
-   - Background color: #ffffff
-
-2. Responsive Design:
-   - All pages must work on mobile (375px), tablet (768px), desktop (1920px)
-   - Use mobile-first approach (base + sm: md: lg: modifiers)
-   - Sidebar → hamburger menu on mobile
-   - Forms: Full width on mobile, 2-3 cols on desktop
-
-3. Performance:
-   - Lazy load images
-   - Code split pages
-   - Debounce search/filter inputs
-
-4. Service Worker:
-   - Basic caching for offline functionality (shell, static assets)
-
-5. Build Variants:
-   - Development: VITE_API_BASE_URL=http://localhost:8000
-   - Production APK: VITE_API_BASE_URL=https://api.cem.yourdomain.com (or EC2 IP)
-
-Do NOT change business logic or API contracts.
-Do NOT modify auth flow; PWA reuses existing Zustand store.
-E. Logging & Monitoring
-Instruction to Copilot:
 
-text
-Implement structured logging across backend:
-
-Requirements:
-1. Logging Service (backend/app/services/logging_service.py):
-   - Log to MongoDB collection system_logs
-   - Schema: {timestamp, level, module, endpoint, user_id, role, action, details, ip_address, response_time_ms}
-   - Async writes (don't block requests)
-
-2. Log All Endpoints:
-   - Log start: endpoint, user_id, role
-   - Log end: response code, response time
-   - Log errors: exception type, traceback
-
-3. Cleanup:
-   - Celery task: Keep logs for 7 days; delete older
-   - Run daily at 2 AM UTC
-
-4. Viewing Logs:
-   - Add endpoint GET /api/admin/logs (admin only)
-   - Filter by: date range, level, module, endpoint
-   - Return paginated results
-
-5. Frontend (optional):
-   - Add page: Admin → System Logs
-   - Table with log entries, filterable
-
-Do NOT log sensitive data (passwords, tokens, PII).
-Do NOT slow down requests with sync logging.
-F. Deployment to AWS EC2
-Instruction to Copilot:
-
-text
-Prepare backend for AWS EC2 deployment:
-
-Requirements:
-1. Environment:
-   - Create .env.production with all secrets (use AWS Secrets Manager)
-   - No hardcoded values
-   - Required vars: MONGO_URI, REDIS_URL, JWT_SECRET, ENVIRONMENT=production
-
-2. Dockerfile:
-   - Multi-stage: builder + runtime
-   - Base: python:3.11-slim
-   - Install deps, copy app, expose 8000
-   - CMD: uvicorn app.main:app --host 0.0.0.0 --port 8000
-
-3. docker-compose.yml (production):
-   - backend service: pull from ECR or local build
-   - environment: inject from .env.production
-   - volumes: /data for logs/certs
-   - restart: always
-   - health check: curl http://localhost:8000/health
-
-4. EC2 Setup Script:
-   - Launch t3.micro Ubuntu 22.04
-   - Install Docker + Docker Compose
-   - Clone repo, set .env.production
-   - Run docker-compose up -d
-   - Set up NGINX reverse proxy (port 80 → 8000)
-   - Enable SSL (Let's Encrypt/Certbot)
-
-5. Secrets Manager:
-   - Store MONGO_URI, REDIS_URL, JWT_SECRET in AWS Secrets Manager
-   - Fetch at startup or via environment variable
-
-Do NOT commit .env.production to Git.
-Do NOT use hardcoded localhost URLs in production.
-9. Current Issues & Fixes
-Issue 1: Env Variable Mismatch
-Problem: docker-compose.yml sets VITE_API_URL but frontend expects VITE_API_BASE_URL
-
-Fix: Standardize on VITE_API_BASE_URL everywhere; update docker-compose.yml and .env files
-
-Issue 2: Hard-Coded Remote URLs
-Problem: Fallback URLs in frontend/src/utils/axios.ts and vite.config.ts
-
-Fix: Remove fallbacks; rely on env variables only. Gate console.log with import.meta.env.DEV
-
-Issue 3: Backup Files
-Problem: Stale backups (frontend_backup/, *.bak) clutter repo
-
-Fix: Delete old backups; keep only active code
-
-Issue 4: Inconsistent UI
-Problem: Some components don't follow the design system
-
-Fix: Audit all components; update to match green theme, Tailwind classes, spacing
-
-10. Testing & Quality Checklist
-Before deploying to AWS, verify:
-
- Backend starts without errors: docker-compose up --build
-
- Frontend loads at http://localhost:5173
-
- Login works for admin/operator/farmer roles
-
- All REST endpoints respond (use curl or Postman)
-
- Celery worker starts and processes tasks
-
- Logs are being stored in MongoDB
-
- API errors show user-friendly messages (no raw exceptions)
-
- Forms validate inputs client-side and show errors
-
- Tables paginate and filter correctly
-
- Mobile layout is responsive (test in Chrome DevTools)
-
- Auth refresh works (test by manually expiring token)
-
- Rate limiting is in place (if needed)
-
-11. Deployment Steps (Once Ready)
-Set up AWS account (✓ Done)
-
-Create EC2 instance (t3.micro, free tier)
-
-Store secrets in AWS Secrets Manager
-
-Push backend to ECR (if using ECS later)
-
-SSH into EC2, install Docker, clone repo
-
-Set .env.production with AWS secrets
-
-Run docker-compose up -d
-
-Point mobile APK to backend URL
-
-Monitor logs via CloudWatch or docker logs
-
-
-# Rules
-1. Do NOT change core business logic
-2. Do NOT add hardcoded values
-3. Do NOT use 'as any' in TypeScript
-4. Do NOT modify auth flow without updating both frontend/src/utils/axios.ts and frontend/src/store/authStore.ts
-5. Always use service layer (frontend/src/services/*.ts) for API calls; never direct axios in components
-6. Always log operations using backend/app/services/logging_service.py
-7. Preserve motor vs pymongo split for async/sync database access
-8. Follow design system patterns for all UI components
-13. Success Criteria
-
-
-
-
-
-
+# Update API endpoint for production
+echo 'VITE_API_BASE_URL=https://your-ec2-ip.com' > .env.production
+
+# Build APK
+npm run build:mobile
+
+# Output location
+ls android/app/build/outputs/apk/debug/app-debug.apk
+
+# Copy to artifacts folder for easy download
+cp android/app/build/outputs/apk/debug/app-debug.apk ../artifacts/app-production.apk
+```
+
+### Deploy APK to Device
+```bash
+# Option 1: Via USB (if adb installed)
+adb install artifacts/app-production.apk
+
+# Option 2: Upload to cloud storage and share link
+# Option 3: Use GitHub Actions to auto-build on push
+```
+
+### GitHub Actions CI/CD for APK
+```yaml
+# .github/workflows/build-android.yml
+name: Build Android APK
+
+on:
+  push:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: cd frontend && npm install
+      
+      - name: Build APK
+        run: cd frontend && npm run build:mobile
+      
+      - name: Upload APK to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-debug.apk
+          path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+---
+
+## 5. CRITICAL PATTERNS IN YOUR PROJECT
+
+### Pattern 1: Motor vs PyMongo (CRITICAL)
+
+**Routes (EC2 FastAPI)** → Motor (async)
+```python
+# backend/app/routes/farmers.py
+from app.database import get_db
+
+@router.get("/api/farmers/{farmer_id}")
+async def get_farmer(farmer_id: str, db = Depends(get_db)):
+    # db is Motor client (async)
+    farmer = await db.farmers.find_one({"farmer_id": farmer_id})
+    return farmer
+```
+
+**Celery Tasks (EC2 Worker)** → PyMongo (sync)
+```python
+# backend/app/tasks/id_card_task.py
+from pymongo import MongoClient
+
+# Create sync client (NOT Motor!)
+MONGO_CLIENT = MongoClient(MONGO_URI)
+db = MONGO_CLIENT["cem_db"]
+
+@celery_app.task
+def generate_id_card(farmer_id: str):
+    # Uses sync pymongo
+    farmer = db.farmers.find_one({"farmer_id": farmer_id})
+    # ... generate PDF ...
+    db.farmers.update_one(
+        {"farmer_id": farmer_id},
+        {"$set": {"id_card_file_id": file_id}}
+    )
+```
+
+### Pattern 2: Mobile APK Authentication
+
+**Frontend** (React + Capacitor)
+```typescript
+// frontend/src/utils/axios.ts
+const axiosInstance = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  timeout: 10000
+});
+
+// Request interceptor: attach JWT token
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Response interceptor: refresh on 401
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Attempt one refresh
+      try {
+        const { data } = await axiosInstance.post('/auth/refresh', {});
+        localStorage.setItem('access_token', data.access_token);
+        error.config.headers.Authorization = `Bearer ${data.access_token}`;
+        return axiosInstance(error.config);
+      } catch {
+        // Logout on failed refresh
+        localStorage.clear();
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+**Backend** (FastAPI)
+```python
+# backend/app/main.py
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "https://your-ec2-ip.com",
+        "http://your-ec2-ip.com"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+### Pattern 3: Service Layer (NO Direct Axios)
+
+**Frontend Component** (Mobile APK)
+```typescript
+// frontend/src/pages/FarmerIDCard.tsx
+import { farmerService } from '@/services/farmer.service';
+
+const FarmerIDCard = () => {
+  const [farmer, setFarmer] = useState(null);
+
+  useEffect(() => {
+    const load = async () => {
+      const data = await farmerService.getFarmer(farmerId);
+      setFarmer(data);
+    };
+    load();
+  }, []);
+
+  const handleGenerateIDCard = async () => {
+    await farmerService.generateIDCard(farmer.farmer_id);
+  };
+};
+```
+
+**Service Layer**
+```typescript
+// frontend/src/services/farmer.service.ts
+import axios from '@/utils/axios'; // Pre-configured with auth
+
+export const farmerService = {
+  getFarmer: async (farmerId: string) => {
+    const { data } = await axios.get(`/api/farmers/${farmerId}`);
+    return data;
+  },
+
+  generateIDCard: async (farmerId: string) => {
+    const { data } = await axios.post(
+      `/api/farmers/${farmerId}/idcards/generate`
+    );
+    return data;
+  },
+
+  downloadIDCard: async (farmerId: string) => {
+    const response = await axios.get(
+      `/api/farmers/${farmerId}/idcards/download`,
+      { responseType: 'blob' }
+    );
+    // Download file...
+    return true;
+  }
+};
+```
+
+---
+
+## 6. INSTRUCTION TEMPLATES FOR AI AGENTS
+
+### Template A: Add Backend Endpoint (EC2)
+```
+CONTEXT:
+Need to add endpoint to approve farmers in bulk
+
+LOCATION:
+backend/app/routes/farmers.py (add new route)
+
+REQUIREMENTS:
+- POST /api/farmers/bulk-approve
+- Accept list of farmer_ids
+- Update status to "verified"
+- Log via logging_service.py
+- Only admin role allowed
+- Return success count
+
+IMPLEMENTATION:
+1. Add route handler (use Motor async)
+2. Add service method in farmer_service.py
+3. Call logging_service.log() for each update
+4. Validate admin role with @require_role("admin")
+
+DO NOT:
+- Use PyMongo (use Motor for routes)
+- Hardcode admin check (use decorator)
+- Skip logging
+```
+
+### Template B: Fix Mobile APK Connection
+```
+CONTEXT:
+Mobile APK cannot connect to EC2 backend
+
+LOCATION:
+frontend/.env.production
+
+DIAGNOSIS:
+1. Check VITE_API_BASE_URL is correct (your EC2 public IP)
+2. Verify EC2 security group allows port 80/443
+3. Check CORS headers in backend/app/main.py
+4. Verify backend is running: docker ps
+
+SOLUTION:
+# Get EC2 public IP
+aws ec2 describe-instances --filters "Name=tag:Name,Values=cem-backend" \
+  --query 'Reservations[].Instances[].PublicIpAddress'
+
+# Update frontend
+echo "VITE_API_BASE_URL=https://YOUR_EC2_IP" > frontend/.env.production
+
+# Rebuild APK
+cd frontend && npm run build:mobile
+
+# Check backend CORS
+curl -H "Origin: http://your-ec2-ip" \
+  http://your-ec2-ip/health
+```
+
+### Template C: Deploy New Version to EC2
+```
+CONTEXT:
+Updated backend code, need to deploy to EC2
+
+LOCATION:
+aws-deployment/ or manual docker-compose
+
+STEPS:
+1. Git push changes to main branch
+2. SSH into EC2
+3. Pull latest code: git pull origin main
+4. Rebuild Docker: docker-compose up -d --build
+5. Verify health: curl http://localhost:8000/health
+6. Check logs: docker-compose logs -f backend
+
+TROUBLESHOOT:
+# View all containers
+docker ps -a
+
+# See logs
+docker-compose logs backend
+
+# Restart service
+docker-compose restart backend
+
+# Full reset (if needed)
+docker-compose down
+docker-compose up -d
+```
+
+### Template D: Build & Deploy APK
+```
+CONTEXT:
+Need to build APK with production backend endpoint
+
+LOCATION:
+frontend/build-mobile.sh or npm commands
+
+STEPS:
+1. In Codespaces, update .env.production:
+   VITE_API_BASE_URL=https://your-ec2-ip.com
+
+2. Build APK:
+   cd frontend
+   npm run build:mobile
+
+3. APK location:
+   android/app/build/outputs/apk/debug/app-debug.apk
+
+4. Download & install on device:
+   adb install android/app/build/outputs/apk/debug/app-debug.apk
+
+5. Or share via GitHub Artifacts:
+   - Upload to artifacts/ folder
+   - Commit to repo
+   - Download from GitHub
+```
+
+---
+
+## 7. DEBUGGING CHECKLIST
+
+### Mobile APK Cannot Connect to Backend
+```bash
+# 1. Check backend is running on EC2
+docker ps | grep cem-backend
+
+# 2. Check logs
+docker-compose logs backend | tail -50
+
+# 3. Test health endpoint
+curl https://your-ec2-ip/health
+
+# 4. Check CORS
+curl -H "Origin: http://your-ec2-ip" https://your-ec2-ip/health
+
+# 5. Verify .env.production in frontend
+cat frontend/.env.production
+
+# 6. Rebuild APK with correct URL
+cd frontend && npm run build:mobile
+```
+
+### Celery Task Not Running
+```bash
+# 1. Check celery-worker container
+docker logs cem-celery
+
+# 2. Check Redis connection
+docker exec cem-redis redis-cli ping
+
+# 3. Check task in MongoDB
+mongosh "mongodb+srv://..." --eval "db.system_logs.find({level: 'error'})"
+
+# 4. Restart worker
+docker-compose restart celery-worker
+```
+
+### Backend API Returning 500
+```bash
+# 1. Check logs
+docker-compose logs backend | grep -i error
+
+# 2. Check MongoDB connection
+# In backend container:
+docker exec cem-backend python -c "from app.database import get_db; print('DB OK')"
+
+# 3. Test endpoint manually
+curl -X GET http://localhost:8000/api/farmers/ZM12345
+
+# 4. Check .env.production
+docker exec cem-backend env | grep MONGO
+```
+
+---
+
+## 8. FILE LOCATIONS QUICK REFERENCE
+
+| Task | File |
+|------|------|
+| Add backend endpoint | `backend/app/routes/{domain}.py` |
+| Add backend service | `backend/app/services/{domain}_service.py` |
+| Add Celery task | `backend/app/tasks/{job}_task.py` |
+| Add mobile page | `frontend/src/pages/{Feature}.tsx` |
+| Add API service | `frontend/src/services/{domain}.service.ts` |
+| Configure mobile URL | `frontend/.env.production` |
+| EC2 config | `.env.production` (root) |
+| Deploy to EC2 | `aws-deployment/deploy-all.sh` |
+| View EC2 logs | `docker-compose logs -f backend` |
+| Build APK | `cd frontend && npm run build:mobile` |
+
+---
+
+## 9. CRITICAL DO NOTs (EC2 + Mobile)
+
+| ❌ DO NOT | ✓ DO THIS |
+|-----------|----------|
+| Use Motor in Celery tasks | Use PyMongo directly in tasks/ |
+| Hardcode API URL in components | Use .env.production + VITE_API_BASE_URL |
+| Call axios directly in components | Use service layer from frontend/src/services/ |
+| Commit .env.production to Git | Store in EC2 only, never in repo |
+| Use localStorage for sensitive data | OK for tokens (with refresh mechanism) |
+| Disable CORS on EC2 | Keep CORS enabled for mobile APK + web |
+| Run docker without -d flag | Use docker-compose up -d (background) |
+| Trust self-signed certs on mobile | Use proper SSL (Let's Encrypt via NGINX) |
+| Use PyMongo in FastAPI routes | Use Motor (async) for request handlers |
+| Forget to set ALLOW_ORIGINS | Include EC2 IP in CORS whitelist |
+
+---
+
+## 10. QUICK DEPLOYMENT REFERENCE
+
+### First-Time EC2 Deployment
+```bash
+# From local machine
+ssh -i your-key.pem ec2-user@your-ec2-ip
+
+# On EC2
+git clone https://github.com/yourusername/cem.git
+cd cem
+
+# Create .env.production with secrets
+nano .env.production
+
+# Start services
+docker-compose up -d
+docker-compose logs -f
+
+# Test
+curl http://localhost:8000/health
+```
+
+### Update Backend Code (Subsequent Deploys)
+```bash
+# On EC2
+cd cem
+git pull origin main
+docker-compose up -d --build
+docker-compose logs -f backend
+```
+
+### Build APK for Production
+```bash
+# In Codespaces
+cd frontend
+echo "VITE_API_BASE_URL=https://your-ec2-ip.com" > .env.production
+npm run build:mobile
+# APK: android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Monitor EC2 Services
+```bash
+# SSH to EC2
+docker ps                          # List all containers
+docker-compose logs -f             # Stream all logs
+docker stats                       # Monitor resources
+curl http://localhost:8000/health # Health check
+```
+
+---
+
+## 11. ARCHITECTURE SUMMARY
+
+**Your deployment is:**
+- ✅ Single EC2 instance (cost-effective)
+- ✅ Backend + Celery + Redis all on EC2
+- ✅ MongoDB Atlas (managed cloud database)
+- ✅ Mobile APK connects via HTTPS to EC2
+- ✅ NGINX reverse proxy (optional but recommended)
+- ✅ GitHub Codespaces for development
+
+**Key differences from generic guides:**
+- NOT using ECS/Fargate (too expensive for free tier)
+- NOT using multiple databases (only MongoDB Atlas)
+- NOT using separate Redis service (Redis on EC2)
+- Mobile APK is PRIMARY (web is secondary)
+- EC2 runs ALL backend services in Docker
+
+---
+
+## 12. SUCCESS CHECKLIST
+
+- [ ] EC2 instance running (t3.micro)
+- [ ] Docker + Docker Compose installed
+- [ ] MongoDB Atlas cluster connected
+- [ ] Backend running in Docker (port 8000)
+- [ ] Celery worker processing tasks
+- [ ] Redis broker active
+- [ ] CORS headers configured for mobile
+- [ ] NGINX reverse proxy working (optional)
+- [ ] SSL certificate installed (Let's Encrypt)
+- [ ] Mobile APK connects to EC2 backend
+- [ ] Login works on APK
+- [ ] Can generate ID cards
+- [ ] Logs appear in MongoDB
+- [ ] Health check: `curl https://your-ec2-ip/health` returns 200
+
+---
+
+**Last Updated:** Jan 3, 2026 | Architecture: Single EC2 Instance
+**Next Steps:** Testing and modifications and enhacements and bug fixings.
 
