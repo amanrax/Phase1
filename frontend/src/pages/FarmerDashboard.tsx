@@ -168,7 +168,7 @@ export default function FarmerDashboard() {
         showSuccess(`✅ ID card saved to:\n${result.savedPath}`, 8000);
       } else if (result?.downloaded) {
         // Web - browser download
-        showSuccess("✅ ID card downloaded! Check your Downloads folder.", 5000);
+        showSuccess("Downloaded to Downloads folder", 3000);
       } else {
         showError("Download failed. Please try again.", 4000);
       }

@@ -12,6 +12,7 @@ const IDCardViewer: React.FC = () => {
   const [pdfError, setPdfError] = useState(false);
   const [isNative, setIsNative] = useState(false);
   const [autoDownloading, setAutoDownloading] = useState(false);
+  const [viewingNatively, setViewingNatively] = useState(false);
 
   useEffect(() => {
     console.log('[IDCardViewer] Component mounted');
@@ -22,14 +23,9 @@ const IDCardViewer: React.FC = () => {
         const native = Capacitor?.isNativePlatform?.() || false;
         setIsNative(native);
         
-        // If mobile, trigger automatic download and show message
+        // If mobile, offer to open with native app instead of auto-downloading
         if (native) {
-          console.log('[IDCardViewer] Mobile detected - will auto-download PDF');
-          setAutoDownloading(true);
-          // Trigger download after a brief delay
-          setTimeout(() => {
-            handleDownload();
-          }, 500);
+          console.log('[IDCardViewer] Mobile detected - will offer native app opening');
         }
       } catch (e) {
         setIsNative(false);
@@ -72,6 +68,60 @@ const IDCardViewer: React.FC = () => {
     };
   }, [navigate, showError]);
 
+  // Open PDF with native app (Android's "Open with..." menu)
+  const handleOpenWithApp = async () => {
+    if (!url) {
+      showError('No PDF available', 3000);
+      return;
+    }
+
+    try {
+      setViewingNatively(true);
+      const { Filesystem, Directory } = await import('@capacitor/filesystem');
+      const { Share } = await import('@capacitor/share');
+      
+      const response = await fetch(url);
+      const blob = await response.blob();
+      
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `ID_Card_${farmerName.replace(/\s+/g, '_')}_${timestamp}.pdf`;
+      
+      // Save to cache first
+      const result = await Filesystem.writeFile({
+        path: filename,
+        data: base64,
+        directory: Directory.Cache,
+      });
+      
+      const fileUri = (result as any).uri;
+      
+      // Share/Open with app chooser
+      await Share.share({
+        title: `${farmerName}'s ID Card`,
+        text: 'View ID Card',
+        url: fileUri,
+        dialogTitle: 'Open with...'
+      });
+      
+      setViewingNatively(false);
+      
+    } catch (error) {
+      console.error('[IDCardViewer] Failed to open with app:', error);
+      setViewingNatively(false);
+      showError('Could not open PDF. Try downloading instead.', 4000);
+    }
+  };
+
   const handleDownload = async () => {
     if (!url) {
       showError('No PDF to download', 3000);
@@ -80,7 +130,7 @@ const IDCardViewer: React.FC = () => {
 
     let downloadNotifId: string | undefined;
     try {
-      downloadNotifId = showInfo('📥 Downloading...', 8000);
+      downloadNotifId = showInfo('Downloading...', 5000);
       console.log('[IDCardViewer] Starting download');
 
       if (isNative) {
@@ -103,12 +153,11 @@ const IDCardViewer: React.FC = () => {
         const filename = `ID_Card_${farmerName.replace(/\s+/g, '_')}_${timestamp}.pdf`;
         
         try {
-          // ✅ NEW: Try to save to External storage (Downloads folder) first
           console.log('[IDCardViewer] Attempting to save to Downloads folder...');
           const result = await Filesystem.writeFile({
-            path: filename, // No subdirectory for Downloads
+            path: filename,
             data: base64,
-            directory: Directory.External, // Public Downloads folder
+            directory: Directory.External,
             recursive: false,
           });
 
@@ -116,15 +165,11 @@ const IDCardViewer: React.FC = () => {
           console.log('[IDCardViewer] ✅ File saved to Downloads:', savedPath);
           
           if (downloadNotifId) dismiss(downloadNotifId);
-          showSuccess(
-            `✅ ID Card Downloaded!\n\n📂 Location: Downloads folder\n📄 File: ${filename}\n\n💡 Open your File Manager app to view it.`,
-            8000
-          );
+          showSuccess('Downloaded to Downloads folder', 4000);
 
         } catch (fsErr: any) {
           console.error('[IDCardViewer] External storage write failed:', fsErr);
           
-          // ✅ FALLBACK: Try Documents folder if External fails
           try {
             console.log('[IDCardViewer] Trying Documents folder as fallback...');
             const fallbackResult = await Filesystem.writeFile({
@@ -134,10 +179,8 @@ const IDCardViewer: React.FC = () => {
               recursive: true,
             });
             
-            const fallbackPath = (fallbackResult as any).uri || `Documents/CEM/${filename}`;
-            console.log('[IDCardViewer] ✅ Saved to Documents folder:', fallbackPath);
-            
             if (downloadNotifId) dismiss(downloadNotifId);
+            showSuccess('Saved to Documents/CEM folder', 4000);
             showSuccess(
               `✅ ID Card Saved!\n\n📂 Location: Documents/CEM/${filename}\n\n💡 Open "Files" app > Documents > CEM folder`,
               8000
@@ -249,35 +292,43 @@ const IDCardViewer: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
           {isNative ? (
-            // Mobile: Show download message instead of trying to render PDF
+            // Mobile: Show options to open or download
             <div className="text-center py-20">
-              <div className="text-6xl mb-4">📥</div>
+              <div className="text-6xl mb-4">📄</div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">
-                {autoDownloading ? 'Downloading ID Card...' : 'ID Card Ready'}
+                {viewingNatively ? 'Opening...' : 'ID Card Ready'}
               </h3>
               <p className="text-gray-600 mb-6">
-                {autoDownloading 
-                  ? 'Your ID card is being downloaded to the Downloads folder.' 
-                  : 'Tap the Download button below to save the ID card to your device.'}
+                {viewingNatively 
+                  ? 'Choose an app to view the PDF...' 
+                  : 'Open with your favorite PDF viewer or download to your device'}
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="flex flex-col gap-3 max-w-sm mx-auto">
+                <button
+                  onClick={handleOpenWithApp}
+                  disabled={viewingNatively}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  📱 Open with App...
+                </button>
                 <button
                   onClick={handleDownload}
-                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition active:scale-95"
+                  disabled={viewingNatively}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  📥 Download ID Card
+                  📥 Download to Device
                 </button>
                 <button
                   onClick={() => navigate(-1)}
-                  className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition active:scale-95"
+                  disabled={viewingNatively}
+                  className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ← Go Back
                 </button>
               </div>
-              <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 text-left">
+              <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 text-left max-w-sm mx-auto">
                 <p className="text-sm text-blue-800">
-                  <strong>💡 Where to find it:</strong> Files are saved to your <strong>Downloads</strong> folder. 
-                  Open your File Manager app to access downloaded ID cards.
+                  <strong>💡 Tip:</strong> "Open with App" lets you choose your PDF viewer (Google Drive, Adobe, etc.)
                 </p>
               </div>
             </div>

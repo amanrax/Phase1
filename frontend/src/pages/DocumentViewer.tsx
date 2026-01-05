@@ -12,6 +12,7 @@ const DocumentViewer: React.FC = () => {
   const [viewError, setViewError] = useState(false);
   const [isNative, setIsNative] = useState(false);
   const [autoDownloading, setAutoDownloading] = useState(false);
+  const [viewingNatively, setViewingNatively] = useState(false);
 
   useEffect(() => {
     console.log('[DocViewer] Component mounted');
@@ -22,10 +23,9 @@ const DocumentViewer: React.FC = () => {
         const native = Capacitor?.isNativePlatform?.() || false;
         setIsNative(native);
         
-        // If mobile and PDF, trigger automatic download
+        // If mobile, offer native app opening
         if (native) {
-          console.log('[DocViewer] Mobile detected - checking document type');
-          // Will trigger auto-download for PDFs after URL is set
+          console.log('[DocViewer] Mobile detected - will offer native app opening');
         }
       } catch (e) {
         setIsNative(false);
@@ -67,22 +67,66 @@ const DocumentViewer: React.FC = () => {
     };
   }, [navigate, showError]);
 
-  // Auto-download PDFs on mobile
-  useEffect(() => {
-    if (isNative && docUrl) {
-      const isPDF = docUrl.toLowerCase().includes('.pdf') || 
-                    docUrl.includes('application/pdf') || 
-                    docUrl.includes('data:application/pdf');
-      
-      if (isPDF && !autoDownloading) {
-        console.log('[DocViewer] PDF on mobile - triggering auto-download');
-        setAutoDownloading(true);
-        setTimeout(() => {
-          handleDownload();
-        }, 500);
-      }
+  // Open document with native app (Android's "Open with..." menu)
+  const handleOpenWithApp = async () => {
+    if (!docUrl) {
+      showError('No document available', 3000);
+      return;
     }
-  }, [isNative, docUrl]);
+
+    try {
+      setViewingNatively(true);
+      const { Filesystem, Directory } = await import('@capacitor/filesystem');
+      const { Share } = await import('@capacitor/share');
+      
+      const response = await fetch(docUrl);
+      const blob = await response.blob();
+      
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      
+      // Determine file extension
+      const contentType = blob.type || '';
+      const ext = contentType.includes('pdf') ? 'pdf' 
+        : contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg'
+        : contentType.includes('png') ? 'png'
+        : 'file';
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `${docTitle.replace(/\s+/g, '_')}_${timestamp}.${ext}`;
+      
+      // Save to cache
+      const result = await Filesystem.writeFile({
+        path: filename,
+        data: base64,
+        directory: Directory.Cache,
+      });
+      
+      const fileUri = (result as any).uri;
+      
+      // Share/Open with app chooser
+      await Share.share({
+        title: docTitle,
+        text: 'View Document',
+        url: fileUri,
+        dialogTitle: 'Open with...'
+      });
+      
+      setViewingNatively(false);
+      
+    } catch (error) {
+      console.error('[DocViewer] Failed to open with app:', error);
+      setViewingNatively(false);
+      showError('Could not open document. Try downloading instead.', 4000);
+    }
+  };
 
   const handleDownload = async () => {
     if (!docUrl) {
@@ -92,7 +136,7 @@ const DocumentViewer: React.FC = () => {
 
     let downloadNotifId: string | undefined;
     try {
-      downloadNotifId = showInfo('📥 Downloading...', 8000);
+      downloadNotifId = showInfo('Downloading...', 5000);
       console.log('[DocViewer] Starting download');
 
       if (isNative) {
@@ -136,10 +180,7 @@ const DocumentViewer: React.FC = () => {
           console.log('[DocViewer] ✅ File saved to Downloads:', savedPath);
           
           if (downloadNotifId) dismiss(downloadNotifId);
-          showSuccess(
-            `✅ Document Downloaded!\n\n📂 Location: Downloads folder\n📄 File: ${filename}\n\n💡 Open your File Manager app to view it.`,
-            8000
-          );
+          showSuccess('Saved to Downloads', 3000);
 
         } catch (fsErr: any) {
           console.error('[DocViewer] External storage write failed:', fsErr);
@@ -158,10 +199,7 @@ const DocumentViewer: React.FC = () => {
             console.log('[DocViewer] ✅ Saved to Documents folder:', fallbackPath);
             
             if (downloadNotifId) dismiss(downloadNotifId);
-            showSuccess(
-              `✅ Document Saved!\n\n📂 Location: Documents/CEM/${filename}\n\n💡 Open "Files" app > Documents > CEM folder`,
-              8000
-            );
+            showSuccess('Saved to Documents/CEM', 3000);
           } catch (docErr: any) {
             console.error('[DocViewer] Both External and Documents failed:', docErr);
             if (downloadNotifId) dismiss(downloadNotifId);
@@ -283,35 +321,43 @@ const DocumentViewer: React.FC = () => {
               </div>
             </div>
           ) : isPDF && isNative ? (
-            // Mobile PDF: Show download message instead of trying to render
+            // Mobile PDF: Show options to open or download
             <div className="text-center py-20">
-              <div className="text-6xl mb-4">📥</div>
+              <div className="text-6xl mb-4">📄</div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">
-                {autoDownloading ? 'Downloading Document...' : 'Document Ready'}
+                {viewingNatively ? 'Opening...' : 'Document Ready'}
               </h3>
               <p className="text-gray-600 mb-6">
-                {autoDownloading 
-                  ? 'Your document is being downloaded to the Downloads folder.' 
-                  : 'Tap the Download button below to save the document to your device.'}
+                {viewingNatively 
+                  ? 'Choose an app to view the document...' 
+                  : 'Open with your favorite PDF viewer or download to your device'}
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="flex flex-col gap-3 max-w-sm mx-auto">
+                <button
+                  onClick={handleOpenWithApp}
+                  disabled={viewingNatively}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  📱 Open with App...
+                </button>
                 <button
                   onClick={handleDownload}
-                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition active:scale-95"
+                  disabled={viewingNatively}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  📥 Download Document
+                  📥 Download to Device
                 </button>
                 <button
                   onClick={() => navigate(-1)}
-                  className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition active:scale-95"
+                  disabled={viewingNatively}
+                  className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ← Go Back
                 </button>
               </div>
-              <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 text-left">
+              <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 text-left max-w-sm mx-auto">
                 <p className="text-sm text-blue-800">
-                  <strong>💡 Where to find it:</strong> Files are saved to your <strong>Downloads</strong> folder. 
-                  Open your File Manager app to access downloaded documents.
+                  <strong>💡 Tip:</strong> "Open with App" lets you choose your PDF viewer (Google Drive, Adobe, etc.)
                 </p>
               </div>
             </div>
