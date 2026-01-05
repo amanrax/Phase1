@@ -68,7 +68,7 @@ const IDCardViewer: React.FC = () => {
     };
   }, [navigate, showError]);
 
-  // Open PDF with native app (Android's PDF viewer app chooser)
+  // Download PDF and show instructions to open
   const handleOpenWithApp = async () => {
     if (!url) {
       showError('No PDF available', 3000);
@@ -78,7 +78,6 @@ const IDCardViewer: React.FC = () => {
     try {
       setViewingNatively(true);
       const { Filesystem, Directory } = await import('@capacitor/filesystem');
-      const { Browser } = await import('@capacitor/browser');
       
       const response = await fetch(url);
       const blob = await response.blob();
@@ -96,7 +95,7 @@ const IDCardViewer: React.FC = () => {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `ID_Card_${farmerName.replace(/\s+/g, '_')}_${timestamp}.pdf`;
       
-      // Save to external storage so other apps can access it
+      // Save to Downloads folder
       const result = await Filesystem.writeFile({
         path: filename,
         data: base64,
@@ -104,22 +103,15 @@ const IDCardViewer: React.FC = () => {
         recursive: false,
       });
       
-      const fileUri = (result as any).uri;
-      console.log('[IDCardViewer] Opening PDF with URI:', fileUri);
-      
-      // Open with Browser plugin - Android will show app chooser for PDF viewers
-      await Browser.open({ 
-        url: fileUri,
-        presentationStyle: 'popover'
-      });
+      console.log('[IDCardViewer] ✅ Saved to Downloads:', filename);
       
       setViewingNatively(false);
-      showSuccess('Opening in PDF viewer...', 2000);
+      showSuccess(`Saved to Downloads\n\nTap notification or open File Manager > Downloads > ${filename}`, 6000);
       
     } catch (error) {
-      console.error('[IDCardViewer] Failed to open with app:', error);
+      console.error('[IDCardViewer] Failed to save:', error);
       setViewingNatively(false);
-      showError('Could not open PDF. Try downloading instead.', 4000);
+      showError('Could not save PDF. Try downloading instead.', 4000);
     }
   };
 
@@ -291,12 +283,12 @@ const IDCardViewer: React.FC = () => {
             <div className="text-center py-20">
               <div className="text-6xl mb-4">📄</div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">
-                {viewingNatively ? 'Opening...' : 'ID Card Ready'}
+                {viewingNatively ? 'Saving...' : 'ID Card Ready'}
               </h3>
               <p className="text-gray-600 mb-6">
                 {viewingNatively 
-                  ? 'Choose an app to view the PDF...' 
-                  : 'Open with your favorite PDF viewer or download to your device'}
+                  ? 'Saving to Downloads folder...' 
+                  : 'Save to Downloads and open with your PDF viewer'}
               </p>
               <div className="flex flex-col gap-3 max-w-sm mx-auto">
                 <button
@@ -304,7 +296,7 @@ const IDCardViewer: React.FC = () => {
                   disabled={viewingNatively}
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  📱 Open with App...
+                  📥 Save to Downloads
                 </button>
                 <button
                   onClick={handleDownload}
@@ -323,7 +315,7 @@ const IDCardViewer: React.FC = () => {
               </div>
               <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 text-left max-w-sm mx-auto">
                 <p className="text-sm text-blue-800">
-                  <strong>💡 Tip:</strong> "Open with App" lets you choose your PDF viewer (Google Drive, Adobe, etc.)
+                  <strong>💡 Tip:</strong> After saving, tap the notification or open File Manager > Downloads to view the PDF
                 </p>
               </div>
             </div>
