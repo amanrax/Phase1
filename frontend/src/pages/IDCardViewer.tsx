@@ -68,7 +68,7 @@ const IDCardViewer: React.FC = () => {
     };
   }, [navigate, showError]);
 
-  // Open PDF with native app (Android's "Open with..." menu)
+  // Open PDF with native app (Android's PDF viewer app chooser)
   const handleOpenWithApp = async () => {
     if (!url) {
       showError('No PDF available', 3000);
@@ -78,7 +78,7 @@ const IDCardViewer: React.FC = () => {
     try {
       setViewingNatively(true);
       const { Filesystem, Directory } = await import('@capacitor/filesystem');
-      const { Share } = await import('@capacitor/share');
+      const { Browser } = await import('@capacitor/browser');
       
       const response = await fetch(url);
       const blob = await response.blob();
@@ -96,24 +96,25 @@ const IDCardViewer: React.FC = () => {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `ID_Card_${farmerName.replace(/\s+/g, '_')}_${timestamp}.pdf`;
       
-      // Save to cache first
+      // Save to external storage so other apps can access it
       const result = await Filesystem.writeFile({
         path: filename,
         data: base64,
-        directory: Directory.Cache,
+        directory: Directory.External,
+        recursive: false,
       });
       
       const fileUri = (result as any).uri;
+      console.log('[IDCardViewer] Opening PDF with URI:', fileUri);
       
-      // Share/Open with app chooser
-      await Share.share({
-        title: `${farmerName}'s ID Card`,
-        text: 'View ID Card',
+      // Open with Browser plugin - Android will show app chooser for PDF viewers
+      await Browser.open({ 
         url: fileUri,
-        dialogTitle: 'Open with...'
+        presentationStyle: 'popover'
       });
       
       setViewingNatively(false);
+      showSuccess('Opening in PDF viewer...', 2000);
       
     } catch (error) {
       console.error('[IDCardViewer] Failed to open with app:', error);
@@ -279,12 +280,6 @@ const IDCardViewer: React.FC = () => {
                 🆔 {farmerName}'s ID Card
               </h1>
             </div>
-            <button
-              onClick={handleDownload}
-              className="bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center gap-2 transition text-sm sm:text-base"
-            >
-              <span>📥</span> Download
-            </button>
           </div>
         </div>
       </header>

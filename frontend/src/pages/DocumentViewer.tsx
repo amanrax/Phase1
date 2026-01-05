@@ -67,7 +67,7 @@ const DocumentViewer: React.FC = () => {
     };
   }, [navigate, showError]);
 
-  // Open document with native app (Android's "Open with..." menu)
+  // Open document with native app (Android's PDF viewer app chooser)
   const handleOpenWithApp = async () => {
     if (!docUrl) {
       showError('No document available', 3000);
@@ -77,7 +77,7 @@ const DocumentViewer: React.FC = () => {
     try {
       setViewingNatively(true);
       const { Filesystem, Directory } = await import('@capacitor/filesystem');
-      const { Share } = await import('@capacitor/share');
+      const { Browser } = await import('@capacitor/browser');
       
       const response = await fetch(docUrl);
       const blob = await response.blob();
@@ -102,24 +102,25 @@ const DocumentViewer: React.FC = () => {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `${docTitle.replace(/\s+/g, '_')}_${timestamp}.${ext}`;
       
-      // Save to cache
+      // Save to external storage
       const result = await Filesystem.writeFile({
         path: filename,
         data: base64,
-        directory: Directory.Cache,
+        directory: Directory.External,
+        recursive: false,
       });
       
       const fileUri = (result as any).uri;
+      console.log('[DocViewer] Opening document with URI:', fileUri);
       
-      // Share/Open with app chooser
-      await Share.share({
-        title: docTitle,
-        text: 'View Document',
+      // Open with Browser plugin - Android will show app chooser
+      await Browser.open({ 
         url: fileUri,
-        dialogTitle: 'Open with...'
+        presentationStyle: 'popover'
       });
       
       setViewingNatively(false);
+      showSuccess('Opening in viewer...', 2000);
       
     } catch (error) {
       console.error('[DocViewer] Failed to open with app:', error);
@@ -288,12 +289,6 @@ const DocumentViewer: React.FC = () => {
               </button>
               <h1 className="text-xl sm:text-2xl font-bold text-gray-800">{docTitle}</h1>
             </div>
-            <button
-              onClick={handleDownload}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition active:scale-95"
-            >
-              📥 Download
-            </button>
           </div>
         </div>
       </header>
