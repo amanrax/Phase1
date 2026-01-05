@@ -11,6 +11,7 @@ const DocumentViewer: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [viewError, setViewError] = useState(false);
   const [isNative, setIsNative] = useState(false);
+  const [autoDownloading, setAutoDownloading] = useState(false);
 
   useEffect(() => {
     console.log('[DocViewer] Component mounted');
@@ -18,7 +19,14 @@ const DocumentViewer: React.FC = () => {
     const checkPlatform = async () => {
       try {
         const { Capacitor } = await import('@capacitor/core');
-        setIsNative(Capacitor?.isNativePlatform?.() || false);
+        const native = Capacitor?.isNativePlatform?.() || false;
+        setIsNative(native);
+        
+        // If mobile and PDF, trigger automatic download
+        if (native) {
+          console.log('[DocViewer] Mobile detected - checking document type');
+          // Will trigger auto-download for PDFs after URL is set
+        }
       } catch (e) {
         setIsNative(false);
       }
@@ -58,6 +66,23 @@ const DocumentViewer: React.FC = () => {
       sessionStorage.removeItem('doc_view_title');
     };
   }, [navigate, showError]);
+
+  // Auto-download PDFs on mobile
+  useEffect(() => {
+    if (isNative && docUrl) {
+      const isPDF = docUrl.toLowerCase().includes('.pdf') || 
+                    docUrl.includes('application/pdf') || 
+                    docUrl.includes('data:application/pdf');
+      
+      if (isPDF && !autoDownloading) {
+        console.log('[DocViewer] PDF on mobile - triggering auto-download');
+        setAutoDownloading(true);
+        setTimeout(() => {
+          handleDownload();
+        }, 500);
+      }
+    }
+  }, [isNative, docUrl]);
 
   const handleDownload = async () => {
     if (!docUrl) {
@@ -257,7 +282,41 @@ const DocumentViewer: React.FC = () => {
                 </button>
               </div>
             </div>
+          ) : isPDF && isNative ? (
+            // Mobile PDF: Show download message instead of trying to render
+            <div className="text-center py-20">
+              <div className="text-6xl mb-4">📥</div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
+                {autoDownloading ? 'Downloading Document...' : 'Document Ready'}
+              </h3>
+              <p className="text-gray-600 mb-6">
+                {autoDownloading 
+                  ? 'Your document is being downloaded to the Downloads folder.' 
+                  : 'Tap the Download button below to save the document to your device.'}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={handleDownload}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition active:scale-95"
+                >
+                  📥 Download Document
+                </button>
+                <button
+                  onClick={() => navigate(-1)}
+                  className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition active:scale-95"
+                >
+                  ← Go Back
+                </button>
+              </div>
+              <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 text-left">
+                <p className="text-sm text-blue-800">
+                  <strong>💡 Where to find it:</strong> Files are saved to your <strong>Downloads</strong> folder. 
+                  Open your File Manager app to access downloaded documents.
+                </p>
+              </div>
+            </div>
           ) : isPDF ? (
+            // Desktop PDF viewer
             <div style={{ 
               width: '100%', 
               height: '75vh', 
@@ -279,6 +338,7 @@ const DocumentViewer: React.FC = () => {
               />
             </div>
           ) : (
+            // Image viewer (works on both mobile and desktop)
             <div className="flex justify-center">
               <img 
                 src={docUrl} 
@@ -293,14 +353,13 @@ const DocumentViewer: React.FC = () => {
             </div>
           )}
           
-          <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4">
-            <p className="text-sm text-blue-800">
-              <strong>💡 Tip:</strong> {isNative 
-                ? 'On mobile, files are saved to your Downloads folder. Open your File Manager app to access downloaded documents.'
-                : 'If the document doesn\'t display, click "Download" to save it to your device.'
-              }
-            </p>
-          </div>
+          {!isNative && (
+            <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4">
+              <p className="text-sm text-blue-800">
+                <strong>💡 Tip:</strong> If the document doesn't display, click "Download" to save it to your device.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

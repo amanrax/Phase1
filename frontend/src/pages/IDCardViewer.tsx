@@ -11,6 +11,7 @@ const IDCardViewer: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [pdfError, setPdfError] = useState(false);
   const [isNative, setIsNative] = useState(false);
+  const [autoDownloading, setAutoDownloading] = useState(false);
 
   useEffect(() => {
     console.log('[IDCardViewer] Component mounted');
@@ -18,7 +19,18 @@ const IDCardViewer: React.FC = () => {
     const checkPlatform = async () => {
       try {
         const { Capacitor } = await import('@capacitor/core');
-        setIsNative(Capacitor?.isNativePlatform?.() || false);
+        const native = Capacitor?.isNativePlatform?.() || false;
+        setIsNative(native);
+        
+        // If mobile, trigger automatic download and show message
+        if (native) {
+          console.log('[IDCardViewer] Mobile detected - will auto-download PDF');
+          setAutoDownloading(true);
+          // Trigger download after a brief delay
+          setTimeout(() => {
+            handleDownload();
+          }, 500);
+        }
       } catch (e) {
         setIsNative(false);
       }
@@ -236,7 +248,40 @@ const IDCardViewer: React.FC = () => {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
-          {pdfError ? (
+          {isNative ? (
+            // Mobile: Show download message instead of trying to render PDF
+            <div className="text-center py-20">
+              <div className="text-6xl mb-4">📥</div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
+                {autoDownloading ? 'Downloading ID Card...' : 'ID Card Ready'}
+              </h3>
+              <p className="text-gray-600 mb-6">
+                {autoDownloading 
+                  ? 'Your ID card is being downloaded to the Downloads folder.' 
+                  : 'Tap the Download button below to save the ID card to your device.'}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={handleDownload}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition active:scale-95"
+                >
+                  📥 Download ID Card
+                </button>
+                <button
+                  onClick={() => navigate(-1)}
+                  className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition active:scale-95"
+                >
+                  ← Go Back
+                </button>
+              </div>
+              <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 text-left">
+                <p className="text-sm text-blue-800">
+                  <strong>💡 Where to find it:</strong> Files are saved to your <strong>Downloads</strong> folder. 
+                  Open your File Manager app to access downloaded ID cards.
+                </p>
+              </div>
+            </div>
+          ) : pdfError ? (
             <div className="text-center py-20">
               <div className="text-6xl mb-4">📄</div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">Failed to Load PDF</h3>
@@ -257,6 +302,7 @@ const IDCardViewer: React.FC = () => {
               </div>
             </div>
           ) : (
+            // Desktop: Show PDF viewer
             <div style={{ 
               width: '100%', 
               height: '75vh', 
@@ -294,14 +340,13 @@ const IDCardViewer: React.FC = () => {
             </div>
           )}
           
-          <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4">
-            <p className="text-sm text-blue-800">
-              <strong>💡 Tip:</strong> {isNative 
-                ? 'On mobile, files are saved to your Downloads folder. Open your File Manager app to access downloaded ID cards.'
-                : 'If the PDF doesn\'t display, click "Download" to save it to your device.'
-              }
-            </p>
-          </div>
+          {!isNative && (
+            <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4">
+              <p className="text-sm text-blue-800">
+                <strong>💡 Tip:</strong> If the PDF doesn't display, click "Download" to save it to your device.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

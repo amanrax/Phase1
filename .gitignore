@@ -1,3 +1,11 @@
 .env
 .env.local
-.env.*.local
+.env.*.local.env.production
+*.env
+
+# Security: Never commit credential files
+backend/.env
+backend/.env.production
+backend/config.env
+frontend/.env
+frontend/.env.production

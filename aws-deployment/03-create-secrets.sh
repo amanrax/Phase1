@@ -27,7 +27,7 @@ echo "📌 Creating MongoDB URI secret..."
 aws secretsmanager create-secret \
   --name cem/mongo-uri \
   --description "MongoDB Atlas connection string" \
-  --secret-string "mongodb+srv://Aman:Zambia1234@farmer.hvygb26.mongodb.net/?retryWrites=true&w=majority&appName=Farmer" \
+  --secret-string "${MONGODB_URL}" \
   --region $REGION
 
 # JWT Secret

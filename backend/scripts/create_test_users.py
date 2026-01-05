@@ -1,9 +1,10 @@
 # create_atlas_users.py
 from pymongo import MongoClient
 from passlib.context import CryptContext
+import os
 
 # Connect to Atlas
-ATLAS_URI = "mongodb+srv://Aman:Zambia1234@farmer.hvygb26.mongodb.net/zambian_farmer_db?retryWrites=true&w=majority&appName=Farmer"
+ATLAS_URI = os.getenv("MONGODB_URL", "your-mongodb-uri-here")
 client = MongoClient(ATLAS_URI)
 db = client.zambian_farmer_db
 

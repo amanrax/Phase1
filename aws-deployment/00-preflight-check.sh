@@ -43,7 +43,7 @@ fi
 
 # Check 4: MongoDB Atlas Connection
 echo -n "✓ Checking MongoDB Atlas... "
-MONGO_URI="mongodb+srv://Aman:Zambia1234@farmer.hvygb26.mongodb.net/?retryWrites=true&w=majority&appName=Farmer"
+MONGO_URI="${MONGODB_URL:-your-mongodb-uri-here}"
 if command -v mongosh &> /dev/null; then
     if timeout 5 mongosh "$MONGO_URI" --eval "db.adminCommand('ping')" --quiet &> /dev/null; then
         echo "OK"
