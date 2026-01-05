@@ -480,6 +480,7 @@ const FarmerIDCard: React.FC = () => {
                 )}
               </div>
             </div>
+          </div>
 
           {/* Right Column - ID Card Actions & QR */}
           <div className="space-y-4 sm:space-y-6">
