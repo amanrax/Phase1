@@ -172,7 +172,7 @@ const FarmerIDCard: React.FC = () => {
         console.log('[IDCard] QR blob URL revoked');
       }
     };
-  }, [farmer?.farmer_id]); // ✅ Only depend on farmer_id
+  }, [farmer?.farmer_id, farmer?.qr_code_file_id]); // ✅ Reload when QR file changes
 
   const handleGenerateIDCard = async () => {
     if (!farmer) return;
@@ -202,6 +202,19 @@ const FarmerIDCard: React.FC = () => {
           if (updated?.id_card_file_id || updated?.id_card_path || updated?.id_card_generated_at) {
             clearInterval(poll);
             setFarmer(updated);
+            
+            // Reload QR code after ID card generation
+            try {
+              const qrBlobUrl = await farmerService.getQRCodeBlobUrl(updated);
+              if (qrBlobUrl) {
+                setQrUrl(qrBlobUrl);
+                setQrError(false);
+                console.log('[IDCard] ✅ QR code reloaded after generation');
+              }
+            } catch (qrErr) {
+              console.error('[IDCard] Failed to reload QR:', qrErr);
+            }
+            
             console.log('[IDCard] ✅ Generation complete!');
             if (notifId) dismiss(notifId);
             showSuccess('✅ ID card generated successfully!', 5000);
@@ -265,6 +278,42 @@ const FarmerIDCard: React.FC = () => {
   };
 
   const handleViewIDCard = async () => {
+    if (!farmer) return;
+    
+    let previewNotifId: string | undefined;
+    try {
+      setViewLoading(true);
+      setError(null);
+      previewNotifId = showInfo("📄 Loading PDF...", 8000);
+      
+      console.log('[IDCard] Fetching PDF for:', farmer.farmer_id);
+      const url = await farmerService.viewIDCard(farmer.farmer_id);
+      
+      if (url) {
+        console.log('[IDCard] PDF URL received, storing in sessionStorage');
+        sessionStorage.setItem('idcard_view_url', url);
+        sessionStorage.setItem('idcard_farmer_name', `${farmer.personal_info.first_name} ${farmer.personal_info.last_name}`);
+        
+        if (previewNotifId) dismiss(previewNotifId);
+        console.log('[IDCard] Navigating to PDF viewer');
+        safeNavigate(navigate, '/farmer/idcard-view');
+      } else {
+        console.error('[IDCard] No URL returned');
+        if (previewNotifId) dismiss(previewNotifId);
+        showError('ID card not available. Generate it first.', 5000);
+      }
+    } catch (err: any) {
+      console.error('[IDCard] View error:', err);
+      const msg = err.response?.data?.detail || err.message || "Failed to view. Generate ID first.";
+      if (previewNotifId) dismiss(previewNotifId);
+      setError(msg);
+      showError(msg, 5000);
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
+  const handlePreviewIDCard = () => {
     if (!farmer) return;
     
     if (!farmer.id_card_file_id && !farmer.id_card_path && !farmer.id_card_generated_at) {
@@ -501,6 +550,13 @@ const FarmerIDCard: React.FC = () => {
 
                   <div className="space-y-3">
                     <button
+                      onClick={handlePreviewIDCard}
+                      className="w-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 text-sm sm:text-base"
+                    >
+                      <span>🎴</span> Preview Card
+                    </button>
+
+                    <button
                       onClick={handleViewIDCard}
                       disabled={viewLoading}
                       className={`w-full font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 text-sm sm:text-base ${
@@ -516,7 +572,7 @@ const FarmerIDCard: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <span>👁️</span> View ID Card
+                          <span>📄</span> View PDF
                         </>
                       )}
                     </button>
