@@ -533,14 +533,6 @@ export const farmerService = {
   },
 
   /**
-   * Alias for getQRCodeUrl - returns blob URL for QR code
-   * Used by FarmerIDCard page
-   */
-  async getQRCodeBlobUrl(farmer: any): Promise<string | null> {
-    return this.getQRCodeUrl(farmer);
-  },
-
-  /**
    * Deactivate a farmer (set is_active to false).
    * Backend: PUT /api/farmers/{farmer_id}
    */
