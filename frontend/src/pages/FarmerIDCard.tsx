@@ -177,14 +177,14 @@ const FarmerIDCard: React.FC = () => {
 
   // Load documents
   useEffect(() => {
-    if (!farmer?.documents) {
-      console.log('[IDCard] No documents object in farmer data');
+    if (!farmer) {
+      console.log('[IDCard] No farmer data yet');
       return;
     }
 
     const loadDocuments = async () => {
       setDocsLoading(true);
-      console.log('[IDCard] Loading documents...');
+      console.log('[IDCard] Loading documents for farmer:', farmer.farmer_id);
 
       const docTypes: Array<'nrc' | 'land_title' | 'license' | 'certificate'> = [
         'nrc',
@@ -226,7 +226,7 @@ const FarmerIDCard: React.FC = () => {
         }
       });
     };
-  }, [farmer?.farmer_id]); // ✅ Only depend on farmer_id
+  }, [farmer?.farmer_id, farmer?.documents]); // ✅ Depend on farmer_id AND documents object to reload when docs change
 
   const handleGenerateIDCard = async () => {
     if (!farmer) return;

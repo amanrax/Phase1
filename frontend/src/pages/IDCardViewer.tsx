@@ -29,7 +29,8 @@ const IDCardViewer: React.FC = () => {
     const storedUrl = sessionStorage.getItem('idcard_view_url');
     const storedName = sessionStorage.getItem('idcard_farmer_name');
     
-    console.log('[IDCardViewer] URL from sessionStorage:', storedUrl?.substring(0, 50));
+    console.log('[IDCardViewer] URL from sessionStorage:', storedUrl?.substring(0, 80));
+    console.log('[IDCardViewer] URL type:', storedUrl?.startsWith('blob:') ? 'Blob URL' : storedUrl?.startsWith('data:') ? 'Data URL' : storedUrl?.startsWith('http') ? 'HTTP URL' : 'Unknown');
     console.log('[IDCardViewer] Farmer name:', storedName);
 
     if (!storedUrl) {

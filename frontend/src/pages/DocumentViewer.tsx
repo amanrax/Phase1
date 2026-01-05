@@ -29,7 +29,8 @@ const DocumentViewer: React.FC = () => {
     const storedUrl = sessionStorage.getItem('doc_view_path');
     const storedTitle = sessionStorage.getItem('doc_view_title');
     
-    console.log('[DocViewer] URL from sessionStorage:', storedUrl?.substring(0, 50));
+    console.log('[DocViewer] URL from sessionStorage:', storedUrl?.substring(0, 80));
+    console.log('[DocViewer] URL type:', storedUrl?.startsWith('blob:') ? 'Blob URL' : storedUrl?.startsWith('data:') ? 'Data URL' : storedUrl?.startsWith('http') ? 'HTTP URL' : 'Unknown');
     console.log('[DocViewer] Title:', storedTitle);
 
     if (!storedUrl) {
@@ -205,7 +206,10 @@ const DocumentViewer: React.FC = () => {
 
   if (!docUrl) return null;
 
-  const isPDF = docUrl.includes('pdf') || docUrl.toLowerCase().includes('application/pdf');
+  // Detect if it's a PDF by checking the URL and content type hints
+  const isPDF = docUrl.toLowerCase().includes('.pdf') || 
+                docUrl.includes('application/pdf') || 
+                docUrl.includes('data:application/pdf');
 
   return (
     <div className="min-h-screen bg-slate-50">

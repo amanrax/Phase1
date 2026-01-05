@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { farmerService } from "@/services/farmer.service";
 
 interface FarmerIDCardPreviewProps {
   farmer: {
@@ -24,6 +25,8 @@ interface FarmerIDCardPreviewProps {
     created_by?: string;
     qr_code_path?: string;
     qr_code_url?: string;
+    qr_code_file_id?: string;
+    photo_file_id?: string;
   };
   onClose?: () => void;
 }
@@ -31,16 +34,62 @@ interface FarmerIDCardPreviewProps {
 export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPreviewProps) {
   const [showBack, setShowBack] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
-  const photoUrl = farmer.documents?.photo
-    ? `${import.meta.env.VITE_API_BASE_URL}${farmer.documents.photo}`
-    : null;
+  // Load QR code using the service
+  useEffect(() => {
+    let mounted = true;
+    
+    const loadQR = async () => {
+      try {
+        const url = await farmerService.getQRCodeBlobUrl(farmer);
+        if (mounted && url) {
+          setQrCodeUrl(url);
+          console.log('[Preview] QR code loaded');
+        }
+      } catch (error) {
+        console.error('[Preview] Failed to load QR code:', error);
+      }
+    };
 
-  const qrCodeUrl = farmer.qr_code_url
-    ? `${import.meta.env.VITE_API_BASE_URL}${farmer.qr_code_url}`
-    : farmer.farmer_id
-    ? `${import.meta.env.VITE_API_BASE_URL}/uploads/qr/${farmer.farmer_id}_qr.png`
-    : null;
+    loadQR();
+
+    return () => {
+      mounted = false;
+      // Cleanup blob URL
+      if (qrCodeUrl && qrCodeUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(qrCodeUrl);
+      }
+    };
+  }, [farmer?.farmer_id]);
+
+  // Load photo using the service
+  useEffect(() => {
+    let mounted = true;
+    
+    const loadPhoto = async () => {
+      try {
+        const url = await farmerService.getPhotoUrl(farmer);
+        if (mounted && url) {
+          setPhotoUrl(url);
+          console.log('[Preview] Photo loaded');
+        }
+      } catch (error) {
+        console.error('[Preview] Failed to load photo:', error);
+      }
+    };
+
+    loadPhoto();
+
+    return () => {
+      mounted = false;
+      // Cleanup blob URL
+      if (photoUrl && photoUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(photoUrl);
+      }
+    };
+  }, [farmer?.farmer_id]);
 
   return (
     <div 

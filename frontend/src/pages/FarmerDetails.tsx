@@ -219,7 +219,7 @@ export default function FarmerDetails() {
     try {
       setUploading("photo");
       await farmerService.uploadPhoto(farmerId!, file);
-      showSuccess("✓ Photo uploaded successfully!", 4000);
+      showSuccess("Photo uploaded successfully!", 4000);
       e.target.value = "";
       await loadFarmerData();
     } catch (err: unknown) {
@@ -246,7 +246,7 @@ export default function FarmerDetails() {
     try {
       setUploading(docType);
       await farmerService.uploadDocument(farmerId!, docType, file);
-      showSuccess(`✓ ${docType.replace("_", " ")} uploaded successfully!`, 4000);
+      showSuccess(`${docType.replace("_", " ")} uploaded successfully!`, 4000);
       e.target.value = "";
       await loadFarmerData();
     } catch (err: unknown) {
@@ -260,7 +260,7 @@ export default function FarmerDetails() {
   const handleGenerateIDCard = async () => {
     try {
       const response = await farmerService.generateIDCard(farmerId!);
-      showSuccess(response.message || "✓ ID card generation started!", 4000);
+      showSuccess(response.message || "ID card generation started!", 4000);
       setTimeout(() => handleDownloadIDCard(), 5000);
     } catch (err: unknown) {
       showError(getErrorMessage(err) || "Failed to generate ID card", 5000);
@@ -271,11 +271,11 @@ export default function FarmerDetails() {
     try {
       const result = await farmerService.downloadIDCard(farmerId!);
       if (result?.savedPath) {
-        showSuccess(`✅ Saved to:\n${result.savedPath}`, 6000);
+        showSuccess(`Saved to:\n${result.savedPath}`, 6000);
       } else if (result?.downloaded) {
-        showSuccess("✓ ID card downloaded!", 4000);
+        showSuccess("ID card downloaded!", 4000);
       } else {
-        showSuccess("✓ Download complete!", 4000);
+        showSuccess("Download complete!", 4000);
       }
     } catch (err: unknown) {
       showError(getErrorMessage(err) || "ID card not ready yet.", 5000);
@@ -286,7 +286,7 @@ export default function FarmerDetails() {
     if (!confirm("Delete this photo?")) return;
     try {
       await farmerService.deletePhoto(farmerId!);
-      showSuccess("✓ Photo deleted", 4000);
+      showSuccess("Photo deleted", 4000);
       await loadFarmerData();
     } catch (err: unknown) {
       showError(getErrorMessage(err) || "Failed to delete photo", 5000);
@@ -297,7 +297,7 @@ export default function FarmerDetails() {
     if (!confirm(`Delete ${docType}?`)) return;
     try {
       await farmerService.deleteDocument(farmerId!, docType);
-      showSuccess("✓ Document deleted", 4000);
+      showSuccess("Document deleted", 4000);
       await loadFarmerData();
     } catch (err: unknown) {
       showError(getErrorMessage(err) || "Failed to delete document", 5000);
