@@ -55,7 +55,7 @@ jobs:
     - name: 📤 Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
-        name: ziamis-debug-apk
+        name: cem-farmer-debug-apk
         path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
         if-no-files-found: error
         retention-days: 30
@@ -65,7 +65,7 @@ jobs:
         echo "✅ Build completed successfully!" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 📱 APK Information" >> $GITHUB_STEP_SUMMARY
-        echo "- **App Name**: ZIAMIS - Chiefdom Empowerment Model" >> $GITHUB_STEP_SUMMARY
-        echo "- **Package**: zm.gov.agri.cem" >> $GITHUB_STEP_SUMMARY
+        echo "- **App Name**: CEM Farmer" >> $GITHUB_STEP_SUMMARY
+        echo "- **Package**: com.cem.farmerapp" >> $GITHUB_STEP_SUMMARY
         echo "- **Build Type**: Debug" >> $GITHUB_STEP_SUMMARY
         echo "- **Download**: Check the artifacts section above ☝️" >> $GITHUB_STEP_SUMMARY

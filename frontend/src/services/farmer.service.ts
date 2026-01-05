@@ -10,11 +10,26 @@ export interface DownloadResult {
 }
 
 /**
+ * In-memory cache for GridFS blobs
+ * Key: fileIdOrPath, Value: { blobUrl, timestamp }
+ */
+const blobCache = new Map<string, { blobUrl: string; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+/**
  * Helper: Fetch GridFS file as blob with authentication
  * Use this for photos, documents, and QR codes stored in GridFS
+ * Now with caching to improve performance
  */
 async function fetchGridFSFile(fileIdOrPath: string): Promise<string | null> {
   try {
+    // Check cache first
+    const cached = blobCache.get(fileIdOrPath);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log('[GridFS] ⚡ Cache hit for:', fileIdOrPath);
+      return cached.blobUrl;
+    }
+    
     console.log('[GridFS] Fetching file:', fileIdOrPath);
     
     const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
@@ -45,12 +60,30 @@ async function fetchGridFSFile(fileIdOrPath: string): Promise<string | null> {
     const blob = await response.blob();
     const blobUrl = URL.createObjectURL(blob);
     
-    console.log('[GridFS] ✅ File loaded, blob URL created');
+    // Store in cache
+    blobCache.set(fileIdOrPath, { blobUrl, timestamp: Date.now() });
+    
+    console.log('[GridFS] ✅ File loaded, blob URL created and cached');
     return blobUrl;
   } catch (error) {
     console.error('[GridFS] Error fetching file:', error);
     return null;
   }
+}
+
+/**
+ * Clear cache (useful when logging out or on memory pressure)
+ */
+function clearBlobCache() {
+  blobCache.forEach(({ blobUrl }) => {
+    try {
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      console.warn('[GridFS] Failed to revoke blob URL:', e);
+    }
+  });
+  blobCache.clear();
+  console.log('[GridFS] Cache cleared');
 }
 
 export const farmerService = {
