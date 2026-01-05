@@ -557,27 +557,6 @@ const FarmerIDCard: React.FC = () => {
                     </button>
 
                     <button
-                      onClick={handleViewIDCard}
-                      disabled={viewLoading}
-                      className={`w-full font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 text-sm sm:text-base ${
-                        viewLoading
-                          ? "bg-gray-400 cursor-not-allowed text-white"
-                          : "bg-blue-600 hover:bg-blue-700 active:scale-95 text-white"
-                      }`}
-                    >
-                      {viewLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                          <span>Loading...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>📄</span> View PDF
-                        </>
-                      )}
-                    </button>
-
-                    <button
                       onClick={handleDownloadIDCard}
                       className="w-full bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 text-sm sm:text-base"
                     >

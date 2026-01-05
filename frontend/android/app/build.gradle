@@ -1,14 +1,18 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "zm.gov.agri.cem"
+    namespace "com.farmer.cem"
     compileSdk rootProject.ext.compileSdkVersion
+    
     defaultConfig {
-        applicationId "com.cem.farmerapp"
+        applicationId "com.farmer.cem"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+        
+        // Increment these for each new build
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
+        
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,6 +20,7 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    
     buildTypes {
         release {
             minifyEnabled false

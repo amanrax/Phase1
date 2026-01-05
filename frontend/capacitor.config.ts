@@ -4,21 +4,17 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.cem.farmerapp',
-  appName: 'CEM Farmer',
+  appId: 'com.farmer.cem',
+  appName: 'CEM',
   webDir: 'dist',
   
   server: {
-    androidScheme: 'https',
-    cleartext: true,
-    hostname: 'localhost'
+    androidScheme: 'https'
   },
   
   android: {
     allowMixedContent: true,
-    captureInput: true,
-    webContentsDebuggingEnabled: true,
-    loggingBehavior: 'debug'
+    webContentsDebuggingEnabled: true
   },
   
   ios: {
