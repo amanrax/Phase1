@@ -430,7 +430,28 @@ export const farmerService = {
    * Get document URL (handles GridFS files)
    */
   async getDocumentUrl(farmer: any, docType: 'nrc' | 'land_title' | 'license' | 'certificate'): Promise<string | null> {
-    if (!farmer?.documents) return null;
+    // NEW: Check identification_documents array first (new backend structure)
+    if (farmer?.identification_documents && Array.isArray(farmer.identification_documents)) {
+      const doc = farmer.identification_documents.find((d: any) => d.doc_type === docType);
+      if (doc?.file_id) {
+        console.log(`[Document] Loading ${docType} from identification_documents (GridFS):`, doc.file_id);
+        return await fetchGridFSFile(doc.file_id);
+      }
+      if (doc?.file_path) {
+        console.log(`[Document] Loading ${docType} from identification_documents (path):`, doc.file_path);
+        // Extract file ID from path like "/api/files/123abc"
+        const match = doc.file_path.match(/\/files\/([a-f0-9]+)/i);
+        if (match) {
+          return await fetchGridFSFile(match[1]);
+        }
+      }
+    }
+
+    // FALLBACK: Old structure (documents object)
+    if (!farmer?.documents) {
+      console.log(`[Document] No ${docType} document available`);
+      return null;
+    }
 
     const docFileId = farmer.documents[`${docType}_file_id`];
     const docPath = farmer.documents[docType];

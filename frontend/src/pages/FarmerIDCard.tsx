@@ -4,6 +4,7 @@ import { safeNavigate } from '@/config/navigation';
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
+import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
 
 interface Farmer {
   farmer_id: string;
@@ -42,6 +43,12 @@ interface Farmer {
     license_file_id?: string;
     certificate_file_id?: string;
   };
+  identification_documents?: Array<{
+    doc_type: string;
+    file_id: string;
+    file_path: string;
+    uploaded_at: string;
+  }>;
   photo_path?: string;
   photo_file_id?: string;
   id_card_path?: string;
@@ -67,6 +74,7 @@ const FarmerIDCard: React.FC = () => {
   const [qrError, setQrError] = useState(false);
   const [photoError, setPhotoError] = useState(false);
   const [docsLoading, setDocsLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
 
   // Document URLs
@@ -226,7 +234,7 @@ const FarmerIDCard: React.FC = () => {
         }
       });
     };
-  }, [farmer?.farmer_id, farmer?.documents]); // ✅ Depend on farmer_id AND documents object to reload when docs change
+  }, [farmer?.farmer_id, farmer?.documents, farmer?.identification_documents]); // ✅ Watch both document structures
 
   const handleGenerateIDCard = async () => {
     if (!farmer) return;
@@ -323,37 +331,13 @@ const FarmerIDCard: React.FC = () => {
   const handleViewIDCard = async () => {
     if (!farmer) return;
     
-    let previewNotifId: string | undefined;
-    try {
-      setViewLoading(true);
-      setError(null);
-      previewNotifId = showInfo("📄 Loading preview...", 8000);
-      
-      console.log('[IDCard] Fetching PDF for:', farmer.farmer_id);
-      const url = await farmerService.viewIDCard(farmer.farmer_id);
-      
-      if (url) {
-        console.log('[IDCard] PDF URL received, storing in sessionStorage');
-        sessionStorage.setItem('idcard_view_url', url);
-        sessionStorage.setItem('idcard_farmer_name', `${farmer.personal_info.first_name} ${farmer.personal_info.last_name}`);
-        
-        if (previewNotifId) dismiss(previewNotifId);
-        console.log('[IDCard] Navigating to viewer');
-        safeNavigate(navigate, '/farmer/idcard-view');
-      } else {
-        console.error('[IDCard] No URL returned');
-        if (previewNotifId) dismiss(previewNotifId);
-        showError('ID card not available. Generate it first.', 5000);
-      }
-    } catch (err: any) {
-      console.error('[IDCard] View error:', err);
-      const msg = err.response?.data?.detail || err.message || "Failed to view. Generate ID first.";
-      if (previewNotifId) dismiss(previewNotifId);
-      setError(msg);
-      showError(msg, 5000);
-    } finally {
-      setViewLoading(false);
+    if (!farmer.id_card_file_id) {
+      showError('ID card not generated yet. Please generate it first.', 4000);
+      return;
     }
+    
+    console.log('[IDCard] Opening preview modal for:', farmer.farmer_id);
+    setShowPreview(true);
   };
 
   const handleViewDocument = (docType: string, docUrl: string | null) => {
@@ -819,6 +803,14 @@ const FarmerIDCard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ID Card Preview Modal */}
+      {showPreview && farmer && (
+        <FarmerIDCardPreview 
+          farmer={farmer} 
+          onClose={() => setShowPreview(false)} 
+        />
+      )}
     </div>
   );
 };
