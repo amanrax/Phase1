@@ -315,7 +315,7 @@ const IDCardViewer: React.FC = () => {
               </div>
               <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 text-left max-w-sm mx-auto">
                 <p className="text-sm text-blue-800">
-                  <strong>💡 Tip:</strong> After saving, tap the notification or open File Manager > Downloads to view the PDF
+                  <strong>💡 Tip:</strong> After saving, tap the notification or open File Manager &gt; Downloads to view the PDF
                 </p>
               </div>
             </div>
