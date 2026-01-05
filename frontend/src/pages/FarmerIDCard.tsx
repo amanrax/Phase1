@@ -73,17 +73,8 @@ const FarmerIDCard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [qrError, setQrError] = useState(false);
   const [photoError, setPhotoError] = useState(false);
-  const [docsLoading, setDocsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
-
-  // Document URLs
-  const [documentUrls, setDocumentUrls] = useState<Record<string, string | null>>({
-    nrc: null,
-    land_title: null,
-    license: null,
-    certificate: null,
-  });
 
   useEffect(() => {
     loadFarmerData();
@@ -183,59 +174,6 @@ const FarmerIDCard: React.FC = () => {
     };
   }, [farmer?.farmer_id]); // ✅ Only depend on farmer_id
 
-  // Load documents
-  useEffect(() => {
-    if (!farmer) {
-      console.log('[IDCard] No farmer data yet');
-      return;
-    }
-
-    const loadDocuments = async () => {
-      setDocsLoading(true);
-      console.log('[IDCard] Loading documents for farmer:', farmer.farmer_id);
-
-      const docTypes: Array<'nrc' | 'land_title' | 'license' | 'certificate'> = [
-        'nrc',
-        'land_title',
-        'license',
-        'certificate',
-      ];
-
-      const urls: Record<string, string | null> = {};
-
-      for (const docType of docTypes) {
-        try {
-          const url = await farmerService.getDocumentUrl(farmer, docType);
-          urls[docType] = url;
-          if (url) {
-            console.log(`[IDCard] ✅ ${docType} loaded`);
-          } else {
-            console.log(`[IDCard] ⚠️ ${docType} not available`);
-          }
-        } catch (error) {
-          console.error(`[IDCard] ❌ Failed to load ${docType}:`, error);
-          urls[docType] = null;
-        }
-      }
-
-      setDocumentUrls(urls);
-      setDocsLoading(false);
-      console.log('[IDCard] All documents loaded:', urls);
-    };
-
-    loadDocuments();
-
-    // Cleanup on unmount only
-    return () => {
-      Object.entries(documentUrls).forEach(([key, url]) => {
-        if (url && url.startsWith('blob:')) {
-          URL.revokeObjectURL(url);
-          console.log(`[IDCard] ${key} blob URL revoked`);
-        }
-      });
-    };
-  }, [farmer?.farmer_id, farmer?.documents, farmer?.identification_documents]); // ✅ Watch both document structures
-
   const handleGenerateIDCard = async () => {
     if (!farmer) return;
     
@@ -313,11 +251,9 @@ const FarmerIDCard: React.FC = () => {
       if (downloadNotifId) dismiss(downloadNotifId);
       
       if (result?.savedPath) {
-        showSuccess(`✅ Saved to:\n${result.savedPath}`, 6000);
-      } else if (result?.downloaded) {
-        showSuccess("✅ Downloaded! Check your Downloads folder.", 5000);
+        showSuccess(`Saved to Downloads folder:\n${result.savedPath.split('/').pop()}`, 5000);
       } else {
-        showSuccess("✅ Download complete!", 4000);
+        showSuccess("Downloaded to your Downloads folder", 4000);
       }
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Download failed. Generate ID first.";
@@ -331,7 +267,7 @@ const FarmerIDCard: React.FC = () => {
   const handleViewIDCard = async () => {
     if (!farmer) return;
     
-    if (!farmer.id_card_file_id) {
+    if (!farmer.id_card_file_id && !farmer.id_card_path && !farmer.id_card_generated_at) {
       showError('ID card not generated yet. Please generate it first.', 4000);
       return;
     }
@@ -429,7 +365,7 @@ const FarmerIDCard: React.FC = () => {
               >
                 ← BACK
               </button>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">🆔 Farmer ID Card & Documents</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">🆔 Farmer ID Card Management</h1>
             </div>
           </div>
         </div>
@@ -545,117 +481,6 @@ const FarmerIDCard: React.FC = () => {
               </div>
             </div>
 
-            {/* Documents Card */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-indigo-600">📄 Documents</h2>
-              
-              {docsLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-indigo-600 mx-auto mb-3"></div>
-                  <p className="text-sm text-gray-600">Loading documents...</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* NRC Document */}
-                  <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-gray-800">🆔 NRC</span>
-                      {documentUrls.nrc ? (
-                        <span className="text-green-600 text-xs font-semibold">✓ Available</span>
-                      ) : (
-                        <span className="text-gray-400 text-xs">Not uploaded</span>
-                      )}
-                    </div>
-                    {documentUrls.nrc ? (
-                      <button
-                        onClick={() => handleViewDocument('nrc', documentUrls.nrc)}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
-                      >
-                        👁️ View
-                      </button>
-                    ) : (
-                      <div className="w-full bg-gray-100 text-gray-400 text-sm font-semibold py-2 rounded text-center cursor-not-allowed">
-                        Not available
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Land Title */}
-                  <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-gray-800">📜 Land Title</span>
-                      {documentUrls.land_title ? (
-                        <span className="text-green-600 text-xs font-semibold">✓ Available</span>
-                      ) : (
-                        <span className="text-gray-400 text-xs">Not uploaded</span>
-                      )}
-                    </div>
-                    {documentUrls.land_title ? (
-                      <button
-                        onClick={() => handleViewDocument('land_title', documentUrls.land_title)}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
-                      >
-                        👁️ View
-                      </button>
-                    ) : (
-                      <div className="w-full bg-gray-100 text-gray-400 text-sm font-semibold py-2 rounded text-center cursor-not-allowed">
-                        Not available
-                      </div>
-                    )}
-                  </div>
-
-                  {/* License */}
-                  <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-gray-800">📋 License</span>
-                      {documentUrls.license ? (
-                        <span className="text-green-600 text-xs font-semibold">✓ Available</span>
-                      ) : (
-                        <span className="text-gray-400 text-xs">Not uploaded</span>
-                      )}
-                    </div>
-                    {documentUrls.license ? (
-                      <button
-                        onClick={() => handleViewDocument('license', documentUrls.license)}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
-                      >
-                        👁️ View
-                      </button>
-                    ) : (
-                      <div className="w-full bg-gray-100 text-gray-400 text-sm font-semibold py-2 rounded text-center cursor-not-allowed">
-                        Not available
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Certificate */}
-                  <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-gray-800">🎓 Certificate</span>
-                      {documentUrls.certificate ? (
-                        <span className="text-green-600 text-xs font-semibold">✓ Available</span>
-                      ) : (
-                        <span className="text-gray-400 text-xs">Not uploaded</span>
-                      )}
-                    </div>
-                    {documentUrls.certificate ? (
-                      <button
-                        onClick={() => handleViewDocument('certificate', documentUrls.certificate)}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition active:scale-95"
-                      >
-                        👁️ View
-                      </button>
-                    ) : (
-                      <div className="w-full bg-gray-100 text-gray-400 text-sm font-semibold py-2 rounded text-center cursor-not-allowed">
-                        Not available
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Right Column - ID Card Actions & QR */}
           <div className="space-y-4 sm:space-y-6">
             {/* ID Card Status */}
@@ -768,7 +593,7 @@ const FarmerIDCard: React.FC = () => {
               </p>
               <div className="flex justify-center mb-4">
                 <div className="p-3 sm:p-4 bg-gray-100 rounded-lg border-2 border-purple-600">
-                  {(farmer?.id_card_file_id || farmer?.qr_code_file_id) && qrUrl ? (
+                  {qrUrl ? (
                     <img 
                       src={qrUrl} 
                       alt="QR Code" 

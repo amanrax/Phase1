@@ -36,6 +36,8 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
   const cardRef = useRef<HTMLDivElement>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(true);
+  const [photoLoading, setPhotoLoading] = useState(true);
 
   // Load QR code using the service
   useEffect(() => {
@@ -43,6 +45,7 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
     
     const loadQR = async () => {
       try {
+        setQrLoading(true);
         const url = await farmerService.getQRCodeBlobUrl(farmer);
         if (mounted && url) {
           setQrCodeUrl(url);
@@ -50,6 +53,8 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
         }
       } catch (error) {
         console.error('[Preview] Failed to load QR code:', error);
+      } finally {
+        if (mounted) setQrLoading(false);
       }
     };
 
@@ -70,6 +75,7 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
     
     const loadPhoto = async () => {
       try {
+        setPhotoLoading(true);
         const url = await farmerService.getPhotoUrl(farmer);
         if (mounted && url) {
           setPhotoUrl(url);
@@ -77,6 +83,8 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
         }
       } catch (error) {
         console.error('[Preview] Failed to load photo:', error);
+      } finally {
+        if (mounted) setPhotoLoading(false);
       }
     };
 
@@ -222,9 +230,14 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
                         borderRadius: '8px',
                         border: '3px solid white',
                         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}>
-                        {photoUrl ? (
+                        {photoLoading ? (
+                          <div style={{ fontSize: '24px' }}>⏳</div>
+                        ) : photoUrl ? (
                           <img
                             src={photoUrl}
                             alt="Farmer"
@@ -355,7 +368,18 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
                         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                         border: '2px solid #16a34a'
                       }}>
-                        {qrCodeUrl ? (
+                        {qrLoading ? (
+                          <div style={{
+                            width: '105px',
+                            height: '105px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '32px'
+                          }}>
+                            ⏳
+                          </div>
+                        ) : qrCodeUrl ? (
                           <img
                             src={qrCodeUrl}
                             alt="QR Code"

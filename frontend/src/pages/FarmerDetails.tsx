@@ -211,7 +211,7 @@ export default function FarmerDetails() {
         }
       });
     };
-  }, [farmer?.farmer_id]);
+  }, [farmer?.farmer_id, farmer?.identification_documents]); // ✅ Watch identification_documents for changes
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -271,11 +271,9 @@ export default function FarmerDetails() {
     try {
       const result = await farmerService.downloadIDCard(farmerId!);
       if (result?.savedPath) {
-        showSuccess(`Saved to:\n${result.savedPath}`, 6000);
-      } else if (result?.downloaded) {
-        showSuccess("ID card downloaded!", 4000);
+        showSuccess(`Saved to Downloads folder:\n${result.savedPath.split('/').pop()}`, 5000);
       } else {
-        showSuccess("Download complete!", 4000);
+        showSuccess("Downloaded to your Downloads folder", 4000);
       }
     } catch (err: unknown) {
       showError(getErrorMessage(err) || "ID card not ready yet.", 5000);
