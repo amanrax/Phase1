@@ -44,13 +44,19 @@ jobs:
       working-directory: ./frontend/android
       run: chmod +x ./gradlew
       
-    - name: 🧹 Clean Gradle build
+    - name: 🧹 Clean Gradle build (with retry)
       working-directory: ./frontend/android
-      run: ./gradlew clean
+      run: |
+        for i in 1 2 3; do
+          ./gradlew clean --no-daemon && break || sleep 10
+        done
       
-    - name: 📱 Build Debug APK
+    - name: 📱 Build Debug APK (with retry)
       working-directory: ./frontend/android
-      run: ./gradlew assembleDebug --no-daemon
+      run: |
+        for i in 1 2 3; do
+          ./gradlew assembleDebug --no-daemon && break || sleep 10
+        done
       
     - name: � Decode Release Keystore
       if: github.ref == 'refs/heads/main'
