@@ -59,12 +59,12 @@ jobs:
         done
       
     - name: 🔐 Decode Release Keystore
-      if: github.ref == 'refs/heads/main'
+      if: false  # Temporarily disabled - enable when Maven Central is stable
       run: |
         echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > frontend/android/app/cem-release-key.keystore
       
     - name: 🏭 Build Release APK (with retry)
-      if: github.ref == 'refs/heads/main'
+      if: false  # Temporarily disabled - enable when Maven Central is stable
       working-directory: ./frontend/android
       env:
         RELEASE_KEYSTORE_FILE: ${{ github.workspace }}/frontend/android/app/cem-release-key.keystore
@@ -85,7 +85,7 @@ jobs:
         retention-days: 30
         
     - name: 📤 Upload Release APK
-      if: github.ref == 'refs/heads/main'
+      if: false  # Temporarily disabled - enable when Maven Central is stable
       uses: actions/upload-artifact@v4
       with:
         name: cem-farmer-release-apk
