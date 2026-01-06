@@ -4,8 +4,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.farmer.cem',
-  appName: 'CEM',
+  appId: 'com.cem.farmerapp',
+  appName: 'CEM Farmer',
   webDir: 'dist',
   
   server: {
