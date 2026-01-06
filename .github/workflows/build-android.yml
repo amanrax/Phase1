@@ -52,6 +52,21 @@ jobs:
       working-directory: ./frontend/android
       run: ./gradlew assembleDebug --no-daemon
       
+    - name: � Decode Release Keystore
+      if: github.ref == 'refs/heads/main'
+      run: |
+        echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > frontend/android/cem-release-key.keystore
+      
+    - name: 🏭 Build Release APK
+      if: github.ref == 'refs/heads/main'
+      working-directory: ./frontend/android
+      env:
+        RELEASE_KEYSTORE_FILE: cem-release-key.keystore
+        RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+        RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+        RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      run: ./gradlew assembleRelease --no-daemon
+      
     - name: 📤 Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
@@ -60,6 +75,15 @@ jobs:
         if-no-files-found: error
         retention-days: 30
         
+    - name: 📤 Upload Release APK
+      if: github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v4
+      with:
+        name: cem-farmer-release-apk
+        path: frontend/android/app/build/outputs/apk/release/app-release.apk
+        if-no-files-found: error
+        retention-days: 90
+        
     - name: 📊 Build summary
       run: |
         echo "✅ Build completed successfully!" >> $GITHUB_STEP_SUMMARY
@@ -67,5 +91,8 @@ jobs:
         echo "### 📱 APK Information" >> $GITHUB_STEP_SUMMARY
         echo "- **App Name**: CEM Farmer" >> $GITHUB_STEP_SUMMARY
         echo "- **Package**: com.cem.farmerapp" >> $GITHUB_STEP_SUMMARY
-        echo "- **Build Type**: Debug" >> $GITHUB_STEP_SUMMARY
+        echo "- **Debug APK**: Available in artifacts" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          echo "- **Release APK**: ✅ Signed and ready for distribution" >> $GITHUB_STEP_SUMMARY
+        fi
         echo "- **Download**: Check the artifacts section above ☝️" >> $GITHUB_STEP_SUMMARY

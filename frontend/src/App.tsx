@@ -8,6 +8,7 @@ import ToastContainer from "@/components/ToastContainer";
 import SessionTimeout from "@/components/SessionTimeout";
 import { useBackButton } from "@/hooks/useBackButton";
 import PermissionRequest from "@/components/PermissionRequest";
+import { updateService } from "@/services/update.service";
 
 // Pages
 import Login from "@/pages/Login";
@@ -48,6 +49,14 @@ function App() {
     const hasRequested = localStorage.getItem('permissions_requested');
     if (!hasRequested && token) {
       setShowPermissions(true);
+    }
+  }, [token]);
+
+  // Check for app updates on startup
+  useEffect(() => {
+    if (token) {
+      // Start periodic update checks when user is logged in
+      updateService.startPeriodicChecks();
     }
   }, [token]);
 

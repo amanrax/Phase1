@@ -9,3 +9,6 @@ backend/.env.production
 backend/config.env
 frontend/.env
 frontend/.env.production
+# Android Release Keystore
+frontend/android/*.keystore
+frontend/android/*.keystore.base64

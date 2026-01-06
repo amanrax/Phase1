@@ -37,6 +37,7 @@ from app.routes import (
     supplies,
     logs,
     files,
+    app_version,
 )
 
 
@@ -305,6 +306,7 @@ app.include_router(sync.router, prefix="/api", tags=["Synchronization"])
 app.include_router(farmers_qr.router, prefix="/api", tags=["Farmers QR"])
 app.include_router(health.router, prefix="/api/health", tags=["Health"])
 app.include_router(logs.router, prefix="/api", tags=["Logs"])
+app.include_router(app_version.router, tags=["App Version"])
 
 logger.info("✅ All API routers registered")
 
