@@ -58,12 +58,12 @@ jobs:
           ./gradlew assembleDebug --no-daemon && break || sleep 10
         done
       
-    - name: � Decode Release Keystore
+    - name: 🔐 Decode Release Keystore
       if: github.ref == 'refs/heads/main'
       run: |
         echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > frontend/android/cem-release-key.keystore
       
-    - name: 🏭 Build Release APK
+    - name: 🏭 Build Release APK (with retry)
       if: github.ref == 'refs/heads/main'
       working-directory: ./frontend/android
       env:
@@ -71,7 +71,10 @@ jobs:
         RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
         RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-      run: ./gradlew assembleRelease --no-daemon
+      run: |
+        for i in 1 2 3; do
+          ./gradlew assembleRelease --no-daemon && break || sleep 10
+        done
       
     - name: 📤 Upload Debug APK
       uses: actions/upload-artifact@v4
