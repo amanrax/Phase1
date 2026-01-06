@@ -1,11 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "zm.gov.agri.cem"
+    namespace "com.cem.farmerapp"
     compileSdk rootProject.ext.compileSdkVersion
     
     defaultConfig {
-        applicationId "zm.gov.agri.cem"
+        applicationId "com.cem.farmerapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         

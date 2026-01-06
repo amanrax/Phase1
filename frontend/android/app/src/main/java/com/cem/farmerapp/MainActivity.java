@@ -1,4 +1,4 @@
-package zm.gov.agri.cem;
+package com.cem.farmerapp;
 
 import com.getcapacitor.BridgeActivity;
 
