@@ -61,13 +61,13 @@ jobs:
     - name: 🔐 Decode Release Keystore
       if: github.ref == 'refs/heads/main'
       run: |
-        echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > frontend/android/cem-release-key.keystore
+        echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > frontend/android/app/cem-release-key.keystore
       
     - name: 🏭 Build Release APK (with retry)
       if: github.ref == 'refs/heads/main'
       working-directory: ./frontend/android
       env:
-        RELEASE_KEYSTORE_FILE: cem-release-key.keystore
+        RELEASE_KEYSTORE_FILE: app/cem-release-key.keystore
         RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
         RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
