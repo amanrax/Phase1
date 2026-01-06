@@ -67,7 +67,7 @@ jobs:
       if: github.ref == 'refs/heads/main'
       working-directory: ./frontend/android
       env:
-        RELEASE_KEYSTORE_FILE: app/cem-release-key.keystore
+        RELEASE_KEYSTORE_FILE: ${{ github.workspace }}/frontend/android/app/cem-release-key.keystore
         RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
         RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
