@@ -182,9 +182,7 @@ export default function Login() {
                     onClick={() => {
                       setUserType(role);
                       console.log('[Login] Role changed to:', role);
-                      // Clear form when switching roles
-                      setEmail("");
-                      setPassword("");
+                      // Only clear diagnostic info, preserve user input
                       setDiag(null);
                     }}
                     className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all duration-300 transform ${

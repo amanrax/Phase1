@@ -10,8 +10,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         
         // Increment these for each new build
-        versionCode 2
-        versionName "1.0.1"
+        versionCode 3
+        versionName "1.0.2"
         
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
