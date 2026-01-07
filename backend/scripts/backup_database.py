@@ -2,19 +2,13 @@
 """
 Backup MongoDB Database
 Creates a JSON backup of all collections before cleanup
+Standalone script - works with MongoDB Atlas directly
 """
-import asyncio
 import json
 from datetime import datetime
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import MongoClient
 from bson import ObjectId
 import os
-import sys
-
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from app.config import settings
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -29,9 +23,13 @@ class JSONEncoder(json.JSONEncoder):
 
 async def backup_database():
     """Create backup of all MongoDB collections"""
-    print("🔄 Connecting to MongoDB...")
-    client = AsyncIOMotorClient(settings.MONGODB_URL)
-    db = client[settings.MONGODB_DB_NAME]
+    # Get MongoDB URL from environment or use default
+    MONGODB_URL = os.getenv('MONGODB_URL', 'mongodb+srv://username:password@cluster.mongodb.net/')
+    MONGODB_DB_NAME = os.getenv('MONGODB_DB_NAME', 'zambian_farmer_db')
+    
+    print("🔄 Connecting to MongoDB Atlas...")
+    client = MongoClient(MONGODB_URL)
+    db = client[MONGODB_DB_NAME]
     
     # Create backup directory
     backup_dir = "backups"
@@ -44,22 +42,19 @@ async def backup_database():
     
     backup_data = {
         "timestamp": datetime.now().isoformat(),
-        "database": settings.MONGODB_DB_NAME,
+        "database": MONGODB_DB_NAME,
         "collections": {}
     }
     
     # Get all collection names
-    collection_names = await db.list_collection_names()
+    collection_names = db.list_collection_names()
     
     for collection_name in collection_names:
         print(f"  📋 Backing up collection: {collection_name}")
         collection = db[collection_name]
         
         # Get all documents
-        documents = []
-        cursor = collection.find({})
-        async for doc in cursor:
-            documents.append(doc)
+        documents = list(collection.find({}))
         
         backup_data["collections"][collection_name] = {
             "count": len(documents),
@@ -85,4 +80,4 @@ async def backup_database():
 
 
 if __name__ == "__main__":
-    asyncio.run(backup_database())
+    backup_database()
