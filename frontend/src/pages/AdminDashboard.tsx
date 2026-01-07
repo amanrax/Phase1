@@ -205,6 +205,14 @@ export default function AdminDashboard() {
               </button>
 
               <button
+                onClick={() => navigate("/farmer/registration")}
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-emerald-600 to-emerald-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0_4px_12px_rgba(5,150,105,0.3)' }}
+              >
+                ➕ Add Farmer
+              </button>
+
+              <button
                 onClick={() => navigate("/admin/reports")}
                 className="px-2 sm:px-4 py-2 bg-gradient-to-br from-orange-600 to-orange-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
                 style={{ boxShadow: '0_4px_12px_rgba(234,88,12,0.3)' }}

@@ -38,6 +38,7 @@ from app.routes import (
     logs,
     files,
     app_version,
+    ethnic_groups,
 )
 
 
@@ -296,6 +297,7 @@ app.include_router(users.router, prefix="/api", tags=["Users"])
 app.include_router(farmers.router, prefix="/api", tags=["Farmers"])
 app.include_router(geo.router, prefix="/api")
 app.include_router(geo_custom.router, prefix="/api")
+app.include_router(ethnic_groups.router, prefix="/api", tags=["Ethnic Groups"])
 app.include_router(operators.router, prefix="/api", tags=["Operators"])
 app.include_router(dashboard.router, prefix="/api", tags=["Dashboard"])
 app.include_router(reports.router, prefix="/api", tags=["Reports"])
