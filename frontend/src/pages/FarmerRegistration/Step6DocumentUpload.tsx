@@ -111,13 +111,13 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
               transition: "all 0.3s"
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: doc.file && !doc.uploaded ? "10px" : "0" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: "28px" }}>{doc.uploaded ? "✅" : "📄"}</span>
-                <div>
-                  <h3 style={{ fontWeight: "600", color: "#333", fontSize: "15px" }}>{doc.label}</h3>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: doc.file && !doc.uploaded ? "10px" : "0", gap: "12px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: "1 1 auto" }}>
+                <span style={{ fontSize: "28px", flexShrink: 0 }}>{doc.uploaded ? "✅" : "📄"}</span>
+                <div style={{ minWidth: 0, overflow: "hidden" }}>
+                  <h3 style={{ fontWeight: "600", color: "#333", fontSize: "15px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.label}</h3>
                   {doc.file && !doc.uploaded && (
-                    <p style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                    <p style={{ fontSize: "12px", color: "#666", marginTop: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {doc.file.name} ({(doc.file.size / 1024 / 1024).toFixed(2)} MB)
                     </p>
                   )}
@@ -125,10 +125,10 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
               </div>
 
               {doc.uploaded ? (
-                <span style={{ color: "#28a745", fontWeight: "600", fontSize: "14px", whiteSpace: "nowrap" }}>Uploaded ✓</span>
+                <span style={{ color: "#28a745", fontWeight: "600", fontSize: "14px", whiteSpace: "nowrap", flexShrink: 0 }}>Uploaded ✓</span>
               ) : (
-                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
-                  <label style={{ flex: "1 1 auto", minWidth: "120px" }}>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0, maxWidth: "min-content" }}>
+                  <label style={{ flexShrink: 0 }}>
                     <input
                       type="file"
                       accept="image/*,.pdf"
@@ -139,13 +139,13 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
                     />
                     <div style={{
                       textAlign: "center",
-                      padding: "8px 16px",
+                      padding: "8px 12px",
                       border: "2px dashed #ddd",
                       borderRadius: "6px",
                       cursor: doc.uploading ? "not-allowed" : "pointer",
                       background: "white",
                       transition: "all 0.3s",
-                      fontSize: "14px",
+                      fontSize: "13px",
                       color: "#666",
                       whiteSpace: "nowrap"
                     }}>
@@ -158,13 +158,13 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
                       onClick={() => handleUpload(index)}
                       disabled={doc.uploading}
                       style={{
-                        padding: "8px 20px",
+                        padding: "8px 16px",
                         background: doc.uploading ? "#6c757d" : "#007bff",
                         color: "white",
                         border: "none",
                         borderRadius: "6px",
                         cursor: doc.uploading ? "not-allowed" : "pointer",
-                        fontSize: "14px",
+                        fontSize: "13px",
                         fontWeight: "600",
                         transition: "all 0.3s",
                         whiteSpace: "nowrap",

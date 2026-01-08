@@ -55,6 +55,8 @@ export default function OperatorsList() {
       alert("✅ Operator deleted successfully");
       // Clear admin dashboard cache to show updated operator list
       dashboardCache.clear();
+      // Set flag to force refresh admin dashboard on next mount
+      sessionStorage.setItem('admin_dashboard_refresh', 'true');
       await fetchOperators();
     } catch (err: any) {
       if (import.meta.env.DEV) {
@@ -71,14 +73,15 @@ export default function OperatorsList() {
     }
 
     try {
-      if (currentStatus === "active") {
-        await operatorService.deactivate(operatorId);
-      } else {
-        await operatorService.activate(operatorId);
-      }
+      // Use update method to change is_active status
+      await operatorService.update(operatorId, {
+        is_active: currentStatus !== "active"
+      });
       alert(`✅ Operator ${action}d successfully`);
       // Clear admin dashboard cache to show updated operator status
       dashboardCache.clear();
+      // Set flag to force refresh admin dashboard on next mount
+      sessionStorage.setItem('admin_dashboard_refresh', 'true');
       await fetchOperators();
     } catch (err: any) {
       if (import.meta.env.DEV) {
