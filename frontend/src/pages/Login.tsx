@@ -14,7 +14,11 @@ const roles = ["admin", "operator", "farmer"];
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userType, setUserType] = useState("farmer"); // Default to farmer for easier mobile login
+  // Remember last selected role in localStorage
+  const [userType, setUserType] = useState(() => {
+    const savedRole = localStorage.getItem('lastSelectedRole');
+    return savedRole || "admin"; // Default to admin for easier testing
+  });
   const [hoveredButton, setHoveredButton] = useState(false);
   const [diag, setDiag] = useState<string | null>(null);
 
@@ -180,8 +184,11 @@ export default function Login() {
                     key={role}
                     type="button"
                     onClick={() => {
-                      setUserType(role);
-                      console.log('[Login] Role changed to:', role);
+                      const newRole = role;
+                      setUserType(newRole);
+                      // Save to localStorage for persistence across refreshes
+                      localStorage.setItem('lastSelectedRole', newRole);
+                      console.log('[Login] Role changed to:', newRole);
                       // Only clear diagnostic info, preserve user input
                       setDiag(null);
                     }}

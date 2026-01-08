@@ -9,7 +9,7 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 import os
 
-async def clean_database():
+def clean_database():
     """Remove test data from database"""
     # Get MongoDB URL from environment or use default
     MONGODB_URL = os.getenv('MONGODB_URL', 'mongodb+srv://username:password@cluster.mongodb.net/')

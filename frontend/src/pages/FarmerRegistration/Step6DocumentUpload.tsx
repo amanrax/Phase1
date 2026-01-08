@@ -1,6 +1,7 @@
 // src/pages/FarmerRegistration/Step6DocumentUpload.tsx
 import { useState } from "react";
 import { farmerService } from "@/services/farmer.service";
+import { useNotification } from "@/contexts/NotificationContext";
 
 interface Step6Props {
   farmerId: string;
@@ -19,6 +20,7 @@ interface DocumentState {
 }
 
 export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: Step6Props) {
+  const { success, error: showError } = useNotification();
   const [documents, setDocuments] = useState<DocumentState[]>([
     { type: "nrc", label: "NRC (National Registration Card)", file: null, uploaded: false, uploading: false },
     { type: "land_title", label: "Land Title Document", file: null, uploaded: false, uploading: false },
@@ -34,8 +36,7 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      const { error } = useNotification();
-      error("File size must be less than 10MB");
+      showError("File size must be less than 10MB");
       return;
     }
 
@@ -55,14 +56,14 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
     try {
       await farmerService.uploadDocument(farmerId, doc.type, doc.file);
 
-      newDocuments[index] = { ...newDocuments[index], uploaded: true, uploading: false, file: null };
-      setDocuments(newDocuments);
+      // Update state immediately to reflect upload and enable submit button
+      const updatedDocuments = [...documents];
+      updatedDocuments[index] = { ...updatedDocuments[index], uploaded: true, uploading: false, file: null };
+      setDocuments(updatedDocuments);
 
-      const { success } = useNotification();
       success(`${doc.label} uploaded successfully!`);
     } catch (error: any) {
       console.error("Upload failed:", error);
-      const { error: showError } = useNotification();
       showError(error.message || `Failed to upload ${doc.label}`);
 
       newDocuments[index] = { ...newDocuments[index], uploading: false };
@@ -124,10 +125,10 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
               </div>
 
               {doc.uploaded ? (
-                <span style={{ color: "#28a745", fontWeight: "600", fontSize: "14px" }}>Uploaded ✓</span>
+                <span style={{ color: "#28a745", fontWeight: "600", fontSize: "14px", whiteSpace: "nowrap" }}>Uploaded ✓</span>
               ) : (
-                <div style={{ display: "flex", gap: "10px" }}>
-                  <label style={{ flex: 1 }}>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                  <label style={{ flex: "1 1 auto", minWidth: "120px" }}>
                     <input
                       type="file"
                       accept="image/*,.pdf"
@@ -145,9 +146,10 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
                       background: "white",
                       transition: "all 0.3s",
                       fontSize: "14px",
-                      color: "#666"
+                      color: "#666",
+                      whiteSpace: "nowrap"
                     }}>
-                      <span>{doc.file ? "📎 Change File" : "📁 Choose File"}</span>
+                      <span>{doc.file ? "📎 Change" : "📁 Choose"}</span>
                     </div>
                   </label>
 
@@ -164,7 +166,9 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
                         cursor: doc.uploading ? "not-allowed" : "pointer",
                         fontSize: "14px",
                         fontWeight: "600",
-                        transition: "all 0.3s"
+                        transition: "all 0.3s",
+                        whiteSpace: "nowrap",
+                        flexShrink: 0
                       }}
                       onMouseOver={(e) => !doc.uploading && (e.currentTarget.style.background = "#0056b3")}
                       onMouseOut={(e) => !doc.uploading && (e.currentTarget.style.background = "#007bff")}

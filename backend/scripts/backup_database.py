@@ -18,10 +18,12 @@ class JSONEncoder(json.JSONEncoder):
             return str(obj)
         if isinstance(obj, datetime):
             return obj.isoformat()
+        if isinstance(obj, bytes):
+            return obj.hex()  # Convert bytes to hex string
         return super().default(obj)
 
 
-async def backup_database():
+def backup_database():
     """Create backup of all MongoDB collections"""
     # Get MongoDB URL from environment or use default
     MONGODB_URL = os.getenv('MONGODB_URL', 'mongodb+srv://username:password@cluster.mongodb.net/')
