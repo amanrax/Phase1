@@ -53,10 +53,8 @@ export default function OperatorsList() {
     try {
       await operatorService.delete(operatorId);
       alert("✅ Operator deleted successfully");
-      // Clear admin dashboard cache to show updated operator list
+      // Clear admin dashboard cache
       dashboardCache.clear();
-      // Set flag to force refresh admin dashboard on next mount
-      sessionStorage.setItem('admin_dashboard_refresh', 'true');
       await fetchOperators();
     } catch (err: any) {
       if (import.meta.env.DEV) {
@@ -78,10 +76,8 @@ export default function OperatorsList() {
         is_active: currentStatus !== "active"
       });
       alert(`✅ Operator ${action}d successfully`);
-      // Clear admin dashboard cache to show updated operator status
+      // Clear admin dashboard cache
       dashboardCache.clear();
-      // Set flag to force refresh admin dashboard on next mount
-      sessionStorage.setItem('admin_dashboard_refresh', 'true');
       await fetchOperators();
     } catch (err: any) {
       if (import.meta.env.DEV) {

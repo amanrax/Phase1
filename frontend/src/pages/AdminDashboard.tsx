@@ -67,12 +67,8 @@ export default function AdminDashboard() {
   const loadingRef = useRef(false); // Prevent duplicate loads
 
   useEffect(() => {
-    // Check if we should force refresh (e.g., after operator delete/update)
-    const shouldForceRefresh = sessionStorage.getItem('admin_dashboard_refresh');
-    if (shouldForceRefresh === 'true') {
-      dashboardCache.clear();
-      sessionStorage.removeItem('admin_dashboard_refresh');
-    }
+    // ALWAYS clear cache on mount to ensure fresh data
+    dashboardCache.clear();
     loadData();
   }, []);
 

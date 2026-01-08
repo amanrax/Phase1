@@ -111,75 +111,75 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
               transition: "all 0.3s"
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: doc.file && !doc.uploaded ? "10px" : "0", gap: "12px", flexWrap: "wrap" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: "1 1 auto" }}>
-                <span style={{ fontSize: "28px", flexShrink: 0 }}>{doc.uploaded ? "✅" : "📄"}</span>
-                <div style={{ minWidth: 0, overflow: "hidden" }}>
-                  <h3 style={{ fontWeight: "600", color: "#333", fontSize: "15px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.label}</h3>
-                  {doc.file && !doc.uploaded && (
-                    <p style={{ fontSize: "12px", color: "#666", marginTop: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {doc.file.name} ({(doc.file.size / 1024 / 1024).toFixed(2)} MB)
-                    </p>
-                  )}
-                </div>
+            {/* Document Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
+              <span style={{ fontSize: "28px" }}>{doc.uploaded ? "✅" : "📄"}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3 style={{ fontWeight: "600", color: "#333", fontSize: "15px" }}>{doc.label}</h3>
+                {doc.file && !doc.uploaded && (
+                  <p style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                    {doc.file.name} ({(doc.file.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
               </div>
+            </div>
 
-              {doc.uploaded ? (
-                <span style={{ color: "#28a745", fontWeight: "600", fontSize: "14px", whiteSpace: "nowrap", flexShrink: 0 }}>Uploaded ✓</span>
-              ) : (
-                <div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0, maxWidth: "min-content" }}>
-                  <label style={{ flexShrink: 0 }}>
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={(e) => handleFileSelect(index, e)}
-                      disabled={doc.uploading}
-                      style={{ display: "none" }}
-                      aria-label={`Upload ${doc.label}`}
-                    />
-                    <div style={{
-                      textAlign: "center",
-                      padding: "8px 12px",
-                      border: "2px dashed #ddd",
+            {/* Buttons Section */}
+            {doc.uploaded ? (
+              <div style={{ textAlign: "right" }}>
+                <span style={{ color: "#28a745", fontWeight: "600", fontSize: "14px" }}>Uploaded ✓</span>
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: "10px", flexDirection: "column" }}>
+                <label style={{ width: "100%" }}>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={(e) => handleFileSelect(index, e)}
+                    disabled={doc.uploading}
+                    style={{ display: "none" }}
+                    aria-label={`Upload ${doc.label}`}
+                  />
+                  <div style={{
+                    textAlign: "center",
+                    padding: "10px",
+                    border: "2px dashed #ddd",
+                    borderRadius: "6px",
+                    cursor: doc.uploading ? "not-allowed" : "pointer",
+                    background: "white",
+                    transition: "all 0.3s",
+                    fontSize: "14px",
+                    color: "#666"
+                  }}>
+                    {doc.file ? "📎 Change File" : "📁 Choose File"}
+                  </div>
+                </label>
+
+                {doc.file && (
+                  <button
+                    onClick={() => handleUpload(index)}
+                    disabled={doc.uploading}
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      background: doc.uploading ? "#6c757d" : "#007bff",
+                      color: "white",
+                      border: "none",
                       borderRadius: "6px",
                       cursor: doc.uploading ? "not-allowed" : "pointer",
-                      background: "white",
-                      transition: "all 0.3s",
-                      fontSize: "13px",
-                      color: "#666",
-                      whiteSpace: "nowrap"
-                    }}>
-                      <span>{doc.file ? "📎 Change" : "📁 Choose"}</span>
-                    </div>
-                  </label>
-
-                  {doc.file && (
-                    <button
-                      onClick={() => handleUpload(index)}
-                      disabled={doc.uploading}
-                      style={{
-                        padding: "8px 16px",
-                        background: doc.uploading ? "#6c757d" : "#007bff",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: doc.uploading ? "not-allowed" : "pointer",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        transition: "all 0.3s",
-                        whiteSpace: "nowrap",
-                        flexShrink: 0
-                      }}
-                      onMouseOver={(e) => !doc.uploading && (e.currentTarget.style.background = "#0056b3")}
-                      onMouseOut={(e) => !doc.uploading && (e.currentTarget.style.background = "#007bff")}
-                      aria-label={`Upload ${doc.label}`}
-                    >
-                      {doc.uploading ? "⏳" : "⬆️ Upload"}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      transition: "all 0.3s"
+                    }}
+                    onMouseOver={(e) => !doc.uploading && (e.currentTarget.style.background = "#0056b3")}
+                    onMouseOut={(e) => !doc.uploading && (e.currentTarget.style.background = "#007bff")}
+                    aria-label={`Upload ${doc.label}`}
+                  >
+                    {doc.uploading ? "⏳ Uploading..." : "⬆️ Upload"}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
