@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "@/utils/axios";
+import { dashboardCache } from "@/pages/AdminDashboard";
 
 interface User {
   email: string;
@@ -114,6 +115,8 @@ export default function AdminSettings() {
     try {
       await axios.patch(`/users/${email}/status`, { is_active: false });
       setSuccess("User deactivated");
+      // Clear admin dashboard cache
+      dashboardCache.clear();
       loadUsers();
       loadStats(); // Refresh stats after user update
       setTimeout(() => setSuccess(null), 3000);
@@ -127,6 +130,8 @@ export default function AdminSettings() {
     try {
       await axios.patch(`/users/${email}/status`, { is_active: true });
       setSuccess("User activated");
+      // Clear admin dashboard cache
+      dashboardCache.clear();
       loadUsers();
       loadStats(); // Refresh stats after user update
       setTimeout(() => setSuccess(null), 3000);
@@ -140,7 +145,10 @@ export default function AdminSettings() {
     try {
       await axios.delete(`/users/${email}`);
       setSuccess("User deleted");
+      // Clear admin dashboard cache so it shows updated data
+      dashboardCache.clear();
       loadUsers();
+      loadStats(); // Also refresh stats
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       setError(err.response?.data?.detail || "Failed to delete user");
