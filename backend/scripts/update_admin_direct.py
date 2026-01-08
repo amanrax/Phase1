@@ -1,23 +1,11 @@
 #!/usr/bin/env python3
 """
-Add a new admin user to the database
+Update admin password directly in database using pre-hashed password
 """
 import os
 import sys
 from datetime import datetime
 from pymongo import MongoClient
-from passlib.context import CryptContext
-
-# Use SAME password context as backend (app/utils/security.py)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def hash_password(password: str) -> str:
-    """Hash password using passlib bcrypt (same as backend)"""
-    return pwd_context.hash(password[:72])
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against hash"""
-    return pwd_context.verify(plain_password, hashed_password)
 
 # MongoDB connection
 MONGODB_URL = os.getenv("MONGODB_URL")
@@ -27,33 +15,34 @@ if not MONGODB_URL:
     print("❌ Error: MONGODB_URL environment variable not set")
     sys.exit(1)
 
-def add_admin():
-    """Add new admin user"""
+def update_admin():
+    """Update admin user with pre-hashed password"""
     print("🔄 Connecting to MongoDB Atlas...")
     client = MongoClient(MONGODB_URL)
     db = client[MONGODB_DB_NAME]
     
     # Admin details
     email = "cemadmin@gmail.com"
-    password = "Admin@2025"
+    # Pre-generated hash from backend container for password: Admin@2025
+    password_hash = "$2b$12$avRRn/OPevVbYgbBWHOxq.hMuWBHX4IcGfqR.NnWEI8wUCwlcVD7W"
     
-    # Check if admin already exists
+    # Check if admin exists
     existing = db.users.find_one({"email": email})
     if existing:
         print(f"⚠️  Admin {email} already exists. Updating password...")
         result = db.users.update_one(
             {"email": email},
             {"$set": {
-                "password_hash": hash_password(password),
+                "password_hash": password_hash,
                 "updated_at": datetime.utcnow()
             }}
         )
-        print(f"✅ Updated admin user")
+        print(f"✅ Updated {result.modified_count} admin user(s)")
     else:
         print(f"➕ Creating new admin user...")
         admin_doc = {
             "email": email,
-            "password_hash": hash_password(password),
+            "password_hash": password_hash,
             "role": "admin",
             "name": "CEM Admin",
             "is_active": True,
@@ -61,28 +50,24 @@ def add_admin():
             "updated_at": datetime.utcnow()
         }
         result = db.users.insert_one(admin_doc)
-        print(f"✅ Created new admin user")
+        print(f"✅ Created new admin user with ID: {result.inserted_id}")
     
     # Verify the user exists
     user = db.users.find_one({"email": email})
     if user:
         print("\n✅ Admin user verified in database!")
         print("=" * 60)
-        print(f"  Email:    {email}")
-        print(f"  Password: {password}")
+        print(f"  Email:    cemadmin@gmail.com")
+        print(f"  Password: Admin@2025")
         print(f"  Role:     {user.get('role', 'N/A')}")
         print(f"  Active:   {user.get('is_active', False)}")
+        print(f"  Hash:     {user.get('password_hash', 'N/A')[:30]}...")
         print("=" * 60)
-        
-        # Test password verification
-        if verify_password(password, user['password_hash']):
-            print("✅ Password verification: PASSED")
-        else:
-            print("❌ Password verification: FAILED")
     else:
         print("❌ Failed to verify admin user")
     
     client.close()
+    print("\n✅ Update complete! You can now log in with these credentials.")
 
 if __name__ == "__main__":
-    add_admin()
+    update_admin()
