@@ -2,6 +2,8 @@
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
 from passlib.context import CryptContext
+import bcrypt
+from passlib.exc import UnknownHashError
 from app.config import settings
 import hmac
 import hashlib
@@ -25,7 +27,14 @@ def hash_password(password: str) -> str:
     Returns:
         str: Hashed password
     """
-    return pwd_ctx.hash(password[:72])
+    pw = password[:72]
+    try:
+        return pwd_ctx.hash(pw)
+    except Exception:
+        # Fallback: use bcrypt directly
+        pwb = pw.encode("utf-8")
+        salt = bcrypt.gensalt()
+        return bcrypt.hashpw(pwb, salt).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
@@ -39,7 +48,21 @@ def verify_password(plain: str, hashed: str) -> bool:
     Returns:
         bool: True if password matches
     """
-    return pwd_ctx.verify(plain, hashed)
+    pw = plain[:72]
+    try:
+        return pwd_ctx.verify(pw, hashed)
+    except (UnknownHashError, AttributeError):
+        # Fallback: if hash looks like bcrypt ($2b$ or $2a$), use bcrypt.checkpw
+        try:
+            if isinstance(hashed, str):
+                hashed_bytes = hashed.encode("utf-8")
+            else:
+                hashed_bytes = hashed
+            return bcrypt.checkpw(pw.encode("utf-8"), hashed_bytes)
+        except Exception:
+            return False
+    except Exception:
+        return False
 
 
 # ==============================
