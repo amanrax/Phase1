@@ -35,14 +35,16 @@ export default function AdminSettings() {
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
 
   useEffect(() => {
-    // Always reload fresh data when component mounts
-    loadUsers();
-    loadStats();
+    // Load users first, then stats (since stats depends on user count)
+    const init = async () => {
+      await loadUsers();
+      await loadStats();
+    };
+    init();
     
-    // Also reload when window regains focus (user comes back from another page)
+    // Reload on window focus
     const handleFocus = () => {
-      loadUsers();
-      loadStats();
+      init();
     };
     
     window.addEventListener('focus', handleFocus);
@@ -71,14 +73,13 @@ export default function AdminSettings() {
   const loadStats = async () => {
     try {
       const response = await axios.get("/reports/dashboard");
-      // API returns {timestamp, metrics: {farmers_total, operators_total, users_total}}
       const metrics = response.data?.metrics || response.data || {};
       
-      // Calculate admin count from users list
+      // Count admins from the already-loaded users list
       const adminCount = users.filter(u => u.role.toUpperCase() === 'ADMIN').length;
       
       setStats({
-        total_users: metrics.users_total || 0,
+        total_users: users.length, // Use actual users array length
         total_admins: adminCount,
         total_operators: metrics.operators_total || 0,
         total_farmers: metrics.farmers_total || 0
@@ -167,9 +168,10 @@ export default function AdminSettings() {
             <h1 className="text-2xl font-bold text-gray-800">⚙️ Settings</h1>
           </div>
           <button
-            onClick={() => {
-              loadUsers();
-              loadStats();
+            onClick={async () => {
+              dashboardCache.clear();
+              await loadUsers();
+              await loadStats();
             }}
             disabled={loading}
             className="px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2"

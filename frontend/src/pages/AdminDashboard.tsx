@@ -18,6 +18,7 @@ interface Farmer {
 
 interface Operator {
   _id: string;
+  operator_id?: string;
   email: string;
   full_name: string;
   phone?: string;
@@ -31,24 +32,28 @@ interface Stats {
   pendingVerifications: number;
 }
 
-// Cache for dashboard data with 2 minute TTL
+// Cache for dashboard data with 30 second TTL
 export const dashboardCache = {
   data: null as any,
   timestamp: 0,
-  TTL: 2 * 60 * 1000, // 2 minutes
+  TTL: 30 * 1000, // 30 seconds (reduced from 2 minutes)
   isValid() {
     return this.data && (Date.now() - this.timestamp) < this.TTL;
   },
   set(data: any) {
     this.data = data;
     this.timestamp = Date.now();
+    console.log('📦 Cache updated at', new Date().toLocaleTimeString());
   },
   get() {
-    return this.isValid() ? this.data : null;
+    const valid = this.isValid();
+    if (!valid) console.log('⚠️ Cache expired');
+    return valid ? this.data : null;
   },
   clear() {
     this.data = null;
     this.timestamp = 0;
+    console.log('🗑️ Cache cleared');
   }
 };
 
@@ -67,30 +72,48 @@ export default function AdminDashboard() {
   const loadingRef = useRef(false); // Prevent duplicate loads
 
   useEffect(() => {
-    // ALWAYS clear cache on mount to ensure fresh data
-    dashboardCache.clear();
-    loadData();
+    // Force fresh data on mount
+    loadData(true);
+    
+    // Also refresh when navigating back to this page
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('👀 Page visible again, refreshing...');
+        loadData(true);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (force = false) => {
     // Check if already loading
     if (loadingRef.current) {
       console.log('Data already loading, skipping...');
       return;
     }
 
-    // Check cache first
-    const cachedData = dashboardCache.get();
-    if (cachedData) {
-      console.log('Loading from cache...');
-      setFarmers(cachedData.farmers);
-      setOperators(cachedData.operators);
-      setStats(cachedData.stats);
-      return;
+    // Check cache first (skip if force=true)
+    if (!force) {
+      const cachedData = dashboardCache.get();
+      if (cachedData) {
+        console.log('Loading from cache...');
+        setFarmers(cachedData.farmers);
+        setOperators(cachedData.operators);
+        setStats(cachedData.stats);
+        return;
+      }
     }
 
     loadingRef.current = true;
     setLoading(true);
+    
+    // Clear cache before loading fresh data
+    dashboardCache.clear();
     try {
       // Load data in parallel for faster response
       const [statsData, farmersData, operatorsData] = await Promise.all([
@@ -105,8 +128,10 @@ export default function AdminDashboard() {
       // Operators endpoint returns {count, results}
       const operatorsList = operatorsData.results || operatorsData.operators || [];
       
-      console.log('Farmers loaded:', farmersList.length);
-      console.log('Operators loaded:', operatorsList.length);
+      console.log('✅ Fresh data loaded:', {
+        farmers: farmersList.length,
+        operators: operatorsList.length
+      });
       
       const statsObject = {
         totalFarmers: statsData.farmers?.total || 0,
@@ -259,8 +284,8 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
-                    dashboardCache.data = null;
-                    loadData();
+                    dashboardCache.clear();
+                    loadData(true);
                   }}
                   disabled={loading}
                   className="px-3 py-1.5 bg-green-700 hover:bg-green-800 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
