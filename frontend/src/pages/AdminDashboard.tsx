@@ -32,7 +32,7 @@ interface Stats {
 }
 
 // Cache for dashboard data with 2 minute TTL
-const dashboardCache = {
+export const dashboardCache = {
   data: null as any,
   timestamp: 0,
   TTL: 2 * 60 * 1000, // 2 minutes
@@ -45,6 +45,10 @@ const dashboardCache = {
   },
   get() {
     return this.isValid() ? this.data : null;
+  },
+  clear() {
+    this.data = null;
+    this.timestamp = 0;
   }
 };
 

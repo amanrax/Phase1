@@ -361,6 +361,14 @@ export default function FarmersList() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Add Farmer Button */}
+        <button
+          onClick={() => navigate("/farmers/create")}
+          className="mb-6 bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg transition shadow-lg inline-flex items-center gap-2"
+        >
+          <i className="fa-solid fa-plus"></i> Add New Farmer
+        </button>
+
         {/* Filter Tabs */}
         <div className="mb-6 bg-white rounded-lg shadow-sm p-2 flex gap-2 overflow-x-auto">
           {["all", "active", "pending", "inactive"].map(f => (

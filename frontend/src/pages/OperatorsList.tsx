@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { operatorService } from "@/services/operator.service";
+import { dashboardCache } from "@/pages/AdminDashboard";
 
 interface Operator {
   _id: string;
@@ -52,6 +53,8 @@ export default function OperatorsList() {
     try {
       await operatorService.delete(operatorId);
       alert("✅ Operator deleted successfully");
+      // Clear admin dashboard cache to show updated operator list
+      dashboardCache.clear();
       await fetchOperators();
     } catch (err: any) {
       if (import.meta.env.DEV) {
@@ -74,6 +77,8 @@ export default function OperatorsList() {
         await operatorService.activate(operatorId);
       }
       alert(`✅ Operator ${action}d successfully`);
+      // Clear admin dashboard cache to show updated operator status
+      dashboardCache.clear();
       await fetchOperators();
     } catch (err: any) {
       if (import.meta.env.DEV) {

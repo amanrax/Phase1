@@ -35,6 +35,23 @@ export default function OperatorDashboard() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
+  
+  // Calculate dynamic metrics from farmers data
+  const farmersThisMonth = farmers.filter(f => {
+    if (!f._id) return false;
+    const createdDate = new Date(f._id.toString().substring(0, 8), 16) * 1000;
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    return createdDate >= thisMonthStart.getTime();
+  }).length;
+  
+  const pendingDocs = farmers.filter(f => 
+    f.registration_status === 'pending' || 
+    f.registration_status === 'submitted' ||
+    f.registration_status === 'under_review'
+  ).length;
+  
+  const totalLand = 0; // TODO: Calculate from farmer land_info when available
 
   useEffect(() => {
     loadOperatorInfo();
@@ -110,19 +127,19 @@ export default function OperatorDashboard() {
 
           {/* This Month Card */}
           <div className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer">
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">3</div>
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{farmersThisMonth}</div>
             <div className="opacity-90 text-xs sm:text-sm md:text-base">📅 This Month</div>
           </div>
 
           {/* Pending Docs Card */}
           <div className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer">
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">8</div>
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{pendingDocs}</div>
             <div className="opacity-90 text-xs sm:text-sm md:text-base">📄 Pending Docs</div>
           </div>
 
           {/* Total Land Card */}
           <div className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer">
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">45.2</div>
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{totalLand.toFixed(1)}</div>
             <div className="opacity-90 text-xs sm:text-sm md:text-base">🌾 Total Land (ha)</div>
           </div>
         </div>
