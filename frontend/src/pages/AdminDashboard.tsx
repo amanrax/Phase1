@@ -193,7 +193,7 @@ export default function AdminDashboard() {
                 className="px-2 sm:px-4 py-2 bg-gradient-to-br from-blue-600 to-blue-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
                 style={{ boxShadow: '0_4px_12px_rgba(37,99,235,0.3)' }}
               >
-                👨‍💼 Operators
+                👨‍💼 Manage Operators
               </button>
 
               <button
@@ -201,15 +201,7 @@ export default function AdminDashboard() {
                 className="px-2 sm:px-4 py-2 bg-gradient-to-br from-green-600 to-green-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
                 style={{ boxShadow: '0_4px_12px_rgba(22,163,74,0.3)' }}
               >
-                👨‍🌾 Farmers
-              </button>
-
-              <button
-                onClick={() => navigate("/farmers/create")}
-                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-emerald-600 to-emerald-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
-                style={{ boxShadow: '0_4px_12px_rgba(5,150,105,0.3)' }}
-              >
-                ➕ Add Farmer
+                👨‍🌾 Manage Farmers
               </button>
 
               <button
