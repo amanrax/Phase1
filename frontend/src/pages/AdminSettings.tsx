@@ -34,8 +34,18 @@ export default function AdminSettings() {
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
 
   useEffect(() => {
+    // Always reload fresh data when component mounts
     loadUsers();
     loadStats();
+    
+    // Also reload when window regains focus (user comes back from another page)
+    const handleFocus = () => {
+      loadUsers();
+      loadStats();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   const loadUsers = async () => {
@@ -148,6 +158,17 @@ export default function AdminSettings() {
             </button>
             <h1 className="text-2xl font-bold text-gray-800">⚙️ Settings</h1>
           </div>
+          <button
+            onClick={() => {
+              loadUsers();
+              loadStats();
+            }}
+            disabled={loading}
+            className="px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2"
+          >
+            <i className={`fa-solid fa-rotate-right ${loading ? 'animate-spin' : ''}`}></i>
+            Refresh
+          </button>
         </div>
       </header>
 
