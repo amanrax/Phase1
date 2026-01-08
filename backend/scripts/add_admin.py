@@ -47,7 +47,7 @@ def add_admin():
         result = db.users.update_one(
             {"email": email},
             {"$set": {
-                "password": hash_password(password),
+                "password_hash": hash_password(password),
                 "updated_at": datetime.utcnow()
             }}
         )
@@ -56,7 +56,7 @@ def add_admin():
         print(f"➕ Creating new admin user...")
         admin_doc = {
             "email": email,
-            "password": hash_password(password),
+            "password_hash": hash_password(password),
             "role": "admin",
             "name": "CEM Admin",
             "is_active": True,
@@ -78,7 +78,7 @@ def add_admin():
         print("=" * 60)
         
         # Test password verification
-        if verify_password(password, user['password']):
+        if verify_password(password, user['password_hash']):
             print("✅ Password verification: PASSED")
         else:
             print("❌ Password verification: FAILED")
