@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "@/utils/axios";
 import { dashboardCache } from "@/pages/AdminDashboard";
+import { userService } from "@/services/user.service";
+import { dashboardService } from "@/services/dashboard.service";
 
 interface User {
   email: string;
@@ -72,17 +74,19 @@ export default function AdminSettings() {
 
   const loadStats = async () => {
     try {
-      const response = await axios.get("/reports/dashboard");
-      const metrics = response.data?.metrics || response.data || {};
+      const data = await dashboardService.getStats();
       
       // Count admins from the already-loaded users list
-      const adminCount = users.filter(u => u.role.toUpperCase() === 'ADMIN').length;
+      const adminCount = users.filter(u => {
+        const userRoles = Array.isArray(u.role) ? u.role : [u.role];
+        return userRoles.some(r => r?.toUpperCase() === 'ADMIN');
+      }).length;
       
       setStats({
-        total_users: users.length, // Use actual users array length
+        total_users: users.length,
         total_admins: adminCount,
-        total_operators: metrics.operators_total || 0,
-        total_farmers: metrics.farmers_total || 0
+        total_operators: data.operators_total || 0,
+        total_farmers: data.farmers?.total || 0
       });
     } catch (err) {
       console.error("Failed to load stats", err);
@@ -114,12 +118,12 @@ export default function AdminSettings() {
   const deactivateUser = async (email: string) => {
     if (!confirm(`Deactivate ${email}?`)) return;
     try {
-      await axios.patch(`/users/${email}/status`, { is_active: false });
+      await userService.updateUserStatus(email, false);
       setSuccess("User deactivated");
       // Clear admin dashboard cache
       dashboardCache.clear();
       loadUsers();
-      loadStats(); // Refresh stats after user update
+      loadStats();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       setError(err.response?.data?.detail || "Failed to deactivate user");
@@ -129,12 +133,12 @@ export default function AdminSettings() {
   const activateUser = async (email: string) => {
     if (!confirm(`Activate ${email}?`)) return;
     try {
-      await axios.patch(`/users/${email}/status`, { is_active: true });
+      await userService.updateUserStatus(email, true);
       setSuccess("User activated");
       // Clear admin dashboard cache
       dashboardCache.clear();
       loadUsers();
-      loadStats(); // Refresh stats after user update
+      loadStats();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       setError(err.response?.data?.detail || "Failed to activate user");
@@ -144,7 +148,7 @@ export default function AdminSettings() {
   const deleteUser = async (email: string) => {
     if (!confirm(`Delete ${email}? This cannot be undone.`)) return;
     try {
-      await axios.delete(`/users/${email}`);
+      await userService.deleteUser(email);
       setSuccess("User deleted");
       // Clear admin dashboard cache so it shows updated data
       dashboardCache.clear();

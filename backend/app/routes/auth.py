@@ -358,13 +358,13 @@ async def register_user(
     # Hash password
     password_hash = hash_password(user_data.password)
     
-    # Create user document - handle both UserRole enum and string values
+    # Create user document - handle both UserRole enum and string values, normalize to uppercase
     roles_list = []
     for role in user_data.roles:
         if isinstance(role, str):
-            roles_list.append(role)
+            roles_list.append(role.upper())
         else:
-            roles_list.append(role.value)
+            roles_list.append(role.value.upper())
     
     now = datetime.now(timezone.utc)
     user_doc = {

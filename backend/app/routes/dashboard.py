@@ -34,6 +34,7 @@ async def get_dashboard_stats(
     pending_farmers = await db.farmers.count_documents({"registration_status": "pending"})
     rejected_farmers = await db.farmers.count_documents({"registration_status": "rejected"})
     total_users = await db.users.count_documents({})
+    admin_count = await db.users.count_documents({"roles": {"$in": ["ADMIN"]}})
     operators = await db.operators.count_documents({})
     recent_farmers = await db.farmers.find({}).sort("created_at", -1).limit(5).to_list(5)
 
@@ -68,7 +69,8 @@ async def get_dashboard_stats(
             "rejected": rejected_farmers,
             "recent": recent_results
         },
-        "users": total_users,
-        "operators": operators,
+        "users_total": total_users,
+        "admins": admin_count,
+        "operators_total": operators,
         "generated_at": datetime.now().isoformat()
     }

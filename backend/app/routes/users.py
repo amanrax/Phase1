@@ -49,7 +49,8 @@ async def get_users(
     for user in users:
         results.append({
             "email": user.get("email"),
-            "role": user.get("roles", [])[0] if user.get("roles") else "UNKNOWN",
+            "roles": user.get("roles", []),  # Return roles array, not singular role
+            "role": user.get("roles", [])[0] if user.get("roles") else "UNKNOWN",  # Keep for backward compatibility
             "is_active": user.get("is_active", True),
             "created_at": user.get("created_at", datetime.now(timezone.utc)).isoformat()
         })
@@ -91,10 +92,12 @@ async def create_user(
 
     password_hash = hash_password(user_data.password)
     now = datetime.now(timezone.utc)
+    # Normalize roles to uppercase
+    normalized_roles = [role.value.upper() if hasattr(role, 'value') else str(role).upper() for role in user_data.roles]
     new_user_doc = {
         "email": email,
         "password_hash": password_hash,
-        "roles": [role.value for role in user_data.roles],
+        "roles": normalized_roles,
         "is_active": True,
         "created_at": now,
         "updated_at": now
@@ -212,6 +215,14 @@ async def delete_user(
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent self-deletion
+    current_email = current_user.get("email", "").lower().strip()
+    if email == current_email:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete your own account"
+        )
     
     # Prevent deleting the last admin
     if "ADMIN" in user.get("roles", []):

@@ -45,10 +45,26 @@ export const userService = {
   },
 
   /**
-   * Deactivate operator
+   * Deactivate operator (DEPRECATED - use updateUserStatus instead)
    */
   async deactivateOperator(userId: string) {
     const { data } = await axiosClient.patch(`/users/${userId}/deactivate`);
+    return data;
+  },
+
+  /**
+   * Update user status (activate/deactivate)
+   */
+  async updateUserStatus(email: string, is_active: boolean) {
+    const { data } = await axiosClient.patch(`/users/${email}/status`, { is_active });
+    return data;
+  },
+
+  /**
+   * Delete user account
+   */
+  async deleteUser(email: string) {
+    const { data } = await axiosClient.delete(`/users/${email}`);
     return data;
   },
 };
