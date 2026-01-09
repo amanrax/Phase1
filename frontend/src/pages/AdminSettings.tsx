@@ -57,15 +57,21 @@ export default function AdminSettings() {
     try {
       setLoading(true);
       const response = await axios.get("/users/");
-      // API returns {users: [...]}
-      if (response.data.users && Array.isArray(response.data.users)) {
-        setUsers(response.data.users);
-      } else if (Array.isArray(response.data)) {
-        setUsers(response.data);
-      } else {
-        setUsers([]);
-      }
+      // API returns: { "users": [ { "email": "...", "roles": ["ADMIN"], ... } ] }
+      const userList = response.data.users || response.data || [];
+      
+      // Convert to User format (flatten roles array to single role string for display)
+      const formattedUsers: User[] = userList.map((u: any) => ({
+        email: u.email,
+        role: Array.isArray(u.roles) ? u.roles[0] || 'UNKNOWN' : u.roles || 'UNKNOWN',
+        is_active: u.is_active !== false,
+        created_at: u.created_at || new Date().toISOString()
+      }));
+      
+      setUsers(formattedUsers);
+      console.log(`[Settings] Loaded ${formattedUsers.length} users`);
     } catch (err: any) {
+      console.error('[Settings] Error loading users:', err);
       setError(err.response?.data?.detail || "Failed to load users");
     } finally {
       setLoading(false);
@@ -74,19 +80,30 @@ export default function AdminSettings() {
 
   const loadStats = async () => {
     try {
-      const data = await dashboardService.getStats();
+      // Count admins from already-loaded users
+      const adminCount = users.filter(u => 
+        u.role?.toUpperCase() === 'ADMIN'
+      ).length;
       
-      // Count admins from the already-loaded users list
-      const adminCount = users.filter(u => {
-        const userRoles = Array.isArray(u.role) ? u.role : [u.role];
-        return userRoles.some(r => r?.toUpperCase() === 'ADMIN');
-      }).length;
+      const operatorCount = users.filter(u => 
+        u.role?.toUpperCase() === 'OPERATOR'
+      ).length;
+      
+      // Get farmer count from dashboard API
+      const dashStats = await dashboardService.getDashboardStats();
       
       setStats({
         total_users: users.length,
         total_admins: adminCount,
-        total_operators: data.operators_total || 0,
-        total_farmers: data.farmers?.total || 0
+        total_operators: operatorCount,
+        total_farmers: dashStats?.metrics?.farmers_total || 0
+      });
+      
+      console.log('[Settings] Stats loaded:', {
+        total_users: users.length,
+        total_admins: adminCount,
+        total_operators: operatorCount,
+        farmers: dashStats?.metrics?.farmers_total || 0
       });
     } catch (err) {
       console.error("Failed to load stats", err);

@@ -88,7 +88,8 @@ export default function AdminReports() {
   const exportToCSV = (data: any[], filename: string) => {
     try {
       if (!data || data.length === 0) {
-        setError('No data to export');
+        setError('No data to export. Make sure the report has loaded.');
+        setShowExportMenu(false);
         return;
       }
 
@@ -103,7 +104,7 @@ export default function AdminReports() {
             if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
               return `"${value.replace(/"/g, '""')}"`;
             }
-            return value;
+            return value ?? '';
           }).join(',')
         )
       ].join('\n');
@@ -120,11 +121,15 @@ export default function AdminReports() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       
+      console.log(`✓ Exported ${filename}`);
+      setError(null);
       setShowExportMenu(false);
     } catch (error) {
-      setError('Failed to export data');
+      setError('Failed to export CSV file');
       console.error('Export error:', error);
+      setShowExportMenu(false);
     }
   };
 
@@ -143,7 +148,8 @@ export default function AdminReports() {
   const exportToExcel = (data: any[], filename: string) => {
     try {
       if (!data || data.length === 0) {
-        setError('No data to export');
+        setError('No data to export. Make sure the report has loaded.');
+        setShowExportMenu(false);
         return;
       }
 
@@ -152,17 +158,21 @@ export default function AdminReports() {
       XLSX.utils.book_append_sheet(wb, ws, activeReport);
       XLSX.writeFile(wb, filename);
       
+      console.log(`✓ Exported ${filename}`);
+      setError(null);
       setShowExportMenu(false);
     } catch (error) {
-      setError('Failed to export Excel');
+      setError('Failed to export Excel file');
       console.error('Excel export error:', error);
+      setShowExportMenu(false);
     }
   };
 
   const exportToPDF = (data: any[], filename: string) => {
     try {
       if (!data || data.length === 0) {
-        setError('No data to export');
+        setError('No data to export. Make sure the report has loaded.');
+        setShowExportMenu(false);
         return;
       }
 
@@ -211,10 +221,13 @@ export default function AdminReports() {
       }
       
       doc.save(filename);
+      console.log(`✓ Exported ${filename}`);
+      setError(null);
       setShowExportMenu(false);
     } catch (error) {
-      setError('Failed to export PDF');
+      setError('Failed to export PDF file');
       console.error('PDF export error:', error);
+      setShowExportMenu(false);
     }
   };
 

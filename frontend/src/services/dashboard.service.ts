@@ -65,7 +65,23 @@ export const dashboardService = {
    */
   async getDashboardReport(): Promise<ReportDashboard> {
     const { data } = await axiosClient.get<ReportDashboard>("/reports/dashboard");
+    console.log('[DashboardService] Got dashboard report:', data);
     return data;
+  },
+
+  /**
+   * Get dashboard stats (alias for getDashboardReport)
+   * Returns the same data but with logging
+   */
+  async getDashboardStats(): Promise<ReportDashboard> {
+    try {
+      const data = await this.getDashboardReport();
+      console.log('[DashboardService] Got stats:', data);
+      return data;
+    } catch (error) {
+      console.error('[DashboardService] Failed to fetch dashboard stats:', error);
+      throw error;
+    }
   },
 
   /**
