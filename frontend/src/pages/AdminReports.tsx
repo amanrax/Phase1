@@ -64,14 +64,6 @@ export default function AdminReports() {
     }
   };
 
-  const generateCSV = () => {
-    let csv = "Farmer ID,Name,District,Status,Registered\n";
-    farmers.forEach(f => {
-      csv += `"${f.farmer_id}","${getFarmerName(f)}","${getFarmerDistrict(f)}","${getFarmerStatus(f)}","${getFarmerDate(f)}"\n`;
-    });
-    return csv;
-  };
-
   const getCurrentDataForExport = () => {
     switch (activeReport) {
       case 'dashboard':
@@ -90,6 +82,50 @@ export default function AdminReports() {
   const getExportFilename = (extension: string) => {
     const date = new Date().toISOString().split('T')[0];
     return `${activeReport}-report-${date}.${extension}`;
+  };
+
+  // CSV Export function
+  const exportToCSV = (data: any[], filename: string) => {
+    try {
+      if (!data || data.length === 0) {
+        setError('No data to export');
+        return;
+      }
+
+      // Get headers from first object
+      const headers = Object.keys(data[0]);
+      const csvContent = [
+        headers.join(','),
+        ...data.map(row =>
+          headers.map(header => {
+            const value = row[header];
+            // Handle quotes and commas in values
+            if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+              return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+          }).join(',')
+        )
+      ].join('\n');
+
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setShowExportMenu(false);
+    } catch (error) {
+      setError('Failed to export data');
+      console.error('Export error:', error);
+    }
   };
 
   const exportReport = (type: "csv" | "excel" | "pdf") => {
@@ -148,7 +184,7 @@ export default function AdminReports() {
       // Convert data to table
       if (data.length > 0) {
         const headers = Object.keys(data[0]);
-        const rows = data.map(item => Object.values(item));
+        const rows = data.map(item => Object.values(item)) as any[][];
         
         autoTable(doc, {
           startY: 45,
@@ -178,43 +214,7 @@ export default function AdminReports() {
       setShowExportMenu(false);
     } catch (error) {
       setError('Failed to export PDF');
-      console.error('PDF export error:', error-label">Pending Verification</div>
-      <div class="metric-value">${report?.pending_verification || 0}</div>
-    </div>
-  </div>
-
-  <h2>Farmer Details (${farmers.length} records)</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Farmer ID</th>
-        <th>Name</th>
-        <th>District</th>
-        <th>Status</th>
-        <th>Registered</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${farmers.map(f => `
-        <tr>
-          <td><strong>${f.farmer_id}</strong></td>
-          <td>${getFarmerName(f)}</td>
-          <td>${getFarmerDistrict(f)}</td>
-          <td><strong>${getFarmerStatus(f)}</strong></td>
-          <td>${getFarmerDate(f)}</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>
-  
-  <div class="footer">
-    <p><strong>Chiefdom Management Model</strong> | Chiefdom Empowerment Model (CEM)</p>
-  </div>
-</body>
-</html>
-      `);
-      printWindow.document.close();
-      printWindow.print();
+      console.error('PDF export error:', error);
     }
   };
 
