@@ -37,21 +37,24 @@ export default function AdminSettings() {
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
 
   useEffect(() => {
-    // Load users first, then stats (since stats depends on user count)
-    const init = async () => {
-      await loadUsers();
-      await loadStats();
-    };
-    init();
+    // Load users on mount
+    loadUsers();
     
     // Reload on window focus
     const handleFocus = () => {
-      init();
+      loadUsers();
     };
     
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
+  
+  // Load stats whenever users change
+  useEffect(() => {
+    if (users.length > 0) {
+      loadStats();
+    }
+  }, [users]);
 
   const loadUsers = async () => {
     try {
