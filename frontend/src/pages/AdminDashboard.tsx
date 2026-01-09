@@ -130,14 +130,17 @@ export default function AdminDashboard() {
       
       console.log('✅ Fresh data loaded:', {
         farmers: farmersList.length,
-        operators: operatorsList.length
+        operators: operatorsList.length,
+        stats: statsData
       });
       
       const statsObject = {
         totalFarmers: statsData.farmers?.total || 0,
-        totalOperators: statsData.operators || 0,
+        totalOperators: statsData.operators_total || 0,  // Fixed: was 'operators'
         pendingVerifications: statsData.farmers?.pending || 0,
       };
+      
+      console.log('📊 Dashboard stats:', statsObject);
 
       // Cache the results
       dashboardCache.set({

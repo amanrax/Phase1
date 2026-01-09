@@ -57,21 +57,30 @@ export default function AdminSettings() {
     try {
       setLoading(true);
       const response = await axios.get("/users/");
-      // API returns: { "users": [ { "email": "...", "roles": ["ADMIN"], ... } ] }
-      const userList = response.data.users || response.data || [];
       
-      // Convert to User format (flatten roles array to single role string for display)
+      console.log('[Settings] API Response:', response.data);
+      
+      // Backend returns: { "users": [...] }
+      const userList = response.data?.users || [];
+      
+      console.log(`[Settings] Raw user list:`, userList);
+      
+      // Convert to User format
       const formattedUsers: User[] = userList.map((u: any) => ({
-        email: u.email,
-        role: Array.isArray(u.roles) ? u.roles[0] || 'UNKNOWN' : u.roles || 'UNKNOWN',
+        email: u.email || '',
+        // Backend provides both 'role' (string) and 'roles' (array)
+        // Use 'role' field directly since backend already provides it
+        role: u.role || u.roles?.[0] || 'UNKNOWN',
         is_active: u.is_active !== false,
         created_at: u.created_at || new Date().toISOString()
       }));
       
+      console.log(`[Settings] Formatted users:`, formattedUsers);
       setUsers(formattedUsers);
-      console.log(`[Settings] Loaded ${formattedUsers.length} users`);
+      console.log(`[Settings] ✓ Loaded ${formattedUsers.length} users`);
     } catch (err: any) {
       console.error('[Settings] Error loading users:', err);
+      console.error('[Settings] Error response:', err.response);
       setError(err.response?.data?.detail || "Failed to load users");
     } finally {
       setLoading(false);
