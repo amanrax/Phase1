@@ -318,7 +318,21 @@ export default function AdminSettings() {
                 {/* Users List */}
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                   <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                    <h2 className="text-lg font-bold text-gray-800">System Users ({users.length})</h2>
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-800">All System Users ({users.length})</h2>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Manage all users: 
+                        <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full font-semibold">
+                          {users.filter(u => u.role.toUpperCase() === 'ADMIN').length} Admins
+                        </span>
+                        <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full font-semibold">
+                          {users.filter(u => u.role.toUpperCase() === 'OPERATOR').length} Operators
+                        </span>
+                        <span className="ml-1 px-2 py-0.5 bg-green-100 text-green-800 rounded-full font-semibold">
+                          {users.filter(u => u.role.toUpperCase() === 'FARMER').length} Farmers
+                        </span>
+                      </p>
+                    </div>
                     <label className="flex items-center gap-2 text-sm text-gray-700">
                       <input
                         type="checkbox"
@@ -347,7 +361,15 @@ export default function AdminSettings() {
                           <tr key={user._id} className="hover:bg-green-50 transition">
                             <td className="px-6 py-4 font-mono text-xs">{user.email}</td>
                             <td className="px-6 py-4">
-                              <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">
+                              <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                                user.role.toUpperCase() === 'ADMIN' 
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : user.role.toUpperCase() === 'OPERATOR'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : user.role.toUpperCase() === 'FARMER'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
                                 {user.role.toUpperCase()}
                               </span>
                             </td>
@@ -403,7 +425,20 @@ export default function AdminSettings() {
                             {user.is_active ? "Active" : "Inactive"}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-600 mb-2"><strong>Role:</strong> {user.role.toUpperCase()}</p>
+                        <p className="text-xs text-gray-600 mb-2">
+                          <strong>Role:</strong> 
+                          <span className={`ml-2 px-2 py-1 text-xs font-bold rounded-full ${
+                            user.role.toUpperCase() === 'ADMIN' 
+                              ? 'bg-purple-100 text-purple-800'
+                              : user.role.toUpperCase() === 'OPERATOR'
+                              ? 'bg-blue-100 text-blue-800'
+                              : user.role.toUpperCase() === 'FARMER'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {user.role.toUpperCase()}
+                          </span>
+                        </p>
                         <p className="text-xs text-gray-600 mb-3"><strong>Created:</strong> {new Date(user.created_at).toLocaleDateString()}</p>
                         <div className="flex gap-2 text-xs">
                           {user.is_active ? (
