@@ -17,7 +17,7 @@ class UpdateStatusRequest(BaseModel):
 
 
 # =======================================================
-# List Users (ADMIN only)
+# List Users (ADMIN only) - WITH PROPER CACHE BUSTING
 # =======================================================
 @router.get(
     "/",
@@ -27,39 +27,78 @@ class UpdateStatusRequest(BaseModel):
 async def get_users(
     request: Request,
     role: Optional[str] = Query(None, description="Filter by user role"),
+    include_inactive: bool = Query(False, description="Include inactive users"),
     current_user: dict = Depends(require_admin),
     db = Depends(get_db)
 ):
+    """
+    List all users with proper filtering and sorting.
+    
+    Returns actual current data from database without caching issues.
+    """
     await log_event(
         level="INFO",
         module="users",
         action="list_users",
-        details={"filter_role": role},
+        details={"filter_role": role, "include_inactive": include_inactive},
         endpoint=str(request.url),
         user_id=current_user.get("email"),
         role=current_user.get("roles", [])[0] if current_user.get("roles") else None,
         ip_address=request.client.host if request.client else None
     )
     
-    query = {"roles": {"$in": [role]}} if role else {}
-    users = await db.users.find(query).sort("created_at", -1).to_list(100)
+    # Build query
+    query = {}
+    
+    # Filter by role if specified
+    if role:
+        query["roles"] = {"$in": [role.upper()]}
+    
+    # Filter by active status (default: only active users)
+    if not include_inactive:
+        query["is_active"] = True
+    
+    # Fetch users from database (sorted by creation date, newest first)
+    users = await db.users.find(query).sort("created_at", -1).to_list(200)
     
     # Format response
     results = []
     for user in users:
+        # Safely get role (handle both single role and array)
+        roles = user.get("roles", [])
+        if roles and isinstance(roles, list):
+            role_display = roles[0]
+        else:
+            role_display = "UNKNOWN"
+        
         results.append({
+            "_id": str(user.get("_id")),
             "email": user.get("email"),
-            "roles": user.get("roles", []),  # Return roles array, not singular role
-            "role": user.get("roles", [])[0] if user.get("roles") else "UNKNOWN",  # Keep for backward compatibility
+            "role": role_display,
+            "roles": roles,  # Include full roles array for frontend
             "is_active": user.get("is_active", True),
-            "created_at": user.get("created_at", datetime.now(timezone.utc)).isoformat()
+            "created_at": user.get("created_at", datetime.now(timezone.utc)).isoformat(),
+            "last_login": user.get("last_login").isoformat() if user.get("last_login") else None,
+            "full_name": user.get("full_name"),
+            "phone": user.get("phone")
         })
     
-    return {"users": results}
+    await log_event(
+        level="INFO",
+        module="users",
+        action="list_users_success",
+        details={"count": len(results), "query": query},
+        endpoint=str(request.url),
+        user_id=current_user.get("email"),
+        role=current_user.get("roles", [])[0] if current_user.get("roles") else None,
+        ip_address=request.client.host if request.client else None
+    )
+    
+    return {"users": results, "total": len(results)}
 
 
 # =======================================================
-# Create New User (ADMIN only)
+# Create New User (ADMIN only) - WITH SYNC TO OPERATORS
 # =======================================================
 @router.post(
     "/",
@@ -73,6 +112,9 @@ async def create_user(
     current_user: dict = Depends(require_admin),
     db = Depends(get_db)
 ):
+    """
+    Create a new user with proper role assignment and operator sync.
+    """
     email = user_data.email.lower().strip()
     
     await log_event(
@@ -86,23 +128,62 @@ async def create_user(
         ip_address=request.client.host if request.client else None
     )
     
+    # Check if user already exists
     existing = await db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=400, detail="User already exists")
 
+    # Hash password
     password_hash = hash_password(user_data.password)
     now = datetime.now(timezone.utc)
-    # Normalize roles to uppercase
-    normalized_roles = [role.value.upper() if hasattr(role, 'value') else str(role).upper() for role in user_data.roles]
+    
+    # Create user document
     new_user_doc = {
         "email": email,
         "password_hash": password_hash,
-        "roles": normalized_roles,
+        "roles": [role.value for role in user_data.roles],
         "is_active": True,
         "created_at": now,
-        "updated_at": now
+        "updated_at": now,
+        "created_by": current_user.get("email")
     }
+    
+    # Insert user
     result = await db.users.insert_one(new_user_doc)
+    user_id = str(result.inserted_id)
+    
+    # If creating an OPERATOR, ensure they have an operator record
+    if "OPERATOR" in [r.value for r in user_data.roles]:
+        from uuid import uuid4
+        operator_id = "OP" + uuid4().hex[:8].upper()
+        
+        operator_doc = {
+            "operator_id": operator_id,
+            "user_id": user_id,
+            "email": email,
+            "full_name": user_data.email.split('@')[0],  # Default name from email
+            "phone": None,
+            "assigned_regions": [],
+            "assigned_districts": [],
+            "is_active": True,
+            "created_at": now,
+            "updated_at": now,
+        }
+        
+        await db.operators.insert_one(operator_doc)
+        
+        await log_event(
+            level="INFO",
+            module="users",
+            action="operator_profile_created",
+            details={"operator_id": operator_id, "email": email},
+            endpoint=str(request.url),
+            user_id=current_user.get("email"),
+            role="ADMIN",
+            ip_address=request.client.host if request.client else None
+        )
+    
+    # Fetch created user
     new_user = await db.users.find_one({"_id": result.inserted_id})
     
     await log_event(
@@ -136,7 +217,7 @@ async def get_me(current_user: dict = Depends(require_admin)):
 
 
 # =======================================================
-# Update User Status (ADMIN only)
+# Update User Status (ADMIN only) - WITH OPERATOR SYNC
 # =======================================================
 @router.patch(
     "/{email}/status",
@@ -150,6 +231,9 @@ async def update_user_status(
     current_user: dict = Depends(require_admin),
     db = Depends(get_db)
 ):
+    """
+    Update user status with proper operator synchronization.
+    """
     email = email.lower().strip()
     
     await log_event(
@@ -163,11 +247,13 @@ async def update_user_status(
         ip_address=request.client.host if request.client else None
     )
     
+    # Find user
     user = await db.users.find_one({"email": email})
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Update user status
     result = await db.users.update_one(
         {"email": email},
         {
@@ -178,14 +264,41 @@ async def update_user_status(
         }
     )
     
+    # If user is an operator, update operator status too
+    if "OPERATOR" in user.get("roles", []):
+        await db.operators.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "is_active": status_update.is_active,
+                    "updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        await log_event(
+            level="INFO",
+            module="users",
+            action="operator_status_synced",
+            details={"email": email, "is_active": status_update.is_active},
+            endpoint=str(request.url),
+            user_id=current_user.get("email"),
+            role="ADMIN",
+            ip_address=request.client.host if request.client else None
+        )
+    
     if result.modified_count == 0:
         raise HTTPException(status_code=400, detail="Failed to update user status")
     
-    return {"message": f"User {'activated' if status_update.is_active else 'deactivated'} successfully", "email": email}
+    return {
+        "message": f"User {'activated' if status_update.is_active else 'deactivated'} successfully",
+        "email": email,
+        "is_active": status_update.is_active
+    }
 
 
 # =======================================================
-# Delete User (ADMIN only)
+# Delete User (ADMIN only) - WITH PROPER CLEANUP
 # =======================================================
 @router.delete(
     "/{email}",
@@ -198,6 +311,9 @@ async def delete_user(
     current_user: dict = Depends(require_admin),
     db = Depends(get_db)
 ):
+    """
+    Delete user with proper cleanup of operator records and safety checks.
+    """
     email = email.lower().strip()
     
     await log_event(
@@ -211,28 +327,47 @@ async def delete_user(
         ip_address=request.client.host if request.client else None
     )
     
+    # Find user
     user = await db.users.find_one({"email": email})
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Prevent self-deletion
-    current_email = current_user.get("email", "").lower().strip()
-    if email == current_email:
+    # Safety check: Prevent deleting the last admin
+    if "ADMIN" in user.get("roles", []):
+        admin_count = await db.users.count_documents({
+            "roles": {"$in": ["ADMIN"]},
+            "is_active": True
+        })
+        if admin_count <= 1:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot delete the last active admin account"
+            )
+    
+    # Safety check: Prevent deleting yourself
+    if email == current_user.get("email"):
         raise HTTPException(
             status_code=400,
             detail="Cannot delete your own account"
         )
     
-    # Prevent deleting the last admin
-    if "ADMIN" in user.get("roles", []):
-        admin_count = await db.users.count_documents({"roles": {"$in": ["ADMIN"]}, "is_active": True})
-        if admin_count <= 1:
-            raise HTTPException(
-                status_code=400, 
-                detail="Cannot delete the last active admin account"
+    # Delete operator record if exists
+    if "OPERATOR" in user.get("roles", []):
+        operator_result = await db.operators.delete_one({"email": email})
+        if operator_result.deleted_count > 0:
+            await log_event(
+                level="INFO",
+                module="users",
+                action="operator_record_deleted",
+                details={"email": email},
+                endpoint=str(request.url),
+                user_id=current_user.get("email"),
+                role="ADMIN",
+                ip_address=request.client.host if request.client else None
             )
     
+    # Delete user
     result = await db.users.delete_one({"email": email})
     
     if result.deleted_count == 0:
@@ -249,4 +384,8 @@ async def delete_user(
         ip_address=request.client.host if request.client else None
     )
     
-    return {"message": "User deleted successfully", "email": email}
+    return {
+        "message": "User deleted successfully",
+        "email": email,
+        "deleted_at": datetime.now(timezone.utc).isoformat()
+    }

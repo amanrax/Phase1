@@ -1,22 +1,19 @@
-// frontend/src/pages/AdminSettings.tsx - FIXED VERSION
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "@/utils/axios";
+import { dashboardCache } from "@/pages/AdminDashboard";
+import { userService } from "@/services/user.service";
+import { dashboardService } from "@/services/dashboard.service";
 
 interface User {
-  _id: string;
   email: string;
   role: string;
-  roles: string[];
   is_active: boolean;
   created_at: string;
-  full_name?: string;
-  phone?: string;
 }
 
 interface SystemStats {
   total_users: number;
-  active_users: number;
   total_admins: number;
   total_operators: number;
   total_farmers: number;
@@ -38,39 +35,55 @@ export default function AdminSettings() {
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [newAdminPassword, setNewAdminPassword] = useState("");
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
-  
-  // Include inactive users toggle
-  const [includeInactive, setIncludeInactive] = useState(false);
 
   useEffect(() => {
+    // Load users on mount
     loadUsers();
-    loadStats();
-  }, [includeInactive]); // Reload when toggle changes
+    
+    // Reload on window focus
+    const handleFocus = () => {
+      loadUsers();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+  
+  // Load stats whenever users change
+  useEffect(() => {
+    if (users.length > 0) {
+      loadStats();
+    }
+  }, [users]);
 
   const loadUsers = async () => {
     try {
       setLoading(true);
-      console.log('[Settings] Loading users (include_inactive:', includeInactive, ')');
+      const response = await axios.get("/users/");
       
-      // Add cache buster and include_inactive parameter
-      const timestamp = Date.now();
-      const response = await axios.get(`/users/?t=${timestamp}&include_inactive=${includeInactive}`);
+      console.log('[Settings] API Response:', response.data);
       
-      console.log('[Settings] Raw response:', response.data);
+      // Backend returns: { "users": [...] }
+      const userList = response.data?.users || [];
       
-      // API returns {users: [...], total: X}
-      let usersList: User[] = [];
-      if (response.data.users && Array.isArray(response.data.users)) {
-        usersList = response.data.users;
-      } else if (Array.isArray(response.data)) {
-        usersList = response.data;
-      }
+      console.log(`[Settings] Raw user list:`, userList);
       
-      console.log('[Settings] Processed users:', usersList.length);
-      setUsers(usersList);
+      // Convert to User format
+      const formattedUsers: User[] = userList.map((u: any) => ({
+        email: u.email || '',
+        // Backend provides both 'role' (string) and 'roles' (array)
+        // Use 'role' field directly since backend already provides it
+        role: u.role || u.roles?.[0] || 'UNKNOWN',
+        is_active: u.is_active !== false,
+        created_at: u.created_at || new Date().toISOString()
+      }));
       
+      console.log(`[Settings] Formatted users:`, formattedUsers);
+      setUsers(formattedUsers);
+      console.log(`[Settings] ✓ Loaded ${formattedUsers.length} users`);
     } catch (err: any) {
-      console.error('[Settings] Failed to load users:', err);
+      console.error('[Settings] Error loading users:', err);
+      console.error('[Settings] Error response:', err.response);
       setError(err.response?.data?.detail || "Failed to load users");
     } finally {
       setLoading(false);
@@ -79,28 +92,33 @@ export default function AdminSettings() {
 
   const loadStats = async () => {
     try {
-      console.log('[Settings] Loading stats...');
-      const timestamp = Date.now();
-      const response = await axios.get(`/dashboard/stats?t=${timestamp}`);
+      // Count admins from already-loaded users
+      const adminCount = users.filter(u => 
+        u.role?.toUpperCase() === 'ADMIN'
+      ).length;
       
-      console.log('[Settings] Stats received:', response.data);
+      const operatorCount = users.filter(u => 
+        u.role?.toUpperCase() === 'OPERATOR'
+      ).length;
       
-      // Extract stats from dashboard API response
-      const metrics = response.data?.users || {};
-      const farmerMetrics = response.data?.farmers || {};
-      const operatorMetrics = response.data?.operators || {};
+      // Get farmer count from dashboard API
+      const dashStats = await dashboardService.getDashboardStats();
       
       setStats({
-        total_users: metrics.total || 0,
-        active_users: metrics.active || 0,
-        total_admins: metrics.by_role?.admin || 0,
-        total_operators: operatorMetrics.total || 0,
-        total_farmers: farmerMetrics.total || 0
+        total_users: users.length,
+        total_admins: adminCount,
+        total_operators: operatorCount,
+        total_farmers: dashStats?.metrics?.farmers_total || 0
       });
       
-      console.log('[Settings] Stats updated');
+      console.log('[Settings] Stats loaded:', {
+        total_users: users.length,
+        total_admins: adminCount,
+        total_operators: operatorCount,
+        farmers: dashStats?.metrics?.farmers_total || 0
+      });
     } catch (err) {
-      console.error("[Settings] Failed to load stats", err);
+      console.error("Failed to load stats", err);
     }
   };
 
@@ -109,95 +127,64 @@ export default function AdminSettings() {
       setError("Email and password required");
       return;
     }
-    
     try {
-      console.log('[Settings] Creating admin:', newAdminEmail);
-      
       await axios.post("/auth/register", {
         email: newAdminEmail,
         password: newAdminPassword,
         roles: ["ADMIN"]
       });
-      
       setSuccess("Admin created successfully");
       setNewAdminEmail("");
       setNewAdminPassword("");
       setShowCreateAdmin(false);
-      
-      // Reload users and stats
-      await Promise.all([loadUsers(), loadStats()]);
-      
+      loadUsers();
       setTimeout(() => setSuccess(null), 3000);
-      
-      console.log('[Settings] ✅ Admin created');
     } catch (err: any) {
-      console.error('[Settings] Failed to create admin:', err);
       setError(err.response?.data?.detail || "Failed to create admin");
     }
   };
 
   const deactivateUser = async (email: string) => {
     if (!confirm(`Deactivate ${email}?`)) return;
-    
     try {
-      console.log('[Settings] Deactivating user:', email);
-      
-      await axios.patch(`/users/${email}/status`, { is_active: false });
-      
+      await userService.updateUserStatus(email, false);
       setSuccess("User deactivated");
-      
-      // Reload data
-      await Promise.all([loadUsers(), loadStats()]);
-      
+      // Clear admin dashboard cache
+      dashboardCache.clear();
+      loadUsers();
+      loadStats();
       setTimeout(() => setSuccess(null), 3000);
-      
-      console.log('[Settings] ✅ User deactivated');
     } catch (err: any) {
-      console.error('[Settings] Failed to deactivate user:', err);
       setError(err.response?.data?.detail || "Failed to deactivate user");
     }
   };
 
   const activateUser = async (email: string) => {
     if (!confirm(`Activate ${email}?`)) return;
-    
     try {
-      console.log('[Settings] Activating user:', email);
-      
-      await axios.patch(`/users/${email}/status`, { is_active: true });
-      
+      await userService.updateUserStatus(email, true);
       setSuccess("User activated");
-      
-      // Reload data
-      await Promise.all([loadUsers(), loadStats()]);
-      
+      // Clear admin dashboard cache
+      dashboardCache.clear();
+      loadUsers();
+      loadStats();
       setTimeout(() => setSuccess(null), 3000);
-      
-      console.log('[Settings] ✅ User activated');
     } catch (err: any) {
-      console.error('[Settings] Failed to activate user:', err);
       setError(err.response?.data?.detail || "Failed to activate user");
     }
   };
 
   const deleteUser = async (email: string) => {
     if (!confirm(`Delete ${email}? This cannot be undone.`)) return;
-    
     try {
-      console.log('[Settings] Deleting user:', email);
-      
-      await axios.delete(`/users/${email}`);
-      
+      await userService.deleteUser(email);
       setSuccess("User deleted");
-      
-      // Reload data
-      await Promise.all([loadUsers(), loadStats()]);
-      
+      // Clear admin dashboard cache so it shows updated data
+      dashboardCache.clear();
+      loadUsers();
+      loadStats(); // Also refresh stats
       setTimeout(() => setSuccess(null), 3000);
-      
-      console.log('[Settings] ✅ User deleted');
     } catch (err: any) {
-      console.error('[Settings] Failed to delete user:', err);
       setError(err.response?.data?.detail || "Failed to delete user");
     }
   };
@@ -214,14 +201,15 @@ export default function AdminSettings() {
             <h1 className="text-2xl font-bold text-gray-800">⚙️ Settings</h1>
           </div>
           <button
-            onClick={() => {
-              loadUsers();
-              loadStats();
+            onClick={async () => {
+              dashboardCache.clear();
+              await loadUsers();
+              await loadStats();
             }}
             disabled={loading}
-            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2"
           >
-            <i className={`fa-solid fa-rotate-right mr-2 ${loading ? 'animate-spin' : ''}`}></i>
+            <i className={`fa-solid fa-rotate-right ${loading ? 'animate-spin' : ''}`}></i>
             Refresh
           </button>
         </div>
@@ -261,7 +249,7 @@ export default function AdminSettings() {
           ))}
         </div>
 
-        {loading && activeTab === "users" ? (
+        {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600"></div>
             <p className="text-gray-600 mt-4">Loading settings...</p>
@@ -292,7 +280,7 @@ export default function AdminSettings() {
                       />
                       <input
                         type="password"
-                        placeholder="Password (min 8 characters)"
+                        placeholder="Password"
                         value={newAdminPassword}
                         onChange={(e) => setNewAdminPassword(e.target.value)}
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
@@ -317,17 +305,8 @@ export default function AdminSettings() {
 
                 {/* Users List */}
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                    <h2 className="text-lg font-bold text-gray-800">System Users ({users.length})</h2>
-                    <label className="flex items-center gap-2 text-sm text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={includeInactive}
-                        onChange={(e) => setIncludeInactive(e.target.checked)}
-                        className="rounded"
-                      />
-                      Show inactive
-                    </label>
+                  <div className="p-4 bg-gray-50 border-b border-gray-200">
+                    <h2 className="text-lg font-bold text-gray-800">System Users</h2>
                   </div>
 
                   {/* Desktop Table */}
@@ -344,7 +323,7 @@ export default function AdminSettings() {
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {users.map(user => (
-                          <tr key={user._id} className="hover:bg-green-50 transition">
+                          <tr key={user.email} className="hover:bg-green-50 transition">
                             <td className="px-6 py-4 font-mono text-xs">{user.email}</td>
                             <td className="px-6 py-4">
                               <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">
@@ -394,7 +373,7 @@ export default function AdminSettings() {
                   {/* Mobile Cards */}
                   <div className="md:hidden divide-y divide-gray-200">
                     {users.map(user => (
-                      <div key={user._id} className="p-4">
+                      <div key={user.email} className="p-4">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="font-bold text-sm text-gray-800 break-all">{user.email}</h3>
                           <span className={`px-2 py-1 text-xs font-bold rounded-full whitespace-nowrap ml-2 ${
@@ -434,26 +413,16 @@ export default function AdminSettings() {
                       </div>
                     ))}
                   </div>
-                  
-                  {users.length === 0 && (
-                    <div className="text-center py-12 text-gray-600">
-                      <p className="text-lg font-semibold mb-2">No users found</p>
-                      <p className="text-sm">
-                        {includeInactive ? "No users in the system" : "No active users. Toggle 'Show inactive' to see all users."}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
 
             {/* System Tab */}
             {activeTab === "system" && stats && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-green-600">
                   <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Users</p>
                   <h3 className="text-3xl font-bold text-gray-800 mt-1">{stats.total_users}</h3>
-                  <p className="text-xs text-gray-500 mt-1">{stats.active_users} active</p>
                 </div>
                 <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-blue-600">
                   <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Admins</p>
@@ -467,12 +436,6 @@ export default function AdminSettings() {
                   <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Farmers</p>
                   <h3 className="text-3xl font-bold text-gray-800 mt-1">{stats.total_farmers}</h3>
                 </div>
-                <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-cyan-600">
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Entities</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">
-                    {stats.total_users + stats.total_farmers}
-                  </h3>
-                </div>
               </div>
             )}
 
@@ -483,19 +446,15 @@ export default function AdminSettings() {
                 <div className="space-y-4 text-gray-600">
                   <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-600">
                     <p className="font-bold text-sm text-blue-800">JWT Token Expiration</p>
-                    <p className="text-xs mt-1">Access tokens expire after 30 minutes. Refresh tokens expire after 7 days.</p>
+                    <p className="text-xs mt-1">Access tokens expire after 15 minutes. Refresh tokens expire after 7 days.</p>
                   </div>
                   <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-600">
                     <p className="font-bold text-sm text-green-800">Password Requirements</p>
-                    <p className="text-xs mt-1">Minimum 8 characters, includes uppercase, lowercase, and numbers.</p>
+                    <p className="text-xs mt-1">Minimum 8 characters, includes uppercase, lowercase, numbers, and special characters.</p>
                   </div>
                   <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
                     <p className="font-bold text-sm text-orange-800">API Rate Limiting</p>
                     <p className="text-xs mt-1">100 requests per minute per IP address for public endpoints.</p>
-                  </div>
-                  <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-600">
-                    <p className="font-bold text-sm text-purple-800">Data Protection</p>
-                    <p className="text-xs mt-1">All sensitive data is encrypted at rest and in transit using industry-standard protocols.</p>
                   </div>
                 </div>
               </div>
