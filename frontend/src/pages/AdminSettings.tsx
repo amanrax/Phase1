@@ -56,17 +56,31 @@ export default function AdminSettings() {
       const timestamp = Date.now();
       const response = await axios.get(`/users/?t=${timestamp}&include_inactive=${includeInactive}`);
       
-      console.log('[Settings] Raw response:', response.data);
+      console.log('[Settings] ========================================');
+      console.log('[Settings] Raw API Response:', response);
+      console.log('[Settings] Response data:', response.data);
+      console.log('[Settings] Response status:', response.status);
+      console.log('[Settings] ========================================');
       
       // API returns {users: [...], total: X}
       let usersList: User[] = [];
       if (response.data.users && Array.isArray(response.data.users)) {
+        console.log('[Settings] ✓ Found users array in response.data.users');
         usersList = response.data.users;
       } else if (Array.isArray(response.data)) {
+        console.log('[Settings] ✓ response.data is array directly');
         usersList = response.data;
+      } else {
+        console.error('[Settings] ❌ Unexpected response format!');
+        console.error('[Settings] Expected: {users: [...]} or [...]');
+        console.error('[Settings] Got:', typeof response.data, response.data);
       }
       
-      console.log('[Settings] Processed users:', usersList.length);
+      console.log('[Settings] ========================================');
+      console.log('[Settings] Processed users count:', usersList.length);
+      console.log('[Settings] First user (sample):', usersList[0]);
+      console.log('[Settings] ========================================');
+      
       setUsers(usersList);
       
     } catch (err: any) {
