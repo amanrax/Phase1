@@ -183,7 +183,8 @@ export default function AdminSettings() {
     try {
       console.log('[Settings] Creating admin:', newAdminEmail);
       
-      await axios.post("/auth/register", {
+      // Use POST /users/ endpoint with proper payload
+      await axios.post("/users/", {
         email: newAdminEmail,
         password: newAdminPassword,
         roles: ["ADMIN"]
@@ -195,7 +196,8 @@ export default function AdminSettings() {
       setShowCreateAdmin(false);
       
       // Reload users and stats
-      await Promise.all([loadUsers(), loadStats()]);
+      await loadUsers();
+      await loadStats();
       
       setTimeout(() => setSuccess(null), 3000);
       
@@ -206,18 +208,26 @@ export default function AdminSettings() {
     }
   };
 
-  const deactivateUser = async (email: string) => {
+  const deactivateUser = async (userId: string, email: string, role: string) => {
     if (!confirm(`Deactivate ${email}?`)) return;
     
     try {
-      console.log('[Settings] Deactivating user:', email);
+      console.log('[Settings] Deactivating user:', { userId, email, role });
       
-      await axios.patch(`/users/${email}/status`, { is_active: false });
+      // Route to correct endpoint based on role
+      if (role.toUpperCase() === 'FARMER') {
+        await axios.patch(`/farmers/${userId}/status`, { is_active: false });
+      } else if (role.toUpperCase() === 'OPERATOR') {
+        await axios.patch(`/operators/${userId}/status`, { is_active: false });
+      } else {
+        await axios.patch(`/users/${email}/status`, { is_active: false });
+      }
       
       setSuccess("User deactivated");
       
       // Reload data
-      await Promise.all([loadUsers(), loadStats()]);
+      await loadUsers();
+      await loadStats();
       
       setTimeout(() => setSuccess(null), 3000);
       
@@ -228,18 +238,26 @@ export default function AdminSettings() {
     }
   };
 
-  const activateUser = async (email: string) => {
+  const activateUser = async (userId: string, email: string, role: string) => {
     if (!confirm(`Activate ${email}?`)) return;
     
     try {
-      console.log('[Settings] Activating user:', email);
+      console.log('[Settings] Activating user:', { userId, email, role });
       
-      await axios.patch(`/users/${email}/status`, { is_active: true });
+      // Route to correct endpoint based on role
+      if (role.toUpperCase() === 'FARMER') {
+        await axios.patch(`/farmers/${userId}/status`, { is_active: true });
+      } else if (role.toUpperCase() === 'OPERATOR') {
+        await axios.patch(`/operators/${userId}/status`, { is_active: true });
+      } else {
+        await axios.patch(`/users/${email}/status`, { is_active: true });
+      }
       
       setSuccess("User activated");
       
       // Reload data
-      await Promise.all([loadUsers(), loadStats()]);
+      await loadUsers();
+      await loadStats();
       
       setTimeout(() => setSuccess(null), 3000);
       
@@ -250,18 +268,29 @@ export default function AdminSettings() {
     }
   };
 
-  const deleteUser = async (email: string) => {
+  const deleteUser = async (userId: string, email: string, role: string) => {
     if (!confirm(`Delete ${email}? This cannot be undone.`)) return;
     
     try {
-      console.log('[Settings] Deleting user:', email);
+      console.log('[Settings] Deleting user:', { userId, email, role });
       
-      await axios.delete(`/users/${email}`);
+      // Route to correct endpoint based on role
+      if (role.toUpperCase() === 'FARMER') {
+        // Delete farmer
+        await axios.delete(`/farmers/${userId}`);
+      } else if (role.toUpperCase() === 'OPERATOR') {
+        // Delete operator (which should also delete user account)
+        await axios.delete(`/operators/${userId}`);
+      } else {
+        // Delete from users collection (admin)
+        await axios.delete(`/users/${email}`);
+      }
       
       setSuccess("User deleted");
       
       // Reload data
-      await Promise.all([loadUsers(), loadStats()]);
+      await loadUsers();
+      await loadStats();
       
       setTimeout(() => setSuccess(null), 3000);
       
@@ -454,7 +483,7 @@ export default function AdminSettings() {
                             <td className="px-6 py-4 text-xs space-x-2">
                               {user.is_active ? (
                                 <button
-                                  onClick={() => deactivateUser(user.email)}
+                                  onClick={() => deactivateUser(user._id, user.email, user.role)}
                                   className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded transition"
                                   title="Deactivate"
                                 >
@@ -462,7 +491,7 @@ export default function AdminSettings() {
                                 </button>
                               ) : (
                                 <button
-                                  onClick={() => activateUser(user.email)}
+                                  onClick={() => activateUser(user._id, user.email, user.role)}
                                   className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold rounded transition"
                                   title="Activate"
                                 >
@@ -470,7 +499,7 @@ export default function AdminSettings() {
                                 </button>
                               )}
                               <button
-                                onClick={() => deleteUser(user.email)}
+                                onClick={() => deleteUser(user._id, user.email, user.role)}
                                 className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded transition"
                                 title="Delete"
                               >
@@ -513,7 +542,7 @@ export default function AdminSettings() {
                         <div className="flex gap-2 text-xs">
                           {user.is_active ? (
                             <button
-                              onClick={() => deactivateUser(user.email)}
+                              onClick={() => deactivateUser(user._id, user.email, user.role)}
                               className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 font-bold py-1 px-2 rounded transition"
                               title="Deactivate"
                             >
@@ -521,7 +550,7 @@ export default function AdminSettings() {
                             </button>
                           ) : (
                             <button
-                              onClick={() => activateUser(user.email)}
+                              onClick={() => activateUser(user._id, user.email, user.role)}
                               className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-bold py-1 px-2 rounded transition"
                               title="Activate"
                             >
@@ -529,7 +558,7 @@ export default function AdminSettings() {
                             </button>
                           )}
                           <button
-                            onClick={() => deleteUser(user.email)}
+                            onClick={() => deleteUser(user._id, user.email, user.role)}
                             className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 font-bold py-1 px-2 rounded transition"
                             title="Delete"
                           >
