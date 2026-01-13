@@ -50,38 +50,94 @@ export default function AdminSettings() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      console.log('[Settings] Loading users (include_inactive:', includeInactive, ')');
+      console.log('[Settings] Loading ALL system entities...');
       
-      // Add cache buster and include_inactive parameter
       const timestamp = Date.now();
-      const response = await axios.get(`/users/?t=${timestamp}&include_inactive=${includeInactive}`);
       
-      console.log('[Settings] ========================================');
-      console.log('[Settings] Raw API Response:', response);
-      console.log('[Settings] Response data:', response.data);
-      console.log('[Settings] Response status:', response.status);
-      console.log('[Settings] ========================================');
+      // Fetch all three types in parallel
+      const [usersResp, operatorsResp, farmersResp] = await Promise.all([
+        axios.get(`/users/?t=${timestamp}&include_inactive=${includeInactive}`).catch(() => ({ data: { users: [] } })),
+        axios.get(`/operators/?t=${timestamp}`).catch(() => ({ data: { results: [] } })),
+        axios.get(`/farmers/?t=${timestamp}&limit=100`).catch(() => ({ data: [] }))
+      ]);
       
-      // API returns {users: [...], total: X}
-      let usersList: User[] = [];
-      if (response.data.users && Array.isArray(response.data.users)) {
-        console.log('[Settings] ✓ Found users array in response.data.users');
-        usersList = response.data.users;
-      } else if (Array.isArray(response.data)) {
-        console.log('[Settings] ✓ response.data is array directly');
-        usersList = response.data;
-      } else {
-        console.error('[Settings] ❌ Unexpected response format!');
-        console.error('[Settings] Expected: {users: [...]} or [...]');
-        console.error('[Settings] Got:', typeof response.data, response.data);
+      console.log('[Settings] Fetched data:', {
+        users: usersResp.data,
+        operators: operatorsResp.data,
+        farmers: farmersResp.data
+      });
+      
+      // Combine all into a unified list
+      const allUsers: User[] = [];
+      
+      // 1. Add users from users collection
+      const usersList = usersResp.data?.users || usersResp.data || [];
+      if (Array.isArray(usersList)) {
+        usersList.forEach((u: any) => {
+          allUsers.push({
+            _id: u._id || u.id || '',
+            email: u.email || '',
+            role: u.role || (u.roles?.[0]) || 'UNKNOWN',
+            roles: u.roles || [u.role || 'UNKNOWN'],
+            is_active: u.is_active !== false,
+            created_at: u.created_at || '',
+            full_name: u.full_name,
+            phone: u.phone
+          });
+        });
       }
       
-      console.log('[Settings] ========================================');
-      console.log('[Settings] Processed users count:', usersList.length);
-      console.log('[Settings] First user (sample):', usersList[0]);
-      console.log('[Settings] ========================================');
+      // 2. Add operators (if they don't have user accounts)
+      const operatorsList = operatorsResp.data?.results || operatorsResp.data?.operators || [];
+      if (Array.isArray(operatorsList)) {
+        operatorsList.forEach((op: any) => {
+          // Only add if not already in users list
+          const existingUser = allUsers.find(u => u.email === op.email);
+          if (!existingUser) {
+            allUsers.push({
+              _id: op._id || op.operator_id || '',
+              email: op.email || '',
+              role: 'OPERATOR',
+              roles: ['OPERATOR'],
+              is_active: op.is_active !== false,
+              created_at: op.created_at || '',
+              full_name: op.full_name || op.operator_name,
+              phone: op.phone
+            });
+          }
+        });
+      }
       
-      setUsers(usersList);
+      // 3. Add farmers (if they don't have user accounts)
+      const farmersList = Array.isArray(farmersResp.data) ? farmersResp.data : (farmersResp.data?.results || []);
+      if (Array.isArray(farmersList)) {
+        farmersList.forEach((f: any) => {
+          const email = f.email || f.primary_email || `${f.farmer_id}@farmer.local`;
+          const existingUser = allUsers.find(u => u.email === email);
+          if (!existingUser) {
+            const personalInfo = f.personal_info || {};
+            allUsers.push({
+              _id: f._id || f.farmer_id || '',
+              email: email,
+              role: 'FARMER',
+              roles: ['FARMER'],
+              is_active: f.is_active !== false,
+              created_at: f.created_at || '',
+              full_name: `${personalInfo.first_name || ''} ${personalInfo.last_name || ''}`.trim() || 'Farmer',
+              phone: f.primary_phone || f.phone
+            });
+          }
+        });
+      }
+      
+      console.log(`[Settings] ✓ Combined ${allUsers.length} total users`);
+      console.log('[Settings] Breakdown:', {
+        admins: allUsers.filter(u => u.role?.toUpperCase() === 'ADMIN').length,
+        operators: allUsers.filter(u => u.role?.toUpperCase() === 'OPERATOR').length,
+        farmers: allUsers.filter(u => u.role?.toUpperCase() === 'FARMER').length
+      });
+      
+      setUsers(allUsers);
       
     } catch (err: any) {
       console.error('[Settings] Failed to load users:', err);
