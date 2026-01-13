@@ -40,7 +40,7 @@ export default function AdminSettings() {
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   
   // Include inactive users toggle
-  const [includeInactive, setIncludeInactive] = useState(false);
+  const [includeInactive, setIncludeInactive] = useState(true);  // Changed to TRUE by default
 
   useEffect(() => {
     loadUsers();
