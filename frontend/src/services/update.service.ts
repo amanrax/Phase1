@@ -22,7 +22,7 @@ export const updateService = {
       const currentVersionCode = parseInt(appInfo.build);
 
       // Check latest version from backend
-      const { data } = await axios.get<VersionInfo>('/api/app/version');
+      const { data } = await axios.get<VersionInfo>('/app/version');
       
       if (data.versionCode > currentVersionCode) {
         // New version available

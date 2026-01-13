@@ -624,10 +624,11 @@ export default function FarmersList() {
                   className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
                 >
                   <option value="">-- Select Status --</option>
-                  <option value="pending">⏳ Pending Review</option>
+                  <option value="under_review">⏳ Under Review</option>
                   <option value="registered">✓ Registered (Approved)</option>
                   <option value="rejected">✗ Rejected</option>
-                  <option value="under_verification">🔍 Under Verification</option>
+                  <option value="verified">✅ Verified</option>
+                  <option value="pending_documents">📄 Pending Documents</option>
                 </select>
               </div>
 
