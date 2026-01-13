@@ -220,9 +220,10 @@ export default function AdminSettings() {
       
       // Route to correct endpoint based on role
       if (role.toUpperCase() === 'FARMER') {
-        await axios.patch(`/farmers/${resourceId}/status`, { is_active: false });
+        await axios.patch(`/farmers/${resourceId}/status?new_status=pending`);
       } else if (role.toUpperCase() === 'OPERATOR') {
-        await axios.patch(`/operators/${resourceId}/status`, { is_active: false });
+        // Operators use PUT with is_active in body (no /status endpoint)
+        await axios.put(`/operators/${resourceId}`, { is_active: false });
       } else {
         await axios.patch(`/users/${resourceId}/status`, { is_active: false });
       }
@@ -250,9 +251,10 @@ export default function AdminSettings() {
       
       // Route to correct endpoint based on role
       if (role.toUpperCase() === 'FARMER') {
-        await axios.patch(`/farmers/${resourceId}/status`, { is_active: true });
+        await axios.patch(`/farmers/${resourceId}/status?new_status=verified`);
       } else if (role.toUpperCase() === 'OPERATOR') {
-        await axios.patch(`/operators/${resourceId}/status`, { is_active: true });
+        // Operators use PUT with is_active in body (no /status endpoint)
+        await axios.put(`/operators/${resourceId}`, { is_active: true });
       } else {
         await axios.patch(`/users/${resourceId}/status`, { is_active: true });
       }
@@ -388,24 +390,29 @@ export default function AdminSettings() {
                     <div className="space-y-4">
                       <input
                         type="email"
-                        placeholder="Email"
+                        placeholder="Admin Email"
                         value={newAdminEmail}
                         onChange={(e) => setNewAdminEmail(e.target.value)}
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
                       />
-                      <input
-                        type="password"
-                        placeholder="Password (min 8 characters)"
-                        value={newAdminPassword}
-                        onChange={(e) => setNewAdminPassword(e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                      />
+                      <div>
+                        <input
+                          type="password"
+                          placeholder="Password"
+                          value={newAdminPassword}
+                          onChange={(e) => setNewAdminPassword(e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                        />
+                        <p className="text-xs text-gray-600 mt-1">
+                          Requirements: Min 8 chars, 1 uppercase, 1 lowercase, 1 number
+                        </p>
+                      </div>
                       <div className="flex gap-2">
                         <button
                           onClick={createAdmin}
                           className="flex-1 bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg transition"
                         >
-                          Create
+                          Create Admin
                         </button>
                         <button
                           onClick={() => setShowCreateAdmin(false)}
