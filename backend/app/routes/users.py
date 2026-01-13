@@ -117,11 +117,14 @@ async def create_user(
     """
     email = user_data.email.lower().strip()
     
+    # Handle roles - they might be strings or UserRole enums
+    role_values = [r.value if hasattr(r, 'value') else r for r in user_data.roles]
+    
     await log_event(
         level="INFO",
         module="users",
         action="create_user_attempt",
-        details={"target_email": email, "target_roles": [r.value for r in user_data.roles]},
+        details={"target_email": email, "target_roles": role_values},
         endpoint=str(request.url),
         user_id=current_user.get("email"),
         role=current_user.get("roles", [])[0] if current_user.get("roles") else None,
@@ -141,7 +144,7 @@ async def create_user(
     new_user_doc = {
         "email": email,
         "password_hash": password_hash,
-        "roles": [role.value for role in user_data.roles],
+        "roles": role_values,  # Already converted above
         "is_active": True,
         "created_at": now,
         "updated_at": now,
@@ -153,7 +156,7 @@ async def create_user(
     user_id = str(result.inserted_id)
     
     # If creating an OPERATOR, ensure they have an operator record
-    if "OPERATOR" in [r.value for r in user_data.roles]:
+    if "OPERATOR" in role_values:
         from uuid import uuid4
         operator_id = "OP" + uuid4().hex[:8].upper()
         
@@ -190,7 +193,7 @@ async def create_user(
         level="INFO",
         module="users",
         action="create_user_success",
-        details={"target_email": email, "target_roles": [role.value for role in user_data.roles]},
+        details={"target_email": email, "target_roles": role_values},  # Use role_values
         endpoint=str(request.url),
         user_id=current_user.get("email"),
         role=current_user.get("roles", [])[0] if current_user.get("roles") else None,
