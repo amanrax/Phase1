@@ -5,18 +5,39 @@ export interface DashboardStats {
   farmers: {
     total: number;
     active: number;
+    inactive: number;
+    verified: number;
     pending: number;
     rejected: number;
-    recent?: Array<{
+    needs_attention: number;
+    recent: Array<{
       farmer_id: string;
       name: string;
       district: string;
       created_at: string;
+      registration_status: string;
+      is_active: boolean;
     }>;
   };
-  users_total: number;
-  admins: number;
-  operators_total: number;
+  users: {
+    total: number;
+    active: number;
+    inactive: number;
+    by_role: {
+      admin: number;
+      operator: number;
+      farmer: number;
+    };
+  };
+  operators: {
+    total: number;
+    active: number;
+    inactive: number;
+  };
+  system: {
+    total_entities: number;
+    needs_attention: number;
+  };
   generated_at: string;
 }
 

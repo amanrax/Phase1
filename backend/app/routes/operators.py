@@ -254,6 +254,67 @@ async def get_current_operator(
 
 
 @router.get(
+    "/me/stats",
+    summary="Get current operator's statistics",
+    description="Returns dashboard statistics for the current operator",
+    dependencies=[Depends(require_operator)]
+)
+async def get_current_operator_stats(
+    db=Depends(get_db),
+    current_user: dict = Depends(require_operator)
+):
+    """Get current operator's dashboard statistics"""
+    # Get operator profile
+    operator_email = current_user.get("email")
+    operator = await db.operators.find_one({"email": operator_email})
+    
+    if not operator:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operator profile not found")
+    
+    operator_id = operator.get("operator_id")
+    
+    # Get stats using the shared function
+    stats = await _get_operator_stats(operator_id, db)
+    
+    # Also get status breakdown
+    assigned_districts = operator.get("assigned_districts", [])
+    
+    if assigned_districts:
+        farmer_query = {"address.district_name": {"$in": assigned_districts}}
+    else:
+        farmer_query = {"created_by": operator_id}
+    
+    # Count by status
+    pending_count = await db.farmers.count_documents({
+        **farmer_query,
+        "registration_status": {"$in": ["pending", "registered", "under_review"]}
+    })
+    
+    verified_count = await db.farmers.count_documents({
+        **farmer_query,
+        "registration_status": {"$in": ["verified", "approved"]}
+    })
+    
+    active_count = await db.farmers.count_documents({
+        **farmer_query,
+        "is_active": True
+    })
+    
+    return {
+        "operator_id": operator_id,
+        "operator_name": operator.get("full_name"),
+        "total_farmers": stats["farmer_count"],
+        "active_farmers": active_count,
+        "pending_farmers": pending_count,
+        "verified_farmers": verified_count,
+        "recent_registrations_30d": stats["recent_registrations_30d"],
+        "total_land_hectares": stats["total_land_hectares"],
+        "avg_land_hectares": stats["avg_land_hectares"],
+        "assigned_districts": assigned_districts
+    }
+
+
+@router.get(
     "/{operator_id}",
     dependencies=[Depends(require_role([UserRole.ADMIN.value, UserRole.OPERATOR.value]))],
     summary="Get operator",
