@@ -72,13 +72,35 @@ export default function AdminSettings() {
       // Combine all into a unified list
       const allUsers: User[] = [];
       
+      // Get operators list for lookup
+      const operatorsList = operatorsResp.data?.results || operatorsResp.data?.operators || [];
+      const operatorsMap = new Map();
+      if (Array.isArray(operatorsList)) {
+        operatorsList.forEach((op: any) => {
+          if (op.email) {
+            operatorsMap.set(op.email.toLowerCase(), op.operator_id);
+          }
+        });
+      }
+      
       // 1. Add users from users collection
       const usersList = usersResp.data?.users || usersResp.data || [];
       if (Array.isArray(usersList)) {
         usersList.forEach((u: any) => {
+          const userRole = (u.role || u.roles?.[0] || 'UNKNOWN').toUpperCase();
+          let resourceId = u.email || u._id || '';
+          
+          // For operators, use operator_id instead of email
+          if (userRole === 'OPERATOR' && u.email) {
+            const operatorId = operatorsMap.get(u.email.toLowerCase());
+            if (operatorId) {
+              resourceId = operatorId;
+            }
+          }
+          
           allUsers.push({
             _id: u._id || u.id || '',
-            resourceId: u.email || u._id || '',  // For users, use email
+            resourceId: resourceId,
             email: u.email || '',
             role: u.role || (u.roles?.[0]) || 'UNKNOWN',
             roles: u.roles || [u.role || 'UNKNOWN'],
@@ -91,7 +113,7 @@ export default function AdminSettings() {
       }
       
       // 2. Add operators (if they don't have user accounts)
-      const operatorsList = operatorsResp.data?.results || operatorsResp.data?.operators || [];
+      // operatorsList already declared above for mapping
       if (Array.isArray(operatorsList)) {
         operatorsList.forEach((op: any) => {
           // Only add if not already in users list
