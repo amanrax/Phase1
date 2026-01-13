@@ -185,17 +185,39 @@ export default function AdminSettings() {
       return;
     }
     
+    // Validate password strength
+    if (newAdminPassword.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+    if (!/[A-Z]/.test(newAdminPassword)) {
+      setError("Password must contain at least 1 uppercase letter");
+      return;
+    }
+    if (!/[a-z]/.test(newAdminPassword)) {
+      setError("Password must contain at least 1 lowercase letter");
+      return;
+    }
+    if (!/[0-9]/.test(newAdminPassword)) {
+      setError("Password must contain at least 1 number");
+      return;
+    }
+    
     try {
+      setError(null);
       console.log('[Settings] Creating admin:', newAdminEmail);
+      console.log('[Settings] Token available:', !!localStorage.getItem('access_token'));
       
       // Use POST /users/ endpoint with proper payload
-      await axios.post("/users/", {
+      const response = await axios.post("/users/", {
         email: newAdminEmail,
         password: newAdminPassword,
         roles: ["ADMIN"]
       });
       
-      setSuccess("Admin created successfully");
+      console.log('[Settings] ✅ Admin created successfully:', response.data);
+      
+      setSuccess("Admin created successfully!");
       setNewAdminEmail("");
       setNewAdminPassword("");
       setShowCreateAdmin(false);
@@ -205,11 +227,27 @@ export default function AdminSettings() {
       await loadStats();
       
       setTimeout(() => setSuccess(null), 3000);
-      
-      console.log('[Settings] ✅ Admin created');
     } catch (err: any) {
-      console.error('[Settings] Failed to create admin:', err);
-      setError(err.response?.data?.detail || "Failed to create admin");
+      console.error('[Settings] ❌ Failed to create admin:', err);
+      console.error('[Settings] Error response:', err.response?.data);
+      console.error('[Settings] Error status:', err.response?.status);
+      
+      let errorMessage = "Failed to create admin";
+      
+      if (err.response?.status === 401) {
+        errorMessage = "Authentication failed. Please log in again.";
+      } else if (err.response?.data?.detail) {
+        // Handle both string and array detail formats
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail)) {
+          errorMessage = detail.map((d: any) => d.msg || d).join(", ");
+        } else {
+          errorMessage = detail;
+        }
+      }
+      
+      setError(errorMessage);
+      setTimeout(() => setError(null), 5000);
     }
   };
 
