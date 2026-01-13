@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "@/utils/axios";
+import useAuthStore from "@/store/authStore";
 
 interface User {
   _id: string;
@@ -213,6 +214,17 @@ export default function AdminSettings() {
   };
 
   const deactivateUser = async (resourceId: string, email: string, role: string) => {
+    // Get current logged-in user
+    const currentUser = useAuthStore.getState().user;
+    const currentEmail = currentUser?.email;
+    
+    // Prevent self-deactivation
+    if (email.toLowerCase() === currentEmail?.toLowerCase()) {
+      setError("❌ You cannot deactivate your own account!");
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    
     if (!confirm(`Deactivate ${email}?`)) return;
     
     try {
@@ -264,6 +276,17 @@ export default function AdminSettings() {
       // Reload data
       await loadUsers();
       await loadStats();
+    // Get current logged-in user
+    const currentUser = useAuthStore.getState().user;
+    const currentEmail = currentUser?.email;
+    
+    // Prevent self-deletion
+    if (email.toLowerCase() === currentEmail?.toLowerCase()) {
+      setError("❌ You cannot delete your own account!");
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    
       
       setTimeout(() => setSuccess(null), 3000);
       
