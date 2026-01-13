@@ -5,6 +5,7 @@ import axios from "@/utils/axios";
 
 interface User {
   _id: string;
+  resourceId: string;  // farmer_id, operator_id, or email - used for API calls
   email: string;
   role: string;
   roles: string[];
@@ -76,6 +77,7 @@ export default function AdminSettings() {
         usersList.forEach((u: any) => {
           allUsers.push({
             _id: u._id || u.id || '',
+            resourceId: u.email || u._id || '',  // For users, use email
             email: u.email || '',
             role: u.role || (u.roles?.[0]) || 'UNKNOWN',
             roles: u.roles || [u.role || 'UNKNOWN'],
@@ -96,6 +98,7 @@ export default function AdminSettings() {
           if (!existingUser) {
             allUsers.push({
               _id: op._id || op.operator_id || '',
+              resourceId: op.operator_id || op._id || '',  // Use operator_id
               email: op.email || '',
               role: 'OPERATOR',
               roles: ['OPERATOR'],
@@ -118,6 +121,7 @@ export default function AdminSettings() {
             const personalInfo = f.personal_info || {};
             allUsers.push({
               _id: f._id || f.farmer_id || '',
+              resourceId: f.farmer_id || f._id || '',  // Use farmer_id (e.g., "ZM1A2B3C4D")
               email: email,
               role: 'FARMER',
               roles: ['FARMER'],
@@ -208,19 +212,19 @@ export default function AdminSettings() {
     }
   };
 
-  const deactivateUser = async (userId: string, email: string, role: string) => {
+  const deactivateUser = async (resourceId: string, email: string, role: string) => {
     if (!confirm(`Deactivate ${email}?`)) return;
     
     try {
-      console.log('[Settings] Deactivating user:', { userId, email, role });
+      console.log('[Settings] Deactivating user:', { resourceId, email, role });
       
       // Route to correct endpoint based on role
       if (role.toUpperCase() === 'FARMER') {
-        await axios.patch(`/farmers/${userId}/status`, { is_active: false });
+        await axios.patch(`/farmers/${resourceId}/status`, { is_active: false });
       } else if (role.toUpperCase() === 'OPERATOR') {
-        await axios.patch(`/operators/${userId}/status`, { is_active: false });
+        await axios.patch(`/operators/${resourceId}/status`, { is_active: false });
       } else {
-        await axios.patch(`/users/${email}/status`, { is_active: false });
+        await axios.patch(`/users/${resourceId}/status`, { is_active: false });
       }
       
       setSuccess("User deactivated");
@@ -238,19 +242,19 @@ export default function AdminSettings() {
     }
   };
 
-  const activateUser = async (userId: string, email: string, role: string) => {
+  const activateUser = async (resourceId: string, email: string, role: string) => {
     if (!confirm(`Activate ${email}?`)) return;
     
     try {
-      console.log('[Settings] Activating user:', { userId, email, role });
+      console.log('[Settings] Activating user:', { resourceId, email, role });
       
       // Route to correct endpoint based on role
       if (role.toUpperCase() === 'FARMER') {
-        await axios.patch(`/farmers/${userId}/status`, { is_active: true });
+        await axios.patch(`/farmers/${resourceId}/status`, { is_active: true });
       } else if (role.toUpperCase() === 'OPERATOR') {
-        await axios.patch(`/operators/${userId}/status`, { is_active: true });
+        await axios.patch(`/operators/${resourceId}/status`, { is_active: true });
       } else {
-        await axios.patch(`/users/${email}/status`, { is_active: true });
+        await axios.patch(`/users/${resourceId}/status`, { is_active: true });
       }
       
       setSuccess("User activated");
@@ -268,22 +272,22 @@ export default function AdminSettings() {
     }
   };
 
-  const deleteUser = async (userId: string, email: string, role: string) => {
+  const deleteUser = async (resourceId: string, email: string, role: string) => {
     if (!confirm(`Delete ${email}? This cannot be undone.`)) return;
     
     try {
-      console.log('[Settings] Deleting user:', { userId, email, role });
+      console.log('[Settings] Deleting user:', { resourceId, email, role });
       
       // Route to correct endpoint based on role
       if (role.toUpperCase() === 'FARMER') {
-        // Delete farmer
-        await axios.delete(`/farmers/${userId}`);
+        // Delete farmer using farmer_id
+        await axios.delete(`/farmers/${resourceId}`);
       } else if (role.toUpperCase() === 'OPERATOR') {
-        // Delete operator (which should also delete user account)
-        await axios.delete(`/operators/${userId}`);
+        // Delete operator using operator_id
+        await axios.delete(`/operators/${resourceId}`);
       } else {
-        // Delete from users collection (admin)
-        await axios.delete(`/users/${email}`);
+        // Delete from users collection using email
+        await axios.delete(`/users/${resourceId}`);
       }
       
       setSuccess("User deleted");
@@ -483,7 +487,7 @@ export default function AdminSettings() {
                             <td className="px-6 py-4 text-xs space-x-2">
                               {user.is_active ? (
                                 <button
-                                  onClick={() => deactivateUser(user._id, user.email, user.role)}
+                                  onClick={() => deactivateUser(user.resourceId, user.email, user.role)}
                                   className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded transition"
                                   title="Deactivate"
                                 >
@@ -491,7 +495,7 @@ export default function AdminSettings() {
                                 </button>
                               ) : (
                                 <button
-                                  onClick={() => activateUser(user._id, user.email, user.role)}
+                                  onClick={() => activateUser(user.resourceId, user.email, user.role)}
                                   className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold rounded transition"
                                   title="Activate"
                                 >
@@ -499,7 +503,7 @@ export default function AdminSettings() {
                                 </button>
                               )}
                               <button
-                                onClick={() => deleteUser(user._id, user.email, user.role)}
+                                onClick={() => deleteUser(user.resourceId, user.email, user.role)}
                                 className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded transition"
                                 title="Delete"
                               >
@@ -542,7 +546,7 @@ export default function AdminSettings() {
                         <div className="flex gap-2 text-xs">
                           {user.is_active ? (
                             <button
-                              onClick={() => deactivateUser(user._id, user.email, user.role)}
+                              onClick={() => deactivateUser(user.resourceId, user.email, user.role)}
                               className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 font-bold py-1 px-2 rounded transition"
                               title="Deactivate"
                             >
@@ -550,7 +554,7 @@ export default function AdminSettings() {
                             </button>
                           ) : (
                             <button
-                              onClick={() => activateUser(user._id, user.email, user.role)}
+                              onClick={() => activateUser(user.resourceId, user.email, user.role)}
                               className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-bold py-1 px-2 rounded transition"
                               title="Activate"
                             >
@@ -558,7 +562,7 @@ export default function AdminSettings() {
                             </button>
                           )}
                           <button
-                            onClick={() => deleteUser(user._id, user.email, user.role)}
+                            onClick={() => deleteUser(user.resourceId, user.email, user.role)}
                             className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 font-bold py-1 px-2 rounded transition"
                             title="Delete"
                           >
