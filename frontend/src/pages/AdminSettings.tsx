@@ -292,7 +292,7 @@ export default function AdminSettings() {
       
       // Route to correct endpoint based on role
       if (role.toUpperCase() === 'FARMER') {
-        await axios.patch(`/farmers/${resourceId}/status?new_status=pending`);
+        await axios.patch(`/farmers/${resourceId}/review?new_status=registered`);
       } else if (role.toUpperCase() === 'OPERATOR') {
         // Operators use PUT with is_active in body (no /status endpoint)
         await axios.put(`/operators/${resourceId}`, { is_active: false });
@@ -323,7 +323,7 @@ export default function AdminSettings() {
       
       // Route to correct endpoint based on role
       if (role.toUpperCase() === 'FARMER') {
-        await axios.patch(`/farmers/${resourceId}/status?new_status=verified`);
+        await axios.patch(`/farmers/${resourceId}/review?new_status=verified`);
       } else if (role.toUpperCase() === 'OPERATOR') {
         // Operators use PUT with is_active in body (no /status endpoint)
         await axios.put(`/operators/${resourceId}`, { is_active: true });

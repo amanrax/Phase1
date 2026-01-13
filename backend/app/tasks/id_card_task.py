@@ -62,9 +62,19 @@ def generate_id_card(farmer_id: str):
         )
         print(f"✅ QR code uploaded to GridFS: {qr_file_id}")
 
-        # Get photo from GridFS if available
-        photo_file_id = (farmer.get("documents") or {}).get("photo_file_id")
+        # Get photo from GridFS if available (check multiple locations)
+        # Note: photo_file_id is stored at root level, NOT in documents subdocument
+        documents = farmer.get("documents") or {}
+        photo_file_id = (
+            farmer.get("photo_file_id") or          # Root level (correct location)
+            documents.get("photo_file_id") or       # Legacy location
+            documents.get("photoFileId")            # Camel case variant
+        )
         photo_data = None
+        
+        print(f"🔍 Looking for photo - farmer_id: {farmer.get('farmer_id')}")
+        print(f"   photo_file_id (root): {farmer.get('photo_file_id')}")
+        print(f"   documents.photo: {documents.get('photo')}")
         
         if photo_file_id:
             try:
@@ -72,7 +82,9 @@ def generate_id_card(farmer_id: str):
                 photo_data = io.BytesIO(photo_bytes)
                 print(f"✅ Photo loaded from GridFS: {photo_file_id}")
             except Exception as e:
-                print(f"⚠️ Photo load failed: {e}")
+                print(f"⚠️ Photo load failed from GridFS ({photo_file_id}): {e}")
+        else:
+            print(f"⚠️ No photo_file_id found. Farmer data: {farmer.get('farmer_id')}")
         
         # Create PDF in memory
         pdf_buffer = io.BytesIO()
