@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
+import { operatorService } from "@/services/operator.service";
 import axios from "@/utils/axios";
 import { useNotification } from "@/contexts/NotificationContext";
 
@@ -27,6 +28,16 @@ interface Farmer {
   email?: string;
 }
 
+interface OperatorStats {
+  total_farmers: number;
+  active_farmers: number;
+  pending_farmers: number;
+  verified_farmers: number;
+  recent_registrations_30d: number;
+  total_land_hectares: number;
+  avg_land_hectares: number;
+}
+
 export default function OperatorDashboard() {
   const { logout } = useAuthStore();
   const navigate = useNavigate();
@@ -35,23 +46,15 @@ export default function OperatorDashboard() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
-  
-  // Calculate dynamic metrics from farmers data
-  const farmersThisMonth = farmers.filter(f => {
-    if (!f._id) return false;
-    const createdDate = new Date(f._id.toString().substring(0, 8), 16) * 1000;
-    const now = new Date();
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    return createdDate >= thisMonthStart.getTime();
-  }).length;
-  
-  const pendingDocs = farmers.filter(f => 
-    f.registration_status === 'pending' || 
-    f.registration_status === 'submitted' ||
-    f.registration_status === 'under_review'
-  ).length;
-  
-  const totalLand = 0; // TODO: Calculate from farmer land_info when available
+  const [stats, setStats] = useState<OperatorStats>({
+    total_farmers: 0,
+    active_farmers: 0,
+    pending_farmers: 0,
+    verified_farmers: 0,
+    recent_registrations_30d: 0,
+    total_land_hectares: 0,
+    avg_land_hectares: 0,
+  });
 
   useEffect(() => {
     loadOperatorInfo();
@@ -62,6 +65,12 @@ export default function OperatorDashboard() {
     try {
       // Get operator's assigned district from their profile
       const response = await axios.get("/operators/me");
+      
+      // Load stats from backend
+      const statsData = await operatorService.getCurrentOperatorStats();
+      setStats(statsData);
+      
+      // Load farmers list
       loadFarmers(response.data.assigned_district);
     } catch (error: any) {
       console.error("Failed to load operator info:", error);
@@ -121,26 +130,29 @@ export default function OperatorDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           {/* My Farmers Card */}
           <div className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer">
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{farmers.length}</div>
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{stats.total_farmers}</div>
             <div className="opacity-90 text-xs sm:text-sm md:text-base">👨‍🌾 My Farmers</div>
+            <div className="opacity-75 text-xs mt-1">{stats.active_farmers} active</div>
           </div>
 
           {/* This Month Card */}
           <div className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer">
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{farmersThisMonth}</div>
-            <div className="opacity-90 text-xs sm:text-sm md:text-base">📅 This Month</div>
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{stats.recent_registrations_30d}</div>
+            <div className="opacity-90 text-xs sm:text-sm md:text-base">📅 Last 30 Days</div>
           </div>
 
           {/* Pending Docs Card */}
           <div className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer">
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{pendingDocs}</div>
-            <div className="opacity-90 text-xs sm:text-sm md:text-base">📄 Pending Docs</div>
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{stats.pending_farmers}</div>
+            <div className="opacity-90 text-xs sm:text-sm md:text-base">⏳ Pending</div>
+            <div className="opacity-75 text-xs mt-1">{stats.verified_farmers} verified</div>
           </div>
 
           {/* Total Land Card */}
           <div className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer">
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{totalLand.toFixed(1)}</div>
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">{stats.total_land_hectares.toFixed(1)}</div>
             <div className="opacity-90 text-xs sm:text-sm md:text-base">🌾 Total Land (ha)</div>
+            <div className="opacity-75 text-xs mt-1">Avg: {stats.avg_land_hectares.toFixed(1)} ha</div>
           </div>
         </div>
 

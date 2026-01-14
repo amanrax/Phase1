@@ -56,4 +56,9 @@ export const operatorService = {
     const response = await api.delete(`/operators/${operatorId}`);
     return response.data;
   },
+
+  async getCurrentOperatorStats(): Promise<any> {
+    const response = await api.get("/operators/me/stats");
+    return response.data;
+  },
 };
