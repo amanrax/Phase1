@@ -13,3 +13,4 @@ frontend/.env.production
 frontend/android/*.keystore
 frontend/android/*.keystore.base64
 backend/scripts/backups/*.json
+mongo_backup_prod/
