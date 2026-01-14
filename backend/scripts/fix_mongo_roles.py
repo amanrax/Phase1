@@ -12,12 +12,12 @@ def get_mongo_connection():
     strategies = [
         # Try 1: Local Docker network with auth
         lambda: pymongo.MongoClient(
-            "mongodb://admin:Admin123@farmer-mongo:27017/zambian_farmer_db?authSource=admin",
+            "mongodb+srv://cemdb_admin:Cem@2025@farmer.5oixrfr.mongodb.net/?retryWrites=truemongodb://admin:Admin123@farmer-mongo:27017/zambian_farmer_db?authSource=adminw=majoritymongodb://admin:Admin123@farmer-mongo:27017/zambian_farmer_db?authSource=adminappName=farmer",
             serverSelectionTimeoutMS=5000
         ),
         # Try 2: Host localhost
         lambda: pymongo.MongoClient(
-            "mongodb://admin:Admin123@localhost:27017/zambian_farmer_db?authSource=admin",
+            "mongodb+srv://cemdb_admin:Cem@2025@farmer.5oixrfr.mongodb.net/?retryWrites=truemongodb://admin:Admin123@localhow=majoritymongodb://admin:Admin123@localhoappName=farmerst:27017/zambian_farmer_db?authSource=admin",
             serverSelectionTimeoutMS=5000
         ),
     ]

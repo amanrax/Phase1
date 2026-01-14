@@ -29,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from app.utils.crypto_utils import generate_farmer_id, hmac_hash
 
 # MongoDB connection
-MONGO_URI = "mongodb://admin:Admin123@localhost:27017/zambian_farmer_db?authSource=admin"
+MONGO_URI = "mongodb+srv://cemdb_admin:Cem@2025@farmer.5oixrfr.mongodb.net/?retryWrites=truemongodb://admin:Admin123@localhow=majoritymongodb://admin:Admin123@localhoappName=farmerst:27017/zambian_farmer_db?authSource=admin"
 
 # Zambian districts for operators
 DISTRICTS = [

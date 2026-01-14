@@ -6,7 +6,7 @@ from app.config import settings
 from app.services.farmer_service import FarmerService
 
 
-MONGODB_URL = settings.MONGODB_URL or "mongodb://mongo:27017"
+MONGODB_URL = settings.MONGODB_URL or "mongodb+srv://cemdb_admin:Cem@2025@farmer.5oixrfr.mongodb.net/?retryWrites=truemongodb://mongo:27017w=majoritymongodb://mongo:27017appName=farmer"
 MONGODB_DB_NAME = settings.MONGODB_DB_NAME or "zambian_farmer_db"
 
 

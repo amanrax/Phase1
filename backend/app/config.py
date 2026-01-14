@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # ======================================
     MONGODB_URL: str = Field(
         ..., 
-        description="MongoDB connection string (mongodb+srv://...)"
+        description="MongoDB connection string (mongodb+srv://cemdb_admin:Cem@2025@farmer.5oixrfr.mongodb.net/?retryWrites=truemongodb+srv://...w=majoritymongodb+srv://...appName=farmer)"
     )
     MONGODB_DB_NAME: str = Field(
         default="zambian_farmer_db",

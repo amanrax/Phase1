@@ -44,7 +44,7 @@ except Exception as e:
 # ============================================
 # Configuration (prefer app settings / .env)
 # ============================================
-MONGO_URL = (settings.MONGODB_URL if settings else os.getenv("MONGODB_URL", "mongodb://admin:Admin123@farmer-mongo:27017/zambian_farmer_db?authSource=admin"))
+MONGO_URL = (settings.MONGODB_URL if settings else os.getenv("MONGODB_URL", "mongodb+srv://cemdb_admin:Cem@2025@farmer.5oixrfr.mongodb.net/?retryWrites=truemongodb://admin:Admin123@farmer-mongo:27017/zambian_farmer_db?authSource=adminw=majoritymongodb://admin:Admin123@farmer-mongo:27017/zambian_farmer_db?authSource=adminappName=farmer"))
 DB_NAME = (settings.MONGODB_DB_NAME if settings else os.getenv("MONGODB_DB_NAME", "zambian_farmer_db"))
 
 # District assignments for operators

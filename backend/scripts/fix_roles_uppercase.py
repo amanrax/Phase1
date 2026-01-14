@@ -16,7 +16,7 @@ from pymongo import MongoClient, errors
 
 # Connection details
 # From docker-compose.yml: admin/Admin123, authSource=admin
-MONGODB_URL = "mongodb://admin:Admin123@farmer-mongo:27017/zambian_farmer_db?authSource=admin"
+MONGODB_URL = "mongodb+srv://cemdb_admin:Cem@2025@farmer.5oixrfr.mongodb.net/?retryWrites=truemongodb://admin:Admin123@farmer-mongo:27017/zambian_farmer_db?authSource=adminw=majoritymongodb://admin:Admin123@farmer-mongo:27017/zambian_farmer_db?authSource=adminappName=farmer"
 DB_NAME = "zambian_farmer_db"
 
 def normalize_roles(roles):
