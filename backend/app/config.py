@@ -170,7 +170,7 @@ class Settings(BaseSettings):
             "http://localhost",
             "capacitor://localhost",
             "ionic://localhost",
-            "http://13.204.83.198:8000",
+            "https://automatic-doodle-wqp6gjqwxvqhggvw.github.dev/",
         ],
         description="Allowed CORS origins"
     )

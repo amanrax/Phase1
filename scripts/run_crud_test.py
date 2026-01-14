@@ -6,7 +6,7 @@ import json
 import sys
 from urllib import request, error
 
-BASE = "http://13.204.83.198:8000/api"
+BASE = "https://automatic-doodle-wqp6gjqwxvqhggvw.github.dev//api"
 
 def req(method, path, token=None, payload=None):
     url = BASE + path

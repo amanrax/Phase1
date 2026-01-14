@@ -32,7 +32,7 @@ async function fetchGridFSFile(fileIdOrPath: string): Promise<string | null> {
     
     console.log('[GridFS] Fetching file:', fileIdOrPath);
     
-    const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
+    const baseURL = import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw.github.dev/";
     
     // If it's a file ID (MongoDB ObjectId format)
     let url: string;
@@ -451,7 +451,7 @@ export const farmerService = {
     // Fallback: try direct API endpoint
     if (farmer.farmer_id) {
       console.log('[QR] Using API endpoint for:', farmer.farmer_id);
-      const baseURL = import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
+      const baseURL = import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw.github.dev/";
       return await fetchGridFSFile(`${baseURL}/api/farmers/${farmer.farmer_id}/qr`);
     }
 
@@ -533,7 +533,7 @@ export const farmerService = {
    * Backend: GET /api/farmers/{farmer_id}/qr
    */
   getQRCode(farmerId: string): string {
-    const baseURL = api.defaults.baseURL || import.meta.env.VITE_API_BASE_URL || "http://13.204.83.198:8000";
+    const baseURL = api.defaults.baseURL || import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw.github.dev/";
     return `${baseURL}/farmers/${farmerId}/qr`;
   },
 

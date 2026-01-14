@@ -39,7 +39,7 @@ export const getApiBaseUrl = (): string => {
     }
 
     // Final fallback for mobile - production backend
-    const fallback = 'http://13.204.83.198:8000';
+    const fallback = 'https://automatic-doodle-wqp6gjqwxvqhggvw.github.dev/';
     console.warn('[Mobile] ⚠️ Using hardcoded fallback:', fallback);
     return fallback;
   }
@@ -67,7 +67,7 @@ export const getApiBaseUrl = (): string => {
   }
 
   // Final fallback
-  const defaultUrl = 'http://13.204.83.198:8000';
+  const defaultUrl = 'https://automatic-doodle-wqp6gjqwxvqhggvw.github.dev/';
   console.log('[Mobile] ✅ Using default URL:', defaultUrl);
   return defaultUrl;
 };

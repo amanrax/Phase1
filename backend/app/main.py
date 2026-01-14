@@ -172,7 +172,7 @@ allowed_origins = [
     "http://localhost",
     "capacitor://localhost",
     "ionic://localhost",
-    "http://13.204.83.198:8000",
+    "https://automatic-doodle-wqp6gjqwxvqhggvw.github.dev/",
 ]
 
 frontend_origin_env = os.getenv("FRONTEND_ORIGIN", "")
