@@ -9,9 +9,9 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         
-        // Increment these for each new build
-        versionCode 4
-        versionName "1.0.3"
+        // Phase-2 Release
+        versionCode 5
+        versionName "2.0.0"
         
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

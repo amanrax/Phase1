@@ -21,7 +21,8 @@ async def connect_to_database() -> None:
     global _client, _database
     
     try:
-        logger.info(f"Connecting to MongoDB: {settings.MONGODB_DB_NAME}")
+        logger.info(f"Attempting to connect to MongoDB: {settings.MONGODB_DB_NAME}")
+        logger.info("This may take a few seconds...")
         
         # Create Motor client with connection pooling
         _client = AsyncIOMotorClient(
@@ -43,7 +44,11 @@ async def connect_to_database() -> None:
         
     except Exception as e:
         logger.error(f"❌ Failed to connect to MongoDB: {e}")
-        raise
+        logger.error("⚠️  Application will start but database operations will fail")
+        logger.error("⚠️  Please check your MONGODB_URL configuration")
+        # Don't raise - let the app start anyway for debugging
+        _client = None
+        _database = None
 
 
 async def close_database_connection() -> None:

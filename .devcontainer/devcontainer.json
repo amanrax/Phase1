@@ -2,7 +2,6 @@
   "name": "ZIAMIS Farmer System",
   "image": "mcr.microsoft.com/devcontainers/universal:2",
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
   "forwardPorts": [5173, 8000, 27017, 6379],
   "portsAttributes": {

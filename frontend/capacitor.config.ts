@@ -9,7 +9,10 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    // Allow cleartext (HTTP) traffic for development
+    // Set to false for production with HTTPS only
+    cleartext: true
   },
   
   android: {

@@ -204,12 +204,32 @@ class SyncGridFSService:
     """
     
     def __init__(self):
-        """Initialize sync GridFS bucket and keep DB reference"""
-        client = MongoClient(settings.MONGODB_URL)
-        db = client[settings.MONGODB_DB_NAME]
-        self.client = client
-        self.db = db
-        self.bucket = GridFSBucket(db, bucket_name="cem_files")
+        """Initialize lazy-loaded connection"""
+        self._client = None
+        self._db = None
+        self._bucket = None
+    
+    def _ensure_connection(self):
+        """Lazy-load MongoDB connection"""
+        if self._client is None:
+            self._client = MongoClient(settings.MONGODB_URL)
+            self._db = self._client[settings.MONGODB_DB_NAME]
+            self._bucket = GridFSBucket(self._db, bucket_name="cem_files")
+    
+    @property
+    def client(self):
+        self._ensure_connection()
+        return self._client
+    
+    @property
+    def db(self):
+        self._ensure_connection()
+        return self._db
+    
+    @property
+    def bucket(self):
+        self._ensure_connection()
+        return self._bucket
     
     def upload_file(
         self,

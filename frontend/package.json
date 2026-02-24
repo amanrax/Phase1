@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,12 +14,21 @@
     "cap:add:android": "npx cap add android",
     "cap:add:ios": "npx cap add ios",
     "cap:sync": "npx cap sync",
+    "cap:sync:android": "npx cap sync android",
+    "cap:sync:ios": "npx cap sync ios",
     "cap:open:android": "npx cap open android",
     "cap:open:ios": "npx cap open ios",
     "bump-version": "node scripts/bump-version.js",
-    "build:android:debug": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug",
-    "build:android:release": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease",
-    "release": "npm run bump-version && npm run build:android:release"
+    "bump-version:patch": "node scripts/bump-version.js patch",
+    "bump-version:minor": "node scripts/bump-version.js minor",
+    "bump-version:major": "node scripts/bump-version.js major",
+    "build:android:debug": "bash scripts/build-android.sh debug",
+    "build:android:release": "bash scripts/build-android.sh release",
+    "build:ios": "bash scripts/build-ios.sh",
+    "build:ios:release": "bash scripts/build-ios.sh Release",
+    "release:android": "npm run bump-version:patch && npm run build:android:release",
+    "release:ios": "npm run bump-version:patch && npm run build:ios:release",
+    "release:all": "npm run bump-version:patch && npm run build:android:release && npm run build:ios:release"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",

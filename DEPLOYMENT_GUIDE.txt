@@ -1,0 +1,302 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║         🚀 READY TO BUILD APK - DEPLOYMENT GUIDE 🚀          ║
+║                  CEM Farmer App v2.0.0                        ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+📅 Date: 2026-02-24
+✅ All configurations complete and verified!
+
+═══════════════════════════════════════════════════════════════
+
+✅ WHAT'S BEEN CONFIGURED
+═══════════════════════════════════════════════════════════════
+
+  ✓ Backend Docker containers running (healthy)
+  ✓ Frontend API configured for PC IP: 192.168.1.66:8000
+  ✓ Android app version updated to 2.0.0
+  ✓ iOS app version updated to 2.0.0
+  ✓ GitHub workflow configured for dev branch
+  ✓ Network security allows HTTP traffic
+  ✓ Build scripts ready and executable
+
+═══════════════════════════════════════════════════════════════
+
+🤖 AUTOMATED APK BUILD (RECOMMENDED)
+═══════════════════════════════════════════════════════════════
+
+Since we're in GitHub Codespaces (no Android SDK), the best way
+to build APK is through GitHub Actions which has SDK pre-installed.
+
+📝 STEPS TO GET YOUR APK:
+
+1. Commit and push changes to dev branch:
+   ─────────────────────────────────────────────────────────────
+   cd /workspaces/Phase1
+   git add .
+   git commit -m "feat: Phase-2 v2.0.0 - Mobile build configuration"
+   git push origin dev
+   ─────────────────────────────────────────────────────────────
+
+2. GitHub Actions will automatically:
+   • Build the React app
+   • Sync with Capacitor
+   • Build Android Debug APK
+   • Upload as artifact
+
+3. Download APK from GitHub:
+   • Go to: https://github.com/amanrax/Phase1/actions
+   • Click on your workflow run
+   • Download "CEM-Farmer-Android-APK" artifact
+   • Extract: CEM-Farmer-v2.0.0-debug.apk
+
+4. Install on Android device:
+   • Enable "Unknown Sources" in Android settings
+   • Transfer APK to phone
+   • Tap to install
+
+═══════════════════════════════════════════════════════════════
+
+📱 APK WILL CONNECT TO YOUR PC
+═══════════════════════════════════════════════════════════════
+
+  ⚡ Backend URL: http://192.168.1.66:8000
+  
+  REQUIREMENTS:
+  ├─ Docker must be running on your PC (port 8000)
+  ├─ Phone must be on same WiFi as PC
+  └─ PC firewall must allow port 8000
+  
+  TO START BACKEND ON YOUR PC:
+  ─────────────────────────────────────────────────────────────
+  cd /workspaces/Phase1
+  docker compose up -d
+  
+  # Verify it's running:
+  curl http://localhost:8000/api/health
+  ─────────────────────────────────────────────────────────────
+
+═══════════════════════════════════════════════════════════════
+
+🔥 QUICK COMMANDS SUMMARY
+═══════════════════════════════════════════════════════════════
+
+Backend (Docker):
+  docker compose up -d              # Start all services
+  docker compose ps                 # Check status
+  docker compose logs -f            # View logs
+  docker compose restart            # Restart all
+
+Build APK (GitHub Actions):
+  git push origin dev               # Triggers build
+  
+Build APK (Local - if SDK installed):
+  cd frontend
+  npm run build:android:debug       # Debug APK
+  npm run build:android:release     # Release APK
+
+Version Management:
+  cd frontend
+  npm run bump-version:patch        # 2.0.0 → 2.0.1
+  npm run bump-version:minor        # 2.0.0 → 2.1.0
+
+═══════════════════════════════════════════════════════════════
+
+📋 FILES UPDATED
+═══════════════════════════════════════════════════════════════
+
+Backend:
+  ├─ .env.production                 (Redis URL fixed)
+  └─ docker-compose.yml              (Version removed)
+
+Frontend:
+  ├─ .env.production                 (PC IP: 192.168.1.66)
+  ├─ .env.development                (localhost + PC IP comment)
+  ├─ capacitor.config.ts             (Cleartext enabled)
+  ├─ package.json                    (v2.0.0)
+  ├─ android/app/build.gradle        (v2.0.0, versionCode 5)
+  ├─ ios/.../project.pbxproj         (v2.0.0, build 5)
+  └─ src/utils/version.ts            (Auto-generated)
+
+Workflows:
+  └─ .github/workflows/build-android.yml  (dev branch added)
+
+Scripts:
+  ├─ scripts/build-android.sh        (Enhanced)
+  ├─ scripts/build-ios.sh            (Enhanced)
+  ├─ scripts/bump-version.js         (iOS support)
+  └─ scripts/quick-build.sh          (NEW - Interactive)
+
+Documentation:
+  ├─ CONFIGURATION_SUMMARY.txt       (This file)
+  ├─ DEPLOYMENT_GUIDE.txt            (Deployment steps)
+  ├─ BUILD_GUIDE.md                  (Complete build docs)
+  ├─ SIGNING_CONFIG.md               (Security setup)
+  └─ MOBILE_README.md                (Mobile app overview)
+
+═══════════════════════════════════════════════════════════════
+
+⚠️  IMPORTANT NOTES
+═══════════════════════════════════════════════════════════════
+
+1. PC IP ADDRESS
+   Your PC IP is set to: 192.168.1.66
+   If your IP changes:
+   • Edit: frontend/.env.production
+   • Rebuild APK
+
+2. DOCKER MUST BE RUNNING
+   Before using the APK, ensure Docker is running on PC:
+   docker ps
+   # Should show farmer-backend, celery-worker, farmer-redis
+
+3. SAME WIFI NETWORK
+   Phone and PC must be on the same WiFi network
+
+4. FIREWALL
+   Ensure port 8000 is open on your PC:
+   # Windows:
+   netsh advfirewall firewall add rule name="FastAPI" dir=in action=allow protocol=TCP localport=8000
+   
+   # Linux:
+   sudo ufw allow 8000/tcp
+
+5. HTTP vs HTTPS
+   Current config uses HTTP for dev (not secure)
+   For production, use HTTPS with SSL certificate
+
+═══════════════════════════════════════════════════════════════
+
+🔍 VERIFY CONFIGURATION
+═══════════════════════════════════════════════════════════════
+
+Before pushing, verify everything:
+
+  # 1. Check Docker
+  docker ps
+  # → Should show 3 running containers
+
+  # 2. Check backend health
+  curl http://localhost:8000/api/health
+  # → Should return: {"status":"ok"}
+
+  # 3. Check frontend env
+  cat frontend/.env.production | grep VITE_API
+  # → Should show: http://192.168.1.66:8000
+
+  # 4. Check workflow
+  cat .github/workflows/build-android.yml | grep "branches:" -A2
+  # → Should include 'dev'
+
+═══════════════════════════════════════════════════════════════
+
+📦 WHAT HAPPENS WHEN YOU PUSH
+═══════════════════════════════════════════════════════════════
+
+1. GitHub Actions detects push to 'dev' branch
+2. Starts Ubuntu runner with Android SDK
+3. Installs Node.js 20 and JDK 17
+4. Installs npm dependencies
+5. Builds React app (Vite)
+6. Syncs with Capacitor Android
+7. Runs Gradle assembleDebug
+8. Creates: CEM-Farmer-v2.0.0-debug.apk
+9. Uploads APK as downloadable artifact
+10. Available for 30 days
+
+Total time: ~5-10 minutes
+
+═══════════════════════════════════════════════════════════════
+
+🎯 NEXT STEPS - DO THIS NOW!
+═══════════════════════════════════════════════════════════════
+
+STEP 1: Commit and push
+  ─────────────────────────────────────────────────────────────
+  cd /workspaces/Phase1
+  git add .
+  git status  # Review changes
+  git commit -m "feat: Phase-2 v2.0.0 - Configure for mobile APK build with PC IP"
+  git push origin dev
+  ─────────────────────────────────────────────────────────────
+
+STEP 2: Monitor build
+  ─────────────────────────────────────────────────────────────
+  Open: https://github.com/amanrax/Phase1/actions
+  Watch the "Build Android APK" workflow run
+  ─────────────────────────────────────────────────────────────
+
+STEP 3: Download APK
+  ─────────────────────────────────────────────────────────────
+  When build completes:
+  1. Click on the workflow run
+  2. Scroll to "Artifacts" section
+  3. Download "CEM-Farmer-Android-APK"
+  4. Extract the ZIP file
+  5. Get: CEM-Farmer-v2.0.0-debug.apk
+  ─────────────────────────────────────────────────────────────
+
+STEP 4: Install on phone
+  ─────────────────────────────────────────────────────────────
+  1. Transfer APK file to Android phone
+  2. Enable "Install from Unknown Sources"
+  3. Tap APK file to install
+  4. Open "CEM Farmer" app
+  5. Should connect to: http://192.168.1.66:8000
+  ─────────────────────────────────────────────────────────────
+
+═══════════════════════════════════════════════════════════════
+
+🐛 TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════
+
+If APK can't connect to backend:
+
+  1. Check Docker on PC:
+     docker ps
+     
+  2. Test from PC browser:
+     http://192.168.1.66:8000/api/health
+     
+  3. Test from phone browser:
+     http://192.168.1.66:8000/api/health
+     ^ Should show: {"status":"ok"}
+     
+  4. If not working:
+     • Check PC IP: ipconfig (Windows) or ifconfig (Linux)
+     • Update frontend/.env.production if IP changed
+     • Rebuild APK
+     • Check firewall allows port 8000
+     • Ensure phone and PC on same WiFi
+
+═══════════════════════════════════════════════════════════════
+
+✅ READY TO GO!
+═══════════════════════════════════════════════════════════════
+
+Everything is configured and ready. Just:
+
+  1. git push origin dev
+  2. Wait ~5-10 minutes
+  3. Download APK from GitHub Actions
+  4. Install on Android phone
+  5. Test!
+
+═══════════════════════════════════════════════════════════════
+
+📞 SUPPORT
+═══════════════════════════════════════════════════════════════
+
+  Documentation:
+  • BUILD_GUIDE.md - Complete build instructions
+  • MOBILE_README.md - Mobile app overview
+  • SIGNING_CONFIG.md - Release builds
+  
+  GitHub: https://github.com/amanrax/Phase1
+  
+═══════════════════════════════════════════════════════════════
+
+🎉 GOOD LUCK WITH YOUR BUILD! 🎉
+
+═══════════════════════════════════════════════════════════════

@@ -2,13 +2,29 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ farmer-edit-fix, main ]
+    branches:
+      - dev
+      - main
+    tags:
+      - 'v*'
   pull_request:
-    branches: [ farmer-edit-fix, main ]
-  workflow_dispatch:  # Allows manual trigger from Actions tab
+    branches:
+      - dev
+      - main
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type (debug/release)'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
 
 jobs:
   build-android:
+    name: Build Android APK
     runs-on: ubuntu-latest
     
     steps:
