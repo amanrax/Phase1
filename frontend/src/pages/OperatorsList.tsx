@@ -88,9 +88,9 @@ export default function OperatorsList() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900 transition-colors duration-150">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button 
@@ -99,7 +99,7 @@ export default function OperatorsList() {
             >
               ← BACK
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">📋 Field Operators</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">📋 Field Operators</h1>
           </div>
         </div>
       </header>
@@ -125,7 +125,7 @@ export default function OperatorsList() {
         {loading ? (
           <div className="space-y-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-4 animate-pulse">
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 flex items-center gap-4 animate-pulse">
                 <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="h-3.5 bg-gray-200 rounded w-1/3" />
@@ -138,15 +138,15 @@ export default function OperatorsList() {
             ))}
           </div>
         ) : operators.length === 0 ? (
-          <div className="bg-white p-12 text-center rounded-xl shadow-sm">
-            <p className="text-gray-600 text-lg">No operators found</p>
+          <div className="bg-white dark:bg-gray-800 p-12 text-center rounded-xl shadow-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-lg">No operators found</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-600">
-                <thead className="bg-gray-100 text-gray-700 font-bold uppercase text-xs">
+              <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+                <thead className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold uppercase text-xs">
                   <tr>
                     <th className="px-6 py-3">#</th>
                     <th className="px-6 py-3">Name</th>
@@ -157,11 +157,11 @@ export default function OperatorsList() {
                     <th className="px-6 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {operators.map((op, i) => (
-                    <tr key={op.operator_id || i} className="hover:bg-green-50 transition">
-                      <td className="px-6 py-4 font-bold text-gray-800">{i + 1}</td>
-                      <td className="px-6 py-4 font-bold text-gray-800">
+                    <tr key={op.operator_id || i} className="hover:bg-green-50 dark:hover:bg-gray-700 transition">
+                      <td className="px-6 py-4 font-bold text-gray-800 dark:text-white">{i + 1}</td>
+                      <td className="px-6 py-4 font-bold text-gray-800 dark:text-white">
                         {op.first_name} {op.last_name}
                       </td>
                       <td className="px-6 py-4">{op.phone}</td>

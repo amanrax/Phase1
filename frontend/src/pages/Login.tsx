@@ -239,7 +239,7 @@ export default function Login() {
                     maxLength={isFarmer ? 11 : undefined}
                     required
                     autoComplete={isFarmer ? "off" : "email"}
-                    className="w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.3),0_8px_16px_rgba(99,102,241,0.2)] focus:translate-y-[-2px]"
+                    className="w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-indigo-500 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.3),0_8px_16px_rgba(99,102,241,0.2)] focus:translate-y-[-2px]"
                     style={{
                       transformStyle: 'preserve-3d',
                       boxShadow: '0 4px 6px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8)'
@@ -262,7 +262,7 @@ export default function Login() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete={isFarmer ? "off" : "current-password"}
-                    className="w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.3),0_8px_16px_rgba(99,102,241,0.2)] focus:translate-y-[-2px]"
+                    className="w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-indigo-500 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.3),0_8px_16px_rgba(99,102,241,0.2)] focus:translate-y-[-2px]"
                     style={{
                       transformStyle: 'preserve-3d',
                       boxShadow: '0 4px 6px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8)'

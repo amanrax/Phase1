@@ -157,7 +157,7 @@ export default function OperatorDashboard() {
         </div>
 
         {/* Main Content Card */}
-        <div className="bg-white rounded-xl shadow-2xl p-4 sm:p-6 md:p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 sm:p-6 md:p-8">
           {/* Header with Actions */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900">📋 My Farmers</h2>
@@ -267,7 +267,7 @@ export default function OperatorDashboard() {
                     return (
                       <tr
                         key={farmer._id}
-                        className="hover:bg-gray-50 transition-colors"
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                       >
                         <td className="px-4 sm:px-6 py-4 text-sm text-gray-600">{index + 1}</td>
                         <td className="px-4 sm:px-6 py-4 text-sm font-medium text-gray-900">
@@ -309,7 +309,7 @@ export default function OperatorDashboard() {
                   })}
                 </tbody>
               </table>
-              <div className="bg-gray-50 px-4 sm:px-6 py-3 text-xs text-gray-600 border-t border-gray-200">
+              <div className="bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-3 text-xs text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-gray-600">
                 Showing {filteredFarmers.length} of {farmers.length} farmers
               </div>
             </div>
@@ -326,7 +326,7 @@ export default function OperatorDashboard() {
                 return (
                   <div
                     key={farmer._id}
-                    className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-lg hover:scale-105 transition-all cursor-pointer"
+                    className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-700 hover:shadow-lg hover:scale-105 transition-all cursor-pointer"
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div>

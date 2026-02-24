@@ -202,14 +202,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* Main Content Card */}
-        <div className="backdrop-blur-xl bg-white/95 rounded-3xl p-4 sm:p-6 md:p-8 border border-white/50 transition-all duration-500" 
+        <div className="backdrop-blur-xl bg-white/95 dark:bg-gray-800/95 rounded-3xl p-4 sm:p-6 md:p-8 border border-white/50 dark:border-gray-700/50 transition-all duration-500" 
              style={{ 
                boxShadow: '0 25px 50px -12px rgba(99,102,241,0.4), 0 0 0 1px rgba(255,255,255,0.5), inset 0 1px 0 0 rgba(255,255,255,0.8)',
                transformStyle: 'preserve-3d'
              }}>
           {/* Header with Actions */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900">🔧 Admin Dashboard</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white">🔧 Admin Dashboard</h2>
             <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
               <button
                 onClick={handleRefresh}
@@ -282,7 +282,7 @@ export default function AdminDashboard() {
           {/* Operators Management Section */}
           <div className="mb-8 sm:mb-12">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">👨‍💼 System Operators</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">👨‍💼 System Operators</h3>
               <button
                 onClick={() => navigate("/operators/manage")}
                 className="px-3 sm:px-4 py-1 sm:py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
@@ -297,7 +297,7 @@ export default function AdminDashboard() {
                 <p className="mt-3 sm:mt-4 text-gray-600 text-sm sm:text-base">Loading...</p>
               </div>
             ) : operators.length === 0 ? (
-              <div className="text-center py-8 sm:py-16 text-gray-600 bg-gray-50 rounded-lg">
+              <div className="text-center py-8 sm:py-16 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">👨‍💼</div>
                 <p className="text-base sm:text-lg font-semibold mb-2">No operators found</p>
                 <p className="text-xs sm:text-sm mb-3 sm:mb-4">Add operators to help manage farmers</p>
@@ -309,29 +309,29 @@ export default function AdminDashboard() {
                 </button>
               </div>
             ) : (
-              <div className="bg-gray-50 rounded-lg border border-gray-200">
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
                 <div className="overflow-hidden">
                   <table className="w-full text-left text-sm table-fixed">
-                    <thead className="bg-gray-100 border-b border-gray-200">
+                    <thead className="bg-gray-100 dark:bg-gray-600 border-b border-gray-200 dark:border-gray-500">
                       <tr>
-                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase truncate" style={{width: '20%'}}>Name</th>
-                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase truncate" style={{width: '25%'}}>Email</th>
-                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase truncate hidden md:table-cell" style={{width: '15%'}}>Phone</th>
-                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase truncate hidden lg:table-cell" style={{width: '20%'}}>District</th>
-                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs uppercase text-center truncate" style={{width: '20%'}}>Status</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 dark:text-gray-200 text-xs uppercase truncate" style={{width: '20%'}}>Name</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 dark:text-gray-200 text-xs uppercase truncate" style={{width: '25%'}}>Email</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 dark:text-gray-200 text-xs uppercase truncate hidden md:table-cell" style={{width: '15%'}}>Phone</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 dark:text-gray-200 text-xs uppercase truncate hidden lg:table-cell" style={{width: '20%'}}>District</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 dark:text-gray-200 text-xs uppercase text-center truncate" style={{width: '20%'}}>Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
                       {operators.slice(0, 5).map((op) => (
                         <tr
                           key={op.operator_id || op._id}
-                          className="bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+                          className="bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors cursor-pointer"
                           onClick={() => navigate(`/operators/${op.operator_id}`)}
                         >
-                          <td className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-900 truncate" title={op.full_name}>{op.full_name}</td>
-                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 text-xs sm:text-sm truncate" title={op.email}>{op.email}</td>
-                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 text-xs sm:text-sm truncate hidden md:table-cell" title={op.phone || "-"}>{op.phone || "-"}</td>
-                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 text-xs sm:text-sm truncate hidden lg:table-cell" title={op.assigned_district || (op.assigned_districts?.[0]) || "All Districts"}>
+                          <td className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-900 dark:text-white truncate" title={op.full_name}>{op.full_name}</td>
+                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-gray-300 text-xs sm:text-sm truncate" title={op.email}>{op.email}</td>
+                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-gray-300 text-xs sm:text-sm truncate hidden md:table-cell" title={op.phone || "-"}>{op.phone || "-"}</td>
+                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-gray-300 text-xs sm:text-sm truncate hidden lg:table-cell" title={op.assigned_district || (op.assigned_districts?.[0]) || "All Districts"}>
                             {op.assigned_district || (op.assigned_districts?.[0]) || "All Districts"}
                           </td>
                           <td className="px-3 sm:px-4 py-2 sm:py-3 text-center">
@@ -349,7 +349,7 @@ export default function AdminDashboard() {
                   </table>
                 </div>
                 {operators.length > 5 && (
-                  <div className="text-center py-3 sm:py-4 bg-white border-t border-gray-200">
+                  <div className="text-center py-3 sm:py-4 bg-white dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
                     <button
                       onClick={() => navigate("/operators/manage")}
                       className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-semibold transition-colors"
@@ -365,7 +365,7 @@ export default function AdminDashboard() {
           {/* Recent Farmers Section */}
           <div>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">👨‍🌾 Recent Farmers</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">👨‍🌾 Recent Farmers</h3>
               <button
                 onClick={() => navigate("/farmers")}
                 className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-semibold transition-colors"
@@ -391,14 +391,14 @@ export default function AdminDashboard() {
                   <div
                     key={farmer.farmer_id}
                     onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
-                    className="border border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50 hover:bg-white hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer"
+                    className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 hover:bg-white dark:hover:bg-gray-600 hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer"
                   >
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                       <div className="flex-1 min-w-0">
-                        <div className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                        <div className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
                           {farmer.name}
                         </div>
-                        <div className="text-gray-600 text-xs sm:text-sm mt-1 line-clamp-2">
+                        <div className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mt-1 line-clamp-2">
                           📍 {farmer.district} • 🆔 {farmer.farmer_id}
                         </div>
                       </div>

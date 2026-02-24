@@ -264,22 +264,22 @@ export default function AdminReports() {
               📥 Export
             </button>
             {showExportMenu && (
-              <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+              <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 z-20">
                 <button
                   onClick={() => exportReport("csv")}
-                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 border-b border-gray-200"
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-600"
                 >
                   📄 CSV
                 </button>
                 <button
                   onClick={() => exportReport("excel")}
-                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 border-b border-gray-200"
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-600"
                 >
                   📊 Excel
                 </button>
                 <button
                   onClick={() => exportReport("pdf")}
-                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
                 >
                   📋 PDF
                 </button>
@@ -290,9 +290,9 @@ export default function AdminReports() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="bg-white border-t border-gray-200">
+        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-wrap border-b border-gray-200 -mb-px">
+            <div className="flex flex-wrap border-b border-gray-200 dark:border-gray-700 -mb-px">
               {[
                 { id: 'dashboard', label: 'Dashboard', icon: '📊' },
                 { id: 'region', label: 'By Region', icon: '🗺️' },
@@ -305,8 +305,8 @@ export default function AdminReports() {
                   className={`
                     flex items-center gap-2 py-4 px-6 font-semibold text-sm transition-all duration-300 border-b-2
                     ${activeReport === tab.id
-                      ? 'text-green-700 border-green-700 bg-green-50'
-                      : 'text-gray-600 border-transparent hover:text-green-600 hover:border-green-300'
+                      ? 'text-green-700 dark:text-green-400 border-green-700 dark:border-green-400 bg-green-50 dark:bg-green-900/20'
+                      : 'text-gray-600 dark:text-gray-400 border-transparent hover:text-green-600 hover:border-green-300'
                     }
                   `}
                 >
@@ -346,7 +346,7 @@ export default function AdminReports() {
             {/* Dashboard Report */}
             {activeReport === 'dashboard' && (
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Dashboard Summary</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Dashboard Summary</h2>
                 {dashboardData?.metrics ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {[
@@ -371,29 +371,29 @@ export default function AdminReports() {
             {/* Farmers by Region Report */}
             {activeReport === 'region' && (
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Farmers by Region</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Farmers by Region</h2>
                 {regionData.length === 0 ? (
                   <p className="text-center text-gray-500 py-8">No regional data available</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                          <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Province</th>
-                          <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">District</th>
-                          <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Farmer Count</th>
+                          <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">Province</th>
+                          <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">District</th>
+                          <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-200">Farmer Count</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
                         {regionData.map((region, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50 transition">
-                            <td className="px-6 py-4 text-sm text-gray-900">{region.province || 'Unknown'}</td>
-                            <td className="px-6 py-4 text-sm text-gray-900">{region.district || 'Unknown'}</td>
+                          <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200">{region.province || 'Unknown'}</td>
+                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200">{region.district || 'Unknown'}</td>
                             <td className="px-6 py-4 text-sm text-right font-semibold text-green-600">{region.farmer_count}</td>
                           </tr>
                         ))}
                       </tbody>
-                      <tfoot className="bg-gray-50">
+                      <tfoot className="bg-gray-50 dark:bg-gray-700">
                         <tr>
                           <td colSpan={2} className="px-6 py-3 text-sm font-semibold text-gray-900">Total</td>
                           <td className="px-6 py-3 text-sm text-right font-bold text-green-700">
@@ -416,27 +416,27 @@ export default function AdminReports() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                          <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Operator Name</th>
-                          <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
-                          <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Total Farmers</th>
-                          <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Last 30 Days</th>
+                          <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">Operator Name</th>
+                          <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">Email</th>
+                          <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-200">Total Farmers</th>
+                          <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-200">Last 30 Days</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
                         {operatorData.map((op, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50 transition">
-                            <td className="px-6 py-4 text-sm text-gray-900 font-semibold">{op.operator_name || 'Unknown'}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{op.email || 'N/A'}</td>
+                          <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200 font-semibold">{op.operator_name || 'Unknown'}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{op.email || 'N/A'}</td>
                             <td className="px-6 py-4 text-sm text-right font-semibold text-green-600">{op.total_farmers}</td>
                             <td className="px-6 py-4 text-sm text-right font-semibold text-blue-600">{op.recent_farmers_30d}</td>
                           </tr>
                         ))}
                       </tbody>
-                      <tfoot className="bg-gray-50">
+                      <tfoot className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                          <td colSpan={2} className="px-6 py-3 text-sm font-semibold text-gray-900">Total</td>
+                          <td colSpan={2} className="px-6 py-3 text-sm font-semibold text-gray-900 dark:text-gray-200">Total</td>
                           <td className="px-6 py-3 text-sm text-right font-bold text-green-700">
                             {operatorData.reduce((sum, op) => sum + op.total_farmers, 0)}
                           </td>
@@ -454,29 +454,29 @@ export default function AdminReports() {
             {/* Activity Trends Report */}
             {activeReport === 'trends' && (
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Activity Trends (Last 14 Days)</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Activity Trends (Last 14 Days)</h2>
                 {trendsData.length === 0 ? (
                   <p className="text-center text-gray-500 py-8">No trends data available</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                          <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
-                          <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Registrations</th>
+                          <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200">Date</th>
+                          <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-200">Registrations</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
                         {trendsData.map((trend, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50 transition">
-                            <td className="px-6 py-4 text-sm text-gray-900">{trend.date}</td>
+                          <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200">{trend.date}</td>
                             <td className="px-6 py-4 text-sm text-right font-semibold text-green-600">{trend.registrations}</td>
                           </tr>
                         ))}
                       </tbody>
-                      <tfoot className="bg-gray-50">
+                      <tfoot className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                          <td className="px-6 py-3 text-sm font-semibold text-gray-900">Total</td>
+                          <td className="px-6 py-3 text-sm font-semibold text-gray-900 dark:text-gray-200">Total</td>
                           <td className="px-6 py-3 text-sm text-right font-bold text-green-700">
                             {trendsData.reduce((sum, t) => sum + t.registrations, 0)}
                           </td>

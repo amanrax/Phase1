@@ -222,7 +222,7 @@ export default function FarmerDashboard() {
         <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6">
           {!farmerData ? (
             // Error State
-            <div className="bg-white rounded-xl p-6 sm:p-8 shadow-xl text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 sm:p-8 shadow-xl text-center">
               <div className="text-6xl mb-4">⚠️</div>
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
                 Unable to load farmer profile
@@ -275,7 +275,7 @@ export default function FarmerDashboard() {
               </div>
 
               {/* Main Content Card */}
-              <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 md:p-8">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 sm:p-6 md:p-8">
                 {/* Header with Actions */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900">👨‍🌾 My Profile</h2>
@@ -317,7 +317,7 @@ export default function FarmerDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Photo and Basic Info - Left Column */}
                   <div className="lg:col-span-1">
-                    <div className="bg-gray-50 rounded-lg p-6 text-center">
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 text-center">
                       <div style={{
                         width: "150px",
                         height: "150px",
@@ -405,8 +405,8 @@ export default function FarmerDashboard() {
               </div>
 
               {/* Address Information */}
-              <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 md:p-8 mt-6">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6 border-b-2 border-blue-600 pb-3">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 sm:p-6 md:p-8 mt-6">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-6 border-b-2 border-blue-600 pb-3">
                   📍 Address Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -450,8 +450,8 @@ export default function FarmerDashboard() {
               </div>
 
               {/* Farm Information */}
-              <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 md:p-8 mt-6">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6 border-b-2 border-green-600 pb-3">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 sm:p-6 md:p-8 mt-6">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-6 border-b-2 border-green-600 pb-3">
                   🌾 Farm Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

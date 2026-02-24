@@ -343,9 +343,9 @@ export default function FarmersList() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900 transition-colors duration-150">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button 
@@ -354,7 +354,7 @@ export default function FarmersList() {
             >
               ← BACK
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">👨‍🌾 All Farmers</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">👨‍🌾 All Farmers</h1>
           </div>
         </div>
       </header>
@@ -370,7 +370,7 @@ export default function FarmersList() {
         </button>
 
         {/* Filter Tabs */}
-        <div className="mb-6 bg-white rounded-lg shadow-sm p-2 flex gap-2 overflow-x-auto">
+        <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-2 flex gap-2 overflow-x-auto">
           {["all", "active", "pending", "inactive"].map(f => (
             <button
               key={f}
@@ -381,7 +381,7 @@ export default function FarmersList() {
                 setFilter(f as any);
               }}
               className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition ${
-                filter === f ? "bg-green-700 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                filter === f ? "bg-green-700 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
               }`}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)} ({getFilterCount(f)})
@@ -390,13 +390,13 @@ export default function FarmersList() {
         </div>
 
         {/* Search Filter */}
-        <div className="mb-6 bg-white rounded-lg shadow-sm p-4 flex gap-3 items-end flex-wrap">
+        <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex gap-3 items-end flex-wrap">
           <div className="flex-1 min-w-64">
-            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Search By</label>
+            <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-2">Search By</label>
             <select
               value={searchBy}
               onChange={(e) => setSearchBy(e.target.value as any)}
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 text-sm"
+              className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 text-sm"
             >
               <option value="name">Name</option>
               <option value="farmer_id">Farmer ID</option>
@@ -405,13 +405,13 @@ export default function FarmersList() {
           </div>
           
           <div className="flex-1 min-w-64">
-            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Search Value</label>
+            <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-2">Search Value</label>
             <input
               type="text"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               placeholder={`Search by ${searchBy === "name" ? "farmer name" : searchBy === "farmer_id" ? "farmer ID" : "NRC"}...`}
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 text-sm"
+              className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 text-sm"
             />
           </div>
 
@@ -430,7 +430,7 @@ export default function FarmersList() {
         {loading ? (
           <div className="space-y-3">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-4 animate-pulse">
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 flex items-center gap-4 animate-pulse">
                 <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="h-3.5 bg-gray-200 rounded w-1/3" />
@@ -443,16 +443,16 @@ export default function FarmersList() {
             ))}
           </div>
         ) : filteredFarmers.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-            <p className="text-gray-600 text-lg">No farmers found</p>
-            <p className="text-gray-500 text-sm">Try changing the filter</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-12 text-center">
+            <p className="text-gray-600 dark:text-gray-400 text-lg">No farmers found</p>
+            <p className="text-gray-500 dark:text-gray-500 text-sm">Try changing the filter</p>
           </div>
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden">
-              <table className="w-full text-left text-sm text-gray-600">
-                <thead className="bg-gray-100 text-gray-700 font-bold uppercase text-xs">
+            <div className="hidden md:block bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+              <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+                <thead className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold uppercase text-xs">
                   <tr>
                     <th className="px-6 py-3">Farmer ID</th>
                     <th className="px-6 py-3">Name</th>
@@ -463,9 +463,9 @@ export default function FarmersList() {
                     <th className="px-6 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredFarmers.map(farmer => (
-                    <tr key={farmer._id} className="hover:bg-green-50 transition">
+                    <tr key={farmer._id} className="hover:bg-green-50 dark:hover:bg-gray-700 transition">
                       <td className="px-6 py-4 font-mono font-bold text-xs">{farmer.farmer_id}</td>
                       <td className="px-6 py-4 font-bold">{getFarmerName(farmer)}</td>
                       <td className="px-6 py-4 text-xs">{getFarmerPhone(farmer)}</td>
@@ -524,9 +524,9 @@ export default function FarmersList() {
             {/* Mobile Cards */}
             <div className="md:hidden space-y-4">
               {filteredFarmers.map(farmer => (
-                <div key={farmer._id} className="bg-white rounded-xl shadow-sm p-4">
+                <div key={farmer._id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-bold text-gray-800 text-sm">{getFarmerName(farmer)}</h3>
+                    <h3 className="font-bold text-gray-800 dark:text-white text-sm">{getFarmerName(farmer)}</h3>
                     <span className={`px-2 py-1 text-xs font-bold rounded-full ${getStatusColor(farmer.registration_status || "", farmer.is_active)}`}>
                       {farmer.is_active ? (farmer.registration_status === "registered" ? "Registered" : "Pending") : "Inactive"}
                     </span>
