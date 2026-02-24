@@ -176,10 +176,10 @@ export default function Login() {
           </div>
 
           {/* Login Card with Enhanced 3D Effect */}
-          <div className="backdrop-blur-xl rounded-3xl p-8 border transition-all duration-500 transform preserve-3d bg-white/90 dark:bg-gray-900/90 border-white/50 dark:border-gray-700/50 shadow-[0_25px_50px_-12px_rgba(99,102,241,0.4),0_0_0_1px_rgba(255,255,255,0.5),inset_0_1px_0_0_rgba(255,255,255,0.8)] hover:shadow-[0_30px_60px_-15px_rgba(99,102,241,0.5)]" style={{ transformStyle: 'preserve-3d', transform: 'translateZ(0)' }}>
+          <div className="backdrop-blur-xl rounded-3xl p-8 border transition-all duration-500 transform preserve-3d bg-white dark:bg-gray-800/90 dark:bg-gray-900/90 border-white/50 dark:border-gray-700/50 shadow-[0_25px_50px_-12px_rgba(99,102,241,0.4),0_0_0_1px_rgba(255,255,255,0.5),inset_0_1px_0_0_rgba(255,255,255,0.8)] hover:shadow-[0_30px_60px_-15px_rgba(99,102,241,0.5)]" style={{ transformStyle: 'preserve-3d', transform: 'translateZ(0)' }}>
             {/* Role Tabs */}
             <div className="mb-8">
-              <div className="flex rounded-2xl p-1.5 bg-gray-100" style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}>
+              <div className="flex rounded-2xl p-1.5 bg-gray-100 dark:bg-gray-700" style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}>
                 {roles.map((role) => (
                   <button
                     key={role}
@@ -196,7 +196,7 @@ export default function Login() {
                     className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all duration-300 transform ${
                       userType === role
                         ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-[0_8px_16px_rgba(99,102,241,0.4),0_4px_6px_rgba(99,102,241,0.3)] scale-105 translate-y-[-2px]'
-                        : 'text-gray-700 hover:bg-gray-200 hover:translate-y-[-1px] hover:shadow-md active:scale-95'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:bg-gray-700 hover:translate-y-[-1px] hover:shadow-md active:scale-95'
                     }`}
                     style={{ 
                       transformStyle: 'preserve-3d',
@@ -221,7 +221,7 @@ export default function Login() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Username Field */}
               <div>
-                <label className="block mb-2 font-semibold text-sm text-gray-700">
+                <label className="block mb-2 font-semibold text-sm text-gray-700 dark:text-gray-300">
                   {usernameLabel}
                 </label>
                 <div className="relative group">
@@ -251,7 +251,7 @@ export default function Login() {
 
               {/* Password Field */}
               <div>
-                <label className="block mb-2 font-semibold text-sm text-gray-700">
+                <label className="block mb-2 font-semibold text-sm text-gray-700 dark:text-gray-300">
                   {passwordLabel}
                 </label>
                 <div className="relative group">
@@ -282,9 +282,9 @@ export default function Login() {
 
               {/* Diagnostic output (only in development/debugging) */}
               {diag && import.meta.env.DEV && (
-                <details className="mt-4 p-3 rounded-lg bg-gray-100">
-                  <summary className="text-xs font-bold text-gray-700 cursor-pointer">Debug Info</summary>
-                  <pre className="mt-2 text-xs text-gray-800 overflow-auto" style={{maxHeight: 200}}>
+                <details className="mt-4 p-3 rounded-lg bg-gray-100 dark:bg-gray-700">
+                  <summary className="text-xs font-bold text-gray-700 dark:text-gray-300 cursor-pointer">Debug Info</summary>
+                  <pre className="mt-2 text-xs text-gray-800 dark:text-gray-100 overflow-auto" style={{maxHeight: 200}}>
                     {diag}
                   </pre>
                 </details>
@@ -333,7 +333,7 @@ export default function Login() {
             </form>
 
             {/* Footer */}
-            <div className="mt-6 text-center text-sm text-gray-600">
+            <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
               <p>🔒 Secure Agricultural Management System</p>
             </div>
           </div>

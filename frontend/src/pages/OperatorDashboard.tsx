@@ -160,14 +160,14 @@ export default function OperatorDashboard() {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 sm:p-6 md:p-8">
           {/* Header with Actions */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900">📋 My Farmers</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white">📋 My Farmers</h2>
             <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
               <button
                 onClick={() => setViewMode("table")}
                 className={`px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                   viewMode === "table"
                     ? "bg-blue-600 hover:bg-blue-700 text-white"
-                    : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                    : "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-700 dark:text-gray-300"
                 }`}
               >
                 📋 Table
@@ -177,7 +177,7 @@ export default function OperatorDashboard() {
                 className={`px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                   viewMode === "grid"
                     ? "bg-blue-600 hover:bg-blue-700 text-white"
-                    : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                    : "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-700 dark:text-gray-300"
                 }`}
               >
                 📱 Grid
@@ -213,7 +213,7 @@ export default function OperatorDashboard() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="🔍 Search by name, phone, or farmer ID..."
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
             />
           </div>
 
@@ -221,17 +221,17 @@ export default function OperatorDashboard() {
           {loading ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin">
-                <div className="w-10 h-10 border-4 border-gray-300 border-t-blue-600 rounded-full"></div>
+                <div className="w-10 h-10 border-4 border-gray-300 dark:border-gray-600 border-t-blue-600 rounded-full"></div>
               </div>
-              <p className="mt-4 text-gray-600 text-sm">Loading farmers...</p>
+              <p className="mt-4 text-gray-600 dark:text-gray-400 text-sm">Loading farmers...</p>
             </div>
           ) : filteredFarmers.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-4xl mb-4">🌾</div>
-              <p className="text-lg font-semibold text-gray-800 mb-2">
+              <p className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
                 {searchQuery ? "No farmers found" : "No farmers assigned"}
               </p>
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                 {searchQuery ? "Try a different search term" : "Farmers will appear here when assigned to you"}
               </p>
               {!searchQuery && (
@@ -245,19 +245,19 @@ export default function OperatorDashboard() {
             </div>
           ) : viewMode === "table" ? (
             /* Table View */
-            <div className="overflow-x-auto border border-gray-200 rounded-lg">
+            <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-100 border-b border-gray-200">
-                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">#</th>
-                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Name</th>
-                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">ID</th>
-                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Phone</th>
-                    <th className="px-4 sm:px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Status</th>
-                    <th className="px-4 sm:px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Actions</th>
+                  <tr className="bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">#</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Name</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">ID</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Phone</th>
+                    <th className="px-4 sm:px-6 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Status</th>
+                    <th className="px-4 sm:px-6 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredFarmers.map((farmer, index) => {
                     const firstName = farmer.first_name || farmer.personal_info?.first_name || "Unknown";
                     const lastName = farmer.last_name || farmer.personal_info?.last_name || "";
@@ -269,12 +269,12 @@ export default function OperatorDashboard() {
                         key={farmer._id}
                         className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                       >
-                        <td className="px-4 sm:px-6 py-4 text-sm text-gray-600">{index + 1}</td>
-                        <td className="px-4 sm:px-6 py-4 text-sm font-medium text-gray-900">
+                        <td className="px-4 sm:px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{index + 1}</td>
+                        <td className="px-4 sm:px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                           {firstName} {lastName}
                         </td>
-                        <td className="px-4 sm:px-6 py-4 text-xs text-gray-600 font-mono">{farmer.farmer_id}</td>
-                        <td className="px-4 sm:px-6 py-4 text-sm text-gray-600">{phone}</td>
+                        <td className="px-4 sm:px-6 py-4 text-xs text-gray-600 dark:text-gray-400 font-mono">{farmer.farmer_id}</td>
+                        <td className="px-4 sm:px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{phone}</td>
                         <td className="px-4 sm:px-6 py-4 text-center">
                           <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${
                             status === "verified"
@@ -330,10 +330,10 @@ export default function OperatorDashboard() {
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <div className="font-semibold text-gray-900">
+                        <div className="font-semibold text-gray-900 dark:text-white">
                           {firstName} {lastName}
                         </div>
-                        <div className="text-xs text-gray-600">{farmer.farmer_id}</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">{farmer.farmer_id}</div>
                       </div>
                       <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
                         status === "verified"
@@ -346,7 +346,7 @@ export default function OperatorDashboard() {
                       </span>
                     </div>
 
-                    <div className="text-sm text-gray-600 mb-4 line-clamp-3">
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
                       📱 {phone}{email ? ` • 📧 ${email}` : ""}
                     </div>
 

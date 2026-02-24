@@ -181,7 +181,7 @@ export default function AnalyticsDashboard() {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 text-sm">
+            <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 dark:text-gray-400 text-sm">
               No registration data available
             </div>
           ))}
@@ -209,7 +209,7 @@ export default function AnalyticsDashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 text-sm">
+              <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 dark:text-gray-400 text-sm">
                 No province data available
               </div>
             ))}
@@ -269,7 +269,7 @@ export default function AnalyticsDashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 text-sm">
+              <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 dark:text-gray-400 text-sm">
                 No crop data available
               </div>
             ))}
@@ -291,7 +291,7 @@ export default function AnalyticsDashboard() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 text-sm">
+              <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 dark:text-gray-400 text-sm">
                 No livestock data available
               </div>
             ))}
@@ -318,7 +318,7 @@ export default function AnalyticsDashboard() {
           )}
         </div>
 
-        <p className="text-center text-xs text-gray-400 dark:text-gray-600 pb-4">
+        <p className="text-center text-xs text-gray-400 dark:text-gray-600 dark:text-gray-400 pb-4">
           CEM Farmer System v2.0.0 - Analytics ({analytics?.generated_at ? new Date(analytics.generated_at).toLocaleString() : "—"})
         </p>
       </div>

@@ -32,11 +32,11 @@ export const Table: React.FC<TableProps> = ({
   pagination
 }) => {
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
       {/* Toolbar */}
       {(title || onAddClick) && (
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white">
-          {title && <h3 className="font-bold text-xl text-gray-800">{title}</h3>}
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white">
+          {title && <h3 className="font-bold text-xl text-gray-800 dark:text-gray-100">{title}</h3>}
           {onAddClick && (
             <button 
               onClick={onAddClick}
@@ -50,8 +50,8 @@ export const Table: React.FC<TableProps> = ({
       
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-gray-600">
-          <thead className="bg-gray-100 text-gray-700 font-bold uppercase text-xs">
+        <table className="w-full text-left text-sm text-gray-600 dark:text-gray-400">
+          <thead className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold uppercase text-xs">
             <tr>
               {columns.map((column) => (
                 <th key={column.key} className="px-6 py-3">
@@ -60,10 +60,10 @@ export const Table: React.FC<TableProps> = ({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={columns.length} className="px-6 py-8 text-center text-gray-500 dark:text-gray-500 dark:text-gray-500">
                   No data available
                 </td>
               </tr>
@@ -86,7 +86,7 @@ export const Table: React.FC<TableProps> = ({
       
       {/* Pagination */}
       {pagination && (
-        <div className="p-4 border-t border-gray-200 bg-gray-50 text-xs text-gray-500 flex justify-between items-center">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-500 dark:text-gray-500 flex justify-between items-center">
           <span>
             Showing {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1}-
             {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of {pagination.totalItems}
@@ -95,14 +95,14 @@ export const Table: React.FC<TableProps> = ({
             <button
               onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
               disabled={pagination.currentPage === 1}
-              className="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 bg-white dark:bg-gray-800 border rounded shadow-sm hover:bg-gray-100 dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Prev
             </button>
             <button
               onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
               disabled={pagination.currentPage >= pagination.totalPages}
-              className="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 bg-white dark:bg-gray-800 border rounded shadow-sm hover:bg-gray-100 dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>

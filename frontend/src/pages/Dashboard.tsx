@@ -41,7 +41,7 @@ export default function Dashboard() {
     >
       {/* Header */}
       <header 
-        className="bg-white/10 backdrop-blur-sm shadow-lg"
+        className="bg-white dark:bg-gray-800/10 backdrop-blur-sm shadow-lg"
         style={{ background: "rgba(255, 255, 255, 0.1)", backdropFilter: "blur(10px)", boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}
       >
         <div 
@@ -76,17 +76,17 @@ export default function Dashboard() {
         style={{ maxWidth: "80rem", margin: "0 auto", padding: "32px 16px" }}
       >
         <section 
-          className="bg-white rounded-2xl shadow-2xl p-5 sm:p-8"
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-5 sm:p-8"
           style={{ background: "white", borderRadius: "16px", boxShadow: "0 15px 35px rgba(0,0,0,0.1)", padding: "32px" }}
         >
-          <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-gray-800" style={{ fontSize: "1.25rem", fontWeight: "bold", marginBottom: "24px", color: "#333" }}>
+          <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-gray-800 dark:text-gray-100" style={{ fontSize: "1.25rem", fontWeight: "bold", marginBottom: "24px", color: "var(--text-primary-hex)" }}>
             Farmers List
           </h2>
 
           {loading ? (
             <div className="text-center py-8" style={{ textAlign: "center", padding: "32px 0" }}>
               <div 
-                className="inline-block w-12 h-12 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mb-4"
+                className="inline-block w-12 h-12 border-4 border-gray-300 dark:border-gray-600 border-t-blue-600 rounded-full animate-spin mb-4"
                 style={{
                   display: "inline-block",
                   width: "48px",
@@ -98,26 +98,26 @@ export default function Dashboard() {
                   marginBottom: "16px"
                 }}
               ></div>
-              <p style={{ color: "#666" }}>Loading farmers...</p>
+              <p style={{ color: "var(--text-secondary-hex)" }}>Loading farmers...</p>
             </div>
           ) : farmers.length === 0 ? (
-            <p className="text-gray-500 text-center py-8" style={{ color: "#666", textAlign: "center", padding: "32px 0" }}>No farmers found</p>
+            <p className="text-gray-500 dark:text-gray-500 dark:text-gray-500 text-center py-8" style={{ color: "var(--text-secondary-hex)", textAlign: "center", padding: "32px 0" }}>No farmers found</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}>
               {farmers.map((farmer) => (
                 <article
                   key={farmer.id || farmer.farmer_id}
-                  className="border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:scale-105 transition-all"
+                  className="border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:shadow-lg hover:scale-105 transition-all"
                   style={{ border: "1px solid #e0e0e0", borderRadius: "12px", padding: "20px", transition: "all 0.3s", cursor: "pointer" }}
                   tabIndex={0}
                 >
-                  <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-2" style={{ fontSize: "1.125rem", fontWeight: "bold", color: "#333", marginBottom: "8px" }}>
+                  <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 mb-2" style={{ fontSize: "1.125rem", fontWeight: "bold", color: "var(--text-primary-hex)", marginBottom: "8px" }}>
                     {farmer.first_name} {farmer.last_name}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-1" style={{ fontSize: "0.875rem", color: "#666", marginBottom: "4px" }}>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1" style={{ fontSize: "0.875rem", color: "var(--text-secondary-hex)", marginBottom: "4px" }}>
                     Phone: {farmer.phone || farmer.primary_phone || "N/A"}
                   </p>
-                  <p className="text-sm text-gray-600 font-mono" style={{ fontSize: "0.875rem", color: "#666", fontFamily: "monospace" }}>ID: {farmer.farmer_id}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 font-mono" style={{ fontSize: "0.875rem", color: "var(--text-secondary-hex)", fontFamily: "monospace" }}>ID: {farmer.farmer_id}</p>
                 </article>
               ))}
             </div>

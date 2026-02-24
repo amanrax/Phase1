@@ -25,7 +25,7 @@ export const FormInput: React.FC<FormInputProps> = ({
 }) => {
   return (
     <div className={`mb-5 ${className}`}>
-      <label className="block mb-2 font-semibold text-gray-700">
+      <label className="block mb-2 font-semibold text-gray-700 dark:text-gray-300">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <input
@@ -36,7 +36,7 @@ export const FormInput: React.FC<FormInputProps> = ({
         placeholder={placeholder}
         required={required}
         disabled={disabled}
-        className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-300 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+        className="w-full p-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-300 bg-white dark:bg-gray-800 disabled:bg-gray-100 dark:bg-gray-700 disabled:cursor-not-allowed"
       />
     </div>
   );

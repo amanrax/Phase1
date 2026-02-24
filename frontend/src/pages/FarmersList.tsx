@@ -280,7 +280,7 @@ export default function FarmersList() {
   };
 
   const getStatusColor = (status: string, isActive: boolean) => {
-    if (!isActive) return "bg-gray-100 text-gray-800";
+    if (!isActive) return "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100";
     if (status === "registered") return "bg-green-100 text-green-800";
     if (status === "pending") return "bg-yellow-100 text-yellow-800";
     return "bg-red-100 text-red-800";
@@ -420,7 +420,7 @@ export default function FarmersList() {
               setSearchValue("");
               setSearchBy("name");
             }}
-            className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 text-xs font-semibold rounded-lg transition"
+            className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition"
           >
             Clear Search
           </button>
@@ -431,21 +431,21 @@ export default function FarmersList() {
           <div className="space-y-3">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 flex items-center gap-4 animate-pulse">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0" />
+                <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3.5 bg-gray-200 rounded w-1/3" />
-                  <div className="h-3 bg-gray-100 rounded w-1/4" />
+                  <div className="h-3.5 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+                  <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-1/4" />
                 </div>
-                <div className="hidden sm:block w-24 h-3 bg-gray-200 rounded" />
-                <div className="hidden md:block w-20 h-3 bg-gray-100 rounded" />
-                <div className="w-16 h-6 bg-gray-200 rounded-full" />
+                <div className="hidden sm:block w-24 h-3 bg-gray-200 dark:bg-gray-700 rounded" />
+                <div className="hidden md:block w-20 h-3 bg-gray-100 dark:bg-gray-700 rounded" />
+                <div className="w-16 h-6 bg-gray-200 dark:bg-gray-700 rounded-full" />
               </div>
             ))}
           </div>
         ) : filteredFarmers.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-12 text-center">
             <p className="text-gray-600 dark:text-gray-400 text-lg">No farmers found</p>
-            <p className="text-gray-500 dark:text-gray-500 text-sm">Try changing the filter</p>
+            <p className="text-gray-500 dark:text-gray-500 dark:text-gray-500 dark:text-gray-500 text-sm">Try changing the filter</p>
           </div>
         ) : (
           <>
@@ -531,10 +531,10 @@ export default function FarmersList() {
                       {farmer.is_active ? (farmer.registration_status === "registered" ? "Registered" : "Pending") : "Inactive"}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600 mb-1"><strong>ID:</strong> {farmer.farmer_id}</p>
-                  <p className="text-xs text-gray-600 mb-1"><strong>Phone:</strong> {getFarmerPhone(farmer)}</p>
-                  <p className="text-xs text-gray-600 mb-1"><strong>District:</strong> {getFarmerDistrict(farmer)}</p>
-                  <p className="text-xs text-gray-600 mb-3"><strong>Registered:</strong> {farmer.created_at ? new Date(farmer.created_at).toLocaleDateString() : "-"}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1"><strong>ID:</strong> {farmer.farmer_id}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1"><strong>Phone:</strong> {getFarmerPhone(farmer)}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1"><strong>District:</strong> {getFarmerDistrict(farmer)}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3"><strong>Registered:</strong> {farmer.created_at ? new Date(farmer.created_at).toLocaleDateString() : "-"}</p>
                   <div className="flex gap-2 text-xs flex-wrap">
                     <button
                       onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
@@ -582,13 +582,13 @@ export default function FarmersList() {
 
         {/* Pagination */}
         {!loading && filteredFarmers.length > 0 && (
-          <div className="mt-6 bg-white rounded-lg shadow-sm p-4 flex justify-between items-center text-xs text-gray-600">
+          <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex justify-between items-center text-xs text-gray-600 dark:text-gray-400">
             <span>Showing {filteredFarmers.length} farmer{filteredFarmers.length !== 1 ? "s" : ""} (Total: {totalFarmers})</span>
             <div className="flex gap-2">
               <button
                 onClick={() => loadFarmers(currentPage - 1)}
                 disabled={currentPage === 0}
-                className="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 bg-white dark:bg-gray-800 border rounded shadow-sm hover:bg-gray-100 dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ← Previous
               </button>
@@ -596,7 +596,7 @@ export default function FarmersList() {
               <button
                 onClick={() => loadFarmers(currentPage + 1)}
                 disabled={filteredFarmers.length < pageSize}
-                className="px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 bg-white dark:bg-gray-800 border rounded shadow-sm hover:bg-gray-100 dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next →
               </button>
@@ -608,12 +608,12 @@ export default function FarmersList() {
       {/* Review Status Modal */}
       {showReviewModal && selectedFarmer && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="border-b border-gray-200 p-6 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-800">📋 Review Farmer Status</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full">
+            <div className="border-b border-gray-200 dark:border-gray-700 p-6 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">📋 Review Farmer Status</h2>
               <button
                 onClick={() => setShowReviewModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-gray-500 dark:text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:text-gray-300 text-2xl"
               >
                 ✕
               </button>
@@ -621,17 +621,17 @@ export default function FarmersList() {
 
             <div className="p-6 space-y-4">
               <div>
-                <p className="text-xs font-bold text-gray-600 uppercase mb-1">Farmer</p>
-                <p className="font-bold text-gray-800">{getFarmerName(selectedFarmer)}</p>
-                <p className="text-xs text-gray-600">{selectedFarmer.farmer_id}</p>
+                <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Farmer</p>
+                <p className="font-bold text-gray-800 dark:text-gray-100">{getFarmerName(selectedFarmer)}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">{selectedFarmer.farmer_id}</p>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase">Status <span className="text-red-500">*</span></label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Status <span className="text-red-500">*</span></label>
                 <select
                   value={reviewStatus}
                   onChange={(e) => setReviewStatus(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
                 >
                   <option value="">-- Select Status --</option>
                   <option value="under_review">⏳ Under Review</option>
@@ -643,16 +643,16 @@ export default function FarmersList() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase">Remarks</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Remarks</label>
                 <textarea
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
                   placeholder="Add any notes or comments..."
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm h-24 resize-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm h-24 resize-none"
                 />
               </div>
 
-              <div className="flex gap-2 pt-4 border-t border-gray-200">
+              <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={handleStatusUpdate}
                   disabled={updating || !reviewStatus}
@@ -662,7 +662,7 @@ export default function FarmersList() {
                 </button>
                 <button
                   onClick={() => setShowReviewModal(false)}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 rounded-lg transition"
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 dark:text-gray-100 font-bold py-2 rounded-lg transition"
                 >
                   Cancel
                 </button>

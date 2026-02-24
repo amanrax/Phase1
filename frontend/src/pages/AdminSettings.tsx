@@ -109,7 +109,7 @@ function AppearanceTab() {
 
         {/* Live preview strip */}
         <div className={`mt-6 p-4 rounded-xl flex items-center gap-3 text-sm font-medium transition-all duration-300 ${
-          isDark ? 'bg-gray-900 text-gray-100 border border-gray-700' : 'bg-white text-gray-800 border border-gray-200'
+          isDark ? 'bg-gray-900 text-gray-100 border border-gray-700' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700'
         }`}>
           <span className="text-xl">{isDark ? '🌙' : '☀️'}</span>
           <span>
@@ -589,8 +589,8 @@ export default function AdminSettings() {
 
         {loading && activeTab === "users" ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600"></div>
-            <p className="text-gray-600 mt-4">Loading settings...</p>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 dark:border-gray-600 border-t-green-600"></div>
+            <p className="text-gray-600 dark:text-gray-400 mt-4">Loading settings...</p>
           </div>
         ) : (
           <>
@@ -598,8 +598,8 @@ export default function AdminSettings() {
             {activeTab === "users" && (
               <div className="space-y-6">
                 {/* Create Admin Card */}
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4">➕ Create New Admin</h2>
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">➕ Create New Admin</h2>
                   {!showCreateAdmin ? (
                     <button
                       onClick={() => setShowCreateAdmin(true)}
@@ -614,7 +614,7 @@ export default function AdminSettings() {
                         placeholder="Admin Email"
                         value={newAdminEmail}
                         onChange={(e) => setNewAdminEmail(e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
                       />
                       <div>
                         <input
@@ -622,9 +622,9 @@ export default function AdminSettings() {
                           placeholder="Password"
                           value={newAdminPassword}
                           onChange={(e) => setNewAdminPassword(e.target.value)}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
                         />
-                        <p className="text-xs text-gray-600 mt-1">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                           Requirements: Min 8 chars, 1 uppercase, 1 lowercase, 1 number
                         </p>
                       </div>
@@ -637,7 +637,7 @@ export default function AdminSettings() {
                         </button>
                         <button
                           onClick={() => setShowCreateAdmin(false)}
-                          className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition"
+                          className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 dark:text-gray-100 font-bold py-2 px-4 rounded-lg transition"
                         >
                           Cancel
                         </button>
@@ -647,11 +647,11 @@ export default function AdminSettings() {
                 </div>
 
                 {/* Users List */}
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                     <div>
-                      <h2 className="text-lg font-bold text-gray-800">All System Users ({users.length})</h2>
-                      <p className="text-xs text-gray-600 mt-1">
+                      <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">All System Users ({users.length})</h2>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                         Manage all users: 
                         <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full font-semibold">
                           {users.filter(u => u.role.toUpperCase() === 'ADMIN').length} Admins
@@ -664,7 +664,7 @@ export default function AdminSettings() {
                         </span>
                       </p>
                     </div>
-                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                       <input
                         type="checkbox"
                         checked={includeInactive}
@@ -677,8 +677,8 @@ export default function AdminSettings() {
 
                   {/* Desktop Table */}
                   <div className="hidden md:block overflow-x-auto">
-                    <table className="w-full text-left text-sm text-gray-600">
-                      <thead className="bg-gray-100 text-gray-700 font-bold uppercase text-xs">
+                    <table className="w-full text-left text-sm text-gray-600 dark:text-gray-400">
+                      <thead className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold uppercase text-xs">
                         <tr>
                           <th className="px-6 py-3">Email</th>
                           <th className="px-6 py-3">Role</th>
@@ -687,7 +687,7 @@ export default function AdminSettings() {
                           <th className="px-6 py-3">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                         {users.map(user => (
                           <tr key={user._id} className="hover:bg-green-50 transition">
                             <td className="px-6 py-4 font-mono text-xs">{user.email}</td>
@@ -699,7 +699,7 @@ export default function AdminSettings() {
                                   ? 'bg-blue-100 text-blue-800'
                                   : user.role.toUpperCase() === 'FARMER'
                                   ? 'bg-green-100 text-green-800'
-                                  : 'bg-gray-100 text-gray-800'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100'
                               }`}>
                                 {user.role.toUpperCase()}
                               </span>
@@ -745,18 +745,18 @@ export default function AdminSettings() {
                   </div>
 
                   {/* Mobile Cards */}
-                  <div className="md:hidden divide-y divide-gray-200">
+                  <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
                     {users.map(user => (
                       <div key={user._id} className="p-4">
                         <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-bold text-sm text-gray-800 break-all">{user.email}</h3>
+                          <h3 className="font-bold text-sm text-gray-800 dark:text-gray-100 break-all">{user.email}</h3>
                           <span className={`px-2 py-1 text-xs font-bold rounded-full whitespace-nowrap ml-2 ${
                             user.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                           }`}>
                             {user.is_active ? "Active" : "Inactive"}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-600 mb-2">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
                           <strong>Role:</strong> 
                           <span className={`ml-2 px-2 py-1 text-xs font-bold rounded-full ${
                             user.role.toUpperCase() === 'ADMIN' 
@@ -765,12 +765,12 @@ export default function AdminSettings() {
                               ? 'bg-blue-100 text-blue-800'
                               : user.role.toUpperCase() === 'FARMER'
                               ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100'
                           }`}>
                             {user.role.toUpperCase()}
                           </span>
                         </p>
-                        <p className="text-xs text-gray-600 mb-3"><strong>Created:</strong> {new Date(user.created_at).toLocaleDateString()}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-3"><strong>Created:</strong> {new Date(user.created_at).toLocaleDateString()}</p>
                         <div className="flex gap-2 text-xs">
                           {user.is_active ? (
                             <button
@@ -802,7 +802,7 @@ export default function AdminSettings() {
                   </div>
                   
                   {users.length === 0 && (
-                    <div className="text-center py-12 text-gray-600">
+                    <div className="text-center py-12 text-gray-600 dark:text-gray-400">
                       <p className="text-lg font-semibold mb-2">No users found</p>
                       <p className="text-sm">
                         {includeInactive ? "No users in the system" : "No active users. Toggle 'Show inactive' to see all users."}
@@ -816,26 +816,26 @@ export default function AdminSettings() {
             {/* System Tab */}
             {activeTab === "system" && stats && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-                <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-green-600">
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Users</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">{stats.total_users}</h3>
-                  <p className="text-xs text-gray-500 mt-1">{stats.active_users} active</p>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border-l-4 border-green-600">
+                  <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-500 uppercase font-bold tracking-wider">Total Users</p>
+                  <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mt-1">{stats.total_users}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-500 mt-1">{stats.active_users} active</p>
                 </div>
-                <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-blue-600">
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Admins</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">{stats.total_admins}</h3>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border-l-4 border-blue-600">
+                  <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-500 uppercase font-bold tracking-wider">Admins</p>
+                  <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mt-1">{stats.total_admins}</h3>
                 </div>
-                <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-orange-500">
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Operators</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">{stats.total_operators}</h3>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border-l-4 border-orange-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-500 uppercase font-bold tracking-wider">Operators</p>
+                  <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mt-1">{stats.total_operators}</h3>
                 </div>
-                <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-purple-600">
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Farmers</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">{stats.total_farmers}</h3>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border-l-4 border-purple-600">
+                  <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-500 uppercase font-bold tracking-wider">Farmers</p>
+                  <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mt-1">{stats.total_farmers}</h3>
                 </div>
-                <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-cyan-600">
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Entities</p>
-                  <h3 className="text-3xl font-bold text-gray-800 mt-1">
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border-l-4 border-cyan-600">
+                  <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-500 uppercase font-bold tracking-wider">Total Entities</p>
+                  <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mt-1">
                     {stats.total_users + stats.total_farmers}
                   </h3>
                 </div>

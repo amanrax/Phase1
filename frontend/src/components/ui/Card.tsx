@@ -18,7 +18,7 @@ export const Card: React.FC<CardProps> = ({
   
   return (
     <div 
-      className={`bg-white ${paddingClass} rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 ${cursorClass} ${className}`}
+      className={`bg-white dark:bg-gray-800 ${paddingClass} rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 ${cursorClass} ${className}`}
       onClick={onClick}
     >
       {children}

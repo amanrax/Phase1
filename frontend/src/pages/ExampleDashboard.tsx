@@ -115,54 +115,54 @@ const Dashboard: React.FC = () => {
       {/* Additional Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <h3 className="text-lg font-bold text-gray-800 mb-4">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">
             <i className="fa-solid fa-chart-pie text-green-700 mr-2"></i>
             Distribution by District
           </h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Lusaka</span>
-              <span className="text-sm font-bold text-gray-800">340</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Lusaka</span>
+              <span className="text-sm font-bold text-gray-800 dark:text-gray-100">340</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div className="bg-green-700 h-2 rounded-full" style={{ width: '68%' }}></div>
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Kitwe</span>
-              <span className="text-sm font-bold text-gray-800">245</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Kitwe</span>
+              <span className="text-sm font-bold text-gray-800 dark:text-gray-100">245</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div className="bg-green-700 h-2 rounded-full" style={{ width: '49%' }}></div>
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Ndola</span>
-              <span className="text-sm font-bold text-gray-800">198</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Ndola</span>
+              <span className="text-sm font-bold text-gray-800 dark:text-gray-100">198</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div className="bg-green-700 h-2 rounded-full" style={{ width: '39%' }}></div>
             </div>
           </div>
         </Card>
 
         <Card>
-          <h3 className="text-lg font-bold text-gray-800 mb-4">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">
             <i className="fa-solid fa-bell text-orange-600 mr-2"></i>
             Recent Notifications
           </h3>
           <div className="space-y-3">
             <div className="border-l-4 border-orange-500 pl-3 py-2">
-              <p className="text-sm font-semibold text-gray-800">42 farmers pending approval</p>
-              <p className="text-xs text-gray-500">2 hours ago</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">42 farmers pending approval</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-500">2 hours ago</p>
             </div>
             <div className="border-l-4 border-green-600 pl-3 py-2">
-              <p className="text-sm font-semibold text-gray-800">ID cards generated successfully</p>
-              <p className="text-xs text-gray-500">5 hours ago</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">ID cards generated successfully</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-500">5 hours ago</p>
             </div>
             <div className="border-l-4 border-blue-600 pl-3 py-2">
-              <p className="text-sm font-semibold text-gray-800">New system update available</p>
-              <p className="text-xs text-gray-500">1 day ago</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">New system update available</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-500">1 day ago</p>
             </div>
           </div>
         </Card>

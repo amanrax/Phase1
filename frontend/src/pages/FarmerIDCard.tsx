@@ -368,16 +368,16 @@ const FarmerIDCard: React.FC = () => {
       case "rejected":
         return "bg-red-100 text-red-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100";
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-700 to-green-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl p-8 text-center shadow-2xl">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading farmer data...</p>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center shadow-2xl">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 dark:border-gray-600 border-t-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading farmer data...</p>
         </div>
       </div>
     );
@@ -386,10 +386,10 @@ const FarmerIDCard: React.FC = () => {
   if (error && !farmer) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-700 to-green-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl p-8 text-center shadow-2xl max-w-md w-full">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center shadow-2xl max-w-md w-full">
           <div className="text-4xl mb-4">❌</div>
           <h2 className="text-2xl font-bold text-red-600 mb-3">Error</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
           <button
             onClick={() => safeNavigate(navigate, "/farmer-dashboard")}
             className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-6 rounded-lg transition active:scale-95"
@@ -402,9 +402,9 @@ const FarmerIDCard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -414,7 +414,7 @@ const FarmerIDCard: React.FC = () => {
               >
                 ← BACK
               </button>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">🆔 Farmer ID Card Management</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">🆔 Farmer ID Card Management</h1>
             </div>
           </div>
         </div>
@@ -437,14 +437,14 @@ const FarmerIDCard: React.FC = () => {
           {/* Left Column - Farmer Information */}
           <div className="lg:col-span-2 space-y-6">
             {/* Farmer Info Card */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 pb-3 border-b-4 border-green-700">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4 sm:mb-6 pb-3 border-b-4 border-green-700">
                 📋 Farmer Information
               </h2>
 
               {/* Profile Photo */}
               <div className="text-center mb-6 sm:mb-8">
-                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-green-700 mx-auto shadow-lg bg-gray-100 flex items-center justify-center">
+                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-green-700 mx-auto shadow-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                   {photoError || !photoUrl ? (
                     <div className="text-5xl sm:text-6xl">👨‍🌾</div>
                   ) : (
@@ -465,57 +465,57 @@ const FarmerIDCard: React.FC = () => {
               {/* Info Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Farmer ID</label>
-                  <p className="text-base sm:text-lg font-bold text-gray-800 mt-1 bg-gray-50 p-2 rounded border-2 border-green-700 font-mono">
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Farmer ID</label>
+                  <p className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 mt-1 bg-gray-50 dark:bg-gray-800 p-2 rounded border-2 border-green-700 font-mono">
                     {farmer?.farmer_id || "N/A"}
                   </p>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Full Name</label>
-                  <p className="text-base sm:text-lg font-bold text-gray-800 mt-1">
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Full Name</label>
+                  <p className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 mt-1">
                     {farmer?.personal_info?.first_name} {farmer?.personal_info?.last_name}
                   </p>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Phone</label>
-                  <p className="text-gray-700 mt-1">{farmer?.personal_info?.phone_primary || "N/A"}</p>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Phone</label>
+                  <p className="text-gray-700 dark:text-gray-300 mt-1">{farmer?.personal_info?.phone_primary || "N/A"}</p>
                 </div>
 
                 {farmer?.personal_info?.nrc && (
                   <div>
-                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">NRC Number</label>
-                    <p className="text-gray-700 mt-1">{farmer.personal_info.nrc}</p>
+                    <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">NRC Number</label>
+                    <p className="text-gray-700 dark:text-gray-300 mt-1">{farmer.personal_info.nrc}</p>
                   </div>
                 )}
 
                 <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">District</label>
-                  <p className="text-gray-700 mt-1">{farmer?.address?.district_name || "N/A"}</p>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">District</label>
+                  <p className="text-gray-700 dark:text-gray-300 mt-1">{farmer?.address?.district_name || "N/A"}</p>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Province</label>
-                  <p className="text-gray-700 mt-1">{farmer?.address?.province_name || "N/A"}</p>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Province</label>
+                  <p className="text-gray-700 dark:text-gray-300 mt-1">{farmer?.address?.province_name || "N/A"}</p>
                 </div>
 
                 {farmer?.farm_info?.farm_size_hectares !== undefined && (
                   <div>
-                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Farm Size</label>
-                    <p className="text-gray-700 mt-1">{farmer.farm_info.farm_size_hectares} hectares</p>
+                    <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Farm Size</label>
+                    <p className="text-gray-700 dark:text-gray-300 mt-1">{farmer.farm_info.farm_size_hectares} hectares</p>
                   </div>
                 )}
 
                 {farmer?.farm_info?.crops_grown && farmer.farm_info.crops_grown.length > 0 && (
                   <div>
-                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Crops</label>
-                    <p className="text-gray-700 mt-1 text-sm">{farmer.farm_info.crops_grown.join(", ")}</p>
+                    <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Crops</label>
+                    <p className="text-gray-700 dark:text-gray-300 mt-1 text-sm">{farmer.farm_info.crops_grown.join(", ")}</p>
                   </div>
                 )}
 
                 <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Status</label>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Status</label>
                   <span className={`inline-block mt-1 px-3 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(farmer?.status)}`}>
                     {farmer?.status || farmer?.registration_status || "Unknown"}
                   </span>
@@ -523,8 +523,8 @@ const FarmerIDCard: React.FC = () => {
 
                 {farmer?.created_at && (
                   <div>
-                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Registered</label>
-                    <p className="text-gray-700 mt-1 text-sm">{formatDate(farmer.created_at)}</p>
+                    <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Registered</label>
+                    <p className="text-gray-700 dark:text-gray-300 mt-1 text-sm">{formatDate(farmer.created_at)}</p>
                   </div>
                 )}
               </div>
@@ -534,8 +534,8 @@ const FarmerIDCard: React.FC = () => {
           {/* Right Column - ID Card Actions & QR */}
           <div className="space-y-4 sm:space-y-6">
             {/* ID Card Status */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-orange-500">🆔 ID Card</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b-4 border-orange-500">🆔 ID Card</h2>
 
               {(farmer?.id_card_file_id || farmer?.id_card_path || farmer?.id_card_generated_at) ? (
                 <div>
@@ -619,16 +619,16 @@ const FarmerIDCard: React.FC = () => {
             </div>
 
             {/* QR Code Card - Shows QR if ID card is generated */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 pb-2 border-b-4 border-purple-600">📱 QR Code</h2>
-              <p className="text-xs sm:text-sm text-gray-600 mb-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b-4 border-purple-600">📱 QR Code</h2>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4">
                 {(farmer?.id_card_file_id || farmer?.qr_code_file_id || qrUrl) 
                   ? "Your ID card contains this QR code for quick verification."
                   : "Generate your ID card to get a QR code."
                 }
               </p>
               <div className="flex justify-center mb-4">
-                <div className="p-3 sm:p-4 bg-gray-100 rounded-lg border-2 border-purple-600">
+                <div className="p-3 sm:p-4 bg-gray-100 dark:bg-gray-700 rounded-lg border-2 border-purple-600">
                   {qrUrl ? (
                     <img 
                       src={qrUrl} 
@@ -641,13 +641,13 @@ const FarmerIDCard: React.FC = () => {
                       }}
                     />
                   ) : qrError ? (
-                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex flex-col items-center justify-center text-sm text-gray-500">
+                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex flex-col items-center justify-center text-sm text-gray-500 dark:text-gray-500 dark:text-gray-500">
                       <div className="text-4xl mb-2">📱</div>
                       <p>QR unavailable</p>
                       <p className="text-xs mt-1">Generate ID card</p>
                     </div>
                   ) : (
-                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex flex-col items-center justify-center text-sm text-gray-500">
+                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex flex-col items-center justify-center text-sm text-gray-500 dark:text-gray-500 dark:text-gray-500">
                       <div className="text-4xl mb-2">📱</div>
                       <p>No QR code yet</p>
                       <p className="text-xs mt-1">Generate ID card first</p>

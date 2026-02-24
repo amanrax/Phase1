@@ -62,7 +62,7 @@ export default function SessionTimeoutModal({
       onClick={(e) => e.stopPropagation()}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl p-8"
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8"
         style={{
           maxWidth: '450px',
           width: '90%',
@@ -78,18 +78,18 @@ export default function SessionTimeoutModal({
           >
             <i className="fa-solid fa-clock text-4xl text-orange-600"></i>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800">Session Expiring Soon</h2>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Session Expiring Soon</h2>
         </div>
 
         {/* Message */}
         <div className="text-center mb-6">
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
             Your session will expire in:
           </p>
           <div className="text-5xl font-bold text-orange-600 mb-2">
             {minutes}:{seconds.toString().padStart(2, '0')}
           </div>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-500 dark:text-gray-500">
             You will be automatically logged out for security purposes.
           </p>
         </div>
@@ -98,7 +98,7 @@ export default function SessionTimeoutModal({
         <div className="flex gap-3">
           <button
             onClick={onLogout}
-            className="flex-1 py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition"
+            className="flex-1 py-3 px-4 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-700 dark:text-gray-300 font-semibold rounded-lg transition"
           >
             <i className="fa-solid fa-right-from-bracket mr-2"></i>
             Logout Now

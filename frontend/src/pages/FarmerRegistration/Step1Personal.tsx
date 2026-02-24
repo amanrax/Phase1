@@ -102,7 +102,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
 
   return (
     <div>
-      <h3 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+      <h3 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
         👤 Personal Information
       </h3>
       {err && (
@@ -114,7 +114,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
         </div>
       )}
       <div style={{ marginTop: "15px" }}>
-        <label htmlFor="firstName" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="firstName" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           First name <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span>
         </label>
         <input
@@ -126,7 +126,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
         />
       </div>
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="lastName" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="lastName" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Last name <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span>
         </label>
         <input
@@ -138,8 +138,8 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
         />
       </div>
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="phone" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
-          Primary Phone <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span> <span style={{ fontWeight: "normal", fontSize: "0.85em", color: "#666" }}>(+260 or 0 + 9 digits)</span>
+        <label htmlFor="phone" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
+          Primary Phone <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span> <span style={{ fontWeight: "normal", fontSize: "0.85em", color: "var(--text-secondary-hex)" }}>(+260 or 0 + 9 digits)</span>
         </label>
         <input
           id="phone"
@@ -156,7 +156,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="phoneSecondary" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="phoneSecondary" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Secondary Phone
         </label>
         <input
@@ -172,7 +172,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="email" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="email" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Email
         </label>
         <input
@@ -186,8 +186,8 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="nrc" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
-          NRC Number <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span> <span style={{ fontWeight: "normal", fontSize: "0.85em", color: "#666" }}>(format: 123456/12/1)</span>
+        <label htmlFor="nrc" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
+          NRC Number <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span> <span style={{ fontWeight: "normal", fontSize: "0.85em", color: "var(--text-secondary-hex)" }}>(format: 123456/12/1)</span>
         </label>
         <input
           id="nrc"
@@ -203,7 +203,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="dob" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="dob" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Date of Birth <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span>
         </label>
         <input
@@ -217,7 +217,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="gender" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="gender" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Gender <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span>
         </label>
         <select
@@ -235,7 +235,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="ethnicGroup" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="ethnicGroup" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Ethnic Group
         </label>
         {!showCustomEthnicGroup ? (
@@ -277,7 +277,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
           />
         )}
         {loadingEthnicGroups && (
-          <small style={{ color: "#666", marginTop: "4px", display: "block" }}>
+          <small style={{ color: "var(--text-secondary-hex)", marginTop: "4px", display: "block" }}>
             Loading ethnic groups...
           </small>
         )}
@@ -292,7 +292,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
             style={{
               marginTop: "8px",
               padding: "6px 12px",
-              background: "#6c757d",
+              background: "var(--text-secondary-hex)",
               color: "white",
               border: "none",
               borderRadius: "4px",
@@ -312,7 +312,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
             onClick={onBack}
             style={{ 
               padding: "12px 30px",
-              background: "#6c757d",
+              background: "var(--text-secondary-hex)",
               color: "white",
               border: "none",
               borderRadius: "8px",

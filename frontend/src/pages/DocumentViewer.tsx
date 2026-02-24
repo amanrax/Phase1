@@ -251,10 +251,10 @@ const DocumentViewer: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading document...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 dark:border-gray-600 border-t-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading document...</p>
         </div>
       </div>
     );
@@ -268,8 +268,8 @@ const DocumentViewer: React.FC = () => {
                 docUrl.includes('data:application/pdf');
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
@@ -279,19 +279,19 @@ const DocumentViewer: React.FC = () => {
               >
                 ← BACK
               </button>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">{docTitle}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">{docTitle}</h1>
             </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm">
           {viewError ? (
             <div className="text-center py-20">
               <div className="text-6xl mb-4">📄</div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Failed to Load Document</h3>
-              <p className="text-gray-600 mb-6">The document could not be displayed</p>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Failed to Load Document</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">The document could not be displayed</p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={handleRetry}
@@ -311,10 +311,10 @@ const DocumentViewer: React.FC = () => {
             // Mobile PDF: Show options to open or download
             <div className="text-center py-20">
               <div className="text-6xl mb-4">📄</div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">
+              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
                 {viewingNatively ? 'Saving...' : 'Document Ready'}
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {viewingNatively 
                   ? 'Saving to Downloads folder...' 
                   : 'Save to Downloads and open with your preferred viewer'}

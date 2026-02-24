@@ -72,14 +72,14 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
 
   return (
     <div>
-      <h2 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+      <h2 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
         📸 Step 5: Upload Farmer Photo
       </h2>
 
-      <div style={{ background: "#fafafa", borderRadius: "10px", padding: "25px", border: "1px solid #e0e0e0" }}>
+      <div style={{ background: "var(--bg-surface)", borderRadius: "10px", padding: "25px", border: "1px solid #e0e0e0" }}>
         {/* Preview Area */}
         <div style={{ marginBottom: "20px" }}>
-          <div style={{ width: "100%", height: "320px", background: "#f0f0f0", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+          <div style={{ width: "100%", height: "320px", background: "var(--bg-surface-subtle)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             {preview ? (
               <img
                 src={preview}
@@ -87,7 +87,7 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
                 style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
               />
             ) : (
-              <div style={{ textAlign: "center", color: "#999" }}>
+              <div style={{ textAlign: "center", color: "var(--text-muted-hex)" }}>
                 <div style={{ fontSize: "60px", marginBottom: "15px" }}>📸</div>
                 <p>No photo selected</p>
               </div>
@@ -173,7 +173,7 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
             style={{
               flex: 1,
               padding: "14px",
-              background: "#6c757d",
+              background: "var(--text-secondary-hex)",
               color: "white",
               border: "none",
               borderRadius: "8px",
@@ -217,7 +217,7 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
                 flex: 1,
                 padding: "14px",
                 background: "#ffc107",
-                color: "#333",
+                color: "var(--text-primary-hex)",
                 border: "none",
                 borderRadius: "8px",
                 fontSize: "15px",

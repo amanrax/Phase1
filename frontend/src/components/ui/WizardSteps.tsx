@@ -22,7 +22,7 @@ export const WizardSteps: React.FC<WizardStepsProps> = ({ steps }) => {
                   ? 'bg-green-900 text-white border-green-900'
                   : step.status === 'active'
                   ? 'bg-green-700 text-white border-green-700'
-                  : 'text-gray-400 border-gray-300'
+                  : 'text-gray-400 border-gray-300 dark:border-gray-600'
               }`}
             >
               {step.status === 'completed' ? (
@@ -37,7 +37,7 @@ export const WizardSteps: React.FC<WizardStepsProps> = ({ steps }) => {
                   ? 'text-green-800'
                   : step.status === 'completed'
                   ? 'text-green-900'
-                  : 'text-gray-500'
+                  : 'text-gray-500 dark:text-gray-500 dark:text-gray-500'
               }`}
             >
               {step.label}

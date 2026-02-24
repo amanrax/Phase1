@@ -14,9 +14,18 @@
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
   --bg-page: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --bg-surface: #f8f9fa;
+  --bg-surface-subtle: #f0f0f0;
   --text-primary: #111827;
+  --text-primary-hex: #333;
   --text-secondary: #4b5563;
+  --text-secondary-hex: #666;
+  --text-muted: #9ca3af;
+  --text-muted-hex: #999;
   --border-color: #e5e7eb;
+  --border-light: #e0e0e0;
+  --border-lighter: #ccc;
+  --divider-color: #e8e8e8;
 }
 
 /* ================================================
@@ -26,9 +35,18 @@ html.dark {
   --bg-main: #111827;
   --bg-card: #1f2937;
   --bg-page: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  --bg-surface: #1f2937;
+  --bg-surface-subtle: #374151;
   --text-primary: #f9fafb;
+  --text-primary-hex: #f3f4f6;
   --text-secondary: #d1d5db;
+  --text-secondary-hex: #9ca3af;
+  --text-muted: #6b7280;
+  --text-muted-hex: #9ca3af;
   --border-color: #374151;
+  --border-light: #4b5563;
+  --border-lighter: #6b7280;
+  --divider-color: #374151;
 }
 
 * {

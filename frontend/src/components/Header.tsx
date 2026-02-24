@@ -23,7 +23,7 @@ export default function Header({
           {showBack && (
             <button
               onClick={() => navigate(backTo || -1)}
-              className="flex items-center gap-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition"
+              className="flex items-center gap-2 hover:bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg transition"
               aria-label="Go back"
             >
               <span className="topbar-title">← Back</span>
@@ -32,7 +32,7 @@ export default function Header({
           <div>
             <h1 className="topbar-title">{title}</h1>
             {subtitle && (
-              <p className="text-gray-500 text-sm" aria-live="polite">
+              <p className="text-gray-500 dark:text-gray-500 dark:text-gray-500 text-sm" aria-live="polite">
                 {subtitle}
               </p>
             )}

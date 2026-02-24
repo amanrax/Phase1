@@ -320,7 +320,7 @@ const FarmerEdit: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <div className="text-sm sm:text-base lg:text-lg text-gray-600" style={{ fontSize: '0.875rem', color: '#4b5563' }}>Loading farmer data...</div>
+        <div className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-400" style={{ fontSize: '0.875rem', color: '#4b5563' }}>Loading farmer data...</div>
       </div>
     );
   }
@@ -340,8 +340,8 @@ const FarmerEdit: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 fade-in" style={{ maxWidth: '72rem', margin: '0 auto', padding: '1.5rem' }}>
       <div className="mb-4 sm:mb-6" style={{ marginBottom: '1.5rem' }}>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800" style={{ fontSize: '1.875rem', fontWeight: '700', color: '#1f2937' }}>Edit Farmer</h1>
-        <p className="text-xs sm:text-sm text-gray-500" style={{ fontSize: '0.875rem', color: '#6b7280' }}>Farmer ID: {formData.farmer_id || id}</p>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-100" style={{ fontSize: '1.875rem', fontWeight: '700', color: '#1f2937' }}>Edit Farmer</h1>
+        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-500 dark:text-gray-500" style={{ fontSize: '0.875rem', color: '#6b7280' }}>Farmer ID: {formData.farmer_id || id}</p>
       </div>
 
       {error && (
@@ -352,94 +352,94 @@ const FarmerEdit: React.FC = () => {
       
       <form onSubmit={handleSubmit} className="space-y-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {/* Personal Information */}
-        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm" style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4" style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>Personal Information</h2>
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm" style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 mb-4" style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>Personal Information</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>First Name *</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>First Name *</label>
               <input
                 type="text"
                 value={formData.personal_info.first_name}
                 onChange={(e) => updatePersonalInfo('first_name', e.target.value)}
-                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
+                className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Last Name *</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Last Name *</label>
               <input
                 type="text"
                 value={formData.personal_info.last_name}
                 onChange={(e) => updatePersonalInfo('last_name', e.target.value)}
-                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
+                className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Primary Phone *</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Primary Phone *</label>
               <input
                 type="text"
                 value={formData.personal_info.phone_primary}
                 onChange={(e) => updatePersonalInfo('phone_primary', e.target.value)}
-                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
+                className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 placeholder="+260977123456"
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Secondary Phone</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Secondary Phone</label>
               <input
                 type="text"
                 value={formData.personal_info.phone_secondary || ''}
                 onChange={(e) => updatePersonalInfo('phone_secondary', e.target.value || undefined)}
-                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
+                className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 placeholder="+260977123456"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Email</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Email</label>
               <input
                 type="email"
                 value={formData.personal_info.email || ''}
                 onChange={(e) => updatePersonalInfo('email', e.target.value || undefined)}
-                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
+                className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 placeholder="farmer@example.com"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>NRC Number *</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>NRC Number *</label>
               <input
                 type="text"
                 value={formData.personal_info.nrc}
                 onChange={(e) => updatePersonalInfo('nrc', e.target.value)}
-                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
+                className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 placeholder="123456/12/1"
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Date of Birth *</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Date of Birth *</label>
               <input
                 type="date"
                 value={formData.personal_info.date_of_birth}
                 onChange={(e) => updatePersonalInfo('date_of_birth', e.target.value)}
-                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
+                className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Gender *</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Gender *</label>
               <select
                 value={formData.personal_info.gender}
                 onChange={(e) => updatePersonalInfo('gender', e.target.value)}
-                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
+                className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
                 required
               >
                 <option value="Male">Male</option>
@@ -449,27 +449,27 @@ const FarmerEdit: React.FC = () => {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Ethnic Group</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase" style={{ fontSize: '0.75rem', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase' }}>Ethnic Group</label>
               <input
                 type="text"
                 value={formData.personal_info.ethnic_group || ''}
                 onChange={(e) => updatePersonalInfo('ethnic_group', e.target.value || undefined)}
-                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
+                className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base" style={{ width: '100%', padding: '0.75rem', borderColor: '#d1d5db', borderRadius: '0.5rem', marginTop: '0.25rem', borderWidth: '1px' }}
               />
             </div>
           </div>
         </div>
 
         {/* Address Information */}
-        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm" style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4" style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>Address Information</h2>
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm" style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 mb-4" style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>Address Information</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Province *</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Province *</label>
               <select
                 value={showCustomProvince ? 'OTHER' : formData.address.province_code}
                 onChange={(e) => handleProvinceChange(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
                 required={!showCustomProvince}
               >
                 <option value="">Select Province</option>
@@ -486,18 +486,18 @@ const FarmerEdit: React.FC = () => {
                   value={customProvince}
                   onChange={(e) => setCustomProvince(e.target.value)}
                   placeholder="Enter province name"
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-2 focus:ring-2 focus:ring-green-500 outline-none"
                   required
                 />
               )}
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">District *</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">District *</label>
               <select
                 value={showCustomDistrict ? 'OTHER' : formData.address.district_code}
                 onChange={(e) => handleDistrictChange(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
                 required={!showCustomDistrict}
                 disabled={showCustomProvince || (!formData.address.province_code && !customProvince)}
               >
@@ -515,18 +515,18 @@ const FarmerEdit: React.FC = () => {
                   value={customDistrict}
                   onChange={(e) => setCustomDistrict(e.target.value)}
                   placeholder="Enter district name"
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-2 focus:ring-2 focus:ring-green-500 outline-none"
                   required
                 />
               )}
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Chiefdom</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Chiefdom</label>
               <select
                 value={showCustomChiefdom ? 'OTHER' : (formData.address.chiefdom_code || '')}
                 onChange={(e) => handleChiefdomChange(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
                 disabled={showCustomDistrict || (!formData.address.district_code && !customDistrict)}
               >
                 <option value="">Select Chiefdom (Optional)</option>
@@ -543,51 +543,51 @@ const FarmerEdit: React.FC = () => {
                   value={customChiefdom}
                   onChange={(e) => setCustomChiefdom(e.target.value)}
                   placeholder="Enter chiefdom name"
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-2 focus:ring-2 focus:ring-green-500 outline-none"
                 />
               )}
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Village *</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Village *</label>
               <input
                 type="text"
                 value={formData.address.village}
                 onChange={(e) => updateAddress('village', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Street</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Street</label>
               <input
                 type="text"
                 value={formData.address.street || ''}
                 onChange={(e) => updateAddress('street', e.target.value || undefined)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">GPS Latitude</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">GPS Latitude</label>
               <input
                 type="number"
                 step="0.000001"
                 value={formData.address.gps_latitude || ''}
                 onChange={(e) => updateAddress('gps_latitude', e.target.value ? parseFloat(e.target.value) : undefined)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">GPS Longitude</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">GPS Longitude</label>
               <input
                 type="number"
                 step="0.000001"
                 value={formData.address.gps_longitude || ''}
                 onChange={(e) => updateAddress('gps_longitude', e.target.value ? parseFloat(e.target.value) : undefined)}
-                className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
               />
             </div>
           </div>
@@ -595,59 +595,59 @@ const FarmerEdit: React.FC = () => {
 
         {/* Farm Information */}
         {formData.farm_info && (
-          <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm" style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4" style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>Farm Information</h2>\n            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm" style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 mb-4" style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>Farm Information</h2>\n            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase">Farm Size (Hectares) *</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Farm Size (Hectares) *</label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.farm_info.farm_size_hectares}
                   onChange={(e) => updateFarmInfo('farm_size_hectares', parseFloat(e.target.value))}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase">Years Farming *</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Years Farming *</label>
                 <input
                   type="number"
                   value={formData.farm_info.years_farming}
                   onChange={(e) => updateFarmInfo('years_farming', parseInt(e.target.value))}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase">Crops Grown</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Crops Grown</label>
                 <input
                   type="text"
                   value={formData.farm_info.crops_grown.join(', ')}
                   onChange={(e) => updateFarmInfo('crops_grown', e.target.value.split(',').map(s => s.trim()))}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
                   placeholder="Maize, Wheat, Rice"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase">Livestock Types</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Livestock Types</label>
                 <input
                   type="text"
                   value={formData.farm_info.livestock_types.join(', ')}
                   onChange={(e) => updateFarmInfo('livestock_types', e.target.value.split(',').map(s => s.trim()))}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
                   placeholder="Cattle, Goats, Chickens"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase">Has Irrigation</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Has Irrigation</label>
                 <select
                   value={formData.farm_info.has_irrigation ? 'true' : 'false'}
                   onChange={(e) => updateFarmInfo('has_irrigation', e.target.value === 'true')}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
                 >
                   <option value="false">No</option>
                   <option value="true">Yes</option>
@@ -659,38 +659,38 @@ const FarmerEdit: React.FC = () => {
 
         {/* Household Information */}
         {formData.household_info && (
-          <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm" style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4" style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>Household Information</h2>
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm" style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 mb-4" style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>Household Information</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase">Household Size *</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Household Size *</label>
                 <input
                   type="number"
                   value={formData.household_info.household_size}
                   onChange={(e) => updateHouseholdInfo('household_size', parseInt(e.target.value))}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase">Number of Dependents *</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Number of Dependents *</label>
                 <input
                   type="number"
                   value={formData.household_info.number_of_dependents}
                   onChange={(e) => updateHouseholdInfo('number_of_dependents', parseInt(e.target.value))}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
                   required
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-xs font-bold text-gray-600 uppercase">Primary Income Source *</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Primary Income Source *</label>
                 <input
                   type="text"
                   value={formData.household_info.primary_income_source}
                   onChange={(e) => updateHouseholdInfo('primary_income_source', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none"
                   required
                 />
               </div>
@@ -710,7 +710,7 @@ const FarmerEdit: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate(`/farmers/${id}`)}
-            className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-bold py-3 px-4 sm:px-6 rounded-lg transition text-sm sm:text-base" style={{ backgroundColor: '#ffffff', borderColor: '#d1d5db', color: '#374151', fontWeight: '700', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid', cursor: 'pointer' }}
+            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-3 px-4 sm:px-6 rounded-lg transition text-sm sm:text-base" style={{ backgroundColor: '#ffffff', borderColor: '#d1d5db', color: '#374151', fontWeight: '700', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid', cursor: 'pointer' }}
           >
             Cancel
           </button>

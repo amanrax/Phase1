@@ -126,14 +126,14 @@ export default function OperatorsList() {
           <div className="space-y-3">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 flex items-center gap-4 animate-pulse">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0" />
+                <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3.5 bg-gray-200 rounded w-1/3" />
-                  <div className="h-3 bg-gray-100 rounded w-1/4" />
+                  <div className="h-3.5 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+                  <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-1/4" />
                 </div>
-                <div className="hidden sm:block w-24 h-3 bg-gray-200 rounded" />
-                <div className="hidden md:block w-20 h-3 bg-gray-100 rounded" />
-                <div className="w-16 h-6 bg-gray-200 rounded-full" />
+                <div className="hidden sm:block w-24 h-3 bg-gray-200 dark:bg-gray-700 rounded" />
+                <div className="hidden md:block w-20 h-3 bg-gray-100 dark:bg-gray-700 rounded" />
+                <div className="w-16 h-6 bg-gray-200 dark:bg-gray-700 rounded-full" />
               </div>
             ))}
           </div>
@@ -221,13 +221,13 @@ export default function OperatorsList() {
             </div>
 
             {/* Mobile Card View */}
-            <div className="md:hidden divide-y divide-gray-200">
+            <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
               {operators.map((op, i) => (
                 <div key={op.operator_id || i} className="p-4 hover:bg-green-50 transition">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Operator #{i + 1}</p>
-                      <h3 className="text-lg font-bold text-gray-800 mt-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-500 uppercase font-bold tracking-wider">Operator #{i + 1}</p>
+                      <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mt-1">
                         {op.first_name} {op.last_name}
                       </h3>
                     </div>
@@ -241,7 +241,7 @@ export default function OperatorsList() {
                       {op.status?.toUpperCase() || "UNKNOWN"}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-600 space-y-1 mb-4">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1 mb-4">
                     <p><strong>Phone:</strong> {op.phone}</p>
                     <p><strong>Email:</strong> {op.email || "-"}</p>
                     <p><strong>District:</strong> {op.assigned_district || "-"}</p>

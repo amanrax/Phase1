@@ -194,7 +194,7 @@ export default function Step4Preview({
           onClick={onBack}
           style={{ 
             padding: "12px 30px",
-            background: "#6c757d",
+            background: "var(--text-secondary-hex)",
             color: "white",
             border: "none",
             borderRadius: "8px",

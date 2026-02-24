@@ -132,7 +132,7 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
       )}
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="province" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="province" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Province <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span>
         </label>
         <select
@@ -169,7 +169,7 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
 
       {showCustomProvince && (
         <div style={{ marginTop: 12 }}>
-          <label htmlFor="customProvince" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+          <label htmlFor="customProvince" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
             Enter Province Name <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span>
           </label>
           <input
@@ -185,7 +185,7 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
       )}
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="district" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="district" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           District <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span>
         </label>
         {showCustomProvince ? (
@@ -231,7 +231,7 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
 
       {showCustomDistrict && !showCustomProvince && (
         <div style={{ marginTop: 12 }}>
-          <label htmlFor="customDistrict" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+          <label htmlFor="customDistrict" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
             Enter District Name <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span>
           </label>
           <input
@@ -247,7 +247,7 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
       )}
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="chiefdom" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="chiefdom" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Chiefdom
         </label>
         {showCustomProvince ? (
@@ -288,7 +288,7 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
 
       {showCustomChiefdom && !showCustomProvince && (
         <div style={{ marginTop: 12 }}>
-          <label htmlFor="customChiefdom" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+          <label htmlFor="customChiefdom" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
             Enter Chiefdom Name
           </label>
           <input
@@ -303,7 +303,7 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
       )}
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="village" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="village" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Village / Locality
         </label>
         <input
@@ -320,7 +320,7 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
           onClick={onBack}
           style={{ 
             padding: "12px 30px",
-            background: "#6c757d",
+            background: "var(--text-secondary-hex)",
             color: "white",
             border: "none",
             borderRadius: "8px",

@@ -16,7 +16,7 @@ export const Badge: React.FC<BadgeProps> = ({
     yellow: 'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200',
     red: 'bg-red-100 text-red-800 ring-1 ring-red-200',
     blue: 'bg-blue-100 text-blue-800 ring-1 ring-blue-200',
-    gray: 'bg-gray-100 text-gray-800 ring-1 ring-gray-200'
+    gray: 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 ring-1 ring-gray-200'
   };
 
   return (

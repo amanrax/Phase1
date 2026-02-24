@@ -30,9 +30,9 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
 
   return (
     <div>
-      <h3 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "#333" }}>Farm details (optional)</h3>
+      <h3 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)" }}>Farm details (optional)</h3>
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="farmSize" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="farmSize" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Farm size (hectares)
         </label>
         <input
@@ -46,13 +46,13 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
           step="0.01"
           aria-describedby="farmSizeDesc"
         />
-        <small id="farmSizeDesc" style={{ color: "#666" }}>
+        <small id="farmSizeDesc" style={{ color: "var(--text-secondary-hex)" }}>
           Enter farm size in hectares
         </small>
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="mainCrops" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="mainCrops" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Main crops (comma separated)
         </label>
         <input
@@ -63,13 +63,13 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
           placeholder="maize, groundnuts, cassava"
           aria-describedby="mainCropsDesc"
         />
-        <small id="mainCropsDesc" style={{ color: "#666" }}>
+        <small id="mainCropsDesc" style={{ color: "var(--text-secondary-hex)" }}>
           Enter main crops separated by commas
         </small>
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="livestock" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="livestock" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Livestock (comma separated)
         </label>
         <input
@@ -79,13 +79,13 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
           style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
           placeholder="cattle, goats, chickens"
         />
-        <small style={{ color: "#666" }}>
+        <small style={{ color: "var(--text-secondary-hex)" }}>
           Enter livestock types separated by commas
         </small>
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="yearsFarming" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="yearsFarming" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Years of Farming Experience
         </label>
         <input
@@ -98,7 +98,7 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
           min="0"
           max="100"
         />
-        <small style={{ color: "#666" }}>Maximum: 100 years</small>
+        <small style={{ color: "var(--text-secondary-hex)" }}>Maximum: 100 years</small>
       </div>
 
       <div style={{ marginTop: 12 }}>
@@ -113,10 +113,10 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
         </label>
       </div>
 
-      <h4 style={{ marginTop: 20, fontSize: "16px", fontWeight: "600", color: "#333" }}>Household Information (optional)</h4>
+      <h4 style={{ marginTop: 20, fontSize: "16px", fontWeight: "600", color: "var(--text-primary-hex)" }}>Household Information (optional)</h4>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="householdSize" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="householdSize" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Household Size
         </label>
         <input
@@ -131,7 +131,7 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="dependents" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="dependents" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Number of Dependents
         </label>
         <input
@@ -146,7 +146,7 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <label htmlFor="primaryIncome" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#333", marginBottom: "6px" }}>
+        <label htmlFor="primaryIncome" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
           Primary Income Source
         </label>
         <input
@@ -163,7 +163,7 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
           onClick={onBack}
           style={{
             padding: "12px 30px",
-            background: "#6c757d",
+            background: "var(--text-secondary-hex)",
             color: "white",
             border: "none",
             borderRadius: "8px",

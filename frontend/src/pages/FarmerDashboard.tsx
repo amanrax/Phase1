@@ -224,10 +224,10 @@ export default function FarmerDashboard() {
             // Error State
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 sm:p-8 shadow-xl text-center">
               <div className="text-6xl mb-4">⚠️</div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3">
                 Unable to load farmer profile
               </h2>
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                 Your farmer profile could not be found. Please contact your operator or administrator.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -278,7 +278,7 @@ export default function FarmerDashboard() {
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 sm:p-6 md:p-8">
                 {/* Header with Actions */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900">👨‍🌾 My Profile</h2>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white">👨‍🌾 My Profile</h2>
                   <div className="flex flex-wrap gap-2 sm:gap-3">
                     <button
                       onClick={() => safeNavigate(navigate, `/farmers/edit/${farmerData?.farmer_id}`)}
@@ -322,7 +322,7 @@ export default function FarmerDashboard() {
                         width: "150px",
                         height: "150px",
                         margin: "0 auto 15px",
-                        background: "#f0f0f0",
+                        background: "var(--bg-surface-subtle)",
                         borderRadius: "50%",
                         overflow: "hidden",
                         boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
@@ -345,10 +345,10 @@ export default function FarmerDashboard() {
                           />
                         )}
                       </div>
-                      <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#333", marginBottom: "5px" }}>
+                      <h3 style={{ fontSize: "18px", fontWeight: "700", color: "var(--text-primary-hex)", marginBottom: "5px" }}>
                         {farmerData?.personal_info?.first_name} {farmerData?.personal_info?.last_name}
                       </h3>
-                      <p style={{ fontSize: "13px", color: "#666", marginBottom: "15px" }}>
+                      <p style={{ fontSize: "13px", color: "var(--text-secondary-hex)", marginBottom: "15px" }}>
                         ID: {farmerData?.farmer_id}
                       </p>
                       <button
@@ -365,39 +365,39 @@ export default function FarmerDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div style={{
                         padding: "15px",
-                        background: "#f8f9fa",
+                        background: "var(--bg-surface)",
                         borderRadius: "8px",
                         borderLeft: "4px solid #2563eb"
                       }}>
-                        <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>Phone</p>
-                        <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>{farmerData?.personal_info?.phone_primary || "N/A"}</p>
+                        <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Phone</p>
+                        <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.personal_info?.phone_primary || "N/A"}</p>
                       </div>
                       <div style={{
                         padding: "15px",
-                        background: "#f8f9fa",
+                        background: "var(--bg-surface)",
                         borderRadius: "8px",
                         borderLeft: "4px solid #059669"
                       }}>
-                        <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>NRC Number</p>
-                        <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>{farmerData?.personal_info?.nrc || "N/A"}</p>
+                        <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>NRC Number</p>
+                        <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.personal_info?.nrc || "N/A"}</p>
                       </div>
                       <div style={{
                         padding: "15px",
-                        background: "#f8f9fa",
+                        background: "var(--bg-surface)",
                         borderRadius: "8px",
                         borderLeft: "4px solid #9333ea"
                       }}>
-                        <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>Gender</p>
-                        <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>{farmerData?.personal_info?.gender || "N/A"}</p>
+                        <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Gender</p>
+                        <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.personal_info?.gender || "N/A"}</p>
                       </div>
                       <div style={{
                         padding: "15px",
-                        background: "#f8f9fa",
+                        background: "var(--bg-surface)",
                         borderRadius: "8px",
                         borderLeft: "4px solid #dc2626"
                       }}>
-                        <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>DOB</p>
-                        <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>{farmerData?.personal_info?.date_of_birth || "N/A"}</p>
+                        <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>DOB</p>
+                        <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.personal_info?.date_of_birth || "N/A"}</p>
                       </div>
                     </div>
                   </div>
@@ -412,39 +412,39 @@ export default function FarmerDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div style={{
                     padding: "15px",
-                    background: "#f8f9fa",
+                    background: "var(--bg-surface)",
                     borderRadius: "8px",
                     borderLeft: "4px solid #2563eb"
                   }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>Province</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>{farmerData?.address?.province_name || "N/A"}</p>
+                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Province</p>
+                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.address?.province_name || "N/A"}</p>
                   </div>
                   <div style={{
                     padding: "15px",
-                    background: "#f8f9fa",
+                    background: "var(--bg-surface)",
                     borderRadius: "8px",
                     borderLeft: "4px solid #059669"
                   }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>District</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>{farmerData?.address?.district_name || "N/A"}</p>
+                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>District</p>
+                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.address?.district_name || "N/A"}</p>
                   </div>
                   <div style={{
                     padding: "15px",
-                    background: "#f8f9fa",
+                    background: "var(--bg-surface)",
                     borderRadius: "8px",
                     borderLeft: "4px solid #9333ea"
                   }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>Chiefdom</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>{farmerData?.address?.chiefdom_name || "N/A"}</p>
+                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Chiefdom</p>
+                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.address?.chiefdom_name || "N/A"}</p>
                   </div>
                   <div style={{
                     padding: "15px",
-                    background: "#f8f9fa",
+                    background: "var(--bg-surface)",
                     borderRadius: "8px",
                     borderLeft: "4px solid #dc2626"
                   }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>Village</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>{farmerData?.address?.village || "N/A"}</p>
+                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Village</p>
+                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.address?.village || "N/A"}</p>
                   </div>
                 </div>
               </div>
@@ -457,56 +457,56 @@ export default function FarmerDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div style={{
                     padding: "15px",
-                    background: "#f8f9fa",
+                    background: "var(--bg-surface)",
                     borderRadius: "8px",
                     borderLeft: "4px solid #16a34a"
                   }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>Farm Size (ha)</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>{farmerData?.farm_info?.farm_size_hectares || 0}</p>
+                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Farm Size (ha)</p>
+                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.farm_info?.farm_size_hectares || 0}</p>
                   </div>
                   <div style={{
                     padding: "15px",
-                    background: "#f8f9fa",
+                    background: "var(--bg-surface)",
                     borderRadius: "8px",
                     borderLeft: "4px solid #0891b2"
                   }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>Crops</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>{(farmerData?.farm_info?.crops_grown?.length || 0)} types</p>
+                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Crops</p>
+                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{(farmerData?.farm_info?.crops_grown?.length || 0)} types</p>
                   </div>
                   <div style={{
                     padding: "15px",
-                    background: "#f8f9fa",
+                    background: "var(--bg-surface)",
                     borderRadius: "8px",
                     borderLeft: "4px solid #ca8a04"
                   }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>Livestock</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>{(farmerData?.farm_info?.livestock_types?.length || farmerData?.farm_info?.livestock?.length || 0) > 0 ? "Yes" : "None"}</p>
+                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Livestock</p>
+                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{(farmerData?.farm_info?.livestock_types?.length || farmerData?.farm_info?.livestock?.length || 0) > 0 ? "Yes" : "None"}</p>
                   </div>
                   <div style={{
                     padding: "15px",
-                    background: "#f8f9fa",
+                    background: "var(--bg-surface)",
                     borderRadius: "8px",
                     borderLeft: "4px solid #7c3aed"
                   }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>Experience</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>{farmerData?.farm_info?.years_farming || farmerData?.farm_info?.farming_experience_years || "N/A"} years</p>
+                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Experience</p>
+                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.farm_info?.years_farming || farmerData?.farm_info?.farming_experience_years || "N/A"} years</p>
                   </div>
                   <div style={{
                     padding: "15px",
-                    background: "#f8f9fa",
+                    background: "var(--bg-surface)",
                     borderRadius: "8px",
                     borderLeft: "4px solid #ea580c"
                   }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>Irrigation</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>{farmerData?.farm_info?.has_irrigation ? "Yes" : "No"}</p>
+                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Irrigation</p>
+                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.farm_info?.has_irrigation ? "Yes" : "No"}</p>
                   </div>
                   <div style={{
                     padding: "15px",
-                    background: "#f8f9fa",
+                    background: "var(--bg-surface)",
                     borderRadius: "8px",
                     borderLeft: "4px solid #06b6d4"
                   }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>Status</p>
+                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Status</p>
                     <p style={{ fontSize: "14px", fontWeight: "600", color: farmerData?.registration_status === "verified" ? "#16a34a" : "#ca8a04" }}>
                       {farmerData?.registration_status === "verified" ? "✅ Verified" : "⏳ Pending"}
                     </p>
@@ -515,8 +515,8 @@ export default function FarmerDashboard() {
               </div>
 
               {/* QR Code Section */}
-              <div className="bg-white rounded-xl shadow-xl p-4 sm:p-8 text-center mt-6">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6">🔐 Your QR Code</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 sm:p-8 text-center mt-6">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-6">🔐 Your QR Code</h3>
                 <div style={{ 
                   width: "220px", 
                   height: "220px", 
@@ -524,14 +524,14 @@ export default function FarmerDashboard() {
                   border: "3px solid #16a34a", 
                   borderRadius: "12px", 
                   padding: "15px",
-                  backgroundColor: "#fff",
+                  backgroundColor: "var(--bg-card)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
                 }}>
                   {qrError ? (
-                    <div style={{ textAlign: "center", color: "#999" }}>
+                    <div style={{ textAlign: "center", color: "var(--text-muted-hex)" }}>
                       <div style={{ fontSize: "3rem", marginBottom: "10px" }}>📱</div>
                       <p style={{ fontSize: "12px" }}>QR code unavailable</p>
                     </div>
@@ -551,10 +551,10 @@ export default function FarmerDashboard() {
                       }}
                     />
                   ) : (
-                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 dark:border-gray-600 border-t-green-600"></div>
                   )}
                 </div>
-                <p style={{ fontSize: "13px", color: "#666" }}>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary-hex)" }}>
                   {qrError ? "Contact operator to generate QR code" : "Present this QR code for quick identification"}
                 </p>
               </div>

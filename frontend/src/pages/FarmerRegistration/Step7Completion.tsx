@@ -29,14 +29,14 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
       
       <p style={{ 
         fontSize: "18px", 
-        color: "#666",
+        color: "var(--text-secondary-hex)",
         marginBottom: "32px"
       }}>
         {farmerName} has been successfully registered
       </p>
 
       <div style={{
-        backgroundColor: "#f8f9fa",
+        backgroundColor: "var(--bg-surface)",
         padding: "24px",
         borderRadius: "12px",
         marginBottom: "32px",
@@ -47,7 +47,7 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
       }}>
         <p style={{ 
           fontSize: "14px", 
-          color: "#666",
+          color: "var(--text-secondary-hex)",
           marginBottom: "8px",
           fontWeight: "600"
         }}>
@@ -56,7 +56,7 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
         <p style={{ 
           fontSize: "28px", 
           fontWeight: "bold",
-          color: "#333",
+          color: "var(--text-primary-hex)",
           fontFamily: "monospace",
           letterSpacing: "2px"
         }}>
@@ -64,7 +64,7 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
         </p>
         <p style={{ 
           fontSize: "12px", 
-          color: "#999",
+          color: "var(--text-muted-hex)",
           marginTop: "8px"
         }}>
           Save this ID for future reference
@@ -121,7 +121,7 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
           onClick={() => navigate("/farmers")}
           style={{
             padding: "14px 24px",
-            backgroundColor: "#6c757d",
+            backgroundColor: "var(--text-secondary-hex)",
             color: "white",
             border: "none",
             borderRadius: "8px",

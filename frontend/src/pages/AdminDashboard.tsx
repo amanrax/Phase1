@@ -202,7 +202,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Main Content Card */}
-        <div className="backdrop-blur-xl bg-white/95 dark:bg-gray-800/95 rounded-3xl p-4 sm:p-6 md:p-8 border border-white/50 dark:border-gray-700/50 transition-all duration-500" 
+        <div className="backdrop-blur-xl bg-white dark:bg-gray-800/95 dark:bg-gray-800/95 rounded-3xl p-4 sm:p-6 md:p-8 border border-white/50 dark:border-gray-700/50 transition-all duration-500" 
              style={{ 
                boxShadow: '0 25px 50px -12px rgba(99,102,241,0.4), 0 0 0 1px rgba(255,255,255,0.5), inset 0 1px 0 0 rgba(255,255,255,0.8)',
                transformStyle: 'preserve-3d'
@@ -293,8 +293,8 @@ export default function AdminDashboard() {
 
             {loading ? (
               <div className="text-center py-8 sm:py-16">
-                <div className="inline-block w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
-                <p className="mt-3 sm:mt-4 text-gray-600 text-sm sm:text-base">Loading...</p>
+                <div className="inline-block w-8 h-8 border-4 border-gray-200 dark:border-gray-700 border-t-blue-600 rounded-full animate-spin"></div>
+                <p className="mt-3 sm:mt-4 text-gray-600 dark:text-gray-400 text-sm sm:text-base">Loading...</p>
               </div>
             ) : operators.length === 0 ? (
               <div className="text-center py-8 sm:py-16 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -376,11 +376,11 @@ export default function AdminDashboard() {
 
             {loading ? (
               <div className="text-center py-8 sm:py-16">
-                <div className="inline-block w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
-                <p className="mt-3 sm:mt-4 text-gray-600 text-sm sm:text-base">Loading...</p>
+                <div className="inline-block w-8 h-8 border-4 border-gray-200 dark:border-gray-700 border-t-blue-600 rounded-full animate-spin"></div>
+                <p className="mt-3 sm:mt-4 text-gray-600 dark:text-gray-400 text-sm sm:text-base">Loading...</p>
               </div>
             ) : farmers.length === 0 ? (
-              <div className="text-center py-12 sm:py-20 text-gray-600">
+              <div className="text-center py-12 sm:py-20 text-gray-600 dark:text-gray-400">
                 <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">🌾</div>
                 <p className="text-base sm:text-lg font-semibold mb-2">No farmers registered yet</p>
                 <p className="text-xs sm:text-sm">Operators can register farmers in the system</p>

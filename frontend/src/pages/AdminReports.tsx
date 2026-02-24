@@ -357,13 +357,13 @@ export default function AdminReports() {
                     ].map((card, idx) => (
                       <div key={idx} className={`bg-gradient-to-br from-${card.color}-50 to-${card.color}-100 rounded-lg p-6 border border-${card.color}-200`}>
                         <div className="text-4xl mb-2">{card.icon}</div>
-                        <p className="text-gray-600 text-sm font-semibold uppercase">{card.label}</p>
-                        <p className="text-3xl font-bold text-gray-800 mt-2">{card.value}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm font-semibold uppercase">{card.label}</p>
+                        <p className="text-3xl font-bold text-gray-800 dark:text-gray-100 mt-2">{card.value}</p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-gray-500 py-8">No dashboard data available</p>
+                  <p className="text-center text-gray-500 dark:text-gray-500 dark:text-gray-500 py-8">No dashboard data available</p>
                 )}
               </div>
             )}
@@ -373,7 +373,7 @@ export default function AdminReports() {
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Farmers by Region</h2>
                 {regionData.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">No regional data available</p>
+                  <p className="text-center text-gray-500 dark:text-gray-500 dark:text-gray-500 py-8">No regional data available</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">
@@ -395,7 +395,7 @@ export default function AdminReports() {
                       </tbody>
                       <tfoot className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                          <td colSpan={2} className="px-6 py-3 text-sm font-semibold text-gray-900">Total</td>
+                          <td colSpan={2} className="px-6 py-3 text-sm font-semibold text-gray-900 dark:text-white">Total</td>
                           <td className="px-6 py-3 text-sm text-right font-bold text-green-700">
                             {regionData.reduce((sum, r) => sum + r.farmer_count, 0)}
                           </td>
@@ -410,9 +410,9 @@ export default function AdminReports() {
             {/* Operator Performance Report */}
             {activeReport === 'operators' && (
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Operator Performance</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Operator Performance</h2>
                 {operatorData.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">No operator data available</p>
+                  <p className="text-center text-gray-500 dark:text-gray-500 dark:text-gray-500 py-8">No operator data available</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">
@@ -456,7 +456,7 @@ export default function AdminReports() {
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Activity Trends (Last 14 Days)</h2>
                 {trendsData.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">No trends data available</p>
+                  <p className="text-center text-gray-500 dark:text-gray-500 dark:text-gray-500 py-8">No trends data available</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">
@@ -491,7 +491,7 @@ export default function AdminReports() {
         )}
 
         {/* Footer */}
-        <div className="mt-8 text-center text-gray-600 text-sm">
+        <div className="mt-8 text-center text-gray-600 dark:text-gray-400 text-sm">
           <p>Last updated: {new Date().toLocaleString()} • Data refreshes on page load</p>
         </div>
       </div>

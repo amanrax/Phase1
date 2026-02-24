@@ -111,7 +111,7 @@ export default function FarmerRegistrationWizard() {
               />
             ))}
           </div>
-          <p style={{ textAlign: "center", color: "#666", fontSize: "15px", fontWeight: "600" }}>
+          <p style={{ textAlign: "center", color: "var(--text-secondary-hex)", fontSize: "15px", fontWeight: "600" }}>
             Step {currentStep} of 7
           </p>
         </div>
@@ -178,7 +178,7 @@ export default function FarmerRegistrationWizard() {
         )}
 
         {/* Footer Tip */}
-        <div style={{ marginTop: "20px", color: "#999", fontSize: "13px", textAlign: "center" }}>
+        <div style={{ marginTop: "20px", color: "var(--text-muted-hex)", fontSize: "13px", textAlign: "center" }}>
           💡 Tip: Fields marked with * are required. Use the back button to edit previous steps.
         </div>
 

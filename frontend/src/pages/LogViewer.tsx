@@ -53,7 +53,7 @@ export const LogViewer: React.FC = () => {
 
   return (
     <div className="fade-in p-4 sm:p-6 lg:p-8">
-      <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm">
+      <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm">
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div className="flex items-center gap-3">
             <button 
@@ -62,28 +62,28 @@ export const LogViewer: React.FC = () => {
             >
               ← BACK
             </button>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">📋 System Logs</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-100">📋 System Logs</h1>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div>
-            <label className="text-xs font-bold text-gray-600 uppercase">Level</label>
-            <select value={level} onChange={e=>setLevel(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm">
+            <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Level</label>
+            <select value={level} onChange={e=>setLevel(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm">
               <option value="">All</option>
               {levels.map(l=> <option key={l} value={l}>{l}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs font-bold text-gray-600 uppercase">Module</label>
-            <input value={module} onChange={e=>setModule(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="middleware, auth, farmers" />
+            <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Module</label>
+            <input value={module} onChange={e=>setModule(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="middleware, auth, farmers" />
           </div>
           <div>
-            <label className="text-xs font-bold text-gray-600 uppercase">User</label>
-            <input value={userId} onChange={e=>setUserId(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="email or id" />
+            <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">User</label>
+            <input value={userId} onChange={e=>setUserId(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="email or id" />
           </div>
           <div>
-            <label className="text-xs font-bold text-gray-600 uppercase">Role</label>
-            <input value={role} onChange={e=>setRole(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="ADMIN, OPERATOR, FARMER" />
+            <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Role</label>
+            <input value={role} onChange={e=>setRole(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="ADMIN, OPERATOR, FARMER" />
           </div>
           <div className="flex items-end">
             <button onClick={load} className="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-2 sm:py-3 px-3 sm:px-4 rounded-lg transition shadow-lg text-sm sm:text-base">
@@ -94,28 +94,28 @@ export const LogViewer: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3 sm:gap-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-            <label className="flex items-center gap-2 text-xs sm:text-sm text-gray-700"><input type="checkbox" checked={autoRefresh} onChange={e=>setAutoRefresh(e.target.checked)} /> Auto-refresh</label>
-            <button onClick={downloadCsv} className="w-full sm:w-auto bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm"><i className="fa-solid fa-file-csv mr-2"/> Export CSV</button>
+            <label className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300"><input type="checkbox" checked={autoRefresh} onChange={e=>setAutoRefresh(e.target.checked)} /> Auto-refresh</label>
+            <button onClick={downloadCsv} className="w-full sm:w-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm"><i className="fa-solid fa-file-csv mr-2"/> Export CSV</button>
           </div>
-          <div className="text-xs sm:text-sm text-gray-600 w-full sm:w-auto">Total: {total}</div>
+          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 w-full sm:w-auto">Total: {total}</div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
-          <div className="p-3 sm:p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 gap-3 sm:gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-x-auto">
+          <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 dark:bg-gray-800 gap-3 sm:gap-4">
             <h3 className="font-bold text-base sm:text-lg">Logs</h3>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
               <select value={pageSize} onChange={e=>setPageSize(Number(e.target.value))} className="p-2 border rounded-lg text-xs sm:text-sm w-full sm:w-auto">
                 {[10,20,50,100].map(n=> <option key={n} value={n}>{n}/page</option>)}
               </select>
               <div className="flex gap-1 w-full sm:w-auto">
-                <button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))} className="flex-1 sm:flex-none px-2 sm:px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 disabled:opacity-50 text-xs sm:text-sm">Prev</button>
+                <button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))} className="flex-1 sm:flex-none px-2 sm:px-3 py-1 bg-white dark:bg-gray-800 border rounded shadow-sm hover:bg-gray-100 dark:bg-gray-700 disabled:opacity-50 text-xs sm:text-sm">Prev</button>
                 <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm flex items-center">{page} / {totalPages}</span>
-                <button disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)} className="flex-1 sm:flex-none px-2 sm:px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 disabled:opacity-50 text-xs sm:text-sm">Next</button>
+                <button disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)} className="flex-1 sm:flex-none px-2 sm:px-3 py-1 bg-white dark:bg-gray-800 border rounded shadow-sm hover:bg-gray-100 dark:bg-gray-700 disabled:opacity-50 text-xs sm:text-sm">Next</button>
               </div>
             </div>
           </div>
-          <table className="w-full text-left text-xs sm:text-sm text-gray-600">
-            <thead className="bg-gray-100 text-gray-700 font-bold uppercase text-xs sticky top-0">
+          <table className="w-full text-left text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+            <thead className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold uppercase text-xs sticky top-0">
               <tr>
                 <th className="px-3 sm:px-6 py-2 sm:py-3 whitespace-nowrap">Timestamp</th>
                 <th className="px-3 sm:px-6 py-2 sm:py-3 whitespace-nowrap">Level</th>
@@ -127,7 +127,7 @@ export const LogViewer: React.FC = () => {
                 <th className="px-3 sm:px-6 py-2 sm:py-3 whitespace-nowrap">Request ID</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {items.map((i, idx) => (
                 <tr key={idx} className="hover:bg-green-50 transition">
                   <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs">{new Date(i.timestamp).toLocaleString()}</td>
@@ -146,24 +146,24 @@ export const LogViewer: React.FC = () => {
             </tbody>
           </table>
 
-          <div className="p-3 sm:p-4 border-t border-gray-200 bg-gray-50 text-xs text-gray-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
+          <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-500 dark:text-gray-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
             <span>Showing {items.length} of {total}</span>
             <div className="flex gap-1 w-full sm:w-auto">
-              <button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))} className="flex-1 sm:flex-none px-2 sm:px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 disabled:opacity-50">Prev</button>
-              <button disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)} className="flex-1 sm:flex-none px-2 sm:px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100 disabled:opacity-50">Next</button>
+              <button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))} className="flex-1 sm:flex-none px-2 sm:px-3 py-1 bg-white dark:bg-gray-800 border rounded shadow-sm hover:bg-gray-100 dark:bg-gray-700 disabled:opacity-50">Prev</button>
+              <button disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)} className="flex-1 sm:flex-none px-2 sm:px-3 py-1 bg-white dark:bg-gray-800 border rounded shadow-sm hover:bg-gray-100 dark:bg-gray-700 disabled:opacity-50">Next</button>
             </div>
           </div>
         </div>
 
-        <div className="mt-6 bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm">
+        <div className="mt-6 bg-white dark:bg-gray-800 p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm">
           <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4">Stats</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {stats.map((s, idx) => (
-              <div key={idx} className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border-l-4 border-green-600 hover:shadow-md transition">
+              <div key={idx} className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm border-l-4 border-green-600 hover:shadow-md transition">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">{s._id.level} • {s._id.module}</p>
-                    <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mt-1">{s.count}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-500 uppercase font-bold tracking-wider">{s._id.level} • {s._id.module}</p>
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">{s.count}</h3>
                   </div>
                   <div className="bg-green-50 p-2 sm:p-3 rounded-lg text-green-600 flex-shrink-0">
                     <i className="fa-solid fa-chart-line text-lg sm:text-xl"></i>
@@ -171,7 +171,7 @@ export const LogViewer: React.FC = () => {
                 </div>
               </div>
             ))}
-            {stats.length===0 && <div className="text-xs sm:text-sm text-gray-600">No stats.</div>}
+            {stats.length===0 && <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">No stats.</div>}
           </div>
         </div>
       </div>

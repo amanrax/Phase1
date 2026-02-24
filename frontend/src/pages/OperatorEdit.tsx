@@ -256,13 +256,13 @@ export default function OperatorEdit() {
         </button>
 
         <div style={{ background: "white", padding: "40px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
-          <h2 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "30px", color: "#333" }}>
+          <h2 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "30px", color: "var(--text-primary-hex)" }}>
             👨‍💼 Operator Information
           </h2>
 
           <div style={{ display: "grid", gap: "20px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#666", marginBottom: "8px" }}>
+              <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "8px" }}>
                 Full Name <span style={{ color: "#dc3545" }}>*</span>
               </label>
               <input
@@ -283,7 +283,7 @@ export default function OperatorEdit() {
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#666", marginBottom: "8px" }}>
+              <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "8px" }}>
                 Email <span style={{ color: "#dc3545" }}>*</span>
               </label>
               <input
@@ -304,7 +304,7 @@ export default function OperatorEdit() {
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#666", marginBottom: "8px" }}>
+              <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "8px" }}>
                 Phone
               </label>
               <input
@@ -326,7 +326,7 @@ export default function OperatorEdit() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#666", marginBottom: "8px" }}>
+                <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "8px" }}>
                   Province
                 </label>
                 <select
@@ -368,7 +368,7 @@ export default function OperatorEdit() {
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#666", marginBottom: "8px" }}>
+                <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "8px" }}>
                   Assigned District
                 </label>
                 <select
@@ -420,7 +420,7 @@ export default function OperatorEdit() {
                 onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
                 style={{ width: "20px", height: "20px", cursor: "pointer" }}
               />
-              <label htmlFor="is_active" style={{ fontSize: "14px", fontWeight: "600", color: "#666", cursor: "pointer" }}>
+              <label htmlFor="is_active" style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", cursor: "pointer" }}>
                 Active Operator
               </label>
             </div>
@@ -431,7 +431,7 @@ export default function OperatorEdit() {
               onClick={() => navigate("/operators/manage")}
               style={{
                 padding: "12px 30px",
-                background: "#6c757d",
+                background: "var(--text-secondary-hex)",
                 color: "white",
                 border: "none",
                 borderRadius: "8px",

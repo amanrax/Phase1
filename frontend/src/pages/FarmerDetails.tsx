@@ -329,7 +329,7 @@ export default function FarmerDetails() {
           <p className="text-xl sm:text-3xl mb-5" style={{ fontSize: "24px", marginBottom: "20px" }}>Farmer not found</p>
           <button
             onClick={() => navigate(getBackPath())}
-            className="px-6 sm:px-8 py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:shadow-lg transition-all text-base sm:text-lg"
+            className="px-6 sm:px-8 py-3 bg-white dark:bg-gray-800 text-indigo-600 rounded-lg font-semibold hover:shadow-lg transition-all text-base sm:text-lg"
             style={{
               padding: "12px 30px",
               background: "white",
@@ -381,7 +381,7 @@ export default function FarmerDetails() {
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3" style={{ marginBottom: "20px" }}>
           <button
             onClick={() => navigate(getBackPath())}
-            className="px-4 py-2 bg-white hover:bg-gray-50 active:scale-95 text-indigo-600 rounded-lg font-semibold text-sm transition-all shadow-md"
+            className="px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:bg-gray-800 active:scale-95 text-indigo-600 rounded-lg font-semibold text-sm transition-all shadow-md"
             style={{
               padding: "10px 20px",
               background: "white",
@@ -457,12 +457,12 @@ export default function FarmerDetails() {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "20px" }}>
           {/* Photo Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-purple-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #a855f7" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#1f2937" }}>📸 Farmer Photo</h2>
+          <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-purple-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #a855f7" }}>
+            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary)" }}>📸 Farmer Photo</h2>
 
             <div className="mb-6" style={{ marginBottom: "20px" }}>
               {photoError || !photoUrl ? (
-                <div className="w-full h-64 sm:h-80 bg-gray-200 rounded-lg flex items-center justify-center" style={{ width: "100%", height: "350px", background: "#f0f0f0", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div className="w-full h-64 sm:h-80 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center" style={{ width: "100%", height: "350px", background: "var(--bg-surface-subtle)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span className="text-6xl sm:text-8xl" style={{ fontSize: "120px" }}>👤</span>
                 </div>
               ) : (
@@ -532,14 +532,14 @@ export default function FarmerDetails() {
           </div>
 
           {/* Personal Info Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all sm:col-span-2 lg:col-span-1 border-l-4 border-blue-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #3b82f6" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#1f2937" }}>👤 Personal Information</h2>
+          <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all sm:col-span-2 lg:col-span-1 border-l-4 border-blue-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #3b82f6" }}>
+            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary)" }}>👤 Personal Information</h2>
 
-            <div className="mb-6 pb-6 border-b border-gray-200" style={{ marginBottom: "20px", paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
+            <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700" style={{ marginBottom: "20px", paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
               <h3 className="text-xl sm:text-2xl font-bold text-indigo-600 mb-3" style={{ fontSize: "18px", fontWeight: "700", color: "#4f46e5", marginBottom: "10px" }}>
                 {farmer.personal_info?.first_name} {farmer.personal_info?.last_name}
               </h3>
-              <p className="text-xs sm:text-sm text-gray-600 font-mono mb-3" style={{ color: "#666", fontSize: "14px", fontFamily: "monospace", marginBottom: "10px" }}>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-mono mb-3" style={{ color: "var(--text-secondary-hex)", fontSize: "14px", fontFamily: "monospace", marginBottom: "10px" }}>
                 🆔 {farmer.farmer_id}
               </p>
               <div>{getStatusBadge(farmer.registration_status || "registered")}</div>
@@ -547,41 +547,41 @@ export default function FarmerDetails() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", fontSize: "14px" }}>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>📱 Primary Phone</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.personal_info?.phone_primary || "N/A"}</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>📱 Primary Phone</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.personal_info?.phone_primary || "N/A"}</p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>📱 Secondary Phone</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.personal_info?.phone_secondary || "N/A"}</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>📱 Secondary Phone</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.personal_info?.phone_secondary || "N/A"}</p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>📧 Email</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.personal_info?.email || "N/A"}</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>📧 Email</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.personal_info?.email || "N/A"}</p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>🆔 NRC Number</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.personal_info?.nrc || farmer.nrc_number || "N/A"}</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>🆔 NRC Number</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.personal_info?.nrc || farmer.nrc_number || "N/A"}</p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>🎂 Date of Birth</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.personal_info?.date_of_birth || "N/A"}</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>🎂 Date of Birth</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.personal_info?.date_of_birth || "N/A"}</p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>⚧️ Gender</p>
-                <p className="text-gray-800 capitalize" style={{ color: "#333", textTransform: "capitalize" }}>{farmer.personal_info?.gender || "N/A"}</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>⚧️ Gender</p>
+                <p className="text-gray-800 dark:text-gray-100 capitalize" style={{ color: "var(--text-primary-hex)", textTransform: "capitalize" }}>{farmer.personal_info?.gender || "N/A"}</p>
               </div>
               <div className="sm:col-span-2">
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>🌍 Ethnic Group</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.personal_info?.ethnic_group || "N/A"}</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>🌍 Ethnic Group</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.personal_info?.ethnic_group || "N/A"}</p>
               </div>
             </div>
 
             {farmer.review_notes && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg border-l-4 border-indigo-500" style={{ marginTop: "20px", padding: "15px", background: "#f9fafb", borderRadius: "8px", borderLeft: "4px solid #6366f1" }}>
-                <p className="font-semibold text-gray-800 mb-2" style={{ fontWeight: "600", color: "#333", marginBottom: "8px" }}>📝 Review Notes</p>
-                <p className="text-gray-600 text-sm leading-relaxed" style={{ color: "#666", fontSize: "14px", lineHeight: "1.6" }}>{farmer.review_notes}</p>
+              <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 border-indigo-500" style={{ marginTop: "20px", padding: "15px", background: "#f9fafb", borderRadius: "8px", borderLeft: "4px solid #6366f1" }}>
+                <p className="font-semibold text-gray-800 dark:text-gray-100 mb-2" style={{ fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "8px" }}>📝 Review Notes</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed" style={{ color: "var(--text-secondary-hex)", fontSize: "14px", lineHeight: "1.6" }}>{farmer.review_notes}</p>
                 {farmer.reviewed_by && (
-                  <p className="text-gray-500 text-xs mt-2" style={{ color: "#999", fontSize: "12px", marginTop: "8px" }}>
+                  <p className="text-gray-500 dark:text-gray-500 dark:text-gray-500 text-xs mt-2" style={{ color: "var(--text-muted-hex)", fontSize: "12px", marginTop: "8px" }}>
                     Reviewed by: {farmer.reviewed_by}
                     {farmer.reviewed_at && ` on ${new Date(farmer.reviewed_at).toLocaleString()}`}
                   </p>
@@ -591,48 +591,48 @@ export default function FarmerDetails() {
           </div>
 
           {/* Address Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-green-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #22c55e" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#1f2937" }}>📍 Address</h2>
+          <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-green-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #22c55e" }}>
+            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary)" }}>📍 Address</h2>
             <div className="grid gap-4 text-sm" style={{ display: "grid", gap: "15px", fontSize: "14px" }}>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Province</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.address?.province_name || farmer.address?.province || "N/A"}</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Province</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.address?.province_name || farmer.address?.province || "N/A"}</p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>District</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.address?.district_name || farmer.address?.district || "N/A"}</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>District</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.address?.district_name || farmer.address?.district || "N/A"}</p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Chiefdom</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.address?.chiefdom_name || farmer.address?.chiefdom || "N/A"}</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Chiefdom</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.address?.chiefdom_name || farmer.address?.chiefdom || "N/A"}</p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Village</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.address?.village || "N/A"}</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Village</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.address?.village || "N/A"}</p>
               </div>
               {farmer.address?.ward_name && (
                 <div>
-                  <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Ward</p>
-                  <p className="text-gray-800" style={{ color: "#333" }}>{farmer.address.ward_name}</p>
+                  <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Ward</p>
+                  <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.address.ward_name}</p>
                 </div>
               )}
               {farmer.address?.camp_name && (
                 <div>
-                  <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Camp</p>
-                  <p className="text-gray-800" style={{ color: "#333" }}>{farmer.address.camp_name}</p>
+                  <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Camp</p>
+                  <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.address.camp_name}</p>
                 </div>
               )}
             </div>
 
             {/* Metadata Section */}
             {(farmer.created_at || farmer.created_by) && (
-              <div className="mt-6 pt-6 border-t border-gray-200" style={{ marginTop: "20px", paddingTop: "20px", borderTop: "1px solid #e0e0e0" }}>
-                <h3 className="text-sm font-bold text-gray-700 uppercase mb-3" style={{ fontSize: "12px", fontWeight: "700", color: "#666", marginBottom: "10px" }}>📋 Registration Info</h3>
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700" style={{ marginTop: "20px", paddingTop: "20px", borderTop: "1px solid #e0e0e0" }}>
+                <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase mb-3" style={{ fontSize: "12px", fontWeight: "700", color: "var(--text-secondary-hex)", marginBottom: "10px" }}>📋 Registration Info</h3>
                 <div className="grid grid-cols-1 gap-3 text-xs" style={{ display: "grid", gap: "10px", fontSize: "12px" }}>
                   {farmer.created_at && (
                     <div>
-                      <p className="text-gray-600 font-semibold" style={{ color: "#666", fontWeight: "600" }}>Registered On</p>
-                      <p className="text-gray-800" style={{ color: "#333" }}>
+                      <p className="text-gray-600 dark:text-gray-400 font-semibold" style={{ color: "var(--text-secondary-hex)", fontWeight: "600" }}>Registered On</p>
+                      <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>
                         {new Date(farmer.created_at).toLocaleString('en-GB', {
                           day: '2-digit',
                           month: 'short',
@@ -645,14 +645,14 @@ export default function FarmerDetails() {
                   )}
                   {farmer.created_by && (
                     <div>
-                      <p className="text-gray-600 font-semibold" style={{ color: "#666", fontWeight: "600" }}>Registered By</p>
-                      <p className="text-gray-800" style={{ color: "#333" }}>{farmer.created_by}</p>
+                      <p className="text-gray-600 dark:text-gray-400 font-semibold" style={{ color: "var(--text-secondary-hex)", fontWeight: "600" }}>Registered By</p>
+                      <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.created_by}</p>
                     </div>
                   )}
                   {farmer.updated_at && (
                     <div>
-                      <p className="text-gray-600 font-semibold" style={{ color: "#666", fontWeight: "600" }}>Last Updated</p>
-                      <p className="text-gray-800" style={{ color: "#333" }}>
+                      <p className="text-gray-600 dark:text-gray-400 font-semibold" style={{ color: "var(--text-secondary-hex)", fontWeight: "600" }}>Last Updated</p>
+                      <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>
                         {new Date(farmer.updated_at).toLocaleString('en-GB', {
                           day: '2-digit',
                           month: 'short',
@@ -669,24 +669,24 @@ export default function FarmerDetails() {
           </div>
 
           {/* Farm Info Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-emerald-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #10b981" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#1f2937" }}>🚜 Farm Information</h2>
+          <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-emerald-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #10b981" }}>
+            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary)" }}>🚜 Farm Information</h2>
             <div className="grid gap-4 text-sm" style={{ display: "grid", gap: "15px", fontSize: "14px" }}>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Farm Size</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.farm_info?.farm_size_hectares || 0} hectares</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Farm Size</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.farm_info?.farm_size_hectares || 0} hectares</p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Crops Grown</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Crops Grown</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>
                   {farmer.farm_info?.crops_grown && farmer.farm_info.crops_grown.length > 0
                     ? farmer.farm_info.crops_grown.join(", ")
                     : "N/A"}
                 </p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Livestock</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Livestock</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>
                   {(farmer.farm_info?.livestock || farmer.farm_info?.livestock_types) && 
                    (farmer.farm_info?.livestock || farmer.farm_info?.livestock_types)!.length > 0
                     ? (farmer.farm_info?.livestock || farmer.farm_info?.livestock_types)!.join(", ")
@@ -694,12 +694,12 @@ export default function FarmerDetails() {
                 </p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Irrigation</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.farm_info?.has_irrigation ? "Yes ✓" : "No ✗"}</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Irrigation</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.farm_info?.has_irrigation ? "Yes ✓" : "No ✗"}</p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Farming Experience</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Farming Experience</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>
                   {farmer.farm_info?.farming_experience_years || farmer.farm_info?.years_farming || 0} years
                 </p>
               </div>
@@ -707,20 +707,20 @@ export default function FarmerDetails() {
           </div>
 
           {/* Household Info Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-orange-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #f97316" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#1f2937" }}>🏠 Household Information</h2>
+          <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-orange-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #f97316" }}>
+            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary)" }}>🏠 Household Information</h2>
             <div className="grid gap-4 text-sm" style={{ display: "grid", gap: "15px", fontSize: "14px" }}>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Household Size</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.household_info?.household_size || 0} members</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Household Size</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.household_info?.household_size || 0} members</p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Number of Dependents</p>
-                <p className="text-gray-800" style={{ color: "#333" }}>{farmer.household_info?.number_of_dependents || 0}</p>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Number of Dependents</p>
+                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.household_info?.number_of_dependents || 0}</p>
               </div>
               <div>
-                <p className="text-gray-600 font-semibold mb-2" style={{ color: "#666", fontWeight: "600", marginBottom: "5px" }}>Primary Income Source</p>
-                <p className="text-gray-800 capitalize" style={{ color: "#333", textTransform: "capitalize" }}>
+                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Primary Income Source</p>
+                <p className="text-gray-800 dark:text-gray-100 capitalize" style={{ color: "var(--text-primary-hex)", textTransform: "capitalize" }}>
                   {farmer.household_info?.primary_income_source || "N/A"}
                 </p>
               </div>
@@ -728,8 +728,8 @@ export default function FarmerDetails() {
           </div>
 
           {/* Documents Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all lg:col-span-3 border-l-4 border-red-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", gridColumn: "1 / -1", borderLeft: "4px solid #ef4444" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#1f2937" }}>📄 Documents</h2>
+          <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all lg:col-span-3 border-l-4 border-red-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", gridColumn: "1 / -1", borderLeft: "4px solid #ef4444" }}>
+            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary)" }}>📄 Documents</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px" }}>
               {/* NRC Card */}
@@ -821,8 +821,8 @@ function DocumentSection({ title, docType, docUrl, uploading, onUpload, onDelete
   };
 
   return (
-    <div className="border border-gray-300 rounded-lg p-4 sm:p-6 bg-gray-50 hover:shadow-md transition-shadow" style={{ border: "1px solid #e0e0e0", borderRadius: "10px", padding: "20px", background: "#fafafa" }}>
-      <h3 className="text-base sm:text-lg font-bold mb-4 text-gray-800" style={{ fontSize: "16px", fontWeight: "700", marginBottom: "15px", color: "#333" }}>{title}</h3>
+    <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 sm:p-6 bg-gray-50 dark:bg-gray-800 hover:shadow-md transition-shadow" style={{ border: "1px solid #e0e0e0", borderRadius: "10px", padding: "20px", background: "var(--bg-surface)" }}>
+      <h3 className="text-base sm:text-lg font-bold mb-4 text-gray-800 dark:text-gray-100" style={{ fontSize: "16px", fontWeight: "700", marginBottom: "15px", color: "var(--text-primary-hex)" }}>{title}</h3>
       
       {docUrl ? (
         <div>
@@ -901,7 +901,7 @@ function DocumentSection({ title, docType, docUrl, uploading, onUpload, onDelete
         </div>
       ) : (
         <div>
-          <p className="text-gray-500 text-xs sm:text-sm mb-4 text-center" style={{ color: "#999", fontSize: "14px", marginBottom: "15px", textAlign: "center" }}>
+          <p className="text-gray-500 dark:text-gray-500 dark:text-gray-500 text-xs sm:text-sm mb-4 text-center" style={{ color: "var(--text-muted-hex)", fontSize: "14px", marginBottom: "15px", textAlign: "center" }}>
             No document uploaded
           </p>
           <input

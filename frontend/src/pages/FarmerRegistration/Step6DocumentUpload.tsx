@@ -73,19 +73,19 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
 
   return (
     <div>
-      <h2 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+      <h2 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
         📄 Step 6: Upload Documents
       </h2>
 
       {/* Progress */}
       <div style={{ marginBottom: "25px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-          <span style={{ fontSize: "14px", fontWeight: "600", color: "#666" }}>Documents Uploaded</span>
+          <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)" }}>Documents Uploaded</span>
           <span style={{ fontSize: "14px", fontWeight: "700", color: "#007bff" }}>
             {documents.filter((d) => d.uploaded).length} / {documents.length}
           </span>
         </div>
-        <div style={{ width: "100%", background: "#e0e0e0", borderRadius: "20px", height: "8px", overflow: "hidden" }}>
+        <div style={{ width: "100%", background: "var(--border-light)", borderRadius: "20px", height: "8px", overflow: "hidden" }}>
           <div
             style={{
               background: "#007bff",
@@ -107,7 +107,7 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
               border: "2px solid #e0e0e0",
               borderRadius: "10px",
               padding: "16px",
-              background: "#fafafa",
+              background: "var(--bg-surface)",
               transition: "all 0.3s"
             }}
           >
@@ -115,9 +115,9 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
               <span style={{ fontSize: "28px" }}>{doc.uploaded ? "✅" : "📄"}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h3 style={{ fontWeight: "600", color: "#333", fontSize: "15px" }}>{doc.label}</h3>
+                <h3 style={{ fontWeight: "600", color: "var(--text-primary-hex)", fontSize: "15px" }}>{doc.label}</h3>
                 {doc.file && !doc.uploaded && (
-                  <p style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                  <p style={{ fontSize: "12px", color: "var(--text-secondary-hex)", marginTop: "4px" }}>
                     {doc.file.name} ({(doc.file.size / 1024 / 1024).toFixed(2)} MB)
                   </p>
                 )}
@@ -149,7 +149,7 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
                     background: "white",
                     transition: "all 0.3s",
                     fontSize: "14px",
-                    color: "#666"
+                    color: "var(--text-secondary-hex)"
                   }}>
                     {doc.file ? "📎 Change File" : "📁 Choose File"}
                   </div>
@@ -199,7 +199,7 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
           style={{
             flex: 1,
             padding: "14px",
-            background: "#6c757d",
+            background: "var(--text-secondary-hex)",
             color: "white",
             border: "none",
             borderRadius: "8px",

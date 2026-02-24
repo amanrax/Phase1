@@ -352,12 +352,12 @@ export default function EditFarmer() {
         <form onSubmit={handleSubmit}>
           {/* Personal Info */}
           <div style={{ background: "white", padding: "clamp(15px, 4vw, 25px)", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
-            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
               👤 Personal Information
             </h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
                   First Name <span style={{ color: "#dc3545" }}>*</span>
                 </label>
                 <input
@@ -367,7 +367,7 @@ export default function EditFarmer() {
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
                   Last Name <span style={{ color: "#dc3545" }}>*</span>
                 </label>
                 <input
@@ -377,7 +377,7 @@ export default function EditFarmer() {
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
                   Phone Primary <span style={{ color: "#dc3545" }}>*</span>
                 </label>
                 <input
@@ -387,7 +387,7 @@ export default function EditFarmer() {
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
                   Phone Secondary
                 </label>
                 <input
@@ -397,7 +397,7 @@ export default function EditFarmer() {
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Email</label>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Email</label>
                 <input
                   type="email" value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
@@ -405,7 +405,7 @@ export default function EditFarmer() {
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
                   NRC <span style={{ color: "#dc3545" }}>*</span>
                 </label>
                 <input
@@ -415,7 +415,7 @@ export default function EditFarmer() {
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
                   Date of Birth <span style={{ color: "#dc3545" }}>*</span>
                 </label>
                 <input
@@ -425,7 +425,7 @@ export default function EditFarmer() {
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
                   Gender <span style={{ color: "#dc3545" }}>*</span>
                 </label>
                 <select
@@ -440,7 +440,7 @@ export default function EditFarmer() {
                 </select>
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
                   Ethnic Group
                 </label>
                 <input
@@ -454,12 +454,12 @@ export default function EditFarmer() {
 
           {/* Address */}
           <div style={{ background: "white", padding: "clamp(15px, 4vw, 25px)", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
-            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
               📍 Address
             </h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Province</label>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Province</label>
                 <select
                   value={formData.province_code}
                   onChange={(e) => handleProvinceChange(e.target.value)}
@@ -472,7 +472,7 @@ export default function EditFarmer() {
               </div>
               {showCustomProvince && (
                 <div>
-                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Custom Province</label>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Custom Province</label>
                   <input
                     type="text" value={customProvince}
                     onChange={(e) => setCustomProvince(e.target.value)}
@@ -481,7 +481,7 @@ export default function EditFarmer() {
                 </div>
               )}
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>District</label>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>District</label>
                 <select
                   value={formData.district_code}
                   onChange={(e) => handleDistrictChange(e.target.value)}
@@ -495,7 +495,7 @@ export default function EditFarmer() {
               </div>
               {showCustomDistrict && (
                 <div>
-                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Custom District</label>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Custom District</label>
                   <input
                     type="text" value={customDistrict}
                     onChange={(e) => setCustomDistrict(e.target.value)}
@@ -504,7 +504,7 @@ export default function EditFarmer() {
                 </div>
               )}
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Chiefdom</label>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Chiefdom</label>
                 <select
                   value={formData.chiefdom_code}
                   onChange={(e) => handleChiefdomChange(e.target.value)}
@@ -518,7 +518,7 @@ export default function EditFarmer() {
               </div>
               {showCustomChiefdom && (
                 <div>
-                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Custom Chiefdom</label>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Custom Chiefdom</label>
                   <input
                     type="text" value={customChiefdom}
                     onChange={(e) => setCustomChiefdom(e.target.value)}
@@ -527,7 +527,7 @@ export default function EditFarmer() {
                 </div>
               )}
               <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Village</label>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Village</label>
                 <input
                   type="text" value={formData.village}
                   onChange={(e) => setFormData(prev => ({ ...prev, village: e.target.value }))}
@@ -539,12 +539,12 @@ export default function EditFarmer() {
 
           {/* Farm Info */}
           <div style={{ background: "white", padding: "clamp(15px, 4vw, 25px)", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
-            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
               🌾 Farm Information
             </h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Farm Size (hectares)</label>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Farm Size (hectares)</label>
                 <input
                   type="number" step="0.01" value={formData.farm_size_hectares}
                   onChange={(e) => setFormData(prev => ({ ...prev, farm_size_hectares: e.target.value }))}
@@ -552,7 +552,7 @@ export default function EditFarmer() {
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Years Farming</label>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Years Farming</label>
                 <input
                   type="number" value={formData.years_farming}
                   onChange={(e) => setFormData(prev => ({ ...prev, years_farming: e.target.value }))}
@@ -560,7 +560,7 @@ export default function EditFarmer() {
                 />
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
                   Crops Grown (comma-separated)
                 </label>
                 <input
@@ -571,7 +571,7 @@ export default function EditFarmer() {
                 />
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
                   Livestock Types (comma-separated)
                 </label>
                 <input
@@ -582,7 +582,7 @@ export default function EditFarmer() {
                 />
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "flex", alignItems: "center", fontSize: "14px", fontWeight: "600", color: "#666", cursor: "pointer" }}>
+                <label style={{ display: "flex", alignItems: "center", fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", cursor: "pointer" }}>
                   <input
                     type="checkbox" checked={formData.has_irrigation}
                     onChange={(e) => setFormData(prev => ({ ...prev, has_irrigation: e.target.checked }))}
@@ -596,12 +596,12 @@ export default function EditFarmer() {
 
           {/* Household Info */}
           <div style={{ background: "white", padding: "clamp(15px, 4vw, 25px)", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
-            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "#333", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
               🏠 Household Information
             </h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Household Size</label>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Household Size</label>
                 <input
                   type="number" value={formData.household_size}
                   onChange={(e) => setFormData(prev => ({ ...prev, household_size: e.target.value }))}
@@ -609,7 +609,7 @@ export default function EditFarmer() {
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Number of Dependents</label>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Number of Dependents</label>
                 <input
                   type="number" value={formData.number_of_dependents}
                   onChange={(e) => setFormData(prev => ({ ...prev, number_of_dependents: e.target.value }))}
@@ -617,7 +617,7 @@ export default function EditFarmer() {
                 />
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#666", marginBottom: "6px" }}>Primary Income Source</label>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Primary Income Source</label>
                 <input
                   type="text" value={formData.primary_income_source}
                   onChange={(e) => setFormData(prev => ({ ...prev, primary_income_source: e.target.value }))}
@@ -633,7 +633,7 @@ export default function EditFarmer() {
               type="button"
               onClick={() => navigate(-1)}
               style={{
-                padding: "12px 30px", background: "#6c757d", color: "white", border: "none",
+                padding: "12px 30px", background: "var(--text-secondary-hex)", color: "white", border: "none",
                 borderRadius: "8px", fontSize: "clamp(13px, 2vw, 15px)", fontWeight: "600", cursor: "pointer", transition: "all 0.3s", flex: "1 1 120px", minWidth: "120px"
               }}
               onMouseOver={(e) => e.currentTarget.style.background = "#5a6268"}

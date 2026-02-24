@@ -60,10 +60,10 @@ export default function OperatorDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600"></div>
-          <p className="text-gray-600 mt-4">Loading operator details...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 dark:border-gray-600 border-t-green-600"></div>
+          <p className="text-gray-600 dark:text-gray-400 mt-4">Loading operator details...</p>
         </div>
       </div>
     );
@@ -71,7 +71,7 @@ export default function OperatorDetails() {
 
   if (error || !operator) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <p className="text-6xl mb-4">❌</p>
           <p className="text-xl text-red-600 mb-6">{error || "Operator not found"}</p>
@@ -87,9 +87,9 @@ export default function OperatorDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button 
@@ -98,7 +98,7 @@ export default function OperatorDetails() {
             >
               ← BACK
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">👨‍💼 Operator Details</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">👨‍💼 Operator Details</h1>
           </div>
           <div className="flex gap-2">
             <button
@@ -126,19 +126,19 @@ export default function OperatorDetails() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Info */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 pb-4 border-b-4 border-green-700">
+          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 pb-4 border-b-4 border-green-700">
               {operator.full_name}
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Operator ID</p>
-                <p className="text-lg font-mono font-bold text-gray-800 mt-1">{operator.operator_id}</p>
+                <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Operator ID</p>
+                <p className="text-lg font-mono font-bold text-gray-800 dark:text-gray-100 mt-1">{operator.operator_id}</p>
               </div>
               
               <div>
-                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Status</p>
+                <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Status</p>
                 <div className="mt-1">
                   <span className={`px-3 py-1 rounded-full text-sm font-bold ${
                     operator.is_active 
@@ -151,23 +151,23 @@ export default function OperatorDetails() {
               </div>
 
               <div>
-                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Email</p>
-                <p className="text-sm text-gray-800 mt-1">{operator.email}</p>
+                <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Email</p>
+                <p className="text-sm text-gray-800 dark:text-gray-100 mt-1">{operator.email}</p>
               </div>
 
               <div>
-                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Phone</p>
-                <p className="text-sm text-gray-800 mt-1">{operator.phone || "N/A"}</p>
+                <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Phone</p>
+                <p className="text-sm text-gray-800 dark:text-gray-100 mt-1">{operator.phone || "N/A"}</p>
               </div>
 
               <div>
-                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Assigned District</p>
-                <p className="text-sm text-gray-800 mt-1">{operator.assigned_district || "All Districts"}</p>
+                <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Assigned District</p>
+                <p className="text-sm text-gray-800 dark:text-gray-100 mt-1">{operator.assigned_district || "All Districts"}</p>
               </div>
 
               <div>
-                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Registered</p>
-                <p className="text-sm text-gray-800 mt-1">
+                <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Registered</p>
+                <p className="text-sm text-gray-800 dark:text-gray-100 mt-1">
                   {operator.created_at ? new Date(operator.created_at).toLocaleDateString() : "N/A"}
                 </p>
               </div>

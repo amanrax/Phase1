@@ -103,7 +103,7 @@ export default function FarmerSupplyRequests() {
     if (s === "approved") return "bg-blue-100 text-blue-800";
     if (s === "fulfilled") return "bg-green-100 text-green-800";
     if (s === "rejected") return "bg-red-100 text-red-800";
-    return "bg-gray-100 text-gray-800";
+    return "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100";
   };
 
   const getUrgencyColor = (urg: string) => {
@@ -114,15 +114,15 @@ export default function FarmerSupplyRequests() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate("/farmer-dashboard")} className="text-green-700 hover:text-green-800 font-bold text-sm">
               ← BACK
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">📦 My Requests</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">📦 My Requests</h1>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
@@ -137,15 +137,15 @@ export default function FarmerSupplyRequests() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* New Request Form */}
         {showForm && (
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">📝 Create New Request</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">📝 Create New Request</h2>
             <div className="space-y-4">
               {/* Items Selection */}
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase">Items Needed</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Items Needed</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
                   {AVAILABLE_ITEMS.map(item => (
-                    <label key={item} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                    <label key={item} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-100 dark:bg-gray-700">
                       <input
                         type="checkbox"
                         checked={selectedItems.includes(item)}
@@ -163,23 +163,23 @@ export default function FarmerSupplyRequests() {
 
               {/* Quantity */}
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase">Quantity</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Quantity</label>
                 <input
                   type="text"
                   placeholder="e.g., 10 bags, 2 units"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
                 />
               </div>
 
               {/* Urgency */}
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase">Urgency</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Urgency</label>
                 <select
                   value={urgency}
                   onChange={(e) => setUrgency(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
                 >
                   {URGENCY_LEVELS.map(u => (
                     <option key={u} value={u}>{u.charAt(0).toUpperCase() + u.slice(1)}</option>
@@ -189,12 +189,12 @@ export default function FarmerSupplyRequests() {
 
               {/* Notes */}
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase">Notes</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Notes</label>
                 <textarea
                   placeholder="Additional details or special requests"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
                   rows={3}
                 />
               </div>
@@ -209,7 +209,7 @@ export default function FarmerSupplyRequests() {
                 </button>
                 <button
                   onClick={() => setShowForm(false)}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition"
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 dark:text-gray-100 font-bold py-2 px-4 rounded-lg transition"
                 >
                   Cancel
                 </button>
@@ -219,13 +219,13 @@ export default function FarmerSupplyRequests() {
         )}
 
         {/* Filter Tabs */}
-        <div className="mb-6 bg-white rounded-lg shadow-sm p-2 flex gap-2 overflow-x-auto">
+        <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-2 flex gap-2 overflow-x-auto">
           {["all", "pending", "approved", "fulfilled", "rejected"].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f as any)}
               className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition ${
-                filter === f ? "bg-green-700 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                filter === f ? "bg-green-700 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:bg-gray-700"
               }`}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -236,20 +236,20 @@ export default function FarmerSupplyRequests() {
         {/* Loading State */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600"></div>
-            <p className="text-gray-600 mt-4">Loading requests...</p>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 dark:border-gray-600 border-t-green-600"></div>
+            <p className="text-gray-600 dark:text-gray-400 mt-4">Loading requests...</p>
           </div>
         ) : filteredRequests.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-            <p className="text-gray-600 text-lg">No requests found</p>
-            <p className="text-gray-500 text-sm">Create a new supply request to get started</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-12 text-center">
+            <p className="text-gray-600 dark:text-gray-400 text-lg">No requests found</p>
+            <p className="text-gray-500 dark:text-gray-500 dark:text-gray-500 text-sm">Create a new supply request to get started</p>
           </div>
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden">
-              <table className="w-full text-left text-sm text-gray-600">
-                <thead className="bg-gray-100 text-gray-700 font-bold uppercase text-xs">
+            <div className="hidden md:block bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+              <table className="w-full text-left text-sm text-gray-600 dark:text-gray-400">
+                <thead className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold uppercase text-xs">
                   <tr>
                     <th className="px-6 py-3">Items</th>
                     <th className="px-6 py-3">Quantity</th>
@@ -259,7 +259,7 @@ export default function FarmerSupplyRequests() {
                     <th className="px-6 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredRequests.map(req => (
                     <tr key={req.id} className="hover:bg-green-50 transition">
                       <td className="px-6 py-4 font-bold">{req.items.join(", ")}</td>
@@ -300,15 +300,15 @@ export default function FarmerSupplyRequests() {
             {/* Mobile Cards */}
             <div className="md:hidden space-y-4">
               {filteredRequests.map(req => (
-                <div key={req.id} className="bg-white rounded-xl shadow-sm p-4">
+                <div key={req.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-bold text-gray-800 text-sm flex-1">{req.items.join(", ")}</h3>
+                    <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm flex-1">{req.items.join(", ")}</h3>
                     <span className={`px-2 py-1 text-xs font-bold rounded-full ${getStatusColor(req.status)} whitespace-nowrap ml-2`}>
                       {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                     </span>
                   </div>
 
-                  <div className="space-y-2 mb-4 text-xs text-gray-600">
+                  <div className="space-y-2 mb-4 text-xs text-gray-600 dark:text-gray-400">
                     <p><strong>Quantity:</strong> {req.quantity}</p>
                     <p>
                       <strong>Urgency:</strong>
