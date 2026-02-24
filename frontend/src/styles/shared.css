@@ -246,3 +246,121 @@
   background-color: #dbeafe;
   color: #1e40af;
 }
+
+/* ============================================
+   DARK MODE OVERRIDES
+   Applied when <html class="dark"> is present
+   ============================================ */
+html.dark .app-topbar {
+  background-color: #1f2937;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .topbar-title {
+  color: #f9fafb;
+}
+
+html.dark .ui-card {
+  background: #1f2937;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .card {
+  background: #1f2937;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  border-color: #374151;
+}
+
+html.dark .card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .card-header {
+  color: #f9fafb;
+  border-bottom-color: #374151;
+}
+
+html.dark .form-label {
+  color: #9ca3af;
+}
+
+html.dark .form-input,
+html.dark .form-select,
+html.dark .form-textarea {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+  color-scheme: dark;
+}
+
+html.dark .form-input:focus,
+html.dark .form-select:focus,
+html.dark .form-textarea:focus {
+  border-color: #6ee7b7;
+  box-shadow: 0 0 0 3px rgba(110, 231, 183, 0.15);
+}
+
+html.dark .form-input:disabled,
+html.dark .form-select:disabled,
+html.dark .form-textarea:disabled {
+  background-color: #1f2937;
+  color: #6b7280;
+}
+
+html.dark .form-input::placeholder,
+html.dark .form-select::placeholder,
+html.dark .form-textarea::placeholder {
+  color: #6b7280;
+}
+
+html.dark .btn-secondary {
+  background-color: #374151;
+  color: #6ee7b7;
+  border-color: #6ee7b7;
+}
+
+html.dark .btn-secondary:hover {
+  background-color: #4b5563;
+}
+
+html.dark .table {
+  background: #1f2937;
+}
+
+html.dark .table thead {
+  background-color: #111827;
+  color: #d1d5db;
+}
+
+html.dark .table th {
+  color: #9ca3af;
+}
+
+html.dark .table td {
+  border-bottom-color: #374151;
+  color: #d1d5db;
+}
+
+html.dark .table tbody tr:hover {
+  background-color: #374151;
+}
+
+html.dark .badge-success {
+  background-color: #064e3b;
+  color: #6ee7b7;
+}
+
+html.dark .badge-warning {
+  background-color: #451a03;
+  color: #fcd34d;
+}
+
+html.dark .badge-error {
+  background-color: #450a0a;
+  color: #fca5a5;
+}
+
+html.dark .badge-info {
+  background-color: #1e3a5f;
+  color: #93c5fd;
+}

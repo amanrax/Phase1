@@ -26,6 +26,14 @@ function resolveEffective(theme: Theme): 'light' | 'dark' {
   return theme;
 }
 
+/** Update meta[name=theme-color] for mobile browser chrome / Android status bar */
+function updateMetaThemeColor(effective: 'light' | 'dark') {
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (meta) {
+    meta.content = effective === 'dark' ? '#111827' : '#15803d';
+  }
+}
+
 /** Apply/remove .dark class on <html> — this is what Tailwind + CSS vars read */
 function applyTheme(theme: Theme) {
   const root = document.documentElement;
@@ -35,6 +43,7 @@ function applyTheme(theme: Theme) {
   } else {
     root.classList.remove('dark');
   }
+  updateMetaThemeColor(effective);
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -52,16 +61,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return 'light';
   });
 
-  // Apply theme class + persist whenever theme state changes
+  // Keep useEffect as a backup persister (in case setTheme bypasses it)
   useEffect(() => {
     applyTheme(theme);
-    const effective = resolveEffective(theme);
     try {
       localStorage.setItem('cem-theme', theme);
     } catch (e) {
       logger.warn('ThemeProvider', 'Could not persist theme', e);
     }
-    logger.info('ThemeProvider', `Theme set to "${theme}" (effective: ${effective})`);
+    logger.info('ThemeProvider', `Theme set to "${theme}" (effective: ${resolveEffective(theme)})`);
   }, [theme]);
 
   // Listen for OS-level changes when mode is 'system'
@@ -73,9 +81,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mq.removeEventListener('change', handler);
   }, [theme]);
 
-  const setTheme = useCallback((t: Theme) => { setThemeState(t); }, []);
+  const setTheme = useCallback((t: Theme) => {
+    // Apply DOM change IMMEDIATELY (synchronous) — don't wait for useEffect
+    applyTheme(t);
+    try { localStorage.setItem('cem-theme', t); } catch (_) {}
+    setThemeState(t);
+  }, []);
+
   const toggleTheme = useCallback(() => {
-    setThemeState(prev => prev === 'light' ? 'dark' : 'light');
+    setThemeState(prev => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      // Apply DOM change IMMEDIATELY (synchronous)
+      applyTheme(next);
+      try { localStorage.setItem('cem-theme', next); } catch (_) {}
+      return next;
+    });
   }, []);
 
   const isDark = resolveEffective(theme) === 'dark';

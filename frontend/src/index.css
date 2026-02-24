@@ -46,7 +46,8 @@ body {
   background-attachment: fixed;
   min-height: 100vh;
   color: var(--text-primary);
-  transition: background 0.3s ease, color 0.3s ease;
+  /* Snappy transition — 150ms feels immediate on real devices */
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 /* Custom Scrollbar */

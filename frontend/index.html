@@ -6,11 +6,25 @@
     <link rel="icon" type="image/png" href="/icons/icon-192x192.png" />
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#15803d" />
-    <meta name="description" content="Chiefdom Empowerment Model - Zambian Farmer Registration & Support System" />
+    <meta name="theme-color" content="#15803d" id="meta-theme-color" />
+    <meta name="description" content="Chiefdom Empowerment Model - Zambian Farmer Registration &amp; Support System" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
+    <!-- Apply saved theme BEFORE React renders to prevent flash of wrong theme on Capacitor/mobile -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('cem-theme') || 'light';
+          var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) {
+            document.documentElement.classList.add('dark');
+            var m = document.getElementById('meta-theme-color');
+            if (m) m.content = '#111827';
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="manifest" href="/manifest.json" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <title>CEM - Chiefdom Empowerment Model</title>
