@@ -1,9 +1,76 @@
-Backend API:
+=======================================================================
+ZAMBIAN FARMER SYSTEM - PHASE 2 v2.0.0
+Codespaces Development Instance
+Updated: 2026-02-24
+=======================================================================
+
+🌐 IMPORTANT URLS
+=======================================================================
+Backend API (Port 8000 - MUST BE PUBLIC):
+https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev
+
+Backend Health Check:
 https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev/api/health
 Should show: {"status":"ok"}
 
-Frontend Test Page:
+Frontend Dev (Port 5173 - MUST BE PUBLIC):
+https://automatic-doodle-wqp6gjqwxvqhggvw-5173.app.github.dev
+
+Connection Test Page:
 https://automatic-doodle-wqp6gjqwxvqhggvw-5173.app.github.dev/test-connection.html
 
-Frontend App:
-https://automatic-doodle-wqp6gjqwxvqhggvw-5173.app.github.dev
+⚠️ MAKE PORTS PUBLIC: Right-click ports 8000 and 5173 in PORTS tab → Port Visibility → Public
+
+🔑 TEST CREDENTIALS
+=======================================================================
+Admin (Original):
+  Email: admin@ziamis.gov.zm
+  Password: Admin@2024
+
+Admin (CEM):
+  Email: cemadmin@gmail.com
+  Password: Admin@2025
+
+Operator:
+  Email: operator1@ziamis.gov.zm
+  Password: Operator@123
+
+Farmer (Mary Mwale):
+  NRC: 315990/08/2
+  DOB: 1961-02-02
+  
+Farmer (David Phiri):
+  NRC: 071186/59/0
+  DOB: 1962-03-03
+
+Farmer (Grace Chanda):
+  NRC: 898722/01/2
+  DOB: 1963-04-04
+
+🚀 QUICK START
+=======================================================================
+1. Start Docker daemon:
+   sudo dockerd > /tmp/dockerd.log 2>&1 &
+   sleep 5
+
+2. Start backend services:
+   cd /workspaces/Phase1
+   docker compose up -d
+
+3. Seed database (if empty):
+   docker exec farmer-backend python3 scripts/quick_seed.py
+
+4. Start frontend:
+   cd frontend
+   npm run dev
+
+5. Make ports PUBLIC in PORTS tab (8000 and 5173)
+
+6. Test: https://automatic-doodle-wqp6gjqwxvqhggvw-5173.app.github.dev
+
+📱 BUILD APK
+=======================================================================
+cd /workspaces/Phase1/frontend
+npm run build:android:debug
+
+APK location: android/app/build/outputs/apk/debug/app-debug.apk
