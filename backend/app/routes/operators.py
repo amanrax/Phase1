@@ -64,13 +64,13 @@ async def _get_operator_stats(operator_id: str, db):
     operator_doc = await db.operators.find_one({"operator_id": operator_id})
     assigned_districts = operator_doc.get("assigned_districts", []) if operator_doc else []
     
-    # Build query based on district assignment or created_by
+    # Build query based on district assignment or operator_id
+    # Farmer documents use: location.district (not address.district_name)
     if assigned_districts:
-        # Count farmers in assigned districts
-        farmer_query = {"address.district_name": {"$in": assigned_districts}}
+        farmer_query = {"location.district": {"$in": assigned_districts}}
     else:
-        # No districts assigned - count only farmers created by this operator
-        farmer_query = {"created_by": operator_id}
+        # Fallback: count farmers directly assigned to this operator
+        farmer_query = {"operator_id": operator_id}
     
     farmer_count = await db.farmers.count_documents(farmer_query)
     from datetime import timedelta
@@ -82,8 +82,9 @@ async def _get_operator_stats(operator_id: str, db):
         {
             "$group": {
                 "_id": None,
-                "total_land": {"$sum": {"$ifNull": ["$farm_info.farm_size_hectares", 0]}},
-                "avg_land": {"$avg": {"$ifNull": ["$farm_info.farm_size_hectares", 0]}},
+                # farm_details.farm_size_hectares is the actual field name
+                "total_land": {"$sum": {"$ifNull": ["$farm_details.farm_size_hectares", 0]}},
+                "avg_land": {"$avg": {"$ifNull": ["$farm_details.farm_size_hectares", 0]}},
             }
         },
     ]
@@ -280,9 +281,9 @@ async def get_current_operator_stats(
     assigned_districts = operator.get("assigned_districts", [])
     
     if assigned_districts:
-        farmer_query = {"address.district_name": {"$in": assigned_districts}}
+        farmer_query = {"location.district": {"$in": assigned_districts}}
     else:
-        farmer_query = {"created_by": operator_id}
+        farmer_query = {"operator_id": operator_id}
     
     # Count by status
     pending_count = await db.farmers.count_documents({

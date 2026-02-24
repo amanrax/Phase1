@@ -92,6 +92,32 @@ html.dark .min-h-screen { background-color: #111827; }
 html.dark .ring-gray-200 { --tw-ring-color: #374151; }
 html.dark .ring-gray-300 { --tw-ring-color: #4b5563; }
 
+/* ================================================================
+   LIGHT MODE EXPLICIT RESETS
+   Ensures elements snap back to light values when html.dark removed.
+   These run AFTER the dark overrides so they always win in light mode.
+   ================================================================ */
+html:not(.dark) .bg-white          { background-color: #ffffff !important; }
+html:not(.dark) .bg-slate-50       { background-color: #f8fafc !important; }
+html:not(.dark) .bg-gray-50        { background-color: #f9fafb !important; }
+html:not(.dark) .bg-gray-100       { background-color: #f3f4f6 !important; }
+html:not(.dark) .text-gray-900     { color: #111827 !important; }
+html:not(.dark) .text-gray-800     { color: #1f2937 !important; }
+html:not(.dark) .text-gray-700     { color: #374151 !important; }
+html:not(.dark) .text-gray-600     { color: #4b5563 !important; }
+html:not(.dark) .text-gray-500     { color: #6b7280 !important; }
+html:not(.dark) table              { background-color: transparent !important; }
+html:not(.dark) thead              { background-color: #f9fafb !important; }
+html:not(.dark) th                 { color: #374151 !important; background-color: #f9fafb !important; }
+html:not(.dark) td                 { color: #111827 !important; }
+html:not(.dark) .sticky            { background-color: initial !important; }
+html:not(.dark) input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html:not(.dark) textarea,
+html:not(.dark) select             { background-color: #ffffff !important; color: #111827 !important; border-color: #d1d5db !important; }
+html:not(.dark) .bg-gradient-to-br,
+html:not(.dark) .bg-gradient-to-r,
+html:not(.dark) .bg-gradient-to-b  { background: revert !important; }
+
 /* ================================================
    Design System CSS Variables - LIGHT MODE
    ================================================ */

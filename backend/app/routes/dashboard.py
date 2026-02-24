@@ -69,23 +69,28 @@ async def get_dashboard_stats(
     # Format recent farmer data safely
     recent_results = []
     for f in recent_farmers:
-        # Safe extraction with defaults
+        # Support both flat full_name and split first/last name
         personal_info = f.get("personal_info") or {}
-        address = f.get("address") or {}
-        
-        # Get names with fallback
-        first_name = personal_info.get("first_name") or ""
-        last_name = personal_info.get("last_name") or ""
-        
-        # Build full name safely
-        full_name = f"{first_name} {last_name}".strip()
-        if not full_name:
-            full_name = "Unknown"
-        
+        location = f.get("location") or f.get("address") or {}
+
+        full_name = (
+            personal_info.get("full_name")
+            or f"{personal_info.get('first_name', '')} {personal_info.get('last_name', '')}".strip()
+            or f.get("name")
+            or "Unknown"
+        )
+
+        district = (
+            location.get("district")
+            or location.get("district_name")
+            or f.get("district")
+            or "N/A"
+        )
+
         recent_results.append({
             "farmer_id": f.get("farmer_id") or "N/A",
             "name": full_name,
-            "district": address.get("district_name") or address.get("district") or "N/A",
+            "district": district,
             "created_at": f.get("created_at"),
             "registration_status": f.get("registration_status") or "registered",
             "is_active": f.get("is_active", True)
