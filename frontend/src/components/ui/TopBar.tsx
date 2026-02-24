@@ -25,7 +25,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   };
 
   return (
-    <div className="h-16 bg-white dark:bg-gray-800 shadow-sm flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20">
+    <div className="h-16 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20">
       {/* Left Side - Menu Button (Mobile) + Title */}
       <div className="flex items-center gap-4 flex-1">
         {/* Hamburger Menu - Mobile Only */}
