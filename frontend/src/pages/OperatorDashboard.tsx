@@ -6,6 +6,7 @@ import { farmerService } from "@/services/farmer.service";
 import { operatorService } from "@/services/operator.service";
 import axios from "@/utils/axios";
 import { useNotification } from "@/contexts/NotificationContext";
+import { ThemeToggle } from "@/contexts/ThemeContext";
 
 interface Farmer {
   _id: string;
@@ -115,7 +116,7 @@ export default function OperatorDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 pb-8 transition-all duration-300">
       {/* Header */}
       <div className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4">
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold drop-shadow-lg mb-2">
@@ -196,6 +197,8 @@ export default function OperatorDashboard() {
               >
                 ➕ Add Farmer
               </button>
+
+              <ThemeToggle className="text-xs sm:text-sm" />
 
               <button
                 onClick={logout}

@@ -4,6 +4,8 @@ import useAuthStore from "@/store/authStore";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RoleRoute } from "@/components/RoleRoute";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import ToastContainer from "@/components/ToastContainer";
 import SessionTimeout from "@/components/SessionTimeout";
 import { useBackButton } from "@/hooks/useBackButton";
@@ -27,6 +29,7 @@ import FarmerIDCard from "@/pages/FarmerIDCard";
 import IDCardViewer from "@/pages/IDCardViewer";
 import DocumentViewer from "@/pages/DocumentViewer";
 import AdminReports from "@/pages/AdminReports";
+import AnalyticsDashboard from "@/pages/AnalyticsDashboard";
 import AdminSettings from "@/pages/AdminSettings";
 import AdminSupplyRequests from "@/pages/AdminSupplyRequests";
 import FarmerSupplyRequests from "@/pages/FarmerSupplyRequests";
@@ -129,6 +132,16 @@ function App() {
               <ProtectedRoute>
                 <RoleRoute requiredRole="admin">
                   <AdminReports />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/analytics"
+            element={
+              <ProtectedRoute>
+                <RoleRoute requiredRole={["admin", "operator"]}>
+                  <AnalyticsDashboard />
                 </RoleRoute>
               </ProtectedRoute>
             }
@@ -287,14 +300,18 @@ function App() {
   };
 
   return (
-    <NotificationProvider>
-      <HashRouter>
-        {showPermissions && (
-          <PermissionRequest onComplete={() => setShowPermissions(false)} />
-        )}
-        <AppContent />
-      </HashRouter>
-    </NotificationProvider>
+    <ErrorBoundary>
+    <ThemeProvider>
+      <NotificationProvider>
+        <HashRouter>
+          {showPermissions && (
+            <PermissionRequest onComplete={() => setShowPermissions(false)} />
+          )}
+          <AppContent />
+        </HashRouter>
+      </NotificationProvider>
+    </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

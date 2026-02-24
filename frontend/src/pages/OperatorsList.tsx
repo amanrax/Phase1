@@ -123,11 +123,19 @@ export default function OperatorsList() {
         )}
 
         {loading ? (
-          <div className="bg-white p-12 text-center rounded-xl shadow-sm">
-            <div className="inline-block">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600"></div>
-            </div>
-            <p className="mt-4 text-gray-600">Loading operators...</p>
+          <div className="space-y-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-4 animate-pulse">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3.5 bg-gray-200 rounded w-1/3" />
+                  <div className="h-3 bg-gray-100 rounded w-1/4" />
+                </div>
+                <div className="hidden sm:block w-24 h-3 bg-gray-200 rounded" />
+                <div className="hidden md:block w-20 h-3 bg-gray-100 rounded" />
+                <div className="w-16 h-6 bg-gray-200 rounded-full" />
+              </div>
+            ))}
           </div>
         ) : operators.length === 0 ? (
           <div className="bg-white p-12 text-center rounded-xl shadow-sm">

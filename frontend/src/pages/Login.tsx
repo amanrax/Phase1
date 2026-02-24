@@ -8,6 +8,8 @@ import { getApiBaseUrl } from "@/config/mobile";
 import { useNotification } from "@/contexts/NotificationContext";
 import { useBackButton } from '@/hooks/useBackButton';
 import { App } from '@capacitor/app';
+import { handleNRCChange } from '@/utils/nrcFormatter';
+import { ThemeToggle } from '@/contexts/ThemeContext';
 
 const roles = ["admin", "operator", "farmer"];
 
@@ -131,7 +133,12 @@ export default function Login() {
   const passwordInputType = isFarmer ? "date" : "password";
 
   return (
-    <div className="min-h-screen relative overflow-hidden transition-all duration-500 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+    <div className="min-h-screen relative overflow-hidden transition-all duration-500 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900">
+      {/* Theme Toggle - top right */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
@@ -175,7 +182,7 @@ export default function Login() {
           </div>
 
           {/* Login Card with Enhanced 3D Effect */}
-          <div className="backdrop-blur-xl rounded-3xl p-8 border transition-all duration-500 transform preserve-3d bg-white/90 border-white/50 shadow-[0_25px_50px_-12px_rgba(99,102,241,0.4),0_0_0_1px_rgba(255,255,255,0.5),inset_0_1px_0_0_rgba(255,255,255,0.8)] hover:shadow-[0_30px_60px_-15px_rgba(99,102,241,0.5)]" style={{ transformStyle: 'preserve-3d', transform: 'translateZ(0)' }}>
+          <div className="backdrop-blur-xl rounded-3xl p-8 border transition-all duration-500 transform preserve-3d bg-white/90 dark:bg-gray-900/90 border-white/50 dark:border-gray-700/50 shadow-[0_25px_50px_-12px_rgba(99,102,241,0.4),0_0_0_1px_rgba(255,255,255,0.5),inset_0_1px_0_0_rgba(255,255,255,0.8)] hover:shadow-[0_30px_60px_-15px_rgba(99,102,241,0.5)]" style={{ transformStyle: 'preserve-3d', transform: 'translateZ(0)' }}>
             {/* Role Tabs */}
             <div className="mb-8">
               <div className="flex rounded-2xl p-1.5 bg-gray-100" style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}>
@@ -228,7 +235,14 @@ export default function Login() {
                     type={usernameInputType}
                     placeholder={usernamePlaceholder}
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      if (isFarmer) {
+                        setEmail(handleNRCChange(e.target.value));
+                      } else {
+                        setEmail(e.target.value);
+                      }
+                    }}
+                    maxLength={isFarmer ? 11 : undefined}
                     required
                     autoComplete={isFarmer ? "off" : "email"}
                     className="w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.3),0_8px_16px_rgba(99,102,241,0.2)] focus:translate-y-[-2px]"

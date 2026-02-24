@@ -9,6 +9,7 @@ import dashboardService, {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { ThemeToggle } from "@/contexts/ThemeContext";
 
 type ReportType = 'dashboard' | 'region' | 'operators' | 'trends';
 
@@ -232,20 +233,28 @@ export default function AdminReports() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => navigate("/admin-dashboard")} 
-              className="text-green-700 hover:text-green-800 font-bold text-sm"
+              className="text-green-700 dark:text-green-400 hover:text-green-800 font-bold text-sm"
             >
               ← BACK
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">📊 Reports & Analytics</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">📊 Reports &amp; Analytics</h1>
           </div>
 
+          <div className="flex items-center gap-2">
+            <ThemeToggle className="text-sm" />
+            <button
+              onClick={() => navigate("/admin/analytics")}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm"
+            >
+              📈 Charts
+            </button>
           {/* Export Menu */}
           <div className="relative">
             <button
@@ -276,6 +285,7 @@ export default function AdminReports() {
                 </button>
               </div>
             )}
+          </div>
           </div>
         </div>
 
@@ -319,12 +329,20 @@ export default function AdminReports() {
         )}
 
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-green-600"></div>
-            <p className="text-gray-600 mt-4">Loading {activeReport} data...</p>
+          <div className="space-y-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 animate-pulse">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4" />
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {[...Array(4)].map((_, j) => (
+                    <div key={j} className="h-20 bg-gray-100 dark:bg-gray-700 rounded-lg" />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
             {/* Dashboard Report */}
             {activeReport === 'dashboard' && (
               <div>

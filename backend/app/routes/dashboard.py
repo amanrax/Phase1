@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, Request
 from app.database import get_db
 from app.dependencies.roles import require_role
 from app.services.logging_service import log_event
-from datetime import datetime
+from datetime import datetime, timedelta
+from collections import defaultdict
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -171,3 +172,129 @@ async def get_dashboard_stats(
         },
         "generated_at": datetime.now().isoformat()
     }
+
+
+@router.get(
+    "/analytics",
+    summary="Get rich analytics data for charts",
+    description="Returns aggregated analytics data for dashboard charts. Admin/Operator only."
+)
+async def get_analytics(
+    request: Request,
+    db=Depends(get_db),
+    current_user=Depends(require_role(["ADMIN", "OPERATOR"]))
+):
+    """Returns chart-ready analytics: monthly trends, regional distribution, crops, livestock."""
+
+    # --- 1. Monthly registrations (last 12 months) ---
+    twelve_months_ago = datetime.utcnow() - timedelta(days=365)
+    monthly_pipeline = [
+        {"$match": {"created_at": {"$gte": twelve_months_ago}}},
+        {"$group": {
+            "_id": {
+                "year": {"$year": "$created_at"},
+                "month": {"$month": "$created_at"}
+            },
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id.year": 1, "_id.month": 1}}
+    ]
+    monthly_cursor = db.farmers.aggregate(monthly_pipeline)
+    monthly_raw = await monthly_cursor.to_list(length=100)
+
+    month_names = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    monthly_registrations = [
+        {
+            "month": f"{month_names[r['_id']['month']]} {r['_id']['year']}",
+            "farmers": r["count"]
+        }
+        for r in monthly_raw
+    ]
+
+    # --- 2. Farmers by Province ---
+    province_pipeline = [
+        {"$group": {
+            "_id": {"$ifNull": ["$location.province", "$personal_info.province", "Unknown"]},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]
+    province_cursor = db.farmers.aggregate(province_pipeline)
+    province_raw = await province_cursor.to_list(length=10)
+    farmers_by_province = [
+        {"province": r["_id"] or "Unknown", "farmers": r["count"]}
+        for r in province_raw
+    ]
+
+    # --- 3. Farmers by District (top 10) ---
+    district_pipeline = [
+        {"$group": {
+            "_id": {"$ifNull": ["$location.district", "$personal_info.district", "Unknown"]},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]
+    district_cursor = db.farmers.aggregate(district_pipeline)
+    district_raw = await district_cursor.to_list(length=10)
+    farmers_by_district = [
+        {"district": r["_id"] or "Unknown", "farmers": r["count"]}
+        for r in district_raw
+    ]
+
+    # --- 4. Crops distribution ---
+    all_farmers = await db.farmers.find(
+        {}, {"farm_details.crops": 1, "personal_info.crops": 1}
+    ).to_list(length=5000)
+
+    crop_counts: dict = defaultdict(int)
+    for f in all_farmers:
+        fd = f.get("farm_details") or f.get("personal_info") or {}
+        crops = fd.get("crops") or []
+        if isinstance(crops, list):
+            for c in crops:
+                if c:
+                    crop_counts[str(c).strip()] += 1
+
+    crops_distribution = sorted(
+        [{"crop": k, "count": v} for k, v in crop_counts.items()],
+        key=lambda x: x["count"],
+        reverse=True
+    )[:10]
+
+    # --- 5. Livestock distribution ---
+    livestock_counts: dict = defaultdict(int)
+    for f in all_farmers:
+        fd = f.get("farm_details") or {}
+        animals = fd.get("livestock") or []
+        if isinstance(animals, list):
+            for a in animals:
+                if a:
+                    livestock_counts[str(a).strip()] += 1
+
+    livestock_distribution = sorted(
+        [{"animal": k, "count": v} for k, v in livestock_counts.items()],
+        key=lambda x: x["count"],
+        reverse=True
+    )[:8]
+
+    # --- 6. Active vs Inactive ---
+    total = await db.farmers.count_documents({})
+    active = await db.farmers.count_documents({"is_active": True})
+    status_breakdown = [
+        {"status": "Active", "count": active},
+        {"status": "Inactive", "count": total - active}
+    ]
+
+    return {
+        "monthly_registrations": monthly_registrations,
+        "farmers_by_province": farmers_by_province,
+        "farmers_by_district": farmers_by_district,
+        "crops_distribution": crops_distribution,
+        "livestock_distribution": livestock_distribution,
+        "status_breakdown": status_breakdown,
+        "generated_at": datetime.utcnow().isoformat()
+    }
+

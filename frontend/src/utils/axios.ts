@@ -103,4 +103,17 @@ axiosInstance.interceptors.response.use(
   }
 );
 
+// Friendly error message helper
+export function getFriendlyError(error: any): string {
+  const status = error?.response?.status;
+  if (status === 401) return "Session expired. Please log in again.";
+  if (status === 403) return "Access denied. You don't have permission.";
+  if (status === 404) return "Resource not found.";
+  if (status === 422) return error?.response?.data?.detail?.[0]?.msg || "Validation error. Please check your input.";
+  if (status >= 500) return "Server error. Please try again later.";
+  if (error?.code === 'ECONNABORTED') return "Request timed out. Check your connection.";
+  if (!error?.response) return "Network error. Please check your connection.";
+  return error?.response?.data?.detail || error?.message || "An unexpected error occurred.";
+}
+
 export default axiosInstance;

@@ -131,6 +131,23 @@ export const dashboardService = {
     const { data } = await axiosClient.get("/reports/activity-trends");
     return data;
   },
+
+  /**
+   * Get rich analytics data for charts.
+   * Backend: GET /api/dashboard/analytics
+   */
+  async getAnalytics(): Promise<{
+    monthly_registrations: { month: string; farmers: number }[];
+    farmers_by_province: { province: string; farmers: number }[];
+    farmers_by_district: { district: string; farmers: number }[];
+    crops_distribution: { crop: string; count: number }[];
+    livestock_distribution: { animal: string; count: number }[];
+    status_breakdown: { status: string; count: number }[];
+    generated_at: string;
+  }> {
+    const { data } = await axiosClient.get("/dashboard/analytics");
+    return data;
+  },
 };
 
 export default dashboardService;

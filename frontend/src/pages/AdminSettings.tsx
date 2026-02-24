@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "@/utils/axios";
 import useAuthStore from "@/store/authStore";
+import { ThemeToggle, useTheme } from "@/contexts/ThemeContext";
 
 interface User {
   _id: string;
@@ -390,28 +391,33 @@ export default function AdminSettings() {
     }
   };
 
+  const { isDark } = useTheme();
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/admin-dashboard")} className="text-green-700 hover:text-green-800 font-bold text-sm">
+            <button onClick={() => navigate("/admin-dashboard")} className="text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 font-bold text-sm">
               ← BACK
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">⚙️ Settings</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">⚙️ Settings</h1>
           </div>
-          <button
-            onClick={() => {
-              loadUsers();
-              loadStats();
-            }}
-            disabled={loading}
-            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <i className={`fa-solid fa-rotate-right mr-2 ${loading ? 'animate-spin' : ''}`}></i>
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle className="text-sm" />
+            <button
+              onClick={() => {
+                loadUsers();
+                loadStats();
+              }}
+              disabled={loading}
+              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <i className={`fa-solid fa-rotate-right mr-2 ${loading ? 'animate-spin' : ''}`}></i>
+              Refresh
+            </button>
+          </div>
         </div>
       </header>
 
@@ -706,8 +712,17 @@ export default function AdminSettings() {
 
             {/* Security Tab */}
             {activeTab === "security" && (
-              <div className="bg-white rounded-xl shadow-sm p-8">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">🔐 Security Settings</h2>
+              <div className="space-y-6">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 border border-gray-100 dark:border-gray-700">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">🎨 Appearance</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Choose your preferred color scheme. Your preference will be saved in your browser.</p>
+                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Current: {isDark ? '🌙 Dark Mode' : '☀️ Light Mode'}</span>
+                  <ThemeToggle className="text-base" />
+                </div>
+              </div>
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 border border-gray-100 dark:border-gray-700">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">🔐 Security Settings</h2>
                 <div className="space-y-4 text-gray-600">
                   <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-600">
                     <p className="font-bold text-sm text-blue-800">JWT Token Expiration</p>
@@ -726,6 +741,7 @@ export default function AdminSettings() {
                     <p className="text-xs mt-1">All sensitive data is encrypted at rest and in transit using industry-standard protocols.</p>
                   </div>
                 </div>
+              </div>
               </div>
             )}
           </>

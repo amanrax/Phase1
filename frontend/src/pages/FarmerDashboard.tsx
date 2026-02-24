@@ -6,6 +6,7 @@ import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
 import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
+import { ThemeToggle } from "@/contexts/ThemeContext";
 
 export default function FarmerDashboard() {
   const { user, logout } = useAuthStore();
@@ -198,7 +199,7 @@ export default function FarmerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 flex items-center justify-center p-4 transition-all duration-300">
         <div className="text-center text-white">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
           <p className="text-lg sm:text-xl">Loading your profile...</p>
@@ -209,7 +210,7 @@ export default function FarmerDashboard() {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 pb-8">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 pb-8 transition-all duration-300">
         {/* Header */}
         <div className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg">
@@ -237,6 +238,8 @@ export default function FarmerDashboard() {
                 >
                   🔄 Retry
                 </button>
+                <ThemeToggle className="text-sm" />
+
                 <button
                   onClick={logout}
                   className="px-4 sm:px-6 py-2 bg-gray-600 hover:bg-gray-700 active:scale-95 text-white rounded-lg text-sm font-semibold transition-all"
@@ -304,6 +307,7 @@ export default function FarmerDashboard() {
                     >
                       📥 Download
                     </button>
+                    <ThemeToggle className="text-xs sm:text-sm" />
                     <button
                       onClick={logout}
                       className="px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"

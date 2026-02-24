@@ -6,6 +6,7 @@ import { farmerService } from "@/services/farmer.service";
 import { dashboardService } from "@/services/dashboard.service";
 import { operatorService } from "@/services/operator.service";
 import { useNotification } from "@/contexts/NotificationContext";
+import { ThemeToggle } from "@/contexts/ThemeContext";
 
 interface Farmer {
   _id: string;
@@ -123,7 +124,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 relative overflow-hidden transition-all duration-300">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
@@ -254,12 +255,22 @@ export default function AdminDashboard() {
               </button>
 
               <button
+                onClick={() => navigate("/admin/analytics")}
+                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-teal-600 to-teal-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                style={{ boxShadow: '0 4px 12px rgba(13,148,136,0.3)' }}
+              >
+                📈 Analytics
+              </button>
+
+              <button
                 onClick={() => navigate("/admin/settings")}
                 className="px-2 sm:px-4 py-2 bg-gradient-to-br from-purple-600 to-purple-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
                 style={{ boxShadow: '0 4px 12px rgba(147,51,234,0.3)' }}
               >
                 ⚙️ Settings
               </button>
+
+              <ThemeToggle className="text-xs sm:text-sm" />
               
               <button
                 onClick={logout}
