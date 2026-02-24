@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "@/utils/axios";
 import useAuthStore from "@/store/authStore";
-import { ThemeToggle, useTheme } from "@/contexts/ThemeContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import type { Theme } from "@/contexts/ThemeContext";
+import { logger } from "@/utils/logger";
 
 interface User {
   _id: string;
@@ -25,7 +27,137 @@ interface SystemStats {
   total_farmers: number;
 }
 
-type SettingsTab = "users" | "system" | "security";
+type SettingsTab = "users" | "system" | "security" | "appearance";
+
+/** ─── Appearance Tab ─────────────────────────────────────────── */
+function AppearanceTab() {
+  const { theme, setTheme, isDark } = useTheme();
+  const [logText, setLogText] = useState<string>('');
+  const [showLogs, setShowLogs] = useState(false);
+
+  const themeOptions: { value: Theme; icon: string; label: string; desc: string }[] = [
+    { value: 'light',  icon: '☀️',  label: 'Light',  desc: 'White backgrounds, high contrast in daylight.' },
+    { value: 'dark',   icon: '🌙',  label: 'Dark',   desc: 'Dark backgrounds, easier on eyes at night.' },
+    { value: 'system', icon: '🖥️', label: 'System', desc: 'Automatically follows your device theme.' },
+  ];
+
+  function handleExportLogs() {
+    const text = logger.exportLogs();
+    setLogText(text || '(no logs recorded yet)');
+    setShowLogs(true);
+    logger.info('AppearanceTab', 'Logs exported by user');
+  }
+
+  function handleClearLogs() {
+    logger.clearLogs();
+    setLogText('(logs cleared)');
+    logger.info('AppearanceTab', 'Logs cleared by user');
+  }
+
+  function downloadLogs() {
+    const blob = new Blob([logText], { type: 'text/plain' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `cem-logs-${new Date().toISOString().slice(0,10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* ── Theme Selector ── */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-1">🎨 Color Theme</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+          Select your preferred color scheme. Changes are instant and saved automatically.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {themeOptions.map(opt => {
+            const active = theme === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  setTheme(opt.value);
+                  logger.info('AppearanceTab', `User selected theme: ${opt.value}`);
+                }}
+                className={`flex flex-col items-start gap-2 p-5 rounded-xl border-2 transition-all duration-200 text-left w-full ${
+                  active
+                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-md'
+                    : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 hover:border-indigo-300 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10'
+                }`}
+              >
+                {/* Icon + radio */}
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-3xl">{opt.icon}</span>
+                  <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    active ? 'border-indigo-500' : 'border-gray-300 dark:border-gray-500'
+                  }`}>
+                    {active && <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />}
+                  </span>
+                </div>
+                <span className={`font-bold text-sm ${active ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-200'}`}>
+                  {opt.label}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{opt.desc}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Live preview strip */}
+        <div className={`mt-6 p-4 rounded-xl flex items-center gap-3 text-sm font-medium transition-all duration-300 ${
+          isDark ? 'bg-gray-900 text-gray-100 border border-gray-700' : 'bg-white text-gray-800 border border-gray-200'
+        }`}>
+          <span className="text-xl">{isDark ? '🌙' : '☀️'}</span>
+          <span>
+            Current preview: <strong>{isDark ? 'Dark' : 'Light'}</strong> mode is active.
+            {' '}Cards, text, and backgrounds adapt automatically.
+          </span>
+        </div>
+      </div>
+
+      {/* ── Application Logs ── */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-1">📋 Application Logs</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Client-side logs stored in your browser (last 200 entries). Useful for debugging.
+        </p>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={handleExportLogs}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition"
+          >
+            📥 View Logs
+          </button>
+          {showLogs && (
+            <>
+              <button
+                onClick={downloadLogs}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition"
+              >
+                ⬇️ Download
+              </button>
+              <button
+                onClick={handleClearLogs}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition"
+              >
+                🗑️ Clear Logs
+              </button>
+            </>
+          )}
+        </div>
+        {showLogs && (
+          <pre className="mt-4 p-4 bg-gray-900 text-green-400 rounded-xl text-xs overflow-auto max-h-64 whitespace-pre-wrap font-mono">
+            {logText}
+          </pre>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function AdminSettings() {
   const navigate = useNavigate();
@@ -391,8 +523,6 @@ export default function AdminSettings() {
     }
   };
 
-  const { isDark } = useTheme();
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
@@ -405,7 +535,6 @@ export default function AdminSettings() {
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white">⚙️ Settings</h1>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle className="text-sm" />
             <button
               onClick={() => {
                 loadUsers();
@@ -437,17 +566,20 @@ export default function AdminSettings() {
         )}
 
         {/* Tabs */}
-        <div className="mb-6 bg-white rounded-lg shadow-sm p-2 flex gap-2 overflow-x-auto">
+        <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-2 flex gap-2 overflow-x-auto">
           {[
-            { value: "users", label: "👥 Users" },
-            { value: "system", label: "📊 System" },
-            { value: "security", label: "🔐 Security" }
+            { value: "users",      label: "👥 Users" },
+            { value: "system",     label: "📊 System" },
+            { value: "appearance", label: "🎨 Appearance" },
+            { value: "security",   label: "🔐 Security" }
           ].map(t => (
             <button
               key={t.value}
               onClick={() => setActiveTab(t.value as any)}
               className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition ${
-                activeTab === t.value ? "bg-green-700 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                activeTab === t.value
+                  ? "bg-green-700 text-white"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
               }`}
             >
               {t.label}
@@ -712,38 +844,37 @@ export default function AdminSettings() {
 
             {/* Security Tab */}
             {activeTab === "security" && (
-              <div className="space-y-6">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 border border-gray-100 dark:border-gray-700">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">🎨 Appearance</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Choose your preferred color scheme. Your preference will be saved in your browser.</p>
-                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Current: {isDark ? '🌙 Dark Mode' : '☀️ Light Mode'}</span>
-                  <ThemeToggle className="text-base" />
-                </div>
-              </div>
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 border border-gray-100 dark:border-gray-700">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">🔐 Security Settings</h2>
-                <div className="space-y-4 text-gray-600">
-                  <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-600">
-                    <p className="font-bold text-sm text-blue-800">JWT Token Expiration</p>
-                    <p className="text-xs mt-1">Access tokens expire after 30 minutes. Refresh tokens expire after 7 days.</p>
-                  </div>
-                  <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-600">
-                    <p className="font-bold text-sm text-green-800">Password Requirements</p>
-                    <p className="text-xs mt-1">Minimum 8 characters, includes uppercase, lowercase, and numbers.</p>
-                  </div>
-                  <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
-                    <p className="font-bold text-sm text-orange-800">API Rate Limiting</p>
-                    <p className="text-xs mt-1">100 requests per minute per IP address for public endpoints.</p>
-                  </div>
-                  <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-600">
-                    <p className="font-bold text-sm text-purple-800">Data Protection</p>
-                    <p className="text-xs mt-1">All sensitive data is encrypted at rest and in transit using industry-standard protocols.</p>
+              <div className="space-y-4">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 border border-gray-100 dark:border-gray-700">
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">🔐 Security Settings</h2>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-600">
+                      <p className="font-bold text-sm text-blue-800 dark:text-blue-300">JWT Token Expiration</p>
+                      <p className="text-xs mt-1 text-blue-700 dark:text-blue-400">Access tokens expire after 30 minutes. Refresh tokens expire after 7 days.</p>
+                    </div>
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border-l-4 border-green-600">
+                      <p className="font-bold text-sm text-green-800 dark:text-green-300">Password Requirements</p>
+                      <p className="text-xs mt-1 text-green-700 dark:text-green-400">Min 8 chars, 1 uppercase, 1 lowercase, 1 number.</p>
+                    </div>
+                    <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border-l-4 border-orange-500">
+                      <p className="font-bold text-sm text-orange-800 dark:text-orange-300">API Rate Limiting</p>
+                      <p className="text-xs mt-1 text-orange-700 dark:text-orange-400">100 requests per minute per IP for public endpoints.</p>
+                    </div>
+                    <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-l-4 border-purple-600">
+                      <p className="font-bold text-sm text-purple-800 dark:text-purple-300">Data Protection</p>
+                      <p className="text-xs mt-1 text-purple-700 dark:text-purple-400">All sensitive data is encrypted at rest and in transit.</p>
+                    </div>
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border-l-4 border-red-600">
+                      <p className="font-bold text-sm text-red-800 dark:text-red-300">Version</p>
+                      <p className="text-xs mt-1 text-red-700 dark:text-red-400">CEM Farmer System v2.0.0 (Phase-2)</p>
+                    </div>
                   </div>
                 </div>
-              </div>
               </div>
             )}
+
+            {/* Appearance Tab */}
+            {activeTab === "appearance" && <AppearanceTab />}
           </>
         )}
       </div>

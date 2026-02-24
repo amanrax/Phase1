@@ -3,7 +3,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import dashboardService from "@/services/dashboard.service";
-import { useTheme, ThemeToggle } from "@/contexts/ThemeContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { logger } from "@/utils/logger";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, AreaChart, Area
@@ -65,6 +66,7 @@ export default function AnalyticsDashboard() {
     try {
       setLoading(true);
       setError(null);
+      logger.info("AnalyticsDashboard", "Loading analytics data");
       const [statsData, analyticsData] = await Promise.all([
         dashboardService.getStats(),
         dashboardService.getAnalytics(),
@@ -72,8 +74,14 @@ export default function AnalyticsDashboard() {
       setStats(statsData);
       setAnalytics(analyticsData);
       setLastUpdated(new Date().toLocaleTimeString());
+      logger.info("AnalyticsDashboard", "Analytics data loaded", {
+        farmers: statsData?.farmers?.total,
+        operators: statsData?.operators?.total,
+      });
     } catch (err: any) {
-      setError(err?.message || "Failed to load analytics data");
+      const msg = err?.response?.data?.detail || err?.message || "Failed to load analytics data";
+      logger.error("AnalyticsDashboard", "Failed to load analytics", { error: msg, status: err?.response?.status });
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -117,7 +125,6 @@ export default function AnalyticsDashboard() {
             >
               {loading ? "⟳ Loading..." : "↻ Refresh"}
             </button>
-            <ThemeToggle />
             <button
               onClick={() => { logout(); navigate("/login"); }}
               className="px-3 py-2 text-sm bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors font-medium"
@@ -150,9 +157,9 @@ export default function AnalyticsDashboard() {
           <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             📅 Monthly Farmer Registrations
           </h2>
-          {loading ? <ChartSkeleton /> : (
+          {loading ? <ChartSkeleton /> : (analytics?.monthly_registrations?.length > 0 ? (
             <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={analytics?.monthly_registrations || []}>
+              <AreaChart data={analytics.monthly_registrations}>
                 <defs>
                   <linearGradient id="colorFarmers" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
@@ -173,7 +180,11 @@ export default function AnalyticsDashboard() {
                 <Area type="monotone" dataKey="farmers" stroke="#6366f1" strokeWidth={2} fill="url(#colorFarmers)" dot={{ r: 4, fill: "#6366f1" }} />
               </AreaChart>
             </ResponsiveContainer>
-          )}
+          ) : (
+            <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 text-sm">
+              No registration data available
+            </div>
+          ))}
         </div>
 
         {/* Province + Status - Row */}
@@ -181,9 +192,9 @@ export default function AnalyticsDashboard() {
           {/* Farmers by Province */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
             <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">🗺️ Farmers by Province</h2>
-            {loading ? <ChartSkeleton /> : (
+          {loading ? <ChartSkeleton /> : (analytics?.farmers_by_province?.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={analytics?.farmers_by_province || []} layout="vertical">
+                <BarChart data={analytics.farmers_by_province} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke={gridLine} />
                   <XAxis type="number" tick={{ fill: gridText, fontSize: 11 }} />
                   <YAxis type="category" dataKey="province" tick={{ fill: gridText, fontSize: 10 }} width={120} />
@@ -197,7 +208,11 @@ export default function AnalyticsDashboard() {
                   <Bar dataKey="farmers" fill="#6366f1" radius={[0, 6, 6, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            )}
+            ) : (
+              <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 text-sm">
+                No province data available
+              </div>
+            ))}
           </div>
 
           {/* Active vs Inactive - Pie */}

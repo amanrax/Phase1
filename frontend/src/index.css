@@ -4,18 +4,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design System CSS Variables */
+/* ================================================
+   Design System CSS Variables - LIGHT MODE
+   ================================================ */
 :root {
-  --zam-green: #15803d;      /* Primary action color */
-  --zam-dark: #14532d;       /* Dark green accent */
-  --zam-copper: #c2410c;     /* Secondary/alert color (orange) */
-  --bg-main: #f8fafc;        /* Page background */
-  --bg-card: #ffffff;        /* Card/container background */
-  
-  /* Modern Gradient Variables */
-  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --gradient-purple-blue: linear-gradient(to bottom right, #9333ea 0%, #3b82f6 100%);
-  --gradient-indigo-purple: linear-gradient(to bottom right, #6366f1 0%, #9333ea 100%);
+  --zam-green: #15803d;
+  --zam-dark: #14532d;
+  --zam-copper: #c2410c;
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-page: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --border-color: #e5e7eb;
+}
+
+/* ================================================
+   DARK MODE VARIABLES — applied when html.dark
+   ================================================ */
+html.dark {
+  --bg-main: #111827;
+  --bg-card: #1f2937;
+  --bg-page: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --border-color: #374151;
 }
 
 * {
@@ -24,12 +37,16 @@
   box-sizing: border-box;
 }
 
+/* Body background now READS from CSS variable so dark mode works */
 body {
   font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bg-page);
+  background-attachment: fixed;
   min-height: 100vh;
+  color: var(--text-primary);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* Custom Scrollbar */
@@ -39,12 +56,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--bg-main);
 }
 
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 3px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
 }
 
 ::-webkit-scrollbar-thumb:hover {

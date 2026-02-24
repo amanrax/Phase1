@@ -6,7 +6,6 @@ import { farmerService } from "@/services/farmer.service";
 import { dashboardService } from "@/services/dashboard.service";
 import { operatorService } from "@/services/operator.service";
 import { useNotification } from "@/contexts/NotificationContext";
-import { ThemeToggle } from "@/contexts/ThemeContext";
 
 interface Farmer {
   _id: string;
@@ -269,8 +268,6 @@ export default function AdminDashboard() {
               >
                 ⚙️ Settings
               </button>
-
-              <ThemeToggle className="text-xs sm:text-sm" />
               
               <button
                 onClick={logout}

@@ -1,5 +1,6 @@
 // src/services/dashboard.service.ts
 import axiosClient from "@/utils/axios";
+import { logger } from "@/utils/logger";
 
 export interface DashboardStats {
   farmers: {
@@ -76,8 +77,14 @@ export const dashboardService = {
    * Backend: GET /api/dashboard/stats
    */
   async getStats(): Promise<DashboardStats> {
-    const { data } = await axiosClient.get<DashboardStats>("/dashboard/stats");
-    return data;
+    try {
+      const { data } = await axiosClient.get<DashboardStats>("/dashboard/stats");
+      logger.info("dashboardService", "Stats loaded", { farmers: data?.farmers?.total });
+      return data;
+    } catch (err: any) {
+      logger.error("dashboardService", "Failed to load stats", { error: err?.message, status: err?.response?.status });
+      throw err;
+    }
   },
 
   /**
@@ -97,10 +104,10 @@ export const dashboardService = {
   async getDashboardStats(): Promise<ReportDashboard> {
     try {
       const data = await this.getDashboardReport();
-      console.log('[DashboardService] Got stats:', data);
+      logger.info("dashboardService", "Dashboard report loaded");
       return data;
-    } catch (error) {
-      console.error('[DashboardService] Failed to fetch dashboard stats:', error);
+    } catch (error: any) {
+      logger.error("dashboardService", "Failed to fetch dashboard stats", { error: error?.message });
       throw error;
     }
   },

@@ -6,7 +6,6 @@ import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
 import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
-import { ThemeToggle } from "@/contexts/ThemeContext";
 
 export default function FarmerDashboard() {
   const { user, logout } = useAuthStore();
@@ -238,8 +237,6 @@ export default function FarmerDashboard() {
                 >
                   🔄 Retry
                 </button>
-                <ThemeToggle className="text-sm" />
-
                 <button
                   onClick={logout}
                   className="px-4 sm:px-6 py-2 bg-gray-600 hover:bg-gray-700 active:scale-95 text-white rounded-lg text-sm font-semibold transition-all"
@@ -307,7 +304,6 @@ export default function FarmerDashboard() {
                     >
                       📥 Download
                     </button>
-                    <ThemeToggle className="text-xs sm:text-sm" />
                     <button
                       onClick={logout}
                       className="px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"

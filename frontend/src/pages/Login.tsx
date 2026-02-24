@@ -9,7 +9,6 @@ import { useNotification } from "@/contexts/NotificationContext";
 import { useBackButton } from '@/hooks/useBackButton';
 import { App } from '@capacitor/app';
 import { handleNRCChange } from '@/utils/nrcFormatter';
-import { ThemeToggle } from '@/contexts/ThemeContext';
 
 const roles = ["admin", "operator", "farmer"];
 
@@ -134,11 +133,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen relative overflow-hidden transition-all duration-500 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900">
-      {/* Theme Toggle - top right */}
-      <div className="absolute top-4 right-4 z-20">
-        <ThemeToggle />
-      </div>
-
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>

@@ -6,7 +6,6 @@ import { farmerService } from "@/services/farmer.service";
 import { operatorService } from "@/services/operator.service";
 import axios from "@/utils/axios";
 import { useNotification } from "@/contexts/NotificationContext";
-import { ThemeToggle } from "@/contexts/ThemeContext";
 
 interface Farmer {
   _id: string;
@@ -197,8 +196,6 @@ export default function OperatorDashboard() {
               >
                 ➕ Add Farmer
               </button>
-
-              <ThemeToggle className="text-xs sm:text-sm" />
 
               <button
                 onClick={logout}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { logger } from "@/utils/logger";
 import dashboardService, { 
   type ReportDashboard, 
   type FarmerByRegion, 
@@ -9,7 +10,6 @@ import dashboardService, {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { ThemeToggle } from "@/contexts/ThemeContext";
 
 type ReportType = 'dashboard' | 'region' | 'operators' | 'trends';
 
@@ -58,8 +58,9 @@ export default function AdminReports() {
           break;
       }
     } catch (err: any) {
-      console.error("Reports error:", err);
-      setError(err.response?.data?.detail || `Failed to load ${activeReport} report`);
+      const msg = err?.response?.data?.detail || `Failed to load ${activeReport} report`;
+      logger.error("AdminReports", `Failed to load ${activeReport} report`, { error: msg, status: err?.response?.status });
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -248,7 +249,6 @@ export default function AdminReports() {
           </div>
 
           <div className="flex items-center gap-2">
-            <ThemeToggle className="text-sm" />
             <button
               onClick={() => navigate("/admin/analytics")}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm"

@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import useAuthStore from "@/store/authStore";
+import { logger } from "@/utils/logger";
 
 // Use production API URL for mobile builds
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev';
@@ -33,7 +34,7 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error('❌ Request Error:', error);
+    logger.error("axios", "Request setup failed", { error: error?.message });
     return Promise.reject(error);
   }
 );
@@ -48,6 +49,11 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
     console.error('❌ Response Error:', error.response?.status, error.config?.url);
+    logger.error("axios", `HTTP ${error.response?.status ?? "ERR"} ${error.config?.url ?? ""}`, {
+      status: error.response?.status,
+      url: error.config?.url,
+      method: error.config?.method?.toUpperCase(),
+    });
 
     // Handle 401 - Unauthorized (token expired)
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -92,7 +98,7 @@ axiosInstance.interceptors.response.use(
 
         return axiosInstance(originalRequest);
       } catch (refreshErr) {
-        console.error('❌ Token refresh failed:', refreshErr);
+        logger.error("axios", "Token refresh failed, logging out", { error: (refreshErr as any)?.message });
         useAuthStore.getState().logout();
         window.location.href = '/login';
         return Promise.reject(refreshErr);

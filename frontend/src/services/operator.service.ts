@@ -1,12 +1,17 @@
 import api from "@/utils/axios";
+import { logger } from "@/utils/logger";
 
 export const operatorService = {
   async getOperators(limit = 50, offset = 0): Promise<any> {
-    // Backend uses /operators/ endpoint
-    // Add a timestamp query param to bust caches (CDN/proxy) after mutations
-    const cacheBuster = `t=${Date.now()}`;
-    const response = await api.get(`/operators/?limit=${limit}&skip=${offset}&${cacheBuster}`);
-    return response.data;
+    try {
+      const cacheBuster = `t=${Date.now()}`;
+      const response = await api.get(`/operators/?limit=${limit}&skip=${offset}&${cacheBuster}`);
+      logger.info("operatorService", `Loaded ${response.data?.length ?? 0} operators`);
+      return response.data;
+    } catch (err: any) {
+      logger.error("operatorService", "Failed to load operators", { error: err?.message, status: err?.response?.status });
+      throw err;
+    }
   },
 
   async getOperator(operatorId: string): Promise<any> {

@@ -1,5 +1,6 @@
 // src/services/farmer.service.ts
 import api from "@/utils/axios";
+import { logger } from "@/utils/logger";
 
 // Type definitions for better type safety
 export interface DownloadResult {
@@ -53,7 +54,7 @@ async function fetchGridFSFile(fileIdOrPath: string): Promise<string | null> {
     });
 
     if (!response.ok) {
-      console.error('[GridFS] Fetch failed:', response.status);
+      logger.warn("GridFS", `Fetch failed: ${response.status} for ${fileIdOrPath}`);
       return null;
     }
 
@@ -66,7 +67,7 @@ async function fetchGridFSFile(fileIdOrPath: string): Promise<string | null> {
     console.log('[GridFS] ✅ File loaded, blob URL created and cached');
     return blobUrl;
   } catch (error) {
-    console.error('[GridFS] Error fetching file:', error);
+    logger.error("GridFS", "Error fetching file", { path: fileIdOrPath, error: (error as any)?.message });
     return null;
   }
 }
@@ -92,8 +93,14 @@ export const farmerService = {
    * Backend: GET /api/farmers?limit=10&skip=0
    */
   async getFarmers(limit = 10, skip = 0, filters?: Record<string, any>) {
-    const { data } = await api.get("/farmers/", { params: { limit, skip, ...filters } });
-    return data;
+    try {
+      const { data } = await api.get("/farmers/", { params: { limit, skip, ...filters } });
+      logger.info("farmerService", `Loaded ${Array.isArray(data) ? data.length : "?"} farmers`);
+      return data;
+    } catch (err: any) {
+      logger.error("farmerService", "Failed to load farmers", { error: err?.message, status: err?.response?.status });
+      throw err;
+    }
   },
 
   /**
@@ -120,8 +127,14 @@ export const farmerService = {
    */
   async getFarmer(farmerId: string) {
     if (!farmerId) throw new Error("Missing farmerId");
-    const { data } = await api.get(`/farmers/${farmerId}`);
-    return data;
+    try {
+      const { data } = await api.get(`/farmers/${farmerId}`);
+      logger.info("farmerService", `Loaded farmer ${farmerId}`);
+      return data;
+    } catch (err: any) {
+      logger.error("farmerService", `Failed to load farmer ${farmerId}`, { error: err?.message, status: err?.response?.status });
+      throw err;
+    }
   },
 
   /**
