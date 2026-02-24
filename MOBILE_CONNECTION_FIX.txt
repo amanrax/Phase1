@@ -1,0 +1,139 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║    🔧 FIX: Mobile App Can't Reach Codespaces Backend 🔧      ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+PROBLEM:
+═══════════════════════════════════════════════════════════════
+Your mobile app is showing "Cannot reach server" because the 
+Codespaces port 8000 is set to PRIVATE by default.
+
+Mobile apps outside Codespaces can't access private ports!
+
+SOLUTION: Make Port 8000 PUBLIC
+═══════════════════════════════════════════════════════════════
+
+STEP 1: Open the PORTS panel in VS Code
+────────────────────────────────────────────────────────────────
+  • Look at the bottom of VS Code
+  • Click on "PORTS" tab (next to TERMINAL)
+  • You should see port 8000 listed
+
+STEP 2: Change Port Visibility to PUBLIC
+────────────────────────────────────────────────────────────────
+  • Find port 8000 in the list
+  • Right-click on port 8000
+  • Select "Port Visibility" → "Public"
+  
+  OR
+  
+  • Click the lock icon 🔒 next to port 8000
+  • Change from "Private" to "Public"
+
+STEP 3: Verify the Public URL
+────────────────────────────────────────────────────────────────
+After making it public, you should see a URL like:
+
+  https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev
+
+Test it in your browser - should show: {"status":"ok"}
+
+STEP 4: Rebuild the APK
+────────────────────────────────────────────────────────────────
+Once port is public, push your changes:
+
+  git add .
+  git commit -m "fix: configure Codespaces backend URL for mobile"
+  git push origin dev
+
+Wait for GitHub Actions to build the new APK with correct URL.
+
+═══════════════════════════════════════════════════════════════
+
+📱 CURRENT CONFIGURATION
+═══════════════════════════════════════════════════════════════
+
+Mobile app will connect to:
+  https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev
+
+This URL:
+  ✅ Works from anywhere (no WiFi restrictions)
+  ✅ Uses HTTPS (secure)
+  ✅ No need for PC to be running
+  ✅ Accessible from your phone
+
+═══════════════════════════════════════════════════════════════
+
+⚠️  IMPORTANT NOTES
+═══════════════════════════════════════════════════════════════
+
+1. Codespaces Must Be Running
+   • The Codespaces instance must be active
+   • Docker containers must be running inside Codespaces
+   • If Codespaces stops, app won't work
+
+2. Port Must Stay Public
+   • If port reverts to private, app will stop working
+   • Always check PORTS tab if connection fails
+
+3. Backend Health Check
+   Test in browser: 
+   https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev/api/health
+   
+   Should return: {"status":"ok"}
+
+═══════════════════════════════════════════════════════════════
+
+🚀 ALTERNATIVE: Use GitHub Actions (No Port Config Needed)
+═══════════════════════════════════════════════════════════════
+
+If you find it difficult to change port visibility, you can:
+
+1. Keep the current configuration (already updated)
+2. Just push to trigger the build:
+   
+   git add .
+   git commit -m "fix: use Codespaces backend URL"
+   git push origin dev
+
+3. Once APK is built, make sure:
+   • Codespaces is running
+   • Port 8000 is PUBLIC in PORTS tab
+   • Then install and test the APK
+
+═══════════════════════════════════════════════════════════════
+
+🔍 TROUBLESHOOTING CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+If app still can't connect:
+
+□ Is Codespaces running?
+□ Is Docker running in Codespaces? (docker ps)
+□ Is port 8000 visible in PORTS tab?
+□ Is port 8000 set to PUBLIC (not Private)?
+□ Can you access the URL in phone browser?
+□ Did you install the new APK (after latest push)?
+
+Test URL in phone browser first:
+https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev/api/health
+
+If browser works but app doesn't:
+  → Rebuild and reinstall APK
+
+═══════════════════════════════════════════════════════════════
+
+✅ FILES UPDATED
+═══════════════════════════════════════════════════════════════
+
+• frontend/.env.production - Now uses Codespaces URL (HTTPS)
+• Everything else ready to go
+
+Just need to:
+1. Make port 8000 PUBLIC in VS Code PORTS tab
+2. Push to dev branch
+3. Download new APK from GitHub Actions
+4. Install on phone
+
+═══════════════════════════════════════════════════════════════
