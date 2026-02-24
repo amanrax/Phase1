@@ -71,7 +71,7 @@ export default function FarmerDashboard() {
         console.log('[Photo] Loading farmer photo:', photoPath);
         setPhotoError(false);
         
-        const baseURL = import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw.github.dev/";
+        const baseURL = import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev";
         const fullUrl = photoPath.startsWith('http') ? photoPath : `${baseURL}${photoPath}`;
         
         const response = await fetch(fullUrl, {
@@ -115,7 +115,7 @@ export default function FarmerDashboard() {
         setQrError(false);
         
         // Fetch QR code with authentication
-        const baseURL = import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw.github.dev/";
+        const baseURL = import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev";
         const response = await fetch(`${baseURL}/api/farmers/${farmerData.farmer_id}/qr`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,

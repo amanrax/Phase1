@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import useAuthStore from "@/store/authStore";
 
 // Use production API URL for mobile builds
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://automatic-doodle-wqp6gjqwxvqhggvw.github.dev/';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev';
 
 console.log('🌐 API Base URL:', API_BASE_URL);
 console.log('🌐 Full endpoint:', `${API_BASE_URL}/api`);

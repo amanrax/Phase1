@@ -39,7 +39,7 @@ export const getApiBaseUrl = (): string => {
     }
 
     // Final fallback for mobile - production backend
-    const fallback = 'https://automatic-doodle-wqp6gjqwxvqhggvw.github.dev/';
+    const fallback = 'https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev';
     console.warn('[Mobile] ⚠️ Using hardcoded fallback:', fallback);
     return fallback;
   }
@@ -67,7 +67,7 @@ export const getApiBaseUrl = (): string => {
   }
 
   // Final fallback
-  const defaultUrl = 'https://automatic-doodle-wqp6gjqwxvqhggvw.github.dev/';
+  const defaultUrl = 'https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev';
   console.log('[Mobile] ✅ Using default URL:', defaultUrl);
   return defaultUrl;
 };

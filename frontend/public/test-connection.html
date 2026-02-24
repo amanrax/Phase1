@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEM Farmer - Connection Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f7f7f7;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.pending { background: #fef3c7; color: #92400e; }
+        .status.success { background: #d1fae5; color: #065f46; }
+        .status.error { background: #fee2e2; color: #991b1b; }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:hover { opacity: 0.9; }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .info {
+            background: #dbeafe;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #3b82f6;
+        }
+        .credentials {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #f59e0b;
+        }
+        .credentials strong {
+            display: block;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌾 CEM Farmer App - Connection Test</h1>
+        
+        <div class="info">
+            <strong>📍 Backend URL:</strong><br>
+            <code id="backendUrl">Loading...</code>
+        </div>
+
+        <div class="test-section">
+            <strong>🔌 Connection Test</strong>
+            <span id="pingStatus" class="status pending">Not tested</span>
+            <button id="testPing" onclick="testConnection()">Test Connection</button>
+            <pre id="pingResult" style="display:none;"></pre>
+        </div>
+
+        <div class="test-section">
+            <strong>🔑 Login Test</strong>
+            <span id="loginStatus" class="status pending">Not tested</span>
+            <button id="testLogin" onclick="testLogin()">Test Login</button>
+            <pre id="loginResult" style="display:none;"></pre>
+        </div>
+
+        <div class="credentials">
+            <strong>📋 Test Farmer Credentials:</strong><br>
+            <strong>NRC:</strong> 315990/08/2<br>
+            <strong>DOB:</strong> 1961-02-02<br>
+            <small>(Mary Mwale - Kawambwa District)</small>
+        </div>
+
+        <div style="margin-top: 20px; text-align: center; color: #666; font-size: 14px;">
+            v2.0.0 | Phase-2
+        </div>
+    </div>
+
+    <script>
+        // Detect API URL from environment or use default
+        const API_URL = 'https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev';
+        
+        document.getElementById('backendUrl').textContent = API_URL;
+
+        async function testConnection() {
+            const statusEl = document.getElementById('pingStatus');
+            const resultEl = document.getElementById('pingResult');
+            const buttonEl = document.getElementById('testPing');
+            
+            statusEl.className = 'status pending';
+            statusEl.textContent = 'Testing...';
+            buttonEl.disabled = true;
+            resultEl.style.display = 'none';
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_URL}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                });
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusEl.className = 'status success';
+                    statusEl.textContent = `✓ Connected (${responseTime}ms)`;
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                    resultEl.style.display = 'block';
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '✗ Failed';
+                resultEl.textContent = `Error: ${error.message}\n\nThis means:\n- Backend may not be running\n- Port 8000 may not be PUBLIC in Codespaces\n- Network issue`;
+                resultEl.style.display = 'block';
+            } finally {
+                buttonEl.disabled = false;
+            }
+        }
+
+        async function testLogin() {
+            const statusEl = document.getElementById('loginStatus');
+            const resultEl = document.getElementById('loginResult');
+            const buttonEl = document.getElementById('testLogin');
+            
+            statusEl.className = 'status pending';
+            statusEl.textContent = 'Testing...';
+            buttonEl.disabled = true;
+            resultEl.style.display = 'none';
+            
+            const loginData = {
+                nrc_number: "315990/08/2",
+                password: "1961-02-02"
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(loginData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusEl.className = 'status success';
+                    statusEl.textContent = '✓ Login successful';
+                    resultEl.textContent = JSON.stringify({
+                        status: 'SUCCESS',
+                        user: data.user?.full_name,
+                        farmer_id: data.user?.farmer_id,
+                        token_received: !!data.access_token
+                    }, null, 2);
+                    resultEl.style.display = 'block';
+                } else {
+                    statusEl.className = 'status error';
+                    statusEl.textContent = '✗ Login failed';
+                    resultEl.textContent = JSON.stringify({
+                        status: 'FAILED',
+                        status_code: response.status,
+                        error: data.detail || data.message || 'Unknown error'
+                    }, null, 2);
+                    resultEl.style.display = 'block';
+                }
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '✗ Request failed';
+                resultEl.textContent = `Error: ${error.message}\n\nCannot reach backend. Check:\n1. Backend is running\n2. Port 8000 is PUBLIC\n3. URL is correct`;
+                resultEl.style.display = 'block';
+            } finally {
+                buttonEl.disabled = false;
+            }
+        }
+
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            setTimeout(() => testConnection(), 500);
+        });
+    </script>
+</body>
+</html>

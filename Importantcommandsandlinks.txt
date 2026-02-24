@@ -1,0 +1,9 @@
+Backend API:
+https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev/api/health
+Should show: {"status":"ok"}
+
+Frontend Test Page:
+https://automatic-doodle-wqp6gjqwxvqhggvw-5173.app.github.dev/test-connection.html
+
+Frontend App:
+https://automatic-doodle-wqp6gjqwxvqhggvw-5173.app.github.dev
