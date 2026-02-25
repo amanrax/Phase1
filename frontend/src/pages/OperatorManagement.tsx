@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { operatorService } from "@/services/operator.service";
 import geoService from "@/services/geo.service";
+import { GeoSelectWithOther } from "@/components/GeoSelectWithOther";
+import PhoneInput from "@/components/PhoneInput";
+import { logger } from "@/utils/logger";
 
 interface Operator {
   _id: string;
@@ -22,10 +25,20 @@ interface Operator {
 interface Province { code: string; name: string }
 interface District { code: string; name: string }
 
+interface GeoValue {
+  province_code: string;
+  province_name: string;
+  district_code: string;
+  district_name: string;
+  chiefdom_code: string;
+  chiefdom_name: string;
+}
+
+const emptyGeo: GeoValue = { province_code: "", province_name: "", district_code: "", district_name: "", chiefdom_code: "", chiefdom_name: "" };
+
 export default function OperatorManagement() {
   const navigate = useNavigate();
   const [operators, setOperators] = useState<Operator[]>([]);
-  const [allOperators, setAllOperators] = useState<Operator[]>([]);
   const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -39,25 +52,20 @@ export default function OperatorManagement() {
     password: "",
     confirmPassword: "",
     phone: "",
-    assigned_district: "",
   });
+  const [createGeoValue, setCreateGeoValue] = useState<GeoValue>(emptyGeo);
   const [editFormData, setEditFormData] = useState({
     first_name: "",
     last_name: "",
     email: "",
     phone: "",
-    assigned_district: "",
     password: "",
     confirmPassword: "",
     is_active: true,
   });
+  const [editGeoValue, setEditGeoValue] = useState<GeoValue>(emptyGeo);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [provinces, setProvinces] = useState<Province[]>([]);
-  const [districts, setDistricts] = useState<District[]>([]);
-  const [editDistricts, setEditDistricts] = useState<District[]>([]);
-  const [selectedProvince, setSelectedProvince] = useState("");
-  const [editSelectedProvince, setEditSelectedProvince] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize] = useState(10);
   const [totalOperators, setTotalOperators] = useState(0);
@@ -66,47 +74,15 @@ export default function OperatorManagement() {
 
   useEffect(() => {
     loadOperators(0);
-    loadProvinces();
   }, []);
 
-  const loadProvinces = async () => {
-    try {
-      const data = await geoService.provinces();
-      setProvinces(data);
-    } catch (err) {
-      console.error("Failed to load provinces:", err);
-    }
-  };
-
-  const loadDistricts = async (provinceCode: string) => {
+  const loadDistricts = async (provinceCode: string): Promise<District[]> => {
     try {
       const data = await geoService.districts(provinceCode);
       return data;
     } catch (err) {
-      console.error("Failed to load districts:", err);
+      logger.error("OperatorManagement", "Failed to load districts", { provinceCode });
       return [];
-    }
-  };
-
-  const handleProvinceChange = async (provinceCode: string) => {
-    setSelectedProvince(provinceCode);
-    setFormData(prev => ({ ...prev, assigned_district: "" }));
-    if (provinceCode) {
-      const districtsData = await loadDistricts(provinceCode);
-      setDistricts(districtsData);
-    } else {
-      setDistricts([]);
-    }
-  };
-
-  const handleEditProvinceChange = async (provinceCode: string) => {
-    setEditSelectedProvince(provinceCode);
-    setEditFormData(prev => ({ ...prev, assigned_district: "" }));
-    if (provinceCode) {
-      const districtsData = await loadDistricts(provinceCode);
-      setEditDistricts(districtsData);
-    } else {
-      setEditDistricts([]);
     }
   };
 
@@ -123,8 +99,8 @@ export default function OperatorManagement() {
 
   const loadOperators = async (page = 0) => {
     setLoading(true);
+    logger.info("OperatorManagement", `Loading operators (page ${page})`);
     try {
-      const skip = page * pageSize;
       const data = await operatorService.getOperators(100, 0); // Load all for display
       
       let operatorList: Operator[] = [];
@@ -135,12 +111,13 @@ export default function OperatorManagement() {
         total = data.length;
       } else if (Array.isArray(data.results)) {
         operatorList = data.results;
-        total = data.total || data.results.length;
+        total = data.total || data.count || data.results.length;
       } else if (Array.isArray(data.operators)) {
         operatorList = data.operators;
         total = data.total || data.operators.length;
       }
       
+      logger.info("OperatorManagement", `Loaded ${operatorList.length} operators (total: ${total})`);
       setOperators(operatorList);
       setTotalOperators(total);
       setCurrentPage(page);
@@ -150,8 +127,8 @@ export default function OperatorManagement() {
       } else {
         setError("");
       }
-    } catch (err) {
-      console.error("Failed to load operators:", err);
+    } catch (err: any) {
+      logger.error("OperatorManagement", "Failed to load operators", { error: err?.message });
       setError("Failed to load operators");
     } finally {
       setLoading(false);
@@ -175,45 +152,51 @@ export default function OperatorManagement() {
   };
 
   const openEditModal = async (operator: Operator) => {
+    logger.info("OperatorManagement", "Opening edit modal", { operator_id: operator.operator_id });
     setSelectedOperator(operator);
     
     // Get the current district and region values
     const currentDistrict = operator.assigned_district || operator.assigned_districts?.[0] || "";
     const currentRegion = operator.assigned_regions?.[0] || "";
     
-    // If it looks like a district code (e.g., LK02, CP01), we need to fetch and convert it to a name
-    let districtValue = currentDistrict;
+    // Resolve district name + code, and province code
+    let districtName = currentDistrict;
+    let districtCode = "";
     let provinceCode = "";
+    let provinceName = currentRegion;
     
-    if (currentDistrict && /^[A-Z]{2}\d{2}$/.test(currentDistrict)) {
-      // It's a code - fetch all districts to find the name and province
-      try {
+    try {
+      // Load all provinces to find province code from region name
+      const allProvinces = await geoService.provinces();
+      const matchProv = allProvinces.find((p: Province) =>
+        p.name.toLowerCase() === currentRegion.toLowerCase() ||
+        p.code === currentRegion
+      );
+      if (matchProv) {
+        provinceCode = matchProv.code;
+        provinceName = matchProv.name;
+      }
+
+      // If district looks like a code, resolve to name
+      if (currentDistrict && /^[A-Z]{2}\d{2}$/.test(currentDistrict)) {
         const allDistricts = await geoService.districts();
-        const matchingDistrict = allDistricts.find((d: District) => d.code === currentDistrict);
-        if (matchingDistrict) {
-          districtValue = matchingDistrict.name;
+        const matchDist = allDistricts.find((d: District) => d.code === currentDistrict);
+        if (matchDist) {
+          districtName = matchDist.name;
+          districtCode = matchDist.code;
         }
-      } catch (err) {
-        console.error("Failed to convert district code to name:", err);
+      } else if (currentDistrict && provinceCode) {
+        // district is a name — find its code in matching province
+        const provDistricts = await loadDistricts(provinceCode);
+        const matchDist = provDistricts.find((d: District) =>
+          d.name.toLowerCase() === currentDistrict.toLowerCase()
+        );
+        if (matchDist) {
+          districtCode = matchDist.code;
+        }
       }
-    }
-    
-    // Find the province code from the region name
-    if (currentRegion) {
-      const matchingProvince = provinces.find((p: Province) => p.name === currentRegion);
-      if (matchingProvince) {
-        provinceCode = matchingProvince.code;
-      }
-    }
-    
-    // If we have a province, load its districts
-    let districtsForProvince: District[] = [];
-    if (provinceCode) {
-      try {
-        districtsForProvince = await loadDistricts(provinceCode);
-      } catch (err) {
-        console.error("Failed to load districts for province:", err);
-      }
+    } catch (err) {
+      logger.error("OperatorManagement", "Error resolving geo for edit", { error: String(err) });
     }
     
     // Split full_name into first and last name
@@ -226,13 +209,18 @@ export default function OperatorManagement() {
       last_name: lastName,
       email: operator.email || "",
       phone: operator.phone || "",
-      assigned_district: districtValue,
       password: "",
       confirmPassword: "",
       is_active: operator.is_active ?? true,
     });
-    setEditSelectedProvince(provinceCode);
-    setEditDistricts(districtsForProvince);
+    setEditGeoValue({
+      province_code: provinceCode,
+      province_name: provinceName,
+      district_code: districtCode,
+      district_name: districtName,
+      chiefdom_code: "",
+      chiefdom_name: "",
+    });
     setShowEditModal(true);
     setShowViewModal(false);
   };
@@ -270,11 +258,11 @@ export default function OperatorManagement() {
       }
     }
 
+    logger.info("OperatorManagement", "Submitting edit for operator", { operator_id: selectedOperator.operator_id });
     try {
-      const provinceName = provinces.find(p => p.code === editSelectedProvince)?.name;
       const full_name = `${editFormData.first_name} ${editFormData.last_name}`.trim();
       const payload: any = {
-        full_name: full_name,
+        full_name,
         email: editFormData.email,
         phone: editFormData.phone,
         is_active: editFormData.is_active,
@@ -285,20 +273,24 @@ export default function OperatorManagement() {
         payload.password = editFormData.password;
       }
 
-      if (editFormData.assigned_district) {
-        payload.assigned_districts = [editFormData.assigned_district];
+      const districtValue = editGeoValue.district_name || editGeoValue.district_code;
+      if (districtValue) {
+        payload.assigned_districts = [districtValue];
       }
-      if (provinceName) {
-        payload.assigned_regions = [provinceName];
+      if (editGeoValue.province_name) {
+        payload.assigned_regions = [editGeoValue.province_name];
       }
 
       await operatorService.update(selectedOperator.operator_id, payload);
+      logger.info("OperatorManagement", "Operator updated successfully", { operator_id: selectedOperator.operator_id });
       setSuccess("✅ Operator updated successfully!");
       setShowEditModal(false);
       setSelectedOperator(null);
+      setEditGeoValue(emptyGeo);
       loadOperators(currentPage);
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
+      logger.error("OperatorManagement", "Failed to update operator", { error: err?.message });
       setError(err.response?.data?.detail || "Failed to update operator");
     }
   };
@@ -317,8 +309,9 @@ export default function OperatorManagement() {
       return;
     }
 
+    logger.info("OperatorManagement", "Creating new operator", { email: formData.email });
     try {
-      const provinceName = provinces.find(p => p.code === selectedProvince)?.name;
+      const districtValue = createGeoValue.district_name || createGeoValue.district_code;
       const payload = {
         first_name: formData.first_name,
         last_name: formData.last_name,
@@ -326,11 +319,12 @@ export default function OperatorManagement() {
         phone: formData.phone.replace(/[\s\-()]/g, ""),
         password: formData.password,
         role: "OPERATOR",
-        assigned_districts: formData.assigned_district ? [formData.assigned_district] : [],
-        assigned_regions: provinceName ? [provinceName] : [],
+        assigned_districts: districtValue ? [districtValue] : [],
+        assigned_regions: createGeoValue.province_name ? [createGeoValue.province_name] : [],
       };
 
       await operatorService.create(payload);
+      logger.info("OperatorManagement", "Operator created successfully", { email: formData.email });
       setSuccess("✅ Operator created successfully!");
       setShowCreateModal(false);
       setFormData({
@@ -340,12 +334,12 @@ export default function OperatorManagement() {
         password: "",
         confirmPassword: "",
         phone: "",
-        assigned_district: "",
       });
-      setSelectedProvince("");
+      setCreateGeoValue(emptyGeo);
       loadOperators();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
+      logger.error("OperatorManagement", "Failed to create operator", { error: err?.message });
       setError(err.response?.data?.detail || "Failed to create operator");
     }
   };
@@ -481,44 +475,21 @@ export default function OperatorManagement() {
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Phone</label>
-                    <input
-                      type="tel"
-                      placeholder="e.g., +260 971 234567"
+                    <PhoneInput
                       value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                      onChange={(v) => setFormData({ ...formData, phone: v })}
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Province</label>
-                    <select
-                      value={selectedProvince}
-                      onChange={(e) => handleProvinceChange(e.target.value)}
-                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                    >
-                      <option value="">-- Select Province --</option>
-                      {provinces.map(p => (
-                        <option key={p.code} value={p.code}>{p.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">District</label>
-                    <select
-                      value={formData.assigned_district}
-                      onChange={(e) => setFormData({...formData, assigned_district: e.target.value})}
-                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                      disabled={!selectedProvince}
-                    >
-                      <option value="">-- Select District --</option>
-                      {districts.map(d => (
-                        <option key={d.code} value={d.name}>{d.name} ({d.code})</option>
-                      ))}
-                    </select>
-                  </div>
+                {/* Province + District (with Other option) */}
+                <div>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase block mb-1">Province &amp; District</label>
+                  <GeoSelectWithOther
+                    value={createGeoValue}
+                    onChange={(v) => setCreateGeoValue(v)}
+                    showChiefdom={false}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -541,8 +512,17 @@ export default function OperatorManagement() {
                       value={formData.confirmPassword}
                       onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
                       required
-                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                      className={`w-full p-3 border rounded-lg mt-1 focus:ring-2 outline-none text-sm ${
+                        formData.confirmPassword
+                          ? formData.password === formData.confirmPassword
+                            ? "border-green-500 focus:ring-green-400"
+                            : "border-red-400 focus:ring-red-300"
+                          : "border-gray-300 dark:border-gray-600 focus:ring-green-500"
+                      }`}
                     />
+                    {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                      <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
+                    )}
                   </div>
                 </div>
 
@@ -973,47 +953,21 @@ export default function OperatorManagement() {
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Phone</label>
-                    <input
-                      type="tel"
-                      placeholder="e.g., +260 971 234567"
+                    <PhoneInput
                       value={editFormData.phone}
-                      onChange={(e) => setEditFormData({...editFormData, phone: e.target.value})}
-                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                      onChange={(v) => setEditFormData({ ...editFormData, phone: v })}
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Province</label>
-                    <select
-                      value={editSelectedProvince}
-                      onChange={(e) => handleEditProvinceChange(e.target.value)}
-                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                    >
-                      <option value="">-- Select Province --</option>
-                      {provinces.map(p => (
-                        <option key={p.code} value={p.code}>{p.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">District</label>
-                    <select
-                      value={editFormData.assigned_district}
-                      onChange={(e) => setEditFormData({...editFormData, assigned_district: e.target.value})}
-                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
-                      disabled={!editSelectedProvince && editDistricts.length === 0 && !editFormData.assigned_district}
-                    >
-                      <option value="">-- Select District --</option>
-                      {editFormData.assigned_district && !editDistricts.some(d => d.name === editFormData.assigned_district) && (
-                        <option value={editFormData.assigned_district}>{editFormData.assigned_district}</option>
-                      )}
-                      {editDistricts.map(d => (
-                        <option key={d.code} value={d.name}>{d.name} ({d.code})</option>
-                      ))}
-                    </select>
-                  </div>
+                {/* Province + District (with Other option) */}
+                <div>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase block mb-1">Province &amp; District</label>
+                  <GeoSelectWithOther
+                    value={editGeoValue}
+                    onChange={(v) => setEditGeoValue(v)}
+                    showChiefdom={false}
+                  />
                 </div>
 
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
@@ -1037,8 +991,17 @@ export default function OperatorManagement() {
                         placeholder="Re-enter password (optional)"
                         value={editFormData.confirmPassword}
                         onChange={(e) => setEditFormData({...editFormData, confirmPassword: e.target.value})}
-                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                        className={`w-full p-3 border rounded-lg mt-1 focus:ring-2 outline-none text-sm ${
+                          editFormData.confirmPassword
+                            ? editFormData.password === editFormData.confirmPassword
+                              ? "border-green-500 focus:ring-green-400"
+                              : "border-red-400 focus:ring-red-300"
+                            : "border-gray-300 dark:border-gray-600 focus:ring-green-500"
+                        }`}
                       />
+                      {editFormData.confirmPassword && editFormData.password !== editFormData.confirmPassword && (
+                        <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
+                      )}
                     </div>
                   </div>
                 </div>

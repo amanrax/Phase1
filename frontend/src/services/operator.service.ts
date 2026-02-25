@@ -6,7 +6,7 @@ export const operatorService = {
     try {
       const cacheBuster = `t=${Date.now()}`;
       const response = await api.get(`/operators/?limit=${limit}&skip=${offset}&${cacheBuster}`);
-      logger.info("operatorService", `Loaded ${response.data?.length ?? 0} operators`);
+      logger.info("operatorService", `Loaded ${response.data?.count ?? response.data?.results?.length ?? 0} operators`);
       return response.data;
     } catch (err: any) {
       logger.error("operatorService", "Failed to load operators", { error: err?.message, status: err?.response?.status });
