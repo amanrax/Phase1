@@ -58,9 +58,71 @@ html.dark select {
   background-color: #1f2937 !important;
   border-color: #4b5563 !important;
   color: #f9fafb !important;
+  /* Color-scheme hint tells browser to render native chrome (calendar, dropdown arrow) in dark too */
+  color-scheme: dark;
 }
 html.dark input::placeholder,
 html.dark textarea::placeholder { color: #6b7280 !important; }
+
+/* ── Date / time input native picker ── */
+html.dark input[type="date"]::-webkit-calendar-picker-indicator,
+html.dark input[type="time"]::-webkit-calendar-picker-indicator,
+html.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.5);
+}
+
+/* ── Select dropdown arrow ── */
+html.dark select option {
+  background-color: #1f2937;
+  color: #f9fafb;
+}
+
+/* ── Alert / notification boxes with inline styles ── */
+/* Can't override inline bg directly, but we provide classes for dark alerts */
+html.dark .alert-error,
+html.dark [role="alert"] {
+  background-color: #7f1d1d !important;
+  color: #fecaca !important;
+  border-color: #991b1b !important;
+}
+html.dark .alert-success {
+  background-color: #14532d !important;
+  color: #bbf7d0 !important;
+  border-color: #166534 !important;
+}
+html.dark .alert-warning {
+  background-color: #78350f !important;
+  color: #fef08a !important;
+  border-color: #92400e !important;
+}
+
+/* ── Focus rings for dark mode ── */
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px #4f46e5 !important;
+  border-color: #6366f1 !important;
+}
+
+/* ── Fieldset / form card containers ── */
+html.dark fieldset {
+  border-color: #4b5563 !important;
+  background-color: #1f2937 !important;
+}
+html.dark label { color: #e5e7eb !important; }
+
+/* ── Modal / dialog overlays ── */
+html.dark .modal-backdrop,
+html.dark [data-modal-backdrop] {
+  background-color: rgba(0,0,0,0.7) !important;
+}
+html.dark [role="dialog"],
+html.dark .modal-content {
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+  border-color: #374151 !important;
+}
 
 /* ── Tables ── */
 html.dark table                   { background-color: #1f2937 !important; }
@@ -165,6 +227,7 @@ html:not(.dark) select {
    DARK MODE VARIABLES — applied when html.dark
    ================================================ */
 html.dark {
+  color-scheme: dark; /* Tells browser to render native controls (scrollbars, date pickers, select arrows) in dark */
   --bg-main: #111827;
   --bg-card: #1f2937;
   --bg-page: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);

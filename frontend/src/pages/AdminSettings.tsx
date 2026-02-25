@@ -169,6 +169,9 @@ export default function AdminSettings() {
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // Confirm modal
+  type ConfirmPending = { label: string; danger?: boolean; onConfirm: () => void };
+  const [confirmPending, setConfirmPending] = useState<ConfirmPending | null>(null);
   
   // Create Admin Form
   const [newAdminEmail, setNewAdminEmail] = useState("");
@@ -188,7 +191,7 @@ export default function AdminSettings() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      console.log('[Settings] Loading ALL system entities...');
+      logger.info('AdminSettings', 'Loading ALL system entities', { includeInactive });
       
       const timestamp = Date.now();
       
@@ -199,10 +202,10 @@ export default function AdminSettings() {
         axios.get(`/farmers/?t=${timestamp}&limit=100`).catch(() => ({ data: [] }))
       ]);
       
-      console.log('[Settings] Fetched data:', {
-        users: usersResp.data,
-        operators: operatorsResp.data,
-        farmers: farmersResp.data
+      logger.info('AdminSettings', 'Fetched all entities', {
+        users: Array.isArray(usersResp.data?.users || usersResp.data) ? (usersResp.data?.users || usersResp.data).length : 0,
+        operators: (operatorsResp.data?.results || []).length,
+        farmers: Array.isArray(farmersResp.data) ? farmersResp.data.length : (farmersResp.data?.results || []).length,
       });
       
       // Combine all into a unified list
@@ -293,47 +296,43 @@ export default function AdminSettings() {
         });
       }
       
-      console.log(`[Settings] ✓ Combined ${allUsers.length} total users`);
-      console.log('[Settings] Breakdown:', {
+      logger.info('AdminSettings', `Combined ${allUsers.length} total entities`, {
         admins: allUsers.filter(u => u.role?.toUpperCase() === 'ADMIN').length,
         operators: allUsers.filter(u => u.role?.toUpperCase() === 'OPERATOR').length,
-        farmers: allUsers.filter(u => u.role?.toUpperCase() === 'FARMER').length
+        farmers: allUsers.filter(u => u.role?.toUpperCase() === 'FARMER').length,
       });
       
       setUsers(allUsers);
       
     } catch (err: any) {
-      console.error('[Settings] Failed to load users:', err);
-      setError(err.response?.data?.detail || "Failed to load users");
+      const code = (err as any)?.response?.status;
+      const msg  = (err as any)?.response?.data?.detail || "Failed to load users";
+      logger.error('AdminSettings', 'Failed to load entities', { error: msg, code });
+      if (code === 401) notify.error('Session expired. Please log in again.');
+      else notify.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
   const loadStats = async () => {
+    logger.info('AdminSettings', 'Loading dashboard stats');
     try {
-      console.log('[Settings] Loading stats...');
       const timestamp = Date.now();
       const response = await axios.get(`/dashboard/stats?t=${timestamp}`);
-      
-      console.log('[Settings] Stats received:', response.data);
-      
-      // Extract stats from dashboard API response
       const metrics = response.data?.users || {};
       const farmerMetrics = response.data?.farmers || {};
       const operatorMetrics = response.data?.operators || {};
-      
       setStats({
-        total_users: metrics.total || 0,
-        active_users: metrics.active || 0,
-        total_admins: metrics.by_role?.admin || 0,
-        total_operators: operatorMetrics.total || 0,
-        total_farmers: farmerMetrics.total || 0
+        total_users:     metrics.total           || 0,
+        active_users:    metrics.active          || 0,
+        total_admins:    metrics.by_role?.admin  || 0,
+        total_operators: operatorMetrics.total   || 0,
+        total_farmers:   farmerMetrics.total     || 0,
       });
-      
-      console.log('[Settings] Stats updated');
-    } catch (err) {
-      console.error("[Settings] Failed to load stats", err);
+      logger.info('AdminSettings', 'Stats updated', { total_users: metrics.total, total_farmers: farmerMetrics.total });
+    } catch (err: any) {
+      logger.error('AdminSettings', 'Failed to load stats', { error: err?.message });
     }
   };
 
@@ -361,51 +360,30 @@ export default function AdminSettings() {
       return;
     }
     
+    const adminEmail = newAdminEmail.trim();
+    logger.info('AdminSettings', 'Creating admin user', { email: adminEmail });
     try {
       setError(null);
-      console.log('[Settings] Creating admin:', newAdminEmail);
-      console.log('[Settings] Token available:', !!localStorage.getItem('access_token'));
-      
-      // Use POST /users/ endpoint with proper payload
       const response = await axios.post("/users/", {
-        email: newAdminEmail,
+        email: adminEmail,
         password: newAdminPassword,
         roles: ["ADMIN"]
       });
-      
-      console.log('[Settings] ✅ Admin created successfully:', response.data);
-      
-      setSuccess("Admin created successfully!");
+      logger.info('AdminSettings', 'Admin created successfully', { email: adminEmail, id: (response.data as any)?._id });
+      notify.success(`Admin account created for ${adminEmail}`);
       setNewAdminEmail("");
       setNewAdminPassword("");
       setShowCreateAdmin(false);
-      
-      // Reload users and stats
-      await loadUsers();
-      await loadStats();
-      
-      setTimeout(() => setSuccess(null), 3000);
+      await Promise.all([loadUsers(), loadStats()]);
     } catch (err: any) {
-      console.error('[Settings] ❌ Failed to create admin:', err);
-      console.error('[Settings] Error response:', err.response?.data);
-      console.error('[Settings] Error status:', err.response?.status);
-      
-      let errorMessage = "Failed to create admin";
-      
-      if (err.response?.status === 401) {
-        errorMessage = "Authentication failed. Please log in again.";
-      } else if (err.response?.data?.detail) {
-        // Handle both string and array detail formats
-        const detail = err.response.data.detail;
-        if (Array.isArray(detail)) {
-          errorMessage = detail.map((d: any) => d.msg || d).join(", ");
-        } else {
-          errorMessage = detail;
-        }
-      }
-      
-      setError(errorMessage);
-      setTimeout(() => setError(null), 5000);
+      const code   = err?.response?.status;
+      const detail = err?.response?.data?.detail;
+      const msg    = Array.isArray(detail) ? detail.map((d: any) => d.msg || d).join(', ') : (detail || 'Failed to create admin');
+      logger.error('AdminSettings', 'Failed to create admin', { email: adminEmail, error: msg, code });
+      if      (code === 401) setError('Authentication failed. Please log in again.');
+      else if (code === 409) setError('An account with this email already exists.');
+      else if (code === 422) setError(`Validation error: ${msg}`);
+      else                   setError(msg);
     }
   };
 
@@ -418,11 +396,14 @@ export default function AdminSettings() {
       notify.error("You cannot deactivate your own account.");
       return;
     }
-    if (!window.confirm(`Deactivate ${email}?`)) return;
-
-    const loadingKey = `deactivate-${email}`;
-    setActionLoadingId(loadingKey);
-    logger.info("AdminSettings", "Deactivating user", { email, role, resourceId });
+    setConfirmPending({
+      label: `Deactivate ${email}?`,
+      danger: true,
+      onConfirm: async () => {
+        setConfirmPending(null);
+        const loadingKey = `deactivate-${email}`;
+        setActionLoadingId(loadingKey);
+        logger.info("AdminSettings", "Deactivating user", { email, role, resourceId });
     try {
       const roleUp = role.toUpperCase();
       if (roleUp === 'FARMER') {
@@ -437,28 +418,32 @@ export default function AdminSettings() {
       } else {
         await axios.patch(`/users/${email}/status`, { is_active: false });
       }
-      logger.info("AdminSettings", "User deactivated", { email });
-      notify.success(`${email} has been deactivated.`);
-      await loadUsers();
-      await loadStats();
-    } catch (err: any) {
-      const status = err?.response?.status;
-      const detail = err?.response?.data?.detail;
-      logger.error("AdminSettings", "Failed to deactivate user", { email, status, detail });
-      if (status === 404) notify.error(`User not found: ${email}`);
-      else if (status === 403) notify.error("Access denied — admin rights required.");
-      else notify.error(detail || "Failed to deactivate user. Please try again.");
-    } finally {
-      setActionLoadingId(null);
-    }
+        logger.info("AdminSettings", "User deactivated", { email });
+        notify.success(`${email} has been deactivated.`);
+        await Promise.all([loadUsers(), loadStats()]);
+      } catch (err: any) {
+        const status = err?.response?.status;
+        const detail = err?.response?.data?.detail;
+        logger.error("AdminSettings", "Failed to deactivate user", { email, status, detail });
+        if (status === 404) notify.error(`User not found: ${email}`);
+        else if (status === 403) notify.error("Access denied — admin rights required.");
+        else notify.error(detail || "Failed to deactivate user. Please try again.");
+      } finally {
+        setActionLoadingId(null);
+      }
+    },
+  });
   };
 
   const activateUser = async (resourceId: string, email: string, role: string) => {
-    if (!window.confirm(`Activate ${email}?`)) return;
-
-    const loadingKey = `activate-${email}`;
-    setActionLoadingId(loadingKey);
-    logger.info("AdminSettings", "Activating user", { email, role, resourceId });
+    setConfirmPending({
+      label: `Activate ${email}?`,
+      danger: false,
+      onConfirm: async () => {
+        setConfirmPending(null);
+        const loadingKey = `activate-${email}`;
+        setActionLoadingId(loadingKey);
+        logger.info("AdminSettings", "Activating user", { email, role, resourceId });
     try {
       const roleUp = role.toUpperCase();
       if (roleUp === 'FARMER') {
@@ -472,20 +457,21 @@ export default function AdminSettings() {
       } else {
         await axios.patch(`/users/${email}/status`, { is_active: true });
       }
-      logger.info("AdminSettings", "User activated", { email });
-      notify.success(`${email} has been activated.`);
-      await loadUsers();
-      await loadStats();
-    } catch (err: any) {
-      const status = err?.response?.status;
-      const detail = err?.response?.data?.detail;
-      logger.error("AdminSettings", "Failed to activate user", { email, status, detail });
-      if (status === 404) notify.error(`User not found: ${email}`);
-      else if (status === 403) notify.error("Access denied — admin rights required.");
-      else notify.error(detail || "Failed to activate user. Please try again.");
-    } finally {
-      setActionLoadingId(null);
-    }
+        logger.info("AdminSettings", "User activated", { email });
+        notify.success(`${email} has been activated.`);
+        await Promise.all([loadUsers(), loadStats()]);
+      } catch (err: any) {
+        const status = err?.response?.status;
+        const detail = err?.response?.data?.detail;
+        logger.error("AdminSettings", "Failed to activate user", { email, status, detail });
+        if (status === 404) notify.error(`User not found: ${email}`);
+        else if (status === 403) notify.error("Access denied — admin rights required.");
+        else notify.error(detail || "Failed to activate user. Please try again.");
+      } finally {
+        setActionLoadingId(null);
+      }
+    },
+  });
   };
 
   const deleteUser = async (resourceId: string, email: string, role: string) => {
@@ -494,11 +480,14 @@ export default function AdminSettings() {
       notify.error("You cannot delete your own account.");
       return;
     }
-    if (!window.confirm(`Permanently delete ${email}?\n\nThis cannot be undone.`)) return;
-
-    const loadingKey = `delete-${email}`;
-    setActionLoadingId(loadingKey);
-    logger.info("AdminSettings", "Deleting user", { email, role, resourceId });
+    setConfirmPending({
+      label: `Permanently delete ${email}? This cannot be undone.`,
+      danger: true,
+      onConfirm: async () => {
+        setConfirmPending(null);
+        const loadingKey = `delete-${email}`;
+        setActionLoadingId(loadingKey);
+        logger.info("AdminSettings", "Deleting user", { email, role, resourceId });
     try {
       const roleUp = role.toUpperCase();
       if (roleUp === 'FARMER') {
@@ -514,21 +503,22 @@ export default function AdminSettings() {
       } else {
         await axios.delete(`/users/${email}`);
       }
-      logger.info("AdminSettings", "User deleted", { email });
-      notify.success(`${email} has been permanently deleted.`);
-      await loadUsers();
-      await loadStats();
-    } catch (err: any) {
-      const status = err?.response?.status;
-      const detail = err?.response?.data?.detail;
-      logger.error("AdminSettings", "Failed to delete user", { email, status, detail });
-      if (status === 404) notify.error(`User not found: ${email} — it may have already been deleted.`);
-      else if (status === 403) notify.error("Access denied — admin rights required.");
-      else if (status === 400) notify.error(detail || "Cannot delete this account (safety constraint).");
-      else notify.error(detail || "Failed to delete user. Please try again.");
-    } finally {
-      setActionLoadingId(null);
-    }
+        logger.info("AdminSettings", "User deleted", { email });
+        notify.success(`${email} has been permanently deleted.`);
+        await Promise.all([loadUsers(), loadStats()]);
+      } catch (err: any) {
+        const status = err?.response?.status;
+        const detail = err?.response?.data?.detail;
+        logger.error("AdminSettings", "Failed to delete user", { email, status, detail });
+        if (status === 404) notify.error(`User not found: ${email} — may have already been deleted.`);
+        else if (status === 403) notify.error("Access denied — admin rights required.");
+        else if (status === 400) notify.error(detail || "Cannot delete this account (safety constraint).");
+        else notify.error(detail || "Failed to delete user. Please try again.");
+      } finally {
+        setActionLoadingId(null);
+      }
+    },
+  });
   };
 
   return (
@@ -560,20 +550,7 @@ export default function AdminSettings() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {error && (
-          <div className="mb-6 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500">
-            {error}
-            <button onClick={() => setError(null)} className="ml-auto block text-xs hover:underline">Dismiss</button>
-          </div>
-        )}
-        
-        {success && (
-          <div className="mb-6 bg-green-50 text-green-700 px-4 py-3 rounded-lg text-sm border-l-4 border-green-600">
-            ✓ {success}
-          </div>
-        )}
-
-        {/* Tabs */}
+        {/* Tabs */
         <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-2 flex gap-2 overflow-x-auto">
           {[
             { value: "users",      label: "👥 Users" },
@@ -636,6 +613,13 @@ export default function AdminSettings() {
                           Requirements: Min 8 chars, 1 uppercase, 1 lowercase, 1 number
                         </p>
                       </div>
+                      {error && (
+                        <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-lg px-3 py-2 text-sm">
+                          <span className="mt-0.5">⚠️</span>
+                          <span>{error}</span>
+                          <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-600 font-bold leading-none">×</button>
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <button
                           onClick={createAdmin}
@@ -892,6 +876,35 @@ export default function AdminSettings() {
           </>
         )}
       </div>
+
+      {/* Confirm Modal */}
+      {confirmPending && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4 leading-snug">
+              {confirmPending.label}
+            </h3>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmPending(null)}
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmPending.onConfirm}
+                className={`px-4 py-2 rounded-lg text-white text-sm font-semibold transition ${
+                  confirmPending.danger
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-green-700 hover:bg-green-800"
+                }`}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

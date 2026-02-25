@@ -312,15 +312,14 @@ export default function AdminDashboard() {
     if (tab === "settings")  { navigate("/admin/settings"); return; }
   };
 
+  // Quick actions = actions NOT already accessible via the bottom nav bar.
+  // Bottom nav covers: Home, Farmers, Operators, Reports, Settings.
   const quickActions: ActionTile[] = [
-    { icon: "➕", label: "Add Farmer",    bg: "bg-gradient-to-br from-emerald-500 to-green-600",   onPress: () => { logger.info("AdminDashboard", "QuickAction: Add Farmer"); navigate("/farmers/create"); } },
-    { icon: "👨‍💼", label: "Operators",    bg: "bg-gradient-to-br from-blue-500 to-indigo-600",     onPress: () => { logger.info("AdminDashboard", "QuickAction: Operators"); navigate("/operators/manage"); } },
-    { icon: "👨‍🌾", label: "Farmers",      bg: "bg-gradient-to-br from-teal-500 to-cyan-600",       onPress: () => { logger.info("AdminDashboard", "QuickAction: Farmers"); navigate("/farmers"); } },
-    { icon: "📊", label: "Reports",       bg: "bg-gradient-to-br from-orange-500 to-amber-600",    onPress: () => { logger.info("AdminDashboard", "QuickAction: Reports"); navigate("/admin/reports"); } },
-    { icon: "📈", label: "Analytics",     bg: "bg-gradient-to-br from-violet-500 to-purple-600",   onPress: () => { logger.info("AdminDashboard", "QuickAction: Analytics"); navigate("/admin/analytics"); } },
-    { icon: "🛒", label: "Supply Req.",   bg: "bg-gradient-to-br from-rose-500 to-pink-600",       onPress: () => { logger.info("AdminDashboard", "QuickAction: Supply Requests"); navigate("/admin/supply-requests"); } },
-    { icon: "📋", label: "Sys Logs",      bg: "bg-gradient-to-br from-gray-600 to-slate-700",      onPress: () => { logger.info("AdminDashboard", "QuickAction: Logs"); navigate("/admin/logs"); } },
-    { icon: "⚙️", label: "Settings",      bg: "bg-gradient-to-br from-cyan-600 to-sky-700",        onPress: () => { logger.info("AdminDashboard", "QuickAction: Settings"); navigate("/admin/settings"); } },
+    { icon: "➕", label: "Add Farmer",   bg: "bg-gradient-to-br from-emerald-500 to-green-600",  onPress: () => { logger.info("AdminDashboard", "QuickAction: Add Farmer");        navigate("/farmers/create"); } },
+    { icon: "🧑‍💼", label: "Add Operator", bg: "bg-gradient-to-br from-blue-500 to-indigo-600",    onPress: () => { logger.info("AdminDashboard", "QuickAction: Add Operator");      navigate("/operators/manage"); } },
+    { icon: "📈", label: "Analytics",    bg: "bg-gradient-to-br from-violet-500 to-purple-600",  onPress: () => { logger.info("AdminDashboard", "QuickAction: Analytics");          navigate("/admin/analytics"); } },
+    { icon: "🛒", label: "Supply Req.",  bg: "bg-gradient-to-br from-rose-500 to-pink-600",      onPress: () => { logger.info("AdminDashboard", "QuickAction: Supply Requests");   navigate("/admin/supply-requests"); } },
+    { icon: "📋", label: "System Logs", bg: "bg-gradient-to-br from-gray-600 to-slate-700",     onPress: () => { logger.info("AdminDashboard", "QuickAction: Logs");              navigate("/admin/logs"); } },
   ];
 
   const getGreeting = () => {
@@ -436,7 +435,7 @@ export default function AdminDashboard() {
         {/* ── Quick Actions ──────────────────────────────────────────────── */}
         <div className="px-4 mt-6">
           <SectionHeader title="Quick Actions" />
-          <div className="grid grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-3 gap-3">
             {quickActions.map((a) => (
               <QuickAction key={a.label} {...a} />
             ))}
