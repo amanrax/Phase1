@@ -35,5 +35,6 @@
       ]
     }
   },
-  "postCreateCommand": "docker compose version && echo '✅ Codespace ready with Docker support!'"
+  "postCreateCommand": "docker compose version && echo '✅ Codespace ready with Docker support!'",
+  "postStartCommand": "bash /workspaces/Phase1/.devcontainer/start.sh"
 }
