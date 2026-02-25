@@ -93,7 +93,7 @@ export default function FarmerRegistrationWizard() {
       </div>
       
       <div style={{ maxWidth: "900px", margin: "0 auto", padding: "0 20px 40px 20px" }}>
-        <div style={{ background: "white", borderRadius: "15px", padding: "40px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
+        <div style={{ background: "white", borderRadius: "15px", padding: "40px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", colorScheme: "light" }}>
         {/* Progress Bar */}
         <div style={{ marginBottom: "40px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>

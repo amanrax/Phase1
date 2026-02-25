@@ -316,7 +316,7 @@ export default function AdminDashboard() {
   // Bottom nav covers: Home, Farmers, Operators, Reports, Settings.
   const quickActions: ActionTile[] = [
     { icon: "➕", label: "Add Farmer",   bg: "bg-gradient-to-br from-emerald-500 to-green-600",  onPress: () => { logger.info("AdminDashboard", "QuickAction: Add Farmer");        navigate("/farmers/create"); } },
-    { icon: "🧑‍💼", label: "Add Operator", bg: "bg-gradient-to-br from-blue-500 to-indigo-600",    onPress: () => { logger.info("AdminDashboard", "QuickAction: Add Operator");      navigate("/operators/manage"); } },
+    { icon: "🧑‍💼", label: "Add Operator", bg: "bg-gradient-to-br from-blue-500 to-indigo-600",    onPress: () => { logger.info("AdminDashboard", "QuickAction: Add Operator"); navigate("/operators/manage", { state: { openCreate: true } }); } },
     { icon: "📈", label: "Analytics",    bg: "bg-gradient-to-br from-violet-500 to-purple-600",  onPress: () => { logger.info("AdminDashboard", "QuickAction: Analytics");          navigate("/admin/analytics"); } },
     { icon: "🛒", label: "Supply Req.",  bg: "bg-gradient-to-br from-rose-500 to-pink-600",      onPress: () => { logger.info("AdminDashboard", "QuickAction: Supply Requests");   navigate("/admin/supply-requests"); } },
     { icon: "📋", label: "System Logs", bg: "bg-gradient-to-br from-gray-600 to-slate-700",     onPress: () => { logger.info("AdminDashboard", "QuickAction: Logs");              navigate("/admin/logs"); } },
