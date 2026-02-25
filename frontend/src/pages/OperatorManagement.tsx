@@ -5,6 +5,7 @@ import geoService from "@/services/geo.service";
 import { GeoSelectWithOther } from "@/components/GeoSelectWithOther";
 import PhoneInput from "@/components/PhoneInput";
 import { logger } from "@/utils/logger";
+import { useNotification } from "@/contexts/NotificationContext";
 
 interface Operator {
   _id: string;
@@ -38,6 +39,7 @@ const emptyGeo: GeoValue = { province_code: "", province_name: "", district_code
 
 export default function OperatorManagement() {
   const navigate = useNavigate();
+  const notify = useNotification();
   const [operators, setOperators] = useState<Operator[]>([]);
   const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -65,7 +67,6 @@ export default function OperatorManagement() {
   });
   const [editGeoValue, setEditGeoValue] = useState<GeoValue>(emptyGeo);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize] = useState(10);
   const [totalOperators, setTotalOperators] = useState(0);
@@ -230,11 +231,14 @@ export default function OperatorManagement() {
     setUpdatingId(operatorId);
     try {
       await operatorService.update(operatorId, { is_active: !currentStatus });
-      setSuccess(`Operator ${!currentStatus ? "activated" : "deactivated"} successfully!`);
+      notify.success(`Operator ${!currentStatus ? 'activated' : 'deactivated'} successfully.`);
       loadOperators(currentPage);
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to update operator status");
+      const detail = err?.response?.data?.detail;
+      const status = err?.response?.status;
+      logger.error("OperatorManagement", "Failed to toggle operator status", { operatorId, status });
+      if (status === 404) notify.error("Operator not found.");
+      else notify.error(detail || "Failed to update operator status.");
     } finally {
       setUpdatingId(null);
     }
@@ -283,15 +287,18 @@ export default function OperatorManagement() {
 
       await operatorService.update(selectedOperator.operator_id, payload);
       logger.info("OperatorManagement", "Operator updated successfully", { operator_id: selectedOperator.operator_id });
-      setSuccess("✅ Operator updated successfully!");
+      notify.success("Operator updated successfully.");
       setShowEditModal(false);
       setSelectedOperator(null);
       setEditGeoValue(emptyGeo);
       loadOperators(currentPage);
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      const status = err?.response?.status;
       logger.error("OperatorManagement", "Failed to update operator", { error: err?.message });
-      setError(err.response?.data?.detail || "Failed to update operator");
+      if (status === 409) setError(detail || "Email already in use by another account.");
+      else if (status === 404) notify.error("Operator not found — it may have been deleted.");
+      else setError(detail || "Failed to update operator. Please try again.");
     }
   };
 
@@ -325,22 +332,18 @@ export default function OperatorManagement() {
 
       await operatorService.create(payload);
       logger.info("OperatorManagement", "Operator created successfully", { email: formData.email });
-      setSuccess("✅ Operator created successfully!");
+      notify.success("Operator created successfully.");
       setShowCreateModal(false);
-      setFormData({
-        first_name: "",
-        last_name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        phone: "",
-      });
+      setFormData({ first_name: "", last_name: "", email: "", password: "", confirmPassword: "", phone: "" });
       setCreateGeoValue(emptyGeo);
       loadOperators();
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      const status = err?.response?.status;
       logger.error("OperatorManagement", "Failed to create operator", { error: err?.message });
-      setError(err.response?.data?.detail || "Failed to create operator");
+      if (status === 409) setError(detail || "An account with this email already exists.");
+      else if (status === 422) setError("Please check all required fields.");
+      else setError(detail || "Failed to create operator. Please try again.");
     }
   };
 
@@ -370,12 +373,6 @@ export default function OperatorManagement() {
           <div className="mb-6 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500">
             {error}
             <button onClick={() => setError("")} className="ml-auto block text-xs hover:underline">Dismiss</button>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-6 bg-green-50 text-green-700 px-4 py-3 rounded-lg text-sm border-l-4 border-green-600">
-            ✓ {success}
           </div>
         )}
 

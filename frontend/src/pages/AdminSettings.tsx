@@ -6,6 +6,7 @@ import useAuthStore from "@/store/authStore";
 import { useTheme } from "@/contexts/ThemeContext";
 import type { Theme } from "@/contexts/ThemeContext";
 import { logger } from "@/utils/logger";
+import { useNotification } from "@/contexts/NotificationContext";
 
 interface User {
   _id: string;
@@ -176,6 +177,8 @@ export default function AdminSettings() {
   
   // Include inactive users toggle
   const [includeInactive, setIncludeInactive] = useState(true);  // Changed to TRUE by default
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const notify = useNotification();
 
   useEffect(() => {
     loadUsers();
@@ -406,120 +409,125 @@ export default function AdminSettings() {
     }
   };
 
+  /** Returns true if a resourceId is an email (orphaned user — no proper ID assigned) */
+  const isEmailFallback = (id: string) => id.includes('@');
+
   const deactivateUser = async (resourceId: string, email: string, role: string) => {
-    // Get current logged-in user
-    const currentUser = useAuthStore.getState().user;
-    const currentEmail = currentUser?.email;
-    
-    // Prevent self-deactivation
+    const currentEmail = useAuthStore.getState().user?.email;
     if (email.toLowerCase() === currentEmail?.toLowerCase()) {
-      setError("❌ You cannot deactivate your own account!");
-      setTimeout(() => setError(null), 3000);
+      notify.error("You cannot deactivate your own account.");
       return;
     }
-    
-    if (!confirm(`Deactivate ${email}?`)) return;
-    
+    if (!window.confirm(`Deactivate ${email}?`)) return;
+
+    const loadingKey = `deactivate-${email}`;
+    setActionLoadingId(loadingKey);
+    logger.info("AdminSettings", "Deactivating user", { email, role, resourceId });
     try {
-      console.log('[Settings] Deactivating user:', { resourceId, email, role });
-      
-      // Route to correct endpoint based on role
-      if (role.toUpperCase() === 'FARMER') {
+      const roleUp = role.toUpperCase();
+      if (roleUp === 'FARMER') {
         await axios.patch(`/farmers/${resourceId}/review?new_status=registered`);
-      } else if (role.toUpperCase() === 'OPERATOR') {
-        // Operators use PUT with is_active in body (no /status endpoint)
-        await axios.put(`/operators/${resourceId}`, { is_active: false });
+      } else if (roleUp === 'OPERATOR') {
+        // If resourceId is an email (orphaned — no operator record), use users endpoint
+        if (isEmailFallback(resourceId)) {
+          await axios.patch(`/users/${email}/status`, { is_active: false });
+        } else {
+          await axios.put(`/operators/${resourceId}`, { is_active: false });
+        }
       } else {
-        await axios.patch(`/users/${resourceId}/status`, { is_active: false });
+        await axios.patch(`/users/${email}/status`, { is_active: false });
       }
-      
-      setSuccess("User deactivated");
-      
-      // Reload data
+      logger.info("AdminSettings", "User deactivated", { email });
+      notify.success(`${email} has been deactivated.`);
       await loadUsers();
       await loadStats();
-      
-      setTimeout(() => setSuccess(null), 3000);
-      
-      console.log('[Settings] ✅ User deactivated');
     } catch (err: any) {
-      console.error('[Settings] Failed to deactivate user:', err);
-      setError(err.response?.data?.detail || "Failed to deactivate user");
+      const status = err?.response?.status;
+      const detail = err?.response?.data?.detail;
+      logger.error("AdminSettings", "Failed to deactivate user", { email, status, detail });
+      if (status === 404) notify.error(`User not found: ${email}`);
+      else if (status === 403) notify.error("Access denied — admin rights required.");
+      else notify.error(detail || "Failed to deactivate user. Please try again.");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
   const activateUser = async (resourceId: string, email: string, role: string) => {
-    if (!confirm(`Activate ${email}?`)) return;
-    
+    if (!window.confirm(`Activate ${email}?`)) return;
+
+    const loadingKey = `activate-${email}`;
+    setActionLoadingId(loadingKey);
+    logger.info("AdminSettings", "Activating user", { email, role, resourceId });
     try {
-      console.log('[Settings] Activating user:', { resourceId, email, role });
-      
-      // Route to correct endpoint based on role
-      if (role.toUpperCase() === 'FARMER') {
+      const roleUp = role.toUpperCase();
+      if (roleUp === 'FARMER') {
         await axios.patch(`/farmers/${resourceId}/review?new_status=verified`);
-      } else if (role.toUpperCase() === 'OPERATOR') {
-        // Operators use PUT with is_active in body (no /status endpoint)
-        await axios.put(`/operators/${resourceId}`, { is_active: true });
+      } else if (roleUp === 'OPERATOR') {
+        if (isEmailFallback(resourceId)) {
+          await axios.patch(`/users/${email}/status`, { is_active: true });
+        } else {
+          await axios.put(`/operators/${resourceId}`, { is_active: true });
+        }
       } else {
-        await axios.patch(`/users/${resourceId}/status`, { is_active: true });
+        await axios.patch(`/users/${email}/status`, { is_active: true });
       }
-      
-      setSuccess("User activated");
-      
-      // Reload data
+      logger.info("AdminSettings", "User activated", { email });
+      notify.success(`${email} has been activated.`);
       await loadUsers();
       await loadStats();
-    // Get current logged-in user
-    const currentUser = useAuthStore.getState().user;
-    const currentEmail = currentUser?.email;
-    
-    // Prevent self-deletion
-    if (email.toLowerCase() === currentEmail?.toLowerCase()) {
-      setError("❌ You cannot delete your own account!");
-      setTimeout(() => setError(null), 3000);
-      return;
-    }
-    
-      
-      setTimeout(() => setSuccess(null), 3000);
-      
-      console.log('[Settings] ✅ User activated');
     } catch (err: any) {
-      console.error('[Settings] Failed to activate user:', err);
-      setError(err.response?.data?.detail || "Failed to activate user");
+      const status = err?.response?.status;
+      const detail = err?.response?.data?.detail;
+      logger.error("AdminSettings", "Failed to activate user", { email, status, detail });
+      if (status === 404) notify.error(`User not found: ${email}`);
+      else if (status === 403) notify.error("Access denied — admin rights required.");
+      else notify.error(detail || "Failed to activate user. Please try again.");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
   const deleteUser = async (resourceId: string, email: string, role: string) => {
-    if (!confirm(`Delete ${email}? This cannot be undone.`)) return;
-    
+    const currentEmail = useAuthStore.getState().user?.email;
+    if (email.toLowerCase() === currentEmail?.toLowerCase()) {
+      notify.error("You cannot delete your own account.");
+      return;
+    }
+    if (!window.confirm(`Permanently delete ${email}?\n\nThis cannot be undone.`)) return;
+
+    const loadingKey = `delete-${email}`;
+    setActionLoadingId(loadingKey);
+    logger.info("AdminSettings", "Deleting user", { email, role, resourceId });
     try {
-      console.log('[Settings] Deleting user:', { resourceId, email, role });
-      
-      // Route to correct endpoint based on role
-      if (role.toUpperCase() === 'FARMER') {
-        // Delete farmer using farmer_id
+      const roleUp = role.toUpperCase();
+      if (roleUp === 'FARMER') {
         await axios.delete(`/farmers/${resourceId}`);
-      } else if (role.toUpperCase() === 'OPERATOR') {
-        // Delete operator using operator_id
-        await axios.delete(`/operators/${resourceId}`);
+      } else if (roleUp === 'OPERATOR') {
+        // If resourceId is an email (orphaned user — no operator_id), delete via users endpoint
+        if (isEmailFallback(resourceId)) {
+          logger.warn("AdminSettings", `Orphaned operator user detected (${email}), deleting via /users`);
+          await axios.delete(`/users/${email}`);
+        } else {
+          await axios.delete(`/operators/${resourceId}`);
+        }
       } else {
-        // Delete from users collection using email
-        await axios.delete(`/users/${resourceId}`);
+        await axios.delete(`/users/${email}`);
       }
-      
-      setSuccess("User deleted");
-      
-      // Reload data
+      logger.info("AdminSettings", "User deleted", { email });
+      notify.success(`${email} has been permanently deleted.`);
       await loadUsers();
       await loadStats();
-      
-      setTimeout(() => setSuccess(null), 3000);
-      
-      console.log('[Settings] ✅ User deleted');
     } catch (err: any) {
-      console.error('[Settings] Failed to delete user:', err);
-      setError(err.response?.data?.detail || "Failed to delete user");
+      const status = err?.response?.status;
+      const detail = err?.response?.data?.detail;
+      logger.error("AdminSettings", "Failed to delete user", { email, status, detail });
+      if (status === 404) notify.error(`User not found: ${email} — it may have already been deleted.`);
+      else if (status === 403) notify.error("Access denied — admin rights required.");
+      else if (status === 400) notify.error(detail || "Cannot delete this account (safety constraint).");
+      else notify.error(detail || "Failed to delete user. Please try again.");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -716,26 +724,29 @@ export default function AdminSettings() {
                               {user.is_active ? (
                                 <button
                                   onClick={() => deactivateUser(user.resourceId, user.email, user.role)}
-                                  className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded transition"
+                                  disabled={actionLoadingId !== null}
+                                  className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                                   title="Deactivate"
                                 >
-                                  🔴 Deactivate
+                                  {actionLoadingId === `deactivate-${user.email}` ? '⏳' : '🔴 Deactivate'}
                                 </button>
                               ) : (
                                 <button
                                   onClick={() => activateUser(user.resourceId, user.email, user.role)}
-                                  className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold rounded transition"
+                                  disabled={actionLoadingId !== null}
+                                  className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                                   title="Activate"
                                 >
-                                  🟢 Activate
+                                  {actionLoadingId === `activate-${user.email}` ? '⏳' : '🟢 Activate'}
                                 </button>
                               )}
                               <button
                                 onClick={() => deleteUser(user.resourceId, user.email, user.role)}
-                                className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded transition"
+                                disabled={actionLoadingId !== null}
+                                className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Delete"
                               >
-                                🗑️ Delete
+                                {actionLoadingId === `delete-${user.email}` ? '⏳' : '🗑️ Delete'}
                               </button>
                             </td>
                           </tr>
@@ -775,26 +786,29 @@ export default function AdminSettings() {
                           {user.is_active ? (
                             <button
                               onClick={() => deactivateUser(user.resourceId, user.email, user.role)}
-                              className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 font-bold py-1 px-2 rounded transition"
+                              disabled={actionLoadingId !== null}
+                              className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 font-bold py-1 px-2 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Deactivate"
                             >
-                              🔴 Deactivate
+                              {actionLoadingId === `deactivate-${user.email}` ? '⏳' : '🔴 Deactivate'}
                             </button>
                           ) : (
                             <button
                               onClick={() => activateUser(user.resourceId, user.email, user.role)}
-                              className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-bold py-1 px-2 rounded transition"
+                              disabled={actionLoadingId !== null}
+                              className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 font-bold py-1 px-2 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Activate"
                             >
-                              🟢 Activate
+                              {actionLoadingId === `activate-${user.email}` ? '⏳' : '🟢 Activate'}
                             </button>
                           )}
                           <button
                             onClick={() => deleteUser(user.resourceId, user.email, user.role)}
-                            className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 font-bold py-1 px-2 rounded transition"
+                            disabled={actionLoadingId !== null}
+                            className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 font-bold py-1 px-2 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Delete"
                           >
-                            🗑️ Delete
+                            {actionLoadingId === `delete-${user.email}` ? '⏳' : '🗑️ Delete'}
                           </button>
                         </div>
                       </div>
