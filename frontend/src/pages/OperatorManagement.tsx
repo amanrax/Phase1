@@ -136,6 +136,31 @@ function ConfirmDialog({
   );
 }
 
+// ─── Eye toggle button ───────────────────────────────────────────────────────
+
+function EyeBtn({ show, onToggle }: { show: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      tabIndex={-1}
+      onClick={onToggle}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition text-base select-none"
+      aria-label={show ? "Hide password" : "Show password"}
+    >
+      {show ? (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+        </svg>
+      ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 // ─── Input class helpers ───────────────────────────────────────────────────────
 
 const inputCls =
@@ -176,6 +201,13 @@ export default function OperatorManagement() {
   const [createError, setCreateError] = useState("");
   const [editError,   setEditError]   = useState("");
 
+  // Password visibility toggles (create form)
+  const [showCreatePwd,        setShowCreatePwd]        = useState(false);
+  const [showCreateConfirmPwd, setShowCreateConfirmPwd] = useState(false);
+  // Password visibility toggles (edit form)
+  const [showEditPwd,          setShowEditPwd]          = useState(false);
+  const [showEditConfirmPwd,   setShowEditConfirmPwd]   = useState(false);
+
   // Confirm modal
   type ConfirmPending = { label: string; danger?: boolean; onConfirm: () => void };
   const [confirmPending, setConfirmPending] = useState<ConfirmPending | null>(null);
@@ -205,6 +237,8 @@ export default function OperatorManagement() {
     setFormData({ first_name: "", last_name: "", email: "", password: "", confirmPassword: "", phone: "" });
     setCreateGeoValue(emptyGeo);
     setCreateError("");
+    setShowCreatePwd(false);
+    setShowCreateConfirmPwd(false);
     setShowCreateModal(true);
   }, []);
 
@@ -299,6 +333,8 @@ export default function OperatorManagement() {
     logger.info("OperatorManagement", "Opening edit modal", { operator_id: op.operator_id });
     setSelectedOperator(op);
     setEditError("");
+    setShowEditPwd(false);
+    setShowEditConfirmPwd(false);
 
     const currentDistrict = op.assigned_district || op.assigned_districts?.[0] || "";
     const currentRegion   = op.assigned_regions?.[0] || "";
@@ -809,7 +845,7 @@ export default function OperatorManagement() {
               <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center rounded-t-2xl">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white">➕ Create New Operator</h2>
                 <button
-                  onClick={() => { setShowCreateModal(false); setCreateError(""); }}
+                  onClick={() => { setShowCreateModal(false); setCreateError(""); setShowCreatePwd(false); setShowCreateConfirmPwd(false); }}
                   className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl leading-none transition"
                 >×</button>
               </div>
@@ -821,28 +857,31 @@ export default function OperatorManagement() {
                 </div>
               )}
 
-              <form onSubmit={handleCreate} className="p-6 space-y-5">
+              <form onSubmit={handleCreate} autoComplete="off" className="p-6 space-y-5">
+                {/* Honeypot hidden fields stop Chrome from autofilling visible inputs */}
+                <input type="text"     style={{ display: "none" }} aria-hidden="true" tabIndex={-1} />
+                <input type="password" style={{ display: "none" }} aria-hidden="true" tabIndex={-1} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>First Name <span className="text-red-500">*</span></label>
                     <input type="text" placeholder="e.g., John" value={formData.first_name}
                       onChange={e => setFormData({ ...formData, first_name: e.target.value })}
-                      required className={inputCls} />
+                      autoComplete="off" required className={inputCls} />
                   </div>
                   <div>
                     <label className={labelCls}>Last Name <span className="text-red-500">*</span></label>
                     <input type="text" placeholder="e.g., Doe" value={formData.last_name}
                       onChange={e => setFormData({ ...formData, last_name: e.target.value })}
-                      required className={inputCls} />
+                      autoComplete="off" required className={inputCls} />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>Email <span className="text-red-500">*</span></label>
-                    <input type="email" placeholder="john@example.com" value={formData.email}
+                    <input type="text" inputMode="email" placeholder="john@example.com" value={formData.email}
                       onChange={e => setFormData({ ...formData, email: e.target.value })}
-                      required className={inputCls} />
+                      autoComplete="off" required className={inputCls} />
                   </div>
                   <div>
                     <label className={labelCls}>Phone</label>
@@ -858,25 +897,40 @@ export default function OperatorManagement() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>Password <span className="text-red-500">*</span></label>
-                    <input type="password" placeholder="Min 8 characters" value={formData.password}
-                      onChange={e => setFormData({ ...formData, password: e.target.value })}
-                      required className={inputCls} />
+                    <div className="relative">
+                      <input
+                        type={showCreatePwd ? "text" : "password"}
+                        placeholder="Min 8 characters"
+                        value={formData.password}
+                        onChange={e => setFormData({ ...formData, password: e.target.value })}
+                        autoComplete="new-password"
+                        required
+                        className={`${inputCls} pr-10`}
+                      />
+                      <EyeBtn show={showCreatePwd} onToggle={() => setShowCreatePwd(v => !v)} />
+                    </div>
                     <PasswordStrength password={formData.password} />
                   </div>
                   <div>
                     <label className={labelCls}>Confirm Password <span className="text-red-500">*</span></label>
-                    <input
-                      type="password" placeholder="Re-enter password" value={formData.confirmPassword}
-                      onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
-                      required
-                      className={`${inputCls} mt-1 ${
-                        formData.confirmPassword
-                          ? formData.password === formData.confirmPassword
-                            ? "!border-green-500 focus:!ring-green-400"
-                            : "!border-red-400 focus:!ring-red-300"
-                          : ""
-                      }`}
-                    />
+                    <div className="relative mt-1">
+                      <input
+                        type={showCreateConfirmPwd ? "text" : "password"}
+                        placeholder="Re-enter password"
+                        value={formData.confirmPassword}
+                        onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
+                        autoComplete="new-password"
+                        required
+                        className={`${inputCls} pr-10 ${
+                          formData.confirmPassword
+                            ? formData.password === formData.confirmPassword
+                              ? "!border-green-500 focus:!ring-green-400"
+                              : "!border-red-400 focus:!ring-red-300"
+                            : ""
+                        }`}
+                      />
+                      <EyeBtn show={showCreateConfirmPwd} onToggle={() => setShowCreateConfirmPwd(v => !v)} />
+                    </div>
                     {formData.confirmPassword && formData.password !== formData.confirmPassword && (
                       <p className="text-xs text-red-500 dark:text-red-400 mt-1">Passwords do not match</p>
                     )}
@@ -895,7 +949,7 @@ export default function OperatorManagement() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setShowCreateModal(false); setCreateError(""); }}
+                    onClick={() => { setShowCreateModal(false); setCreateError(""); setShowCreatePwd(false); setShowCreateConfirmPwd(false); }}
                     className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-3 px-4 rounded-lg transition"
                   >Cancel</button>
                 </div>
@@ -1054,7 +1108,7 @@ export default function OperatorManagement() {
               <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center rounded-t-2xl">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white">✏️ Edit Operator</h2>
                 <button
-                  onClick={() => { setShowEditModal(false); setEditError(""); }}
+                  onClick={() => { setShowEditModal(false); setEditError(""); setShowEditPwd(false); setShowEditConfirmPwd(false); }}
                   className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl leading-none transition"
                 >×</button>
               </div>
@@ -1066,17 +1120,19 @@ export default function OperatorManagement() {
                 </div>
               )}
 
-              <form onSubmit={handleEditSubmit} className="p-6 space-y-5">
+              <form onSubmit={handleEditSubmit} autoComplete="off" className="p-6 space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>First Name <span className="text-red-500">*</span></label>
                     <input type="text" placeholder="e.g., John" value={editFormData.first_name}
+                      autoComplete="off"
                       onChange={e => setEditFormData({ ...editFormData, first_name: e.target.value })}
                       required className={inputCls} />
                   </div>
                   <div>
                     <label className={labelCls}>Last Name <span className="text-red-500">*</span></label>
                     <input type="text" placeholder="e.g., Doe" value={editFormData.last_name}
+                      autoComplete="off"
                       onChange={e => setEditFormData({ ...editFormData, last_name: e.target.value })}
                       required className={inputCls} />
                   </div>
@@ -1085,7 +1141,8 @@ export default function OperatorManagement() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>Email <span className="text-red-500">*</span></label>
-                    <input type="email" placeholder="john@example.com" value={editFormData.email}
+                    <input type="text" inputMode="email" placeholder="john@example.com" value={editFormData.email}
+                      autoComplete="off"
                       onChange={e => setEditFormData({ ...editFormData, email: e.target.value })}
                       required className={inputCls} />
                   </div>
@@ -1108,33 +1165,41 @@ export default function OperatorManagement() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>New Password</label>
-                      <input
-                        type="password"
-                        placeholder="Leave blank to keep current"
-                        value={editFormData.password}
-                        autoComplete="new-password"
-                        onChange={e => setEditFormData({ ...editFormData, password: e.target.value, confirmPassword: e.target.value ? editFormData.confirmPassword : "" })}
-                        className={inputCls}
-                      />
+                      <div className="relative">
+                        <input
+                          type={showEditPwd ? "text" : "password"}
+                          placeholder="Leave blank to keep current"
+                          value={editFormData.password}
+                          autoComplete="new-password"
+                          onChange={e => setEditFormData({ ...editFormData, password: e.target.value, confirmPassword: e.target.value ? editFormData.confirmPassword : "" })}
+                          className={`${inputCls} pr-10`}
+                        />
+                        <EyeBtn show={showEditPwd} onToggle={() => setShowEditPwd(v => !v)} />
+                      </div>
                       <PasswordStrength password={editFormData.password} />
                     </div>
                     <div>
                       <label className={labelCls}>Confirm New Password</label>
-                      <input
-                        type="password"
-                        placeholder="Re-enter new password"
-                        value={editFormData.confirmPassword}
-                        autoComplete="new-password"
-                        disabled={!editFormData.password}
-                        onChange={e => setEditFormData({ ...editFormData, confirmPassword: e.target.value })}
-                        className={`${inputCls} mt-1 disabled:opacity-40 disabled:cursor-not-allowed ${
-                          editFormData.confirmPassword
-                            ? editFormData.password === editFormData.confirmPassword
-                              ? "!border-green-500 focus:!ring-green-400"
-                              : "!border-red-400 focus:!ring-red-300"
-                            : ""
-                        }`}
-                      />
+                      <div className="relative mt-1">
+                        <input
+                          type={showEditConfirmPwd ? "text" : "password"}
+                          placeholder="Re-enter new password"
+                          value={editFormData.confirmPassword}
+                          autoComplete="new-password"
+                          disabled={!editFormData.password}
+                          onChange={e => setEditFormData({ ...editFormData, confirmPassword: e.target.value })}
+                          className={`${inputCls} pr-10 disabled:opacity-40 disabled:cursor-not-allowed ${
+                            editFormData.confirmPassword
+                              ? editFormData.password === editFormData.confirmPassword
+                                ? "!border-green-500 focus:!ring-green-400"
+                                : "!border-red-400 focus:!ring-red-300"
+                              : ""
+                          }`}
+                        />
+                        {editFormData.password && (
+                          <EyeBtn show={showEditConfirmPwd} onToggle={() => setShowEditConfirmPwd(v => !v)} />
+                        )}
+                      </div>
                       {editFormData.confirmPassword && editFormData.password !== editFormData.confirmPassword && (
                         <p className="text-xs text-red-500 dark:text-red-400 mt-1">Passwords do not match</p>
                       )}
@@ -1172,7 +1237,7 @@ export default function OperatorManagement() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setShowEditModal(false); setEditError(""); }}
+                    onClick={() => { setShowEditModal(false); setEditError(""); setShowEditPwd(false); setShowEditConfirmPwd(false); }}
                     className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-3 px-4 rounded-xl transition"
                   >Cancel</button>
                 </div>
