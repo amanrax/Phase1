@@ -550,7 +550,7 @@ export default function AdminSettings() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Tabs */
+        {/* Tabs */}
         <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-2 flex gap-2 overflow-x-auto">
           {[
             { value: "users",      label: "👥 Users" },
