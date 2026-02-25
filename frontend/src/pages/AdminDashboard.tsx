@@ -1,20 +1,32 @@
-// src/pages/AdminDashboard.tsx - FIXED VERSION
-import { useEffect, useState, useRef } from "react";
+// src/pages/AdminDashboard.tsx — Mobile-first modern admin dashboard
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
-import { farmerService } from "@/services/farmer.service";
 import { dashboardService } from "@/services/dashboard.service";
 import { operatorService } from "@/services/operator.service";
 import { useNotification } from "@/contexts/NotificationContext";
+import { logger } from "@/utils/logger";
 
-interface Farmer {
-  _id: string;
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Stats {
+  totalFarmers: number;
+  activeFarmers: number;
+  pendingFarmers: number;
+  totalOperators: number;
+  activeOperators: number;
+  totalUsers: number;
+  activeUsers: number;
+  totalAdmins: number;
+}
+
+interface RecentFarmer {
   farmer_id: string;
   name: string;
   district: string;
-  created_at: string;
   registration_status: string;
   is_active: boolean;
+  created_at: string;
 }
 
 interface Operator {
@@ -26,424 +38,525 @@ interface Operator {
   assigned_district?: string;
   assigned_districts?: string[];
   is_active?: boolean;
+  farmer_count?: number;
 }
 
-interface Stats {
-  totalFarmers: number;
-  activeFarmers: number;
-  totalOperators: number;
-  activeOperators: number;
-  pendingVerifications: number;
-  totalUsers: number;
-  activeUsers: number;
-  totalAdmins: number;
+type NavTab = "home" | "farmers" | "operators" | "reports" | "settings";
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+function Skeleton({ className = "" }: { className?: string }) {
+  return (
+    <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-2xl ${className}`} />
+  );
 }
 
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+interface StatCardProps {
+  icon: string;
+  label: string;
+  value: number | string;
+  sub?: string;
+  color: string;
+  loading?: boolean;
+  onClick?: () => void;
+}
+
+function StatCard({ icon, label, value, sub, color, loading, onClick }: StatCardProps) {
+  if (loading) return <Skeleton className="h-24" />;
+  return (
+    <button
+      onClick={onClick}
+      className={`relative flex flex-col justify-between p-4 rounded-2xl text-left w-full
+        ${color} text-white shadow-lg active:scale-95 transition-transform duration-150 select-none`}
+    >
+      <div className="flex justify-between items-start">
+        <span className="text-2xl">{icon}</span>
+        <span className="text-3xl font-extrabold tracking-tight leading-none">{value}</span>
+      </div>
+      <div className="mt-2">
+        <p className="text-xs font-semibold uppercase tracking-wide opacity-90">{label}</p>
+        {sub && <p className="text-xs opacity-70 mt-0.5">{sub}</p>}
+      </div>
+    </button>
+  );
+}
+
+// ─── Quick Action Tile ────────────────────────────────────────────────────────
+interface ActionTile {
+  icon: string;
+  label: string;
+  bg: string;
+  onPress: () => void;
+}
+
+function QuickAction({ icon, label, bg, onPress }: ActionTile) {
+  return (
+    <button
+      onClick={onPress}
+      className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl ${bg}
+        text-white shadow-md active:scale-95 transition-transform duration-150 select-none`}
+    >
+      <span className="text-2xl leading-none">{icon}</span>
+      <span className="text-[11px] font-semibold text-center leading-tight">{label}</span>
+    </button>
+  );
+}
+
+// ─── Bottom Nav Item ──────────────────────────────────────────────────────────
+function NavItem({
+  icon, label, active, onClick,
+}: { icon: string; label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center flex-1 py-2 gap-0.5 transition-colors duration-150
+        ${active ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"}`}
+    >
+      <span className={`text-xl leading-none ${active ? "scale-110" : "scale-100"} transition-transform duration-150`}>
+        {icon}
+      </span>
+      <span className={`text-[10px] font-semibold ${active ? "opacity-100" : "opacity-70"}`}>{label}</span>
+      {active && <span className="w-1 h-1 rounded-full bg-green-500 dark:bg-green-400 mt-0.5" />}
+    </button>
+  );
+}
+
+// ─── Operator Card ────────────────────────────────────────────────────────────
+function OperatorCard({ op, onClick }: { op: Operator; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex-shrink-0 w-40 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700
+        rounded-2xl p-3 text-left shadow-sm active:scale-95 transition-transform duration-150 select-none"
+    >
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600
+        flex items-center justify-center text-white font-bold text-base mb-2">
+        {(op.full_name || "?")[0].toUpperCase()}
+      </div>
+      <p className="text-xs font-bold text-gray-800 dark:text-gray-100 truncate">{op.full_name}</p>
+      <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate mt-0.5">{op.email}</p>
+      <div className="mt-2 flex items-center gap-1">
+        <span className={`w-1.5 h-1.5 rounded-full ${op.is_active !== false ? "bg-green-500" : "bg-red-400"}`} />
+        <span className={`text-[10px] font-medium ${op.is_active !== false ? "text-green-600" : "text-red-500"}`}>
+          {op.is_active !== false ? "Active" : "Inactive"}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+// ─── Farmer List Item ─────────────────────────────────────────────────────────
+function FarmerItem({ farmer, onClick }: { farmer: RecentFarmer; onClick: () => void }) {
+  const statusColor: Record<string, string> = {
+    verified: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
+    pending:  "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400",
+    registered: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+    rejected: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+    inactive: "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400",
+  };
+  const status = farmer.is_active ? (farmer.registration_status || "registered") : "inactive";
+  const colorClass = statusColor[status.toLowerCase()] || statusColor.registered;
+
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-3 w-full px-4 py-3 bg-white dark:bg-gray-800
+        border-b border-gray-100 dark:border-gray-700/60 active:bg-gray-50 dark:active:bg-gray-700
+        transition-colors duration-100 text-left select-none last:border-b-0"
+    >
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600
+        flex items-center justify-center text-white font-bold text-base flex-shrink-0">
+        {(farmer.name || "?")[0].toUpperCase()}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{farmer.name}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">📍 {farmer.district} · {farmer.farmer_id}</p>
+      </div>
+      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase whitespace-nowrap ${colorClass}`}>
+        {status}
+      </span>
+    </button>
+  );
+}
+
+// ─── Section Header ───────────────────────────────────────────────────────────
+function SectionHeader({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
+  return (
+    <div className="flex justify-between items-center px-4 mb-2">
+      <h2 className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">{title}</h2>
+      {action && (
+        <button onClick={onAction} className="text-xs font-semibold text-green-600 dark:text-green-400 active:opacity-70">
+          {action} →
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
   const navigate = useNavigate();
-  const { error: showError } = useNotification();
+  const notify = useNotification();
 
-  const [farmers, setFarmers] = useState<Farmer[]>([]);
-  const [operators, setOperators] = useState<Operator[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<NavTab>("home");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<Stats>({
-    totalFarmers: 0,
-    activeFarmers: 0,
-    totalOperators: 0,
-    activeOperators: 0,
-    pendingVerifications: 0,
-    totalUsers: 0,
-    activeUsers: 0,
-    totalAdmins: 0,
+    totalFarmers: 0, activeFarmers: 0, pendingFarmers: 0,
+    totalOperators: 0, activeOperators: 0,
+    totalUsers: 0, activeUsers: 0, totalAdmins: 0,
   });
+  const [recentFarmers, setRecentFarmers] = useState<RecentFarmer[]>([]);
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const loadingRef = useRef(false);
+
+  const loadData = useCallback(async (isRefresh = false) => {
+    if (loadingRef.current) {
+      logger.warn("AdminDashboard", "Load already in-progress, skipping duplicate call");
+      return;
+    }
+    loadingRef.current = true;
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    setLoadError(null);
+
+    logger.info("AdminDashboard", "Loading dashboard data", { isRefresh, user: user?.email });
+
+    try {
+      const [statsData, operatorsData] = await Promise.all([
+        dashboardService.getStats().catch((err: any) => {
+          logger.error("AdminDashboard", "Stats fetch failed", { error: err?.message, status: err?.response?.status });
+          throw err;
+        }),
+        operatorService.getOperators(20, 0).catch((err: any) => {
+          logger.error("AdminDashboard", "Operators fetch failed", { error: err?.message });
+          return { results: [], count: 0 };
+        }),
+      ]);
+
+      logger.info("AdminDashboard", "Stats received", {
+        farmers: statsData?.farmers?.total ?? 0,
+        operators: statsData?.operators?.total ?? 0,
+        users: statsData?.users?.total ?? 0,
+      });
+
+      setStats({
+        totalFarmers:    statsData?.farmers?.total    ?? 0,
+        activeFarmers:   statsData?.farmers?.active   ?? 0,
+        pendingFarmers:  statsData?.farmers?.pending  ?? 0,
+        totalOperators:  statsData?.operators?.total  ?? 0,
+        activeOperators: statsData?.operators?.active ?? 0,
+        totalUsers:      statsData?.users?.total      ?? 0,
+        activeUsers:     statsData?.users?.active     ?? 0,
+        totalAdmins:     statsData?.users?.by_role?.admin ?? 0,
+      });
+
+      const recentList: RecentFarmer[] = (statsData?.farmers?.recent || []).map((f: any) => ({
+        farmer_id: f.farmer_id,
+        name: f.name
+          || `${f.personal_info?.first_name ?? ""} ${f.personal_info?.last_name ?? ""}`.trim()
+          || "Unknown Farmer",
+        district: f.district || f.personal_info?.district || "N/A",
+        registration_status: f.registration_status || "registered",
+        is_active: f.is_active !== false,
+        created_at: f.created_at || "",
+      }));
+      setRecentFarmers(recentList);
+
+      const opList: Operator[] = operatorsData?.results || operatorsData?.operators || [];
+      setOperators(opList);
+
+      logger.info("AdminDashboard", "Dashboard data loaded successfully", {
+        farmers: recentList.length,
+        operators: opList.length,
+      });
+
+      if (isRefresh) notify.success("Dashboard refreshed successfully.");
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.detail || err?.message || "Failed to load dashboard data";
+      logger.error("AdminDashboard", "Dashboard load error", { error: msg, status });
+
+      if (status === 401) {
+        notify.error("Your session has expired. Please log in again.");
+        logout();
+        return;
+      }
+      if (status === 403) {
+        notify.error("You do not have permission to view this page.");
+      } else {
+        setLoadError(msg);
+        if (!isRefresh) notify.error(`Dashboard: ${msg}`);
+        else notify.error("Refresh failed – please try again.");
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+      loadingRef.current = false;
+    }
+  }, [logout, notify, user?.email]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
-  const loadData = async () => {
-    if (loadingRef.current) {
-      console.log('Data already loading, skipping...');
-      return;
-    }
-
-    loadingRef.current = true;
-    setLoading(true);
-    
-    try {
-      console.log('[Dashboard] Loading data...');
-      
-      // Load stats from backend (with accurate counts)
-      const statsData = await dashboardService.getStats();
-      console.log('[Dashboard] Stats received:', statsData);
-      
-      // Extract farmers data from stats
-      const recentFarmers = statsData.farmers?.recent || [];
-      console.log('[Dashboard] Recent farmers:', recentFarmers.length);
-      
-      // Load operators data
-      const operatorsData = await operatorService.getOperators(20, 0);
-      const operatorsList = operatorsData.results || operatorsData.operators || [];
-      console.log('[Dashboard] Operators loaded:', operatorsList.length);
-      
-      // Update stats with correct data structure
-      const newStats: Stats = {
-        totalFarmers: statsData.farmers?.total || 0,
-        activeFarmers: statsData.farmers?.active || 0,
-        totalOperators: statsData.operators?.total || 0,
-        activeOperators: statsData.operators?.active || 0,
-        pendingVerifications: statsData.farmers?.pending || 0,
-        totalUsers: statsData.users?.total || 0,
-        activeUsers: statsData.users?.active || 0,
-        totalAdmins: statsData.users?.by_role?.admin || 0,
-      };
-      
-      console.log('[Dashboard] Processed stats:', newStats);
-      
-      setFarmers(recentFarmers);
-      setOperators(operatorsList);
-      setStats(newStats);
-      
-      console.log('[Dashboard] ✅ Data loaded successfully');
-    } catch (error: any) {
-      console.error("[Dashboard] Failed to load data:", error);
-      showError(error.response?.data?.detail || "Failed to load dashboard data", 5000);
-    } finally {
-      setLoading(false);
-      loadingRef.current = false;
-    }
+  const handleTabChange = (tab: NavTab) => {
+    logger.info("AdminDashboard", "Tab navigation", { tab, from: activeTab });
+    if (tab === "home")      { setActiveTab("home"); return; }
+    if (tab === "farmers")   { navigate("/farmers"); return; }
+    if (tab === "operators") { navigate("/operators/manage"); return; }
+    if (tab === "reports")   { navigate("/admin/reports"); return; }
+    if (tab === "settings")  { navigate("/admin/settings"); return; }
   };
 
-  const handleRefresh = () => {
-    console.log('[Dashboard] Manual refresh triggered');
-    loadingRef.current = false; // Reset loading flag
-    loadData();
+  const quickActions: ActionTile[] = [
+    { icon: "➕", label: "Add Farmer",    bg: "bg-gradient-to-br from-emerald-500 to-green-600",   onPress: () => { logger.info("AdminDashboard", "QuickAction: Add Farmer"); navigate("/farmers/create"); } },
+    { icon: "👨‍💼", label: "Operators",    bg: "bg-gradient-to-br from-blue-500 to-indigo-600",     onPress: () => { logger.info("AdminDashboard", "QuickAction: Operators"); navigate("/operators/manage"); } },
+    { icon: "👨‍🌾", label: "Farmers",      bg: "bg-gradient-to-br from-teal-500 to-cyan-600",       onPress: () => { logger.info("AdminDashboard", "QuickAction: Farmers"); navigate("/farmers"); } },
+    { icon: "📊", label: "Reports",       bg: "bg-gradient-to-br from-orange-500 to-amber-600",    onPress: () => { logger.info("AdminDashboard", "QuickAction: Reports"); navigate("/admin/reports"); } },
+    { icon: "📈", label: "Analytics",     bg: "bg-gradient-to-br from-violet-500 to-purple-600",   onPress: () => { logger.info("AdminDashboard", "QuickAction: Analytics"); navigate("/admin/analytics"); } },
+    { icon: "🛒", label: "Supply Req.",   bg: "bg-gradient-to-br from-rose-500 to-pink-600",       onPress: () => { logger.info("AdminDashboard", "QuickAction: Supply Requests"); navigate("/admin/supply-requests"); } },
+    { icon: "📋", label: "Sys Logs",      bg: "bg-gradient-to-br from-gray-600 to-slate-700",      onPress: () => { logger.info("AdminDashboard", "QuickAction: Logs"); navigate("/admin/logs"); } },
+    { icon: "⚙️", label: "Settings",      bg: "bg-gradient-to-br from-cyan-600 to-sky-700",        onPress: () => { logger.info("AdminDashboard", "QuickAction: Settings"); navigate("/admin/settings"); } },
+  ];
+
+  const getGreeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 18) return "Good afternoon";
+    return "Good evening";
   };
+
+  const firstName = user?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "Admin";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 relative overflow-hidden transition-all duration-300">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-        <div className="absolute top-40 right-20 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-20 left-40 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      <div className="overflow-y-auto pb-24">
 
-      {/* Header */}
-      <div className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4 relative z-10">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2" style={{ textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)' }}>
-          🌾 Chiefdom Management Model
-        </h1>
-        <p className="text-xs sm:text-sm md:text-base opacity-90" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>Advanced Agricultural Management System - Admin Dashboard</p>
-      </div>
+        {/* ── Hero Banner ──────────────────────────────────────────────────── */}
+        <div className="relative bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700 px-5 pt-12 pb-10 overflow-hidden">
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-4 -left-4 w-24 h-24 rounded-full bg-white/10 blur-xl pointer-events-none" />
 
-      {/* Main Container */}
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pb-6 relative z-10">
-        {/* Stats Grid - Mobile responsive with CORRECT DATA */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          {/* Total Users Card */}
-          <div className="backdrop-blur-xl bg-gradient-to-br from-indigo-600/90 to-purple-600/90 text-white p-4 sm:p-6 rounded-2xl border border-white/20 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-4px] cursor-pointer" 
-               style={{ 
-                 boxShadow: '0 15px 30px rgba(99,102,241,0.4), 0 5px 15px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
-                 transformStyle: 'preserve-3d'
-               }}>
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-              {stats.totalUsers}
+          {/* Top bar */}
+          <div className="relative flex justify-between items-center mb-6">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                <span className="text-sm">🌾</span>
+              </div>
+              <span className="text-white/80 text-xs font-semibold tracking-widest uppercase">CEM Admin</span>
             </div>
-            <div className="opacity-90 text-xs sm:text-sm md:text-base">👥 Total Users</div>
-            <div className="opacity-75 text-xs mt-1">
-              {stats.activeUsers} active • {stats.totalAdmins} admins
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => loadData(true)}
+                disabled={refreshing}
+                aria-label="Refresh dashboard"
+                className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+              >
+                <span className={`text-sm ${refreshing ? "animate-spin" : ""}`}>🔄</span>
+              </button>
+              <button
+                onClick={() => { logger.info("AdminDashboard", "Logout pressed"); logout(); }}
+                aria-label="Logout"
+                className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:scale-90 transition-transform"
+              >
+                <span className="text-sm">🚪</span>
+              </button>
             </div>
           </div>
 
-          {/* Operators Card */}
-          <div className="backdrop-blur-xl bg-gradient-to-br from-indigo-600/90 to-purple-600/90 text-white p-4 sm:p-6 rounded-2xl border border-white/20 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-4px] cursor-pointer" 
-               style={{ 
-                 boxShadow: '0 15px 30px rgba(99,102,241,0.4), 0 5px 15px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
-                 transformStyle: 'preserve-3d'
-               }}>
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-              {stats.totalOperators}
-            </div>
-            <div className="opacity-90 text-xs sm:text-sm md:text-base">👨‍💼 Total Operators</div>
-            <div className="opacity-75 text-xs mt-1">
-              {stats.activeOperators} active
-            </div>
+          {/* Greeting */}
+          <div className="relative">
+            <p className="text-white/70 text-sm font-medium">{getGreeting()},</p>
+            <h1 className="text-white text-2xl font-extrabold tracking-tight mt-0.5">{firstName} 👋</h1>
+            <p className="text-white/60 text-xs mt-1">Chiefdom Farmer Management System</p>
           </div>
 
-          {/* Farmers Card */}
-          <div className="backdrop-blur-xl bg-gradient-to-br from-indigo-600/90 to-purple-600/90 text-white p-4 sm:p-6 rounded-2xl border border-white/20 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-4px] cursor-pointer"
-               style={{ 
-                 boxShadow: '0 15px 30px rgba(99,102,241,0.4), 0 5px 15px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
-                 transformStyle: 'preserve-3d'
-               }}>
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-              {stats.totalFarmers}
-            </div>
-            <div className="opacity-90 text-xs sm:text-sm md:text-base">👨‍🌾 Total Farmers</div>
-            <div className="opacity-75 text-xs mt-1">
-              {stats.activeFarmers} active
-            </div>
-          </div>
-
-          {/* Pending Verifications Card */}
-          <div className="backdrop-blur-xl bg-gradient-to-br from-indigo-600/90 to-purple-600/90 text-white p-4 sm:p-6 rounded-2xl border border-white/20 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-4px] cursor-pointer"
-               style={{ 
-                 boxShadow: '0 15px 30px rgba(99,102,241,0.4), 0 5px 15px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
-                 transformStyle: 'preserve-3d'
-               }}>
-            <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-              {stats.pendingVerifications}
-            </div>
-            <div className="opacity-90 text-xs sm:text-sm md:text-base">⏳ Pending Verifications</div>
+          {/* Version pill */}
+          <div className="relative mt-4 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse" />
+            <span className="text-white/90 text-[11px] font-semibold">v2.0.0 · Live</span>
           </div>
         </div>
 
-        {/* Main Content Card */}
-        <div className="backdrop-blur-xl bg-white dark:bg-gray-800/95 dark:bg-gray-800/95 rounded-3xl p-4 sm:p-6 md:p-8 border border-white/50 dark:border-gray-700/50 transition-all duration-500" 
-             style={{ 
-               boxShadow: '0 25px 50px -12px rgba(99,102,241,0.4), 0 0 0 1px rgba(255,255,255,0.5), inset 0 1px 0 0 rgba(255,255,255,0.8)',
-               transformStyle: 'preserve-3d'
-             }}>
-          {/* Header with Actions */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white">🔧 Admin Dashboard</h2>
-            <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
-              <button
-                onClick={handleRefresh}
-                disabled={loading}
-                className="px-2 sm:px-3 py-2 bg-gradient-to-br from-cyan-600 to-cyan-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ boxShadow: '0 4px 12px rgba(8,145,178,0.3)' }}
-              >
-                <i className={`fa-solid fa-rotate-right mr-2 ${loading ? 'animate-spin' : ''}`}></i>
-                Refresh
-              </button>
+        {/* ── Error Banner ──────────────────────────────────────────────────── */}
+        {loadError && !loading && (
+          <div className="mx-4 mt-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-2xl p-4">
+            <p className="text-sm font-semibold text-red-700 dark:text-red-400">⚠️ Failed to load data</p>
+            <p className="text-xs text-red-600 dark:text-red-400 mt-1">{loadError}</p>
+            <button
+              onClick={() => loadData()}
+              className="mt-3 text-xs font-bold text-red-700 dark:text-red-400 border border-red-300 dark:border-red-600 px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
 
+        {/* ── Stats Grid ──────────────────────────────────────────────────── */}
+        <div className="px-4 mt-5">
+          <SectionHeader title="Overview" />
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard
+              icon="👥" label="Total Users" value={loading ? "—" : stats.totalUsers}
+              sub={`${stats.activeUsers} active · ${stats.totalAdmins} admins`}
+              color="bg-gradient-to-br from-indigo-500 to-purple-600"
+              loading={loading}
+              onClick={() => { logger.info("AdminDashboard", "Stat tapped: Users"); navigate("/admin/settings"); }}
+            />
+            <StatCard
+              icon="👨‍💼" label="Operators" value={loading ? "—" : stats.totalOperators}
+              sub={`${stats.activeOperators} active`}
+              color="bg-gradient-to-br from-blue-500 to-cyan-600"
+              loading={loading}
+              onClick={() => { logger.info("AdminDashboard", "Stat tapped: Operators"); navigate("/operators/manage"); }}
+            />
+            <StatCard
+              icon="👨‍🌾" label="Farmers" value={loading ? "—" : stats.totalFarmers}
+              sub={`${stats.activeFarmers} active`}
+              color="bg-gradient-to-br from-green-500 to-emerald-600"
+              loading={loading}
+              onClick={() => { logger.info("AdminDashboard", "Stat tapped: Farmers"); navigate("/farmers"); }}
+            />
+            <StatCard
+              icon="⏳" label="Pending" value={loading ? "—" : stats.pendingFarmers}
+              sub="Awaiting verification"
+              color={stats.pendingFarmers > 0
+                ? "bg-gradient-to-br from-amber-500 to-orange-600"
+                : "bg-gradient-to-br from-gray-400 to-slate-500"}
+              loading={loading}
+              onClick={() => { logger.info("AdminDashboard", "Stat tapped: Pending"); navigate("/farmers"); }}
+            />
+          </div>
+        </div>
+
+        {/* ── Quick Actions ──────────────────────────────────────────────── */}
+        <div className="px-4 mt-6">
+          <SectionHeader title="Quick Actions" />
+          <div className="grid grid-cols-4 gap-2.5">
+            {quickActions.map((a) => (
+              <QuickAction key={a.label} {...a} />
+            ))}
+          </div>
+        </div>
+
+        {/* ── Recent Operators ──────────────────────────────────────────── */}
+        <div className="mt-6">
+          <SectionHeader
+            title="Operators"
+            action="See All"
+            onAction={() => { logger.info("AdminDashboard", "SeeAll: Operators"); navigate("/operators/manage"); }}
+          />
+          {loading ? (
+            <div className="flex gap-3 px-4 overflow-x-auto pb-1">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="flex-shrink-0 w-40 h-28" />)}
+            </div>
+          ) : operators.length === 0 ? (
+            <div className="mx-4 bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 text-center border border-gray-100 dark:border-gray-700">
+              <p className="text-2xl mb-1">👨‍💼</p>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">No operators yet</p>
               <button
                 onClick={() => navigate("/operators/manage")}
-                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-blue-600 to-blue-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
-                style={{ boxShadow: '0 4px 12px rgba(37,99,235,0.3)' }}
+                className="mt-3 text-xs font-bold text-blue-600 dark:text-blue-400 active:opacity-70"
               >
-                👨‍💼 Operators
+                + Add First Operator
               </button>
+            </div>
+          ) : (
+            <div className="flex gap-3 px-4 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
+              {operators.slice(0, 10).map((op) => (
+                <OperatorCard
+                  key={op.operator_id || op._id}
+                  op={op}
+                  onClick={() => {
+                    logger.info("AdminDashboard", "Operator card tapped", { id: op.operator_id });
+                    navigate("/operators/manage");
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
-              <button
-                onClick={() => navigate("/farmers")}
-                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-green-600 to-green-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
-                style={{ boxShadow: '0 4px 12px rgba(22,163,74,0.3)' }}
-              >
-                👨‍🌾 Farmers
-              </button>
-
+        {/* ── Recent Farmers ────────────────────────────────────────────── */}
+        <div className="mt-6">
+          <SectionHeader
+            title="Recent Farmers"
+            action="See All"
+            onAction={() => { logger.info("AdminDashboard", "SeeAll: Farmers"); navigate("/farmers"); }}
+          />
+          {loading ? (
+            <div className="mx-4 flex flex-col gap-2">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16" />)}
+            </div>
+          ) : recentFarmers.length === 0 ? (
+            <div className="mx-4 bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 text-center border border-gray-100 dark:border-gray-700">
+              <p className="text-2xl mb-1">🌾</p>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">No farmers registered yet</p>
               <button
                 onClick={() => navigate("/farmers/create")}
-                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-emerald-600 to-emerald-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
-                style={{ boxShadow: '0 4px 12px rgba(5,150,105,0.3)' }}
+                className="mt-3 text-xs font-bold text-green-600 dark:text-green-400 active:opacity-70"
               >
-                ➕ Add Farmer
-              </button>
-
-              <button
-                onClick={() => navigate("/admin/reports")}
-                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-orange-600 to-orange-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
-                style={{ boxShadow: '0 4px 12px rgba(234,88,12,0.3)' }}
-              >
-                📊 Reports
-              </button>
-
-              <button
-                onClick={() => navigate("/admin/analytics")}
-                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-teal-600 to-teal-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
-                style={{ boxShadow: '0 4px 12px rgba(13,148,136,0.3)' }}
-              >
-                📈 Analytics
-              </button>
-
-              <button
-                onClick={() => navigate("/admin/settings")}
-                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-purple-600 to-purple-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
-                style={{ boxShadow: '0 4px 12px rgba(147,51,234,0.3)' }}
-              >
-                ⚙️ Settings
-              </button>
-              
-              <button
-                onClick={logout}
-                className="px-2 sm:px-4 py-2 bg-gradient-to-br from-gray-600 to-gray-700 hover:scale-105 hover:translate-y-[-2px] active:scale-95 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
-                style={{ boxShadow: '0 4px 12px rgba(75,85,99,0.3)' }}
-              >
-                🚪 Logout
+                + Register First Farmer
               </button>
             </div>
-          </div>
-
-          {/* Operators Management Section */}
-          <div className="mb-8 sm:mb-12">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">👨‍💼 System Operators</h3>
-              <button
-                onClick={() => navigate("/operators/manage")}
-                className="px-3 sm:px-4 py-1 sm:py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
-              >
-                ➕ Add Operator
-              </button>
-            </div>
-
-            {loading ? (
-              <div className="text-center py-8 sm:py-16">
-                <div className="inline-block w-8 h-8 border-4 border-gray-200 dark:border-gray-700 border-t-blue-600 rounded-full animate-spin"></div>
-                <p className="mt-3 sm:mt-4 text-gray-600 dark:text-gray-400 text-sm sm:text-base">Loading...</p>
-              </div>
-            ) : operators.length === 0 ? (
-              <div className="text-center py-8 sm:py-16 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">👨‍💼</div>
-                <p className="text-base sm:text-lg font-semibold mb-2">No operators found</p>
-                <p className="text-xs sm:text-sm mb-3 sm:mb-4">Add operators to help manage farmers</p>
+          ) : (
+            <div className="mx-4 bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
+              {recentFarmers.slice(0, 8).map((f) => (
+                <FarmerItem
+                  key={f.farmer_id}
+                  farmer={f}
+                  onClick={() => {
+                    logger.info("AdminDashboard", "Farmer tapped", { farmer_id: f.farmer_id });
+                    navigate(`/farmers/${f.farmer_id}`);
+                  }}
+                />
+              ))}
+              {stats.totalFarmers > 8 && (
                 <button
-                  onClick={() => navigate("/operators/manage")}
-                  className="px-4 sm:px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-all"
+                  onClick={() => navigate("/farmers")}
+                  className="w-full py-3 text-xs font-bold text-green-600 dark:text-green-400 bg-gray-50 dark:bg-gray-700/60 active:bg-gray-100 border-t border-gray-100 dark:border-gray-700"
                 >
-                  Add First Operator
+                  View all {stats.totalFarmers} farmers →
                 </button>
-              </div>
-            ) : (
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                <div className="overflow-hidden">
-                  <table className="w-full text-left text-sm table-fixed">
-                    <thead className="bg-gray-100 dark:bg-gray-600 border-b border-gray-200 dark:border-gray-500">
-                      <tr>
-                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 dark:text-gray-200 text-xs uppercase truncate" style={{width: '20%'}}>Name</th>
-                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 dark:text-gray-200 text-xs uppercase truncate" style={{width: '25%'}}>Email</th>
-                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 dark:text-gray-200 text-xs uppercase truncate hidden md:table-cell" style={{width: '15%'}}>Phone</th>
-                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 dark:text-gray-200 text-xs uppercase truncate hidden lg:table-cell" style={{width: '20%'}}>District</th>
-                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 dark:text-gray-200 text-xs uppercase text-center truncate" style={{width: '20%'}}>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
-                      {operators.slice(0, 5).map((op) => (
-                        <tr
-                          key={op.operator_id || op._id}
-                          className="bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors cursor-pointer"
-                          onClick={() => navigate(`/operators/${op.operator_id}`)}
-                        >
-                          <td className="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-900 dark:text-white truncate" title={op.full_name}>{op.full_name}</td>
-                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-gray-300 text-xs sm:text-sm truncate" title={op.email}>{op.email}</td>
-                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-gray-300 text-xs sm:text-sm truncate hidden md:table-cell" title={op.phone || "-"}>{op.phone || "-"}</td>
-                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-gray-300 text-xs sm:text-sm truncate hidden lg:table-cell" title={op.assigned_district || (op.assigned_districts?.[0]) || "All Districts"}>
-                            {op.assigned_district || (op.assigned_districts?.[0]) || "All Districts"}
-                          </td>
-                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-center">
-                            <span className={`inline-block px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${
-                              op.is_active !== false 
-                                ? "bg-green-100 text-green-800" 
-                                : "bg-red-100 text-red-800"
-                            }`}>
-                              {op.is_active !== false ? "✓ Active" : "✗ Inactive"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {operators.length > 5 && (
-                  <div className="text-center py-3 sm:py-4 bg-white dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-                    <button
-                      onClick={() => navigate("/operators/manage")}
-                      className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-semibold transition-colors"
-                    >
-                      View All {operators.length} Operators →
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Recent Farmers Section */}
-          <div>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">👨‍🌾 Recent Farmers</h3>
-              <button
-                onClick={() => navigate("/farmers")}
-                className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-semibold transition-colors"
-              >
-                View All →
-              </button>
+              )}
             </div>
+          )}
+        </div>
 
-            {loading ? (
-              <div className="text-center py-8 sm:py-16">
-                <div className="inline-block w-8 h-8 border-4 border-gray-200 dark:border-gray-700 border-t-blue-600 rounded-full animate-spin"></div>
-                <p className="mt-3 sm:mt-4 text-gray-600 dark:text-gray-400 text-sm sm:text-base">Loading...</p>
+        {/* ── System Strip ─────────────────────────────────────────────── */}
+        <div className="mx-4 mt-6 bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700">
+          <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">System</p>
+          <div className="flex flex-wrap gap-x-6 gap-y-1.5">
+            {[
+              { k: "Version", v: "2.0.0" },
+              { k: "Environment", v: "Development" },
+              { k: "Role", v: user?.role || "Admin" },
+              { k: "Logged in as", v: user?.email ?? "—" },
+            ].map(({ k, v }) => (
+              <div key={k}>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500">{k}: </span>
+                <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{v}</span>
               </div>
-            ) : farmers.length === 0 ? (
-              <div className="text-center py-12 sm:py-20 text-gray-600 dark:text-gray-400">
-                <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">🌾</div>
-                <p className="text-base sm:text-lg font-semibold mb-2">No farmers registered yet</p>
-                <p className="text-xs sm:text-sm">Operators can register farmers in the system</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3 sm:gap-4">
-                {farmers.map((farmer) => (
-                  <div
-                    key={farmer.farmer_id}
-                    onClick={() => navigate(`/farmers/${farmer.farmer_id}`)}
-                    className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 hover:bg-white dark:hover:bg-gray-600 hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer"
-                  >
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
-                          {farmer.name}
-                        </div>
-                        <div className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mt-1 line-clamp-2">
-                          📍 {farmer.district} • 🆔 {farmer.farmer_id}
-                        </div>
-                      </div>
-                      <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-                        farmer.is_active
-                          ? farmer.registration_status === "verified"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
-                      }`}>
-                        {!farmer.is_active ? "Inactive" : (farmer.registration_status || "Registered")}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            ))}
           </div>
         </div>
-      </div>
 
-      {/* Enhanced Animations */}
-      <style>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
+      </div>{/* end scrollable content */}
 
-        * {
-          transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        }
-      `}</style>
+      {/* ── Bottom Navigation Bar ─────────────────────────────────────────── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+        <div className="flex max-w-lg mx-auto">
+          <NavItem icon="🏠" label="Home"      active={activeTab === "home"}      onClick={() => handleTabChange("home")} />
+          <NavItem icon="👨‍🌾" label="Farmers"   active={activeTab === "farmers"}   onClick={() => handleTabChange("farmers")} />
+          <NavItem icon="👨‍💼" label="Operators" active={activeTab === "operators"} onClick={() => handleTabChange("operators")} />
+          <NavItem icon="📊" label="Reports"   active={activeTab === "reports"}   onClick={() => handleTabChange("reports")} />
+          <NavItem icon="⚙️" label="Settings"  active={activeTab === "settings"}  onClick={() => handleTabChange("settings")} />
+        </div>
+      </nav>
     </div>
   );
 }

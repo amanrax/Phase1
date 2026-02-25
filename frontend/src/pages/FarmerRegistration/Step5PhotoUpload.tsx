@@ -1,6 +1,7 @@
 // src/pages/FarmerRegistration/Step5PhotoUpload.tsx
 import { useState } from "react";
 import { farmerService } from "@/services/farmer.service";
+import { useNotification } from "@/contexts/NotificationContext";
 
 interface Step5Props {
   farmerId: string;

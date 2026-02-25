@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { operatorService } from "@/services/operator.service";
-import { dashboardCache } from "@/pages/AdminDashboard";
+// dashboardCache removed – dashboard reloads fresh on each mount
 
 interface Operator {
   _id: string;
@@ -53,8 +53,6 @@ export default function OperatorsList() {
     try {
       await operatorService.delete(operatorId);
       alert("✅ Operator deleted successfully");
-      // Clear admin dashboard cache
-      dashboardCache.clear();
       await fetchOperators();
     } catch (err: any) {
       if (import.meta.env.DEV) {
@@ -76,8 +74,6 @@ export default function OperatorsList() {
         is_active: currentStatus !== "active"
       });
       alert(`✅ Operator ${action}d successfully`);
-      // Clear admin dashboard cache
-      dashboardCache.clear();
       await fetchOperators();
     } catch (err: any) {
       if (import.meta.env.DEV) {
