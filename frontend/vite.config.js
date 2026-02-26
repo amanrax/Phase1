@@ -23,6 +23,8 @@ export default defineConfig({
         port: 5173,
         host: true,
         strictPort: false,
+        // Allow Codespaces/GitHub forwarded hostnames so mobile/external access works
+        allowedHosts: true,
         proxy: {
             '/api': {
                 target: BACKEND_URL,
