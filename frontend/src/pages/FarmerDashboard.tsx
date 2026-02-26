@@ -6,6 +6,9 @@ import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
 import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
+import { logger } from "@/utils/logger";
+
+const COMPONENT = "FarmerDashboard";
 
 export default function FarmerDashboard() {
   const { user, logout } = useAuthStore();
@@ -29,19 +32,19 @@ export default function FarmerDashboard() {
       setLoading(true);
 
       if (!user?.farmer_id) {
-        console.error("[Dashboard] No farmer_id in JWT token - authentication issue");
+        logger.error(COMPONENT, "No farmer_id in JWT token - authentication issue");
         showError("Authentication error. Please login again.", 5000);
         setFarmerData(null);
         return;
       }
 
-      console.log("[Dashboard] Loading farmer data for:", user.farmer_id);
+      logger.info(COMPONENT, "loadFarmerData start", { farmer_id: user.farmer_id });
       const fullData = await farmerService.getFarmer(user.farmer_id);
-      console.log("[Dashboard] Farmer data loaded successfully");
+      logger.info(COMPONENT, "loadFarmerData success");
       setFarmerData(fullData);
       hasLoadedRef.current = true;
     } catch (error: any) {
-      console.error("[Dashboard] Failed to load farmer data:", error);
+      logger.error(COMPONENT, "loadFarmerData failed", { error });
       showError("Failed to load profile. Please retry.", 5000);
       setFarmerData(null);
     } finally {
@@ -63,12 +66,12 @@ export default function FarmerDashboard() {
 
       const photoPath = farmerData?.documents?.photo || farmerData?.photo_path;
       if (!photoPath) {
-        console.log('[Photo] No photo path available');
+        logger.info(COMPONENT, 'loadPhoto - no path');
         return;
       }
 
       try {
-        console.log('[Photo] Loading farmer photo:', photoPath);
+        logger.info(COMPONENT, 'loadPhoto start', { photoPath });
         setPhotoError(false);
         
         const baseURL = import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev";
@@ -87,7 +90,7 @@ export default function FarmerDashboard() {
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
         
-        console.log('[Photo] Photo loaded successfully');
+        logger.info(COMPONENT, 'loadPhoto success');
         setPhotoUrl(blobUrl);
 
         // Cleanup on unmount
@@ -97,7 +100,7 @@ export default function FarmerDashboard() {
           }
         };
       } catch (error) {
-        console.error('[Photo] Failed to load photo:', error);
+        logger.error(COMPONENT, 'loadPhoto failed', { error });
         setPhotoError(true);
       }
     };
@@ -111,7 +114,7 @@ export default function FarmerDashboard() {
       if (!farmerData) return;
 
       try {
-        console.log('[QR] Loading QR code for farmer:', farmerData.farmer_id);
+        logger.info(COMPONENT, 'loadQRCode start', { farmer_id: farmerData.farmer_id });
         setQrError(false);
         
         // Fetch QR code with authentication
@@ -129,7 +132,7 @@ export default function FarmerDashboard() {
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
         
-        console.log('[QR] QR code loaded successfully');
+        logger.info(COMPONENT, 'loadQRCode success');
         setQrCodeUrl(blobUrl);
 
         // Cleanup function
@@ -139,7 +142,7 @@ export default function FarmerDashboard() {
           }
         };
       } catch (error) {
-        console.error('[QR] Failed to load QR code:', error);
+        logger.error(COMPONENT, 'loadQRCode failed', { error });
         setQrError(true);
       }
     };
@@ -157,7 +160,7 @@ export default function FarmerDashboard() {
       }
 
       downloadNotifId = showInfo("📥 Preparing download...", 8000);
-      console.log("[Dashboard] Downloading ID card for:", farmerId);
+      logger.info(COMPONENT, "handleDownloadIDCard start", { farmerId });
       
       const result = await farmerService.downloadIDCard(farmerId);
       
@@ -173,7 +176,7 @@ export default function FarmerDashboard() {
         showError("Download failed. Please try again.", 4000);
       }
     } catch (error: any) {
-      console.error("[Dashboard] Download failed:", error);
+      logger.error(COMPONENT, "handleDownloadIDCard failed", { error });
       if (downloadNotifId) dismiss(downloadNotifId);
       const errorMsg = error.response?.data?.detail || "ID card not available yet. Generate it first.";
       showError(errorMsg, 5000);
@@ -186,12 +189,12 @@ export default function FarmerDashboard() {
       return;
     }
     
-    console.log("[Dashboard] Opening ID card preview");
+    logger.info(COMPONENT, "handleViewIDCard open preview");
     setShowPreview(true);
   };
 
   const handleRetry = () => {
-    console.log("[Dashboard] Retrying data load");
+    logger.info(COMPONENT, "handleRetry triggered");
     hasLoadedRef.current = false;
     loadFarmerData();
   };
@@ -337,9 +340,9 @@ export default function FarmerDashboard() {
                             src={photoUrl}
                             alt="Farmer"
                             style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                            onLoad={() => console.log("[Photo] Image displayed successfully")}
-                            onError={(e) => {
-                              console.error("[Photo] Failed to display image");
+                            onLoad={() => logger.info(COMPONENT, 'photo image displayed')}
+                            onError={() => {
+                              logger.error(COMPONENT, 'photo image display failed');
                               setPhotoError(true);
                             }}
                           />
@@ -544,9 +547,9 @@ export default function FarmerDashboard() {
                         maxHeight: "100%",
                         objectFit: "contain"
                       }}
-                      onLoad={() => console.log('[QR] Image loaded successfully')}
-                      onError={(e) => {
-                        console.error('[QR] Image failed to load');
+                      onLoad={() => logger.info(COMPONENT, 'QR image loaded')}
+                      onError={() => {
+                        logger.error(COMPONENT, 'QR image display failed');
                         setQrError(true);
                       }}
                     />

@@ -1,28 +1,32 @@
 // src/pages/FarmerDetails.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { safeNavigate } from '@/config/navigation';
+import { safeNavigate } from "@/config/navigation";
 import { farmerService } from "@/services/farmer.service";
 import useAuthStore from "@/store/authStore";
 import { useNotification } from "@/contexts/NotificationContext";
+import { logger } from "@/utils/logger";
 
+const COMPONENT = "FarmerDetails";
+
+// ─── helpers ───────────────────────────────────────────────────────────────────
 const getErrorMessage = (err: unknown): string => {
   if (typeof err === "object" && err !== null) {
-    const error = err as Record<string, unknown>;
-    if (error.response && typeof error.response === "object") {
-      const response = error.response as Record<string, unknown>;
-      if (response.data && typeof response.data === "object") {
-        const data = response.data as Record<string, string>;
-        return data.detail || "An error occurred";
-      }
-    }
-    if (error.message && typeof error.message === "string") {
-      return error.message;
-    }
+    const e = err as Record<string, unknown>;
+    const status = (e.response as Record<string, unknown>)?.status as number | undefined;
+    if (status === 401) return "Session expired. Please log in again.";
+    if (status === 403) return "You do not have permission to perform this action.";
+    if (status === 404) return "Record not found.";
+    if (status === 413) return "File is too large. Maximum allowed size is 10 MB.";
+    if (status && status >= 500) return "Server error. Please try again later.";
+    const detail = ((e.response as Record<string, unknown>)?.data as Record<string, string>)?.detail;
+    if (detail) return detail;
+    if (typeof e.message === "string") return e.message;
   }
-  return "An error occurred";
+  return "An unexpected error occurred.";
 };
 
+// ─── types ─────────────────────────────────────────────────────────────────────
 interface Farmer {
   farmer_id: string;
   personal_info?: {
@@ -50,7 +54,7 @@ interface Farmer {
   farm_info?: {
     farm_size_hectares?: number;
     crops_grown?: string[];
-    livestock?: string[]
+    livestock?: string[];
     livestock_types?: string[];
     has_irrigation?: boolean;
     farming_experience_years?: number;
@@ -91,231 +95,373 @@ interface Farmer {
   created_by?: string;
 }
 
+interface ConfirmState {
+  open: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+}
+
+// ─── status badge ──────────────────────────────────────────────────────────────
+const STATUS_META: Record<string, { label: string; cls: string }> = {
+  registered:        { label: "Registered",     cls: "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300" },
+  under_review:      { label: "Under Review",   cls: "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300" },
+  verified:          { label: "Verified \u2713",     cls: "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300" },
+  rejected:          { label: "Rejected \u2717",     cls: "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300" },
+  pending_documents: { label: "Pending Docs",   cls: "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300" },
+  pending:           { label: "Pending",         cls: "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" },
+  submitted:         { label: "Submitted",       cls: "bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300" },
+  inactive:          { label: "Inactive",        cls: "bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400" },
+};
+
+const StatusBadge = ({ status }: { status?: string }) => {
+  if (!status) return null;
+  const meta = STATUS_META[status] ?? { label: status, cls: "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" };
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-semibold inline-block ${meta.cls}`}>
+      {meta.label}
+    </span>
+  );
+};
+
+// ─── info row helper ───────────────────────────────────────────────────────────
+const InfoRow = ({ label, value }: { label: string; value?: string | number | boolean | null }) => {
+  if (value === undefined || value === null || value === "") return null;
+  const display = typeof value === "boolean" ? (value ? "Yes" : "No") : String(value);
+  return (
+    <div className="py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+      <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 block">{label}</span>
+      <span className="text-sm font-medium text-gray-800 dark:text-gray-100 mt-0.5 block">{display}</span>
+    </div>
+  );
+};
+
+// ─── document section sub-component ────────────────────────────────────────────
+interface DocSectionProps {
+  label: string;
+  docType: "nrc" | "land_title" | "license" | "certificate";
+  docUrl: string | null;
+  uploading: string | null;
+  onUpload: (e: React.ChangeEvent<HTMLInputElement>, docType: "nrc" | "land_title" | "license" | "certificate") => void;
+  onDelete: (docType: string) => void;
+}
+
+const DocumentSection = ({ label, docType, docUrl, uploading, onUpload, onDelete }: DocSectionProps) => {
+  const isUploading = uploading === docType;
+  return (
+    <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-gray-50 dark:bg-gray-900/50">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{label}</span>
+        {docUrl ? (
+          <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            Uploaded
+          </span>
+        ) : (
+          <span className="text-xs text-gray-400 dark:text-gray-600">No file</span>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {docUrl && (
+          <a
+            href={docUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+            View
+          </a>
+        )}
+        <label className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${isUploading ? "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed" : docUrl ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/40" : "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800/40"}`}>
+          {isUploading ? (
+            <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+          ) : (
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+          )}
+          {isUploading ? "Uploading..." : docUrl ? "Replace" : "Upload"}
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => onUpload(e, docType)} disabled={isUploading} className="hidden" />
+        </label>
+        {docUrl && (
+          <button
+            onClick={() => onDelete(docType)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/40 text-xs font-semibold rounded-lg transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            Delete
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── confirm dialog ────────────────────────────────────────────────────────────
+const ConfirmDialog = ({ state, onCancel }: { state: ConfirmState; onCancel: () => void }) => {
+  if (!state.open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-sm w-full z-10">
+        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">{state.title}</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">{state.message}</p>
+        <div className="flex gap-3 justify-end">
+          <button onClick={onCancel} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+            Cancel
+          </button>
+          <button onClick={() => { state.onConfirm(); onCancel(); }} className="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── main component ─────────────────────────────────────────────────────────────
 export default function FarmerDetails() {
   const { farmerId } = useParams<{ farmerId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { success: showSuccess, error: showError } = useNotification();
-
-  const getBackPath = () => {
-    if (user?.roles?.includes("FARMER")) {
-      return "/farmer-dashboard";
-    }
-    return "/farmers";
-  };
+  const { success: showSuccess, error: showError, info: showInfo } = useNotification();
 
   const [farmer, setFarmer] = useState<Farmer | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
-  
-  // ✅ Add state for GridFS blob URLs
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState(false);
   const [documentUrls, setDocumentUrls] = useState<Record<string, string | null>>({
-    nrc: null,
-    land_title: null,
-    license: null,
-    certificate: null,
+    nrc: null, land_title: null, license: null, certificate: null,
   });
+  const [confirm, setConfirm] = useState<ConfirmState>({ open: false, title: "", message: "", onConfirm: () => {} });
 
-  useEffect(() => {
-    if (farmerId) {
-      loadFarmerData();
-    }
-  }, [farmerId]);
+  const getBackPath = () => user?.roles?.includes("FARMER") ? "/farmer-dashboard" : "/farmers";
 
-  const loadFarmerData = async () => {
+  // ─── load farmer ──────────────────────────────────────────────────────────────
+  const loadFarmerData = useCallback(async () => {
+    logger.info(COMPONENT, "loadFarmerData", { farmerId });
     try {
       setLoading(true);
       const data = await farmerService.getFarmer(farmerId!);
       setFarmer(data);
-      console.log('[FarmerDetails] Loaded:', data);
+      logger.info(COMPONENT, "loadFarmerData success", { farmer_id: data.farmer_id });
     } catch (err: unknown) {
-      const errorMsg = getErrorMessage(err) || "Failed to load farmer details";
-      showError(errorMsg, 5000);
+      const msg = getErrorMessage(err);
+      logger.error(COMPONENT, "loadFarmerData failed", { msg, err });
+      showError(msg, 5000);
     } finally {
       setLoading(false);
     }
-  };
+  }, [farmerId]);
 
-  // ✅ Load farmer photo using GridFS
+  useEffect(() => {
+    if (farmerId) loadFarmerData();
+  }, [farmerId, loadFarmerData]);
+
+  // ─── load photo ───────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!farmer) return;
-
+    let blobUrl: string | null = null;
     const loadPhoto = async () => {
+      logger.info(COMPONENT, "loadPhoto", { farmer_id: farmer.farmer_id });
       try {
-        console.log('[FarmerDetails] Loading photo...');
         setPhotoError(false);
         const url = await farmerService.getPhotoUrl(farmer);
         if (url) {
+          blobUrl = url;
           setPhotoUrl(url);
-          console.log('[FarmerDetails] ✅ Photo loaded');
+          logger.info(COMPONENT, "loadPhoto success");
         } else {
-          console.log('[FarmerDetails] No photo available');
+          logger.info(COMPONENT, "loadPhoto - no photo available");
           setPhotoError(true);
         }
-      } catch (error) {
-        console.error('[FarmerDetails] Photo load failed:', error);
+      } catch (err: unknown) {
+        logger.error(COMPONENT, "loadPhoto failed", { err });
         setPhotoError(true);
       }
     };
-
     loadPhoto();
-
     return () => {
-      if (photoUrl && photoUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(photoUrl);
-        console.log('[FarmerDetails] Photo blob URL revoked');
+      if (blobUrl && blobUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(blobUrl);
+        logger.info(COMPONENT, "loadPhoto cleanup - blob revoked");
       }
     };
   }, [farmer?.farmer_id]);
 
-  // ✅ Load documents using GridFS
+  // ─── load documents ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!farmer) return;
-
+    const blobUrls: string[] = [];
     const loadDocuments = async () => {
-      console.log('[FarmerDetails] Loading documents...');
-      const docTypes: Array<'nrc' | 'land_title' | 'license' | 'certificate'> = [
-        'nrc',
-        'land_title',
-        'license',
-        'certificate',
-      ];
-
+      logger.info(COMPONENT, "loadDocuments", { farmer_id: farmer.farmer_id });
+      const docTypes: Array<"nrc" | "land_title" | "license" | "certificate"> = ["nrc", "land_title", "license", "certificate"];
       const urls: Record<string, string | null> = {};
-
-      for (const docType of docTypes) {
+      for (const dt of docTypes) {
         try {
-          const url = await farmerService.getDocumentUrl(farmer, docType);
-          urls[docType] = url;
+          const url = await farmerService.getDocumentUrl(farmer, dt);
+          urls[dt] = url;
           if (url) {
-            console.log(`[FarmerDetails] ✅ ${docType} loaded`);
+            blobUrls.push(url);
+            logger.info(COMPONENT, `loadDocuments ${dt} ready`);
           }
-        } catch (error) {
-          console.error(`[FarmerDetails] Failed to load ${docType}:`, error);
-          urls[docType] = null;
+        } catch (err: unknown) {
+          logger.error(COMPONENT, `loadDocuments ${dt} failed`, { err });
+          urls[dt] = null;
         }
       }
-
       setDocumentUrls(urls);
     };
-
     loadDocuments();
-
     return () => {
-      Object.entries(documentUrls).forEach(([key, url]) => {
-        if (url && url.startsWith('blob:')) {
+      blobUrls.forEach((url) => {
+        if (url.startsWith("blob:")) {
           URL.revokeObjectURL(url);
-          console.log(`[FarmerDetails] ${key} blob URL revoked`);
         }
       });
     };
-  }, [farmer?.farmer_id, farmer?.identification_documents]); // ✅ Watch identification_documents for changes
+  }, [farmer?.farmer_id, farmer?.identification_documents]);
 
+  // ─── photo upload ─────────────────────────────────────────────────────────────
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    logger.info(COMPONENT, "handlePhotoUpload", { name: file.name, size: file.size });
     try {
       setUploading("photo");
       await farmerService.uploadPhoto(farmerId!, file);
+      logger.info(COMPONENT, "handlePhotoUpload success");
       showSuccess("Photo uploaded successfully!", 4000);
       e.target.value = "";
       await loadFarmerData();
     } catch (err: unknown) {
-      showError(getErrorMessage(err) || "Failed to upload photo", 5000);
+      const msg = getErrorMessage(err);
+      logger.error(COMPONENT, "handlePhotoUpload failed", { msg });
+      showError(msg, 5000);
     } finally {
       setUploading(null);
     }
   };
 
+  // ─── document upload ──────────────────────────────────────────────────────────
   const handleDocumentUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     docType: "nrc" | "land_title" | "license" | "certificate"
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
-    const MAX_FILE_SIZE = 10 * 1024 * 1024;
-    if (file.size > MAX_FILE_SIZE) {
-      showError(`File too large! Maximum size is 10MB. Your file: ${(file.size / (1024*1024)).toFixed(2)}MB`, 5000);
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      const sizeStr = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+      logger.warn(COMPONENT, "handleDocumentUpload file too large", { docType, size: sizeStr });
+      showError(`File too large (${sizeStr}). Maximum is 10 MB.`, 5000);
       e.target.value = "";
       return;
     }
-    
+    logger.info(COMPONENT, "handleDocumentUpload", { docType, name: file.name, size: file.size });
     try {
       setUploading(docType);
       await farmerService.uploadDocument(farmerId!, docType, file);
+      logger.info(COMPONENT, "handleDocumentUpload success", { docType });
       showSuccess(`${docType.replace("_", " ")} uploaded successfully!`, 4000);
       e.target.value = "";
       await loadFarmerData();
     } catch (err: unknown) {
-      showError(`Upload failed: ${getErrorMessage(err)}`, 5000);
+      const msg = getErrorMessage(err);
+      logger.error(COMPONENT, "handleDocumentUpload failed", { docType, msg });
+      showError(msg, 5000);
       e.target.value = "";
     } finally {
       setUploading(null);
     }
   };
 
+  // ─── generate ID card ─────────────────────────────────────────────────────────
   const handleGenerateIDCard = async () => {
+    logger.info(COMPONENT, "handleGenerateIDCard", { farmerId });
     try {
       const response = await farmerService.generateIDCard(farmerId!);
-      showSuccess(response.message || "ID card generation started!", 4000);
+      logger.info(COMPONENT, "handleGenerateIDCard success");
+      showInfo(response?.message ?? "ID card generation started. Download will be available shortly.", 5000);
       setTimeout(() => handleDownloadIDCard(), 5000);
     } catch (err: unknown) {
-      showError(getErrorMessage(err) || "Failed to generate ID card", 5000);
+      const msg = getErrorMessage(err);
+      logger.error(COMPONENT, "handleGenerateIDCard failed", { msg });
+      showError(msg, 5000);
     }
   };
 
+  // ─── download ID card ─────────────────────────────────────────────────────────
   const handleDownloadIDCard = async () => {
+    logger.info(COMPONENT, "handleDownloadIDCard", { farmerId });
     try {
       const result = await farmerService.downloadIDCard(farmerId!);
-      if (result?.savedPath) {
-        showSuccess(`Saved to Downloads folder:\n${result.savedPath.split('/').pop()}`, 5000);
-      } else {
-        showSuccess("Downloaded to your Downloads folder", 4000);
-      }
+      const fileName = result?.savedPath?.split("/").pop() ?? "ID card";
+      logger.info(COMPONENT, "handleDownloadIDCard success", { file: fileName });
+      showSuccess(`Downloaded: ${fileName}`, 4000);
     } catch (err: unknown) {
-      showError(getErrorMessage(err) || "ID card not ready yet.", 5000);
+      const msg = getErrorMessage(err);
+      logger.error(COMPONENT, "handleDownloadIDCard failed", { msg });
+      showError(msg, 5000);
     }
   };
 
-  const handleDeletePhoto = async () => {
-    if (!confirm("Delete this photo?")) return;
-    try {
-      await farmerService.deletePhoto(farmerId!);
-      showSuccess("Photo deleted", 4000);
-      await loadFarmerData();
-    } catch (err: unknown) {
-      showError(getErrorMessage(err) || "Failed to delete photo", 5000);
-    }
+  // ─── delete photo ─────────────────────────────────────────────────────────────
+  const handleDeletePhoto = () => {
+    setConfirm({
+      open: true,
+      title: "Delete Photo",
+      message: "Are you sure you want to delete this farmer's photo? This action cannot be undone.",
+      onConfirm: async () => {
+        logger.info(COMPONENT, "handleDeletePhoto confirmed", { farmerId });
+        try {
+          await farmerService.deletePhoto(farmerId!);
+          logger.info(COMPONENT, "handleDeletePhoto success");
+          showSuccess("Photo deleted.", 4000);
+          setPhotoUrl(null);
+          setPhotoError(true);
+          await loadFarmerData();
+        } catch (err: unknown) {
+          const msg = getErrorMessage(err);
+          logger.error(COMPONENT, "handleDeletePhoto failed", { msg });
+          showError(msg, 5000);
+        }
+      },
+    });
   };
 
-  const handleDeleteDocument = async (docType: string) => {
-    if (!confirm(`Delete ${docType}?`)) return;
-    try {
-      await farmerService.deleteDocument(farmerId!, docType);
-      showSuccess("Document deleted", 4000);
-      await loadFarmerData();
-    } catch (err: unknown) {
-      showError(getErrorMessage(err) || "Failed to delete document", 5000);
-    }
+  // ─── delete document ──────────────────────────────────────────────────────────
+  const handleDeleteDocument = (docType: string) => {
+    setConfirm({
+      open: true,
+      title: "Delete Document",
+      message: `Are you sure you want to delete the ${docType.replace("_", " ")} document? This cannot be undone.`,
+      onConfirm: async () => {
+        logger.info(COMPONENT, "handleDeleteDocument confirmed", { farmerId, docType });
+        try {
+          await farmerService.deleteDocument(farmerId!, docType);
+          logger.info(COMPONENT, "handleDeleteDocument success", { docType });
+          showSuccess("Document deleted.", 4000);
+          setDocumentUrls((prev) => ({ ...prev, [docType]: null }));
+          await loadFarmerData();
+        } catch (err: unknown) {
+          const msg = getErrorMessage(err);
+          logger.error(COMPONENT, "handleDeleteDocument failed", { docType, msg });
+          showError(msg, 5000);
+        }
+      },
+    });
   };
 
+  const dismissConfirm = () => setConfirm({ open: false, title: "", message: "", onConfirm: () => {} });
+
+  // ─── loading / not-found states ───────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 flex items-center justify-center" style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div className="text-center text-white" style={{ textAlign: "center", color: "white" }}>
-          <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-5" style={{
-            width: "60px",
-            height: "60px",
-            border: "5px solid rgba(255,255,255,0.3)",
-            borderTop: "5px solid white",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-            margin: "0 auto 20px"
-          }}></div>
-          <p className="text-lg sm:text-xl" style={{ fontSize: "18px" }}>Loading farmer details...</p>
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-gray-300 dark:border-gray-600 border-t-green-600 rounded-full animate-spin mx-auto mb-5" />
+          <p className="text-lg font-medium text-gray-700 dark:text-gray-300">Loading farmer details...</p>
         </div>
       </div>
     );
@@ -323,615 +469,191 @@ export default function FarmerDetails() {
 
   if (!farmer) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div className="text-center text-white" style={{ textAlign: "center", color: "white" }}>
-          <div className="text-6xl sm:text-8xl mb-5" style={{ fontSize: "80px", marginBottom: "20px" }}>❌</div>
-          <p className="text-xl sm:text-3xl mb-5" style={{ fontSize: "24px", marginBottom: "20px" }}>Farmer not found</p>
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-8xl mb-6">❌</div>
+          <p className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Farmer not found</p>
           <button
             onClick={() => navigate(getBackPath())}
-            className="px-6 sm:px-8 py-3 bg-white dark:bg-gray-800 text-indigo-600 rounded-lg font-semibold hover:shadow-lg transition-all text-base sm:text-lg"
-            style={{
-              padding: "12px 30px",
-              background: "white",
-              color: "#667eea",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "16px",
-              fontWeight: "600",
-              cursor: "pointer",
-              transition: "all 0.3s"
-            }}
+            className="px-8 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl font-semibold text-lg shadow transition-all active:scale-95"
           >
-            ← Back
+            Back
           </button>
         </div>
       </div>
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    const config: Record<string, { bg: string; color: string; label: string }> = {
-      registered: { bg: "#fff3cd", color: "#856404", label: "Registered" },
-      under_review: { bg: "#d1ecf1", color: "#0c5460", label: "Under Review" },
-      verified: { bg: "#d4edda", color: "#155724", label: "Verified ✓" },
-      rejected: { bg: "#f8d7da", color: "#721c24", label: "Rejected ✗" },
-      pending_documents: { bg: "#e7e3fc", color: "#5b21b6", label: "Pending Docs" },
-    };
-    const c = config[status] || config.registered;
-    return (
-      <span style={{ padding: "6px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: "600", background: c.bg, color: c.color, display: "inline-block" }}>
-        {c.label}
-      </span>
-    );
-  };
+  const fullName = [farmer.personal_info?.first_name, farmer.personal_info?.last_name].filter(Boolean).join(" ") || "Unknown Farmer";
 
+  // ─── render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500" style={{ minHeight: "100vh" }}>
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
+      <ConfirmDialog state={confirm} onCancel={dismissConfirm} />
+
       {/* Header */}
-      <div className="text-center text-white py-6 sm:py-8 px-4" style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold drop-shadow-lg mb-2" style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
-          🌾 Chiefdom Management Model
-        </h1>
-        <p className="text-sm sm:text-base opacity-90" style={{ fontSize: "16px", opacity: 0.9 }}>Farmer Profile & Documents</p>
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 text-center py-6 px-4">
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-white mb-1">🌾 Chiefdom Management Model</h1>
+        <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">Farmer Profile &amp; Documents</p>
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pb-6" style={{ maxWidth: "1200px", margin: "0 auto", paddingBottom: "30px" }}>
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pb-10">
+
         {/* Top Actions */}
-        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3" style={{ marginBottom: "20px" }}>
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <button
-            onClick={() => navigate(getBackPath())}
-            className="px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:bg-gray-800 active:scale-95 text-indigo-600 rounded-lg font-semibold text-sm transition-all shadow-md"
-            style={{
-              padding: "10px 20px",
-              background: "white",
-              color: "#5b21b6",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "600",
-              cursor: "pointer",
-              transition: "all 0.3s"
-            }}
+            onClick={() => safeNavigate(navigate, getBackPath())}
+            className="px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 text-indigo-700 dark:text-indigo-400 font-semibold text-sm rounded-xl shadow transition-all active:scale-95"
           >
             ← Back
           </button>
-
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            <button
-              onClick={handleGenerateIDCard}
-              className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-sm sm:text-base transition-all hover:shadow-md"
-              style={{
-                padding: "10px 20px",
-                background: "#047857",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "pointer",
-                transition: "all 0.3s"
-              }}
-            >
+          <div className="flex flex-wrap gap-2">
+            <button onClick={handleGenerateIDCard} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
               🎴 Generate ID Card
             </button>
-
-            <button
-              onClick={handleDownloadIDCard}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm sm:text-base transition-all hover:shadow-md"
-              style={{
-                padding: "10px 20px",
-                background: "#2563eb",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "pointer",
-                transition: "all 0.3s"
-              }}
-            >
+            <button onClick={handleDownloadIDCard} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
               ⬇️ Download ID
             </button>
-
-            <button
-              onClick={() => navigate(`/farmers/edit/${farmerId}`)}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-sm sm:text-base transition-all hover:shadow-md"
-              style={{
-                padding: "10px 20px",
-                background: "#4f46e5",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "pointer",
-                transition: "all 0.3s"
-              }}
-            >
+            <button onClick={() => navigate(`/farmers/edit/${farmerId}`)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
               ✏️ Edit Farmer
             </button>
           </div>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "20px" }}>
-          {/* Photo Card */}
-          <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-purple-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #a855f7" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary)" }}>📸 Farmer Photo</h2>
+        {/* Card Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
 
-            <div className="mb-6" style={{ marginBottom: "20px" }}>
+          {/* Photo */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-purple-500">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">📸 Farmer Photo</h2>
+            <div className="mb-4">
               {photoError || !photoUrl ? (
-                <div className="w-full h-64 sm:h-80 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center" style={{ width: "100%", height: "350px", background: "var(--bg-surface-subtle)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="text-6xl sm:text-8xl" style={{ fontSize: "120px" }}>👤</span>
+                <div className="w-full h-64 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center">
+                  <span className="text-7xl">👤</span>
                 </div>
               ) : (
-                <div className="relative" style={{ position: "relative" }}>
+                <div className="relative">
                   <img
                     src={photoUrl}
-                    alt="Farmer"
-                    className="w-full h-64 sm:h-80 object-cover rounded-lg"
-                    style={{ width: "100%", height: "350px", objectFit: "cover", borderRadius: "12px" }}
-                    onLoad={() => console.log('[FarmerDetails] Photo displayed')}
-                    onError={() => {
-                      console.error('[FarmerDetails] Photo display failed');
-                      setPhotoError(true);
-                    }}
+                    alt={`Photo of ${fullName}`}
+                    className="w-full h-64 object-cover rounded-xl"
+                    onError={() => { logger.error(COMPONENT, "img onError"); setPhotoError(true); }}
                   />
                   <button
                     onClick={handleDeletePhoto}
                     title="Delete photo"
-                    className="absolute top-3 right-3 bg-red-600 hover:bg-red-700 text-white rounded-full w-10 h-10 flex items-center justify-center text-lg transition-all"
-                    style={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                      background: "#dc3545",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "50%",
-                      width: "40px",
-                      height: "40px",
-                      fontSize: "18px",
-                      cursor: "pointer",
-                      transition: "all 0.3s"
-                    }}
+                    className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-9 h-9 flex items-center justify-center shadow-lg transition-all active:scale-90"
                   >
                     🗑️
                   </button>
                 </div>
               )}
             </div>
-
-            <input
-              type="file"
-              id="photo-upload"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              disabled={uploading !== null}
-              style={{ display: 'none' }}
-            />
             <label
               htmlFor="photo-upload"
-              className="block text-center p-3 sm:p-4 rounded-lg text-sm sm:text-base font-semibold transition-all"
-              style={{
-                display: "block",
-                textAlign: "center",
-                padding: "12px",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: uploading === "photo" ? "not-allowed" : "pointer",
-                background: uploading === "photo" ? "#6b7280" : "#2563eb",
-                color: "white",
-                transition: "all 0.3s"
-              }}
+              className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-sm cursor-pointer transition-all ${uploading === "photo" ? "bg-gray-200 dark:bg-gray-700 text-gray-500 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700 text-white active:scale-95"}`}
             >
-              {uploading === "photo" ? "⏳ Uploading..." : "📸 Upload / Replace Photo"}
+              {uploading === "photo" ? (
+                <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Uploading...</>
+              ) : (
+                <>📤 {photoUrl ? "Replace Photo" : "Upload Photo"}</>
+              )}
             </label>
+            <input id="photo-upload" type="file" accept="image/*" onChange={handlePhotoUpload} disabled={uploading === "photo"} className="hidden" />
+            <p className="text-xs text-center text-gray-400 mt-1.5">JPG · PNG · WebP</p>
           </div>
 
-          {/* Personal Info Card */}
-          <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all sm:col-span-2 lg:col-span-1 border-l-4 border-blue-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #3b82f6" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary)" }}>👤 Personal Information</h2>
-
-            <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700" style={{ marginBottom: "20px", paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
-              <h3 className="text-xl sm:text-2xl font-bold text-indigo-600 mb-3" style={{ fontSize: "18px", fontWeight: "700", color: "#4f46e5", marginBottom: "10px" }}>
-                {farmer.personal_info?.first_name} {farmer.personal_info?.last_name}
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-mono mb-3" style={{ color: "var(--text-secondary-hex)", fontSize: "14px", fontFamily: "monospace", marginBottom: "10px" }}>
-                🆔 {farmer.farmer_id}
-              </p>
-              <div>{getStatusBadge(farmer.registration_status || "registered")}</div>
+          {/* Personal Info */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-blue-500">
+            <div className="flex items-start justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">👤 Personal Info</h2>
+              <StatusBadge status={farmer.registration_status} />
             </div>
+            <InfoRow label="Full Name"          value={fullName} />
+            <InfoRow label="Farmer ID"          value={farmer.farmer_id} />
+            <InfoRow label="NRC"                value={farmer.personal_info?.nrc ?? farmer.nrc_number} />
+            <InfoRow label="Date of Birth"      value={farmer.personal_info?.date_of_birth} />
+            <InfoRow label="Gender"             value={farmer.personal_info?.gender} />
+            <InfoRow label="Ethnic Group"       value={farmer.personal_info?.ethnic_group} />
+            <InfoRow label="Phone (Primary)"    value={farmer.personal_info?.phone_primary} />
+            <InfoRow label="Phone (Secondary)"  value={farmer.personal_info?.phone_secondary} />
+            <InfoRow label="Email"              value={farmer.personal_info?.email} />
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", fontSize: "14px" }}>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>📱 Primary Phone</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.personal_info?.phone_primary || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>📱 Secondary Phone</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.personal_info?.phone_secondary || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>📧 Email</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.personal_info?.email || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>🆔 NRC Number</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.personal_info?.nrc || farmer.nrc_number || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>🎂 Date of Birth</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.personal_info?.date_of_birth || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>⚧️ Gender</p>
-                <p className="text-gray-800 dark:text-gray-100 capitalize" style={{ color: "var(--text-primary-hex)", textTransform: "capitalize" }}>{farmer.personal_info?.gender || "N/A"}</p>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>🌍 Ethnic Group</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.personal_info?.ethnic_group || "N/A"}</p>
-              </div>
-            </div>
+          {/* Address */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-teal-500">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">📍 Address</h2>
+            <InfoRow label="Province"   value={farmer.address?.province_name ?? farmer.address?.province} />
+            <InfoRow label="District"   value={farmer.address?.district_name ?? farmer.address?.district} />
+            <InfoRow label="Chiefdom"   value={farmer.address?.chiefdom_name ?? farmer.address?.chiefdom} />
+            <InfoRow label="Village"    value={farmer.address?.village} />
+            <InfoRow label="Ward"       value={farmer.address?.ward_name} />
+            <InfoRow label="Camp"       value={farmer.address?.camp_name} />
+          </div>
 
+          {/* Farm Info */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-green-500">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">🌱 Farm Info</h2>
+            {farmer.farm_info ? (
+              <>
+                <InfoRow label="Farm Size (ha)"   value={farmer.farm_info.farm_size_hectares} />
+                <InfoRow label="Years Farming"    value={farmer.farm_info.years_farming ?? farmer.farm_info.farming_experience_years} />
+                <InfoRow label="Has Irrigation"   value={farmer.farm_info.has_irrigation} />
+                <InfoRow label="Crops"            value={(farmer.farm_info.crops_grown ?? []).join(", ") || undefined} />
+                <InfoRow label="Livestock"        value={([...(farmer.farm_info.livestock ?? []), ...(farmer.farm_info.livestock_types ?? [])]).join(", ") || undefined} />
+              </>
+            ) : (
+              <p className="text-sm text-gray-400 dark:text-gray-600 italic">No farm information recorded.</p>
+            )}
+          </div>
+
+          {/* Household */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-amber-500">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">🏠 Household Info</h2>
+            {farmer.household_info ? (
+              <>
+                <InfoRow label="Household Size"       value={farmer.household_info.household_size} />
+                <InfoRow label="Number of Dependents" value={farmer.household_info.number_of_dependents} />
+                <InfoRow label="Primary Income"       value={farmer.household_info.primary_income_source} />
+              </>
+            ) : (
+              <p className="text-sm text-gray-400 dark:text-gray-600 italic">No household information recorded.</p>
+            )}
+          </div>
+
+          {/* Record Info */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-gray-400">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">🗂️ Record Info</h2>
+            <InfoRow label="Status"      value={farmer.registration_status} />
+            <InfoRow label="Active"      value={farmer.is_active} />
+            <InfoRow label="Created At"  value={farmer.created_at ? new Date(farmer.created_at).toLocaleString() : undefined} />
+            <InfoRow label="Updated At"  value={farmer.updated_at ? new Date(farmer.updated_at).toLocaleString() : undefined} />
+            <InfoRow label="Created By"  value={farmer.created_by} />
+            <InfoRow label="Reviewed By" value={farmer.reviewed_by} />
+            <InfoRow label="Reviewed At" value={farmer.reviewed_at ? new Date(farmer.reviewed_at).toLocaleString() : undefined} />
             {farmer.review_notes && (
-              <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 border-indigo-500" style={{ marginTop: "20px", padding: "15px", background: "#f9fafb", borderRadius: "8px", borderLeft: "4px solid #6366f1" }}>
-                <p className="font-semibold text-gray-800 dark:text-gray-100 mb-2" style={{ fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "8px" }}>📝 Review Notes</p>
-                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed" style={{ color: "var(--text-secondary-hex)", fontSize: "14px", lineHeight: "1.6" }}>{farmer.review_notes}</p>
-                {farmer.reviewed_by && (
-                  <p className="text-gray-500 dark:text-gray-500 dark:text-gray-500 text-xs mt-2" style={{ color: "var(--text-muted-hex)", fontSize: "12px", marginTop: "8px" }}>
-                    Reviewed by: {farmer.reviewed_by}
-                    {farmer.reviewed_at && ` on ${new Date(farmer.reviewed_at).toLocaleString()}`}
-                  </p>
-                )}
+              <div className="py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 block">Review Notes</span>
+                <p className="text-sm text-gray-800 dark:text-gray-100 mt-0.5 whitespace-pre-wrap">{farmer.review_notes}</p>
               </div>
             )}
           </div>
 
-          {/* Address Card */}
-          <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-green-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #22c55e" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary)" }}>📍 Address</h2>
-            <div className="grid gap-4 text-sm" style={{ display: "grid", gap: "15px", fontSize: "14px" }}>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Province</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.address?.province_name || farmer.address?.province || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>District</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.address?.district_name || farmer.address?.district || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Chiefdom</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.address?.chiefdom_name || farmer.address?.chiefdom || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Village</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.address?.village || "N/A"}</p>
-              </div>
-              {farmer.address?.ward_name && (
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Ward</p>
-                  <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.address.ward_name}</p>
-                </div>
-              )}
-              {farmer.address?.camp_name && (
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Camp</p>
-                  <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.address.camp_name}</p>
-                </div>
-              )}
+          {/* Documents (full-width) */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-indigo-500 sm:col-span-2 lg:col-span-3">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-5">📄 Documents</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <DocumentSection label="NRC / National ID" docType="nrc"         docUrl={documentUrls.nrc}         uploading={uploading} onUpload={handleDocumentUpload} onDelete={handleDeleteDocument} />
+              <DocumentSection label="Land Title"        docType="land_title"  docUrl={documentUrls.land_title}  uploading={uploading} onUpload={handleDocumentUpload} onDelete={handleDeleteDocument} />
+              <DocumentSection label="License"           docType="license"     docUrl={documentUrls.license}     uploading={uploading} onUpload={handleDocumentUpload} onDelete={handleDeleteDocument} />
+              <DocumentSection label="Certificate"       docType="certificate" docUrl={documentUrls.certificate} uploading={uploading} onUpload={handleDocumentUpload} onDelete={handleDeleteDocument} />
             </div>
-
-            {/* Metadata Section */}
-            {(farmer.created_at || farmer.created_by) && (
-              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700" style={{ marginTop: "20px", paddingTop: "20px", borderTop: "1px solid #e0e0e0" }}>
-                <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase mb-3" style={{ fontSize: "12px", fontWeight: "700", color: "var(--text-secondary-hex)", marginBottom: "10px" }}>📋 Registration Info</h3>
-                <div className="grid grid-cols-1 gap-3 text-xs" style={{ display: "grid", gap: "10px", fontSize: "12px" }}>
-                  {farmer.created_at && (
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400 font-semibold" style={{ color: "var(--text-secondary-hex)", fontWeight: "600" }}>Registered On</p>
-                      <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>
-                        {new Date(farmer.created_at).toLocaleString('en-GB', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                  )}
-                  {farmer.created_by && (
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400 font-semibold" style={{ color: "var(--text-secondary-hex)", fontWeight: "600" }}>Registered By</p>
-                      <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.created_by}</p>
-                    </div>
-                  )}
-                  {farmer.updated_at && (
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400 font-semibold" style={{ color: "var(--text-secondary-hex)", fontWeight: "600" }}>Last Updated</p>
-                      <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>
-                        {new Date(farmer.updated_at).toLocaleString('en-GB', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            <p className="mt-3 text-xs text-gray-400 dark:text-gray-600">Accepted formats: PDF · JPG · PNG | Max size: 10 MB per file</p>
           </div>
 
-          {/* Farm Info Card */}
-          <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-emerald-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #10b981" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary)" }}>🚜 Farm Information</h2>
-            <div className="grid gap-4 text-sm" style={{ display: "grid", gap: "15px", fontSize: "14px" }}>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Farm Size</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.farm_info?.farm_size_hectares || 0} hectares</p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Crops Grown</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>
-                  {farmer.farm_info?.crops_grown && farmer.farm_info.crops_grown.length > 0
-                    ? farmer.farm_info.crops_grown.join(", ")
-                    : "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Livestock</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>
-                  {(farmer.farm_info?.livestock || farmer.farm_info?.livestock_types) && 
-                   (farmer.farm_info?.livestock || farmer.farm_info?.livestock_types)!.length > 0
-                    ? (farmer.farm_info?.livestock || farmer.farm_info?.livestock_types)!.join(", ")
-                    : "None"}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Irrigation</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.farm_info?.has_irrigation ? "Yes ✓" : "No ✗"}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Farming Experience</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>
-                  {farmer.farm_info?.farming_experience_years || farmer.farm_info?.years_farming || 0} years
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Household Info Card */}
-          <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-orange-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", borderLeft: "4px solid #f97316" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary)" }}>🏠 Household Information</h2>
-            <div className="grid gap-4 text-sm" style={{ display: "grid", gap: "15px", fontSize: "14px" }}>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Household Size</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.household_info?.household_size || 0} members</p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Number of Dependents</p>
-                <p className="text-gray-800 dark:text-gray-100" style={{ color: "var(--text-primary-hex)" }}>{farmer.household_info?.number_of_dependents || 0}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold mb-2" style={{ color: "var(--text-secondary-hex)", fontWeight: "600", marginBottom: "5px" }}>Primary Income Source</p>
-                <p className="text-gray-800 dark:text-gray-100 capitalize" style={{ color: "var(--text-primary-hex)", textTransform: "capitalize" }}>
-                  {farmer.household_info?.primary_income_source || "N/A"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Documents Card */}
-          <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-all lg:col-span-3 border-l-4 border-red-500" style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", gridColumn: "1 / -1", borderLeft: "4px solid #ef4444" }}>
-            <h2 className="text-lg sm:text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100" style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary)" }}>📄 Documents</h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px" }}>
-              {/* NRC Card */}
-              <DocumentSection
-                title="NRC Card"
-                docType="nrc"
-                docUrl={documentUrls.nrc}
-                uploading={uploading}
-                onUpload={handleDocumentUpload}
-                onDelete={handleDeleteDocument}
-                navigate={navigate}
-              />
-
-              {/* Land Title */}
-              <DocumentSection
-                title="Land Title"
-                docType="land_title"
-                docUrl={documentUrls.land_title}
-                uploading={uploading}
-                onUpload={handleDocumentUpload}
-                onDelete={handleDeleteDocument}
-                navigate={navigate}
-              />
-
-              {/* Farming License */}
-              <DocumentSection
-                title="Farming License"
-                docType="license"
-                docUrl={documentUrls.license}
-                uploading={uploading}
-                onUpload={handleDocumentUpload}
-                onDelete={handleDeleteDocument}
-                navigate={navigate}
-              />
-
-              {/* Certificate */}
-              <DocumentSection
-                title="Certificate"
-                docType="certificate"
-                docUrl={documentUrls.certificate}
-                uploading={uploading}
-                onUpload={handleDocumentUpload}
-                onDelete={handleDeleteDocument}
-                navigate={navigate}
-              />
-            </div>
-          </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-interface DocumentSectionProps {
-  title: string;
-  docType: "nrc" | "land_title" | "license" | "certificate";
-  docUrl: string | null;
-  uploading: string | null;
-  onUpload: (e: React.ChangeEvent<HTMLInputElement>, docType: "nrc" | "land_title" | "license" | "certificate") => void;
-  onDelete: (docType: string) => void;
-  navigate: ReturnType<typeof useNavigate>;
-}
-
-function DocumentSection({ title, docType, docUrl, uploading, onUpload, onDelete, navigate }: DocumentSectionProps) {
-  const uploadInputId = `doc-upload-${docType}`;
-  const replaceInputId = `doc-replace-${docType}`;
-  const isUploading = uploading === docType;
-
-  const handleViewDocument = () => {
-    if (!docUrl) return;
-    
-    const titles: Record<string, string> = {
-      nrc: 'NRC Document',
-      land_title: 'Land Title',
-      license: 'License',
-      certificate: 'Certificate',
-    };
-
-    console.log(`[FarmerDetails] Viewing ${docType}`);
-    sessionStorage.setItem('doc_view_path', docUrl);
-    sessionStorage.setItem('doc_view_title', titles[docType] || 'Document');
-    safeNavigate(navigate, '/document-viewer');
-  };
-
-  return (
-    <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 sm:p-6 bg-gray-50 dark:bg-gray-800 hover:shadow-md transition-shadow" style={{ border: "1px solid #e0e0e0", borderRadius: "10px", padding: "20px", background: "var(--bg-surface)" }}>
-      <h3 className="text-base sm:text-lg font-bold mb-4 text-gray-800 dark:text-gray-100" style={{ fontSize: "16px", fontWeight: "700", marginBottom: "15px", color: "var(--text-primary-hex)" }}>{title}</h3>
-      
-      {docUrl ? (
-        <div>
-          <div className="text-green-600 text-sm sm:text-base font-semibold mb-3 flex items-center gap-2" style={{ color: "#28a745", fontSize: "14px", fontWeight: "600", marginBottom: "10px", display: "flex", alignItems: "center", gap: "5px" }}>
-            ✓ Uploaded
-          </div>
-          <button
-            onClick={handleViewDocument}
-            className="w-full block p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg mb-3 text-sm text-center font-semibold transition-all"
-            style={{
-              display: "block",
-              width: "100%",
-              padding: "10px",
-              background: "#007bff",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              marginBottom: "10px",
-              fontSize: "14px",
-              textAlign: "center",
-              fontWeight: "600",
-              cursor: "pointer",
-              transition: "all 0.3s"
-            }}
-          >
-            👁️ View
-          </button>
-          
-          {/* Replace button */}
-          <input
-            type="file"
-            id={replaceInputId}
-            accept="image/*,.pdf"
-            onChange={(e) => onUpload(e, docType)}
-            disabled={uploading !== null}
-            style={{ display: 'none' }}
-          />
-          <label
-            htmlFor={replaceInputId}
-            className="block p-2 sm:p-3 rounded-lg text-sm text-center font-semibold transition-all mb-3"
-            style={{
-              display: "block",
-              padding: "10px",
-              borderRadius: "6px",
-              fontSize: "14px",
-              fontWeight: "600",
-              textAlign: "center",
-              cursor: uploading !== null ? "not-allowed" : "pointer",
-              background: isUploading ? "#6c757d" : "#fd7e14",
-              color: "white",
-              transition: "all 0.3s",
-              marginBottom: "10px"
-            }}
-          >
-            {isUploading ? "⏳ Replacing..." : "🔄 Replace"}
-          </label>
-          
-          <button
-            onClick={() => onDelete(docType)}
-            className="w-full p-2 sm:p-3 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-all"
-            style={{
-              width: "100%",
-              padding: "10px",
-              background: "#dc3545",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              fontSize: "14px",
-              fontWeight: "600",
-              cursor: "pointer",
-              transition: "all 0.3s"
-            }}
-          >
-            🗑️ Delete
-          </button>
-        </div>
-      ) : (
-        <div>
-          <p className="text-gray-500 dark:text-gray-500 dark:text-gray-500 text-xs sm:text-sm mb-4 text-center" style={{ color: "var(--text-muted-hex)", fontSize: "14px", marginBottom: "15px", textAlign: "center" }}>
-            No document uploaded
-          </p>
-          <input
-            type="file"
-            id={uploadInputId}
-            accept="image/*,.pdf"
-            onChange={(e) => onUpload(e, docType)}
-            disabled={uploading !== null}
-            style={{ display: 'none' }}
-          />
-          <label
-            htmlFor={uploadInputId}
-            className="block p-3 sm:p-4 rounded-lg text-sm text-center font-semibold transition-all"
-            style={{
-              display: "block",
-              padding: "12px",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "600",
-              textAlign: "center",
-              cursor: uploading !== null ? "not-allowed" : "pointer",
-              background: isUploading ? "#6c757d" : "#007bff",
-              color: "white",
-              transition: "all 0.3s"
-            }}
-          >
-            {isUploading ? "⏳ Uploading..." : "📎 Choose File"}
-          </label>
-        </div>
-      )}
     </div>
   );
 }

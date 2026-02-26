@@ -5,6 +5,9 @@ import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
 import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
+import { logger } from "@/utils/logger";
+
+const COMPONENT = "FarmerIDCard";
 
 interface Farmer {
   farmer_id: string;
@@ -94,13 +97,13 @@ const FarmerIDCard: React.FC = () => {
         return;
       }
 
-      console.log('[IDCard] Loading farmer data for:', farmerId);
+      logger.info(COMPONENT, 'Loading farmer data for:', farmerId);
       const data = await farmerService.getFarmer(farmerId);
       setFarmer(data);
-      console.log('[IDCard] Farmer data loaded:', data);
+      logger.info(COMPONENT, 'Farmer data loaded:', data);
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Failed to load farmer data";
-      console.error('[IDCard] Load error:', msg);
+      logger.error(COMPONENT, 'Load error:', msg);
       setError(msg);
       showError(msg, 5000);
     } finally {
@@ -114,18 +117,18 @@ const FarmerIDCard: React.FC = () => {
 
     const loadPhoto = async () => {
       try {
-        console.log('[IDCard] Loading photo for:', farmer.farmer_id);
+        logger.info(COMPONENT, 'Loading photo for:', farmer.farmer_id);
         setPhotoError(false);
         const url = await farmerService.getPhotoUrl(farmer);
         if (url) {
           setPhotoUrl(url);
-          console.log('[IDCard] ✅ Photo loaded');
+          logger.info(COMPONENT, '✅ Photo loaded');
         } else {
-          console.log('[IDCard] No photo available');
+          logger.info(COMPONENT, 'No photo available');
           setPhotoError(true);
         }
       } catch (error) {
-        console.error('[IDCard] Failed to load photo:', error);
+        logger.error(COMPONENT, 'Failed to load photo:', error);
         setPhotoError(true);
       }
     };
@@ -136,7 +139,7 @@ const FarmerIDCard: React.FC = () => {
     return () => {
       if (photoUrl && photoUrl.startsWith('blob:')) {
         URL.revokeObjectURL(photoUrl);
-        console.log('[IDCard] Photo blob URL revoked');
+        logger.info(COMPONENT, 'Photo blob URL revoked');
       }
     };
   }, [farmer?.farmer_id]); // ✅ Only depend on farmer_id
@@ -147,18 +150,18 @@ const FarmerIDCard: React.FC = () => {
 
     const loadQRCode = async () => {
       try {
-        console.log('[IDCard] Loading QR code for:', farmer.farmer_id);
+        logger.info(COMPONENT, 'Loading QR code for:', farmer.farmer_id);
         setQrError(false);
         const url = await farmerService.getQRCodeBlobUrl(farmer);
         if (url) {
           setQrUrl(url);
-          console.log('[IDCard] ✅ QR code loaded');
+          logger.info(COMPONENT, '✅ QR code loaded');
         } else {
-          console.log('[IDCard] No QR code available');
+          logger.info(COMPONENT, 'No QR code available');
           setQrError(true);
         }
       } catch (error) {
-        console.error('[IDCard] Failed to load QR code:', error);
+        logger.error(COMPONENT, 'Failed to load QR code:', error);
         setQrError(true);
       }
     };
@@ -169,7 +172,7 @@ const FarmerIDCard: React.FC = () => {
     return () => {
       if (qrUrl && qrUrl.startsWith('blob:')) {
         URL.revokeObjectURL(qrUrl);
-        console.log('[IDCard] QR blob URL revoked');
+        logger.info(COMPONENT, 'QR blob URL revoked');
       }
     };
   }, [farmer?.farmer_id, farmer?.qr_code_file_id]); // ✅ Reload when QR file changes
@@ -183,10 +186,10 @@ const FarmerIDCard: React.FC = () => {
       setError(null);
       
       notifId = showInfo("⏳ Generating ID card...", 10000);
-      console.log('[IDCard] Starting generation for:', farmer.farmer_id);
+      logger.info(COMPONENT, 'Starting generation for:', farmer.farmer_id);
       
       const response = await farmerService.generateIDCard(farmer.farmer_id);
-      console.log('[IDCard] Generation queued:', response);
+      logger.info(COMPONENT, 'Generation queued:', response);
 
       // Poll for completion
       const maxAttempts = 12;
@@ -194,7 +197,7 @@ const FarmerIDCard: React.FC = () => {
       
       const poll = setInterval(async () => {
         attempts += 1;
-        console.log(`[IDCard] Polling attempt ${attempts}/${maxAttempts}`);
+        logger.info(COMPONENT, `polling attempt ${attempts}/${maxAttempts}`);
         
         try {
           const updated = await farmerService.getFarmer(farmer.farmer_id);
@@ -209,27 +212,27 @@ const FarmerIDCard: React.FC = () => {
               if (qrBlobUrl) {
                 setQrUrl(qrBlobUrl);
                 setQrError(false);
-                console.log('[IDCard] ✅ QR code reloaded after generation');
+                logger.info(COMPONENT, '✅ QR code reloaded after generation');
               }
             } catch (qrErr) {
-              console.error('[IDCard] Failed to reload QR:', qrErr);
+              logger.error(COMPONENT, 'Failed to reload QR:', qrErr);
             }
             
-            console.log('[IDCard] ✅ Generation complete!');
+            logger.info(COMPONENT, '✅ Generation complete!');
             if (notifId) dismiss(notifId);
             showSuccess('✅ ID card generated successfully!', 5000);
             setGenerating(false);
           } else if (attempts >= maxAttempts) {
             clearInterval(poll);
             const msg = 'Generation timeout. Please try again.';
-            console.error('[IDCard]', msg);
+            logger.error(COMPONENT, 'generation timeout', { msg });
             if (notifId) dismiss(notifId);
             setError(msg);
             showError(msg, 5000);
             setGenerating(false);
           }
         } catch (e) {
-          console.error('[IDCard] Polling error:', e);
+          logger.error(COMPONENT, 'Polling error:', e);
           if (attempts >= maxAttempts) {
             clearInterval(poll);
             const msg = 'Generation failed. Contact support.';
@@ -243,7 +246,7 @@ const FarmerIDCard: React.FC = () => {
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Failed to generate ID card";
       if (notifId) dismiss(notifId);
-      console.error('[IDCard] Generation error:', msg);
+      logger.error(COMPONENT, 'Generation error:', msg);
       setError(msg);
       showError(msg, 5000);
       setGenerating(false);
@@ -257,7 +260,7 @@ const FarmerIDCard: React.FC = () => {
     try {
       setError(null);
       downloadNotifId = showInfo("📥 Downloading...", 8000);
-      console.log('[IDCard] Downloading for:', farmer.farmer_id);
+      logger.info(COMPONENT, 'Downloading for:', farmer.farmer_id);
       
       const result = await farmerService.downloadIDCard(farmer.farmer_id);
       
@@ -270,7 +273,7 @@ const FarmerIDCard: React.FC = () => {
       }
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Download failed. Generate ID first.";
-      console.error('[IDCard] Download error:', msg);
+      logger.error(COMPONENT, 'Download error:', msg);
       if (downloadNotifId) dismiss(downloadNotifId);
       showError(msg, 5000);
       setError(msg);
@@ -286,24 +289,24 @@ const FarmerIDCard: React.FC = () => {
       setError(null);
       previewNotifId = showInfo("📄 Loading PDF...", 8000);
       
-      console.log('[IDCard] Fetching PDF for:', farmer.farmer_id);
+      logger.info(COMPONENT, 'Fetching PDF for:', farmer.farmer_id);
       const url = await farmerService.viewIDCard(farmer.farmer_id);
       
       if (url) {
-        console.log('[IDCard] PDF URL received, storing in sessionStorage');
+        logger.info(COMPONENT, 'PDF URL received, storing in sessionStorage');
         sessionStorage.setItem('idcard_view_url', url);
         sessionStorage.setItem('idcard_farmer_name', `${farmer.personal_info.first_name} ${farmer.personal_info.last_name}`);
         
         if (previewNotifId) dismiss(previewNotifId);
-        console.log('[IDCard] Navigating to PDF viewer');
+        logger.info(COMPONENT, 'Navigating to PDF viewer');
         safeNavigate(navigate, '/farmer/idcard-view');
       } else {
-        console.error('[IDCard] No URL returned');
+        logger.error(COMPONENT, 'No URL returned');
         if (previewNotifId) dismiss(previewNotifId);
         showError('ID card not available. Generate it first.', 5000);
       }
     } catch (err: any) {
-      console.error('[IDCard] View error:', err);
+      logger.error(COMPONENT, 'View error:', err);
       const msg = err.response?.data?.detail || err.message || "Failed to view. Generate ID first.";
       if (previewNotifId) dismiss(previewNotifId);
       setError(msg);
@@ -321,7 +324,7 @@ const FarmerIDCard: React.FC = () => {
       return;
     }
     
-    console.log('[IDCard] Opening preview modal for:', farmer.farmer_id);
+    logger.info(COMPONENT, 'Opening preview modal for:', farmer.farmer_id);
     setShowPreview(true);
   };
 
@@ -338,7 +341,7 @@ const FarmerIDCard: React.FC = () => {
       certificate: 'Certificate',
     };
 
-    console.log(`[IDCard] Viewing ${docType}, URL:`, docUrl.substring(0, 50));
+    logger.info(COMPONENT, `handleViewDocument ${docType}`, { url: docUrl.substring(0, 50) });
     sessionStorage.setItem('doc_view_path', docUrl);
     sessionStorage.setItem('doc_view_title', titles[docType] || 'Document');
     safeNavigate(navigate, '/document-viewer');
@@ -374,8 +377,8 @@ const FarmerIDCard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-700 to-green-900 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center shadow-2xl">
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center shadow-md border border-gray-100 dark:border-gray-700">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 dark:border-gray-600 border-t-green-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading farmer data...</p>
         </div>
@@ -385,10 +388,10 @@ const FarmerIDCard: React.FC = () => {
 
   if (error && !farmer) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-700 to-green-900 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center shadow-2xl max-w-md w-full">
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center shadow-md border border-gray-100 dark:border-gray-700 max-w-md w-full">
           <div className="text-4xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-red-600 mb-3">Error</h2>
+          <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-3">Error</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
           <button
             onClick={() => safeNavigate(navigate, "/farmer-dashboard")}
@@ -424,7 +427,7 @@ const FarmerIDCard: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Error Alert */}
         {error && (
-          <div className="mb-6 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border-l-4 border-red-500 flex items-start gap-2">
+          <div className="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 border-l-4 border-l-red-500 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
             <span className="text-lg">⚠️</span>
             <div>
               <strong>Error:</strong> {error}
@@ -452,9 +455,9 @@ const FarmerIDCard: React.FC = () => {
                       src={photoUrl}
                       alt="Profile"
                       className="w-full h-full object-cover"
-                      onLoad={() => console.log('[IDCard] Photo displayed')}
+                      onLoad={() => logger.info(COMPONENT, 'Photo displayed')}
                       onError={() => {
-                        console.error('[IDCard] Photo display failed');
+                        logger.error(COMPONENT, 'Photo display failed');
                         setPhotoError(true);
                       }}
                     />
@@ -634,9 +637,9 @@ const FarmerIDCard: React.FC = () => {
                       src={qrUrl} 
                       alt="QR Code" 
                       className="w-40 h-40 sm:w-48 sm:h-48"
-                      onLoad={() => console.log('[IDCard] QR displayed')}
+                      onLoad={() => logger.info(COMPONENT, 'QR displayed')}
                       onError={() => {
-                        console.error('[IDCard] QR display failed');
+                        logger.error(COMPONENT, 'QR display failed');
                         setQrError(true);
                       }}
                     />
