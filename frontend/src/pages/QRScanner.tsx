@@ -77,9 +77,12 @@ const QRScanner: React.FC = () => {
     setErrorMessage("");
     setFarmerResult(null);
     try {
-      // @ts-expect-error — optional mobile-only Capacitor plugin, not installed in web builds
+      // Optional mobile-only Capacitor plugin — not installed in web builds.
+      // Path is split to prevent Vite static import-analysis from trying to resolve it.
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const mod = await import(/* @vite-ignore */ "@capacitor-community/barcode-scanner").catch(() => null) as Record<string, unknown> | null;
+      const pluginPath = "@capacitor-community" + "/barcode-scanner";
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const mod = await import(/* @vite-ignore */ /* @ts-ignore */ pluginPath).catch(() => null) as Record<string, unknown> | null;
       type BS = {
         checkPermission: (o: { force: boolean }) => Promise<{ granted: boolean }>;
         hideBackground: () => void;
