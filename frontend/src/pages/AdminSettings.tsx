@@ -7,6 +7,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import type { Theme } from "@/contexts/ThemeContext";
 import { logger } from "@/utils/logger";
 import { useNotification } from "@/contexts/NotificationContext";
+import { APP_VERSION, PHASE } from "@/utils/version";
 
 interface User {
   _id: string;
@@ -168,7 +169,7 @@ export default function AdminSettings() {
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  // success messages handled via notify.success() — local state unused
   // Confirm modal
   type ConfirmPending = { label: string; danger?: boolean; onConfirm: () => void };
   const [confirmPending, setConfirmPending] = useState<ConfirmPending | null>(null);
@@ -864,7 +865,7 @@ export default function AdminSettings() {
                     </div>
                     <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border-l-4 border-red-600">
                       <p className="font-bold text-sm text-red-800 dark:text-red-300">Version</p>
-                      <p className="text-xs mt-1 text-red-700 dark:text-red-400">CEM Farmer System v2.0.0 (Phase-2)</p>
+                      <p className="text-xs mt-1 text-red-700 dark:text-red-400">CEM Farmer System v{APP_VERSION} ({PHASE})</p>
                     </div>
                   </div>
                 </div>

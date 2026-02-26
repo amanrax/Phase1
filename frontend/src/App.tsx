@@ -16,7 +16,6 @@ import { updateService } from "@/services/update.service";
 import Login from "@/pages/Login";
 import AdminDashboard from "@/pages/AdminDashboard";
 import OperatorDashboard from "@/pages/OperatorDashboard";
-import Dashboard from "@/pages/Dashboard";
 import FarmerRegistration from "@/pages/FarmerRegistration";
 import FarmersList from "@/pages/FarmersList";
 import EditFarmer from "@/pages/EditFarmer";

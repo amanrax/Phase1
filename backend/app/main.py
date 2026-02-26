@@ -343,41 +343,32 @@ async def root():
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     request_id = getattr(request.state, "request_id", "unknown")
-    
-    logger.error(f"[{request_id}] ❌ Validation Error on {request.method} {request.url.path}")
-    logger.error(f"[{request_id}]    Errors: {exc.errors()}")
-    
-    try:
-        body = await request.body()
-        logger.error(f"[{request_id}]    Request Body: {body.decode('utf-8')[:500]}")
-    except:
-        pass
-    
+    logger.error(f"[{request_id}] Validation Error {request.method} {request.url.path}: {exc.errors()}")
     return JSONResponse(
         status_code=422,
         content={
-            "detail": "Validation error",
-            "errors": exc.errors(),
-            "request_id": request_id
-        }
+            "error": True,
+            "message": "Validation error. Please check your input.",
+            "code": "VALIDATION_ERROR",
+            "request_id": request_id,
+        },
     )
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    # Log full detail internally — never expose to client
     request_id = getattr(request.state, "request_id", "unknown")
-    
-    logger.error(f"[{request_id}] ❌ Unhandled Exception on {request.method} {request.url.path}")
-    logger.error(f"[{request_id}]    Error Type: {type(exc).__name__}")
-    logger.error(f"[{request_id}]    Error Message: {str(exc)}")
-    logger.error(f"[{request_id}]    Traceback:\n{traceback.format_exc()}")
-    
+    logger.error(
+        f"[{request_id}] Unhandled {type(exc).__name__} on "
+        f"{request.method} {request.url.path}: {exc}\n{traceback.format_exc()}"
+    )
     return JSONResponse(
         status_code=500,
         content={
-            "detail": "Internal server error",
-            "message": str(exc) if settings.DEBUG else "An unexpected error occurred",
+            "error": True,
+            "message": "An unexpected error occurred. Please try again.",
+            "code": "INTERNAL_ERROR",
             "request_id": request_id,
-            "type": type(exc).__name__ if settings.DEBUG else None
-        }
+        },
     )

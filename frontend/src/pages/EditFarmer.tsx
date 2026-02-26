@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { farmerService } from "@/services/farmer.service";
 import geoService from "@/services/geo.service";
+import { handleNRCChange } from "@/utils/nrcFormatter";
 
 const getErrorMessage = (err: unknown): string => {
   if (typeof err === "object" && err !== null) {
@@ -410,7 +411,11 @@ export default function EditFarmer() {
                 </label>
                 <input
                   type="text" required value={formData.nrc}
-                  onChange={(e) => setFormData(prev => ({ ...prev, nrc: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, nrc: handleNRCChange(e.target.value) }))
+                  }
+                  placeholder="123456/78/9"
+                  maxLength={12}
                   style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
                 />
               </div>

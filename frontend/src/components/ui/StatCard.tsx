@@ -9,43 +9,19 @@ interface StatCardProps {
   onClick?: () => void;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ 
-  label, 
-  value, 
-  icon, 
-  borderColor = 'green', 
+export const StatCard: React.FC<StatCardProps> = ({
+  label,
+  value,
+  icon,
+  borderColor: _borderColor = 'green', // kept for API compatibility
   trend,
-  onClick
+  onClick,
 }) => {
-  const colorClasses = {
-    green: {
-      border: 'border-green-600',
-      bg: 'bg-green-50',
-      text: 'text-green-600'
-    },
-    orange: {
-      border: 'border-orange-500',
-      bg: 'bg-orange-50',
-      text: 'text-orange-600'
-    },
-    blue: {
-      border: 'border-blue-600',
-      bg: 'bg-blue-50',
-      text: 'text-blue-600'
-    },
-    purple: {
-      border: 'border-purple-600',
-      bg: 'bg-purple-50',
-      text: 'text-purple-600'
-    }
-  };
-
-  const colors = colorClasses[borderColor];
   const cursorClass = onClick ? 'cursor-pointer' : '';
 
   return (
     <div 
-      className={`bg-gradient-to-br from-purple-600 to-indigo-600 text-white p-7 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${cursorClass}`}
+      className={`bg-gradient-to-br from-purple-600 to-indigo-600 dark:from-purple-800 dark:to-indigo-900 text-white p-7 rounded-xl shadow-lg hover:shadow-xl ring-1 ring-white/10 dark:ring-white/5 transition-all duration-300 hover:-translate-y-1 ${cursorClass}`}
       onClick={onClick}
     >
       <div className="text-center">

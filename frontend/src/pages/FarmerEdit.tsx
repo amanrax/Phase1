@@ -1,3 +1,5 @@
+// DEAD CODE — not routed. Active edit form is EditFarmer.tsx (see App.tsx router).
+// Keep for reference only. Do not delete without team review.
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import farmerService from '../services/farmer.service';
