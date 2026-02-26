@@ -1,5 +1,6 @@
 // src/contexts/NotificationContext.tsx
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import { globalToast } from '@/utils/globalToast';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
@@ -44,8 +45,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const lastShown = recentNotifications.current.get(notificationKey);
     
     if (lastShown && (now - lastShown) < 500) { // ✅ Prevent duplicates within 500ms
-      console.log('[Notification] 🚫 Duplicate prevented:', type, message.substring(0, 50));
-      return ''; // Return empty string to indicate duplicate was prevented
+      return ''; // Duplicate prevented
     }
     
     // Update ref with current timestamp
@@ -68,8 +68,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       duration,
       timestamp: now 
     };
-
-    console.log('[Notification] ✅ Showing:', type, message.substring(0, 50));
 
     setNotifications(prev => {
       // ✅ EXTRA CHECK: Ensure no duplicate IDs in state
@@ -103,20 +101,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, [show]);
 
   const dismiss = useCallback((id: string) => {
-    if (!id) {
-      console.warn('[Notification] ⚠️ Attempted to dismiss notification with empty ID');
-      return;
-    }
-    
-    console.log('[Notification] 🗑️ Dismissing:', id);
+    if (!id) return;
     setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
 
   const dismissAll = useCallback(() => {
-    console.log('[Notification] 🗑️ Dismissing all notifications');
     setNotifications([]);
     recentNotifications.current.clear();
   }, []);
+
+  // Register globalToast bridge so axios interceptors can show toasts
+  useEffect(() => {
+    globalToast.register(error, warning, info);
+  }, [error, warning, info]);
 
   return (
     <NotificationContext.Provider

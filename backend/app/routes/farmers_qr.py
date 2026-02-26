@@ -38,6 +38,42 @@ async def verify_qr(payload: Dict, db=Depends(get_db)):
     }
 
 
+@router.get(
+    "/verify-qr/{farmer_id}",
+    summary="Public QR verification by farmer ID",
+    description=(
+        "Public endpoint — no authentication required. "
+        "Returns a safe public summary of the farmer for QR scanner display."
+    ),
+)
+async def verify_farmer_by_id(farmer_id: str, db=Depends(get_db)):
+    """Return limited public info about a farmer identified by QR code scan."""
+    farmer = await db.farmers.find_one({"farmer_id": farmer_id})
+    if not farmer:
+        raise HTTPException(status_code=404, detail="Farmer not found")
+
+    personal = farmer.get("personal_info", {})
+    address = farmer.get("address", {})
+    operator_id = farmer.get("operator_id")
+
+    operator_name: str | None = None
+    if operator_id:
+        op = await db.operators.find_one({"operator_id": operator_id}, {"full_name": 1})
+        if op:
+            operator_name = op.get("full_name")
+
+    return {
+        "verified": True,
+        "farmer_id": farmer_id,
+        "name": f"{personal.get('first_name', '')} {personal.get('last_name', '')}".strip(),
+        "nrc": personal.get("nrc_number"),
+        "province": address.get("province_name"),
+        "district": address.get("district_name"),
+        "registered_date": farmer.get("created_at"),
+        "operator_name": operator_name,
+    }
+
+
 @router.post(
     "/{farmer_id}/generate-idcard",
     summary="Generate farmer ID card asynchronously",

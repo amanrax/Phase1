@@ -34,6 +34,7 @@ import AdminSettings from "@/pages/AdminSettings";
 import AdminSupplyRequests from "@/pages/AdminSupplyRequests";
 import FarmerSupplyRequests from "@/pages/FarmerSupplyRequests";
 import LogViewer from "@/pages/LogViewer";
+import QRScanner from "@/pages/QRScanner";
 
 function App() {
   const token = useAuthStore((state) => state.token);
@@ -84,6 +85,7 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/qr-scanner" element={<QRScanner />} />
 
           {/* Admin Routes */}
           <Route

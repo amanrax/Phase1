@@ -1,4 +1,5 @@
 import time
+import traceback
 import uuid
 from typing import Callable
 
@@ -53,7 +54,12 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 level="ERROR",
                 module="middleware",
                 action="error",
-                details={"method": request.method, "path": request.url.path, "error": str(exc)},
+                details={
+                    "method": request.method,
+                    "path": request.url.path,
+                    "error": str(exc),
+                    "traceback": traceback.format_exc(),
+                },
                 endpoint=request.url.path,
                 user_id=user_id,
                 role=role,

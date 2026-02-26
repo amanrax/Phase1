@@ -1,16 +1,17 @@
+# backend/app/tasks/log_cleanup_task.py
+# Celery beat task: deletes system_logs older than 7 days — runs daily
 from datetime import datetime, timedelta
 
 from pymongo import MongoClient
 
 from app.config import settings
-
-# Celery app import pattern consistent with existing tasks
-from app.tasks.celery_app import celery
+from app.tasks.celery_app import celery_app
 
 LOG_COLLECTION = "system_logs"
+RETENTION_DAYS = 7
 
 
-@celery.on_after_configure.connect
+@celery_app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     # Run daily at midnight
     sender.add_periodic_task(
@@ -20,31 +21,20 @@ def setup_periodic_tasks(sender, **kwargs):
     )
 
 
-@celery.task
+@celery_app.task
 def cleanup_logs():
+    """Delete all system_logs older than RETENTION_DAYS (7 days). Uses pymongo (sync)."""
     client = MongoClient(settings.MONGODB_URL)
     db = client[settings.MONGODB_DB_NAME]
     coll = db[LOG_COLLECTION]
 
-    now = datetime.utcnow()
-    cutoff_24h = now - timedelta(days=1)
-    cutoff_7d = now - timedelta(days=7)
+    cutoff = datetime.utcnow() - timedelta(days=RETENTION_DAYS)
 
-    # Delete non-error logs older than 24 hours
-    result_info = coll.delete_many({
-        "timestamp": {"$lt": cutoff_24h},
-        "level": {"$nin": ["ERROR", "CRITICAL"]},
-    })
-
-    # Delete ERROR/CRITICAL older than 7 days
-    result_errors = coll.delete_many({
-        "timestamp": {"$lt": cutoff_7d},
-        "level": {"$in": ["ERROR", "CRITICAL"]},
-    })
+    result = coll.delete_many({"timestamp": {"$lt": cutoff}})
 
     # Log the cleanup action itself
     coll.insert_one({
-        "timestamp": now,
+        "timestamp": datetime.utcnow(),
         "level": "INFO",
         "module": "log_cleanup_task",
         "endpoint": None,
@@ -52,8 +42,9 @@ def cleanup_logs():
         "role": "system",
         "action": "cleanup",
         "details": {
-            "deleted_info": result_info.deleted_count,
-            "deleted_errors": result_errors.deleted_count,
+            "deleted_count": result.deleted_count,
+            "cutoff_date": cutoff.isoformat(),
+            "retention_days": RETENTION_DAYS,
         },
         "ip_address": None,
         "request_id": "log-cleanup",
@@ -61,3 +52,5 @@ def cleanup_logs():
     })
 
     client.close()
+    return {"deleted": result.deleted_count}
+

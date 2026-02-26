@@ -1,0 +1,489 @@
+.
+├── ./CONFIGURATION_SUMMARY.txt
+├── ./DEPLOYMENT_GUIDE.txt
+├── ./Importantcommandsandlinks.txt
+├── ./MOBILE_CONNECTION_FIX.txt
+├── ./SEEDED_CREDENTIALS.txt
+├── ./artifacts
+├── ./aws-deployment
+│   ├── ./aws-deployment/[]?') || true
+│   ├── ./aws-deployment/cloudfront-distribution.yml
+│   ├── ./aws-deployment/ecs-task-definition.json
+│   ├── ./aws-deployment/elbv2 describe-rules --listener-arn  --output json
+│   ├── ./aws-deployment/sts get-caller-identity --output json
+│   └── ./aws-deployment/task-def-4gb.json
+├── ./backend
+│   ├── ./backend/Dockerfile
+│   ├── ./backend/FARMER_LOGIN_CREDENTIALS.txt
+│   ├── ./backend/app
+│   │   ├── ./backend/app/config.py
+│   │   ├── ./backend/app/database.py
+│   │   ├── ./backend/app/dependencies
+│   │   │   └── ./backend/app/dependencies/roles.py
+│   │   ├── ./backend/app/main.py
+│   │   ├── ./backend/app/main.py.backup2
+│   │   ├── ./backend/app/main.py.backup_cors
+│   │   ├── ./backend/app/middleware
+│   │   │   └── ./backend/app/middleware/logging_middleware.py
+│   │   ├── ./backend/app/models
+│   │   │   ├── ./backend/app/models/ethnic_group.py
+│   │   │   ├── ./backend/app/models/farmer.py
+│   │   │   └── ./backend/app/models/user.py
+│   │   ├── ./backend/app/routes
+│   │   │   ├── ./backend/app/routes/app_version.py
+│   │   │   ├── ./backend/app/routes/auth.py
+│   │   │   ├── ./backend/app/routes/dashboard.py
+│   │   │   ├── ./backend/app/routes/ethnic_groups.py
+│   │   │   ├── ./backend/app/routes/farmer_idcards.py
+│   │   │   ├── ./backend/app/routes/farmer_photos.py
+│   │   │   ├── ./backend/app/routes/farmer_reports.py 
+│   │   │   ├── ./backend/app/routes/farmers.py
+│   │   │   ├── ./backend/app/routes/farmers_qr.py
+│   │   │   ├── ./backend/app/routes/files.py
+│   │   │   ├── ./backend/app/routes/geo.py
+│   │   │   ├── ./backend/app/routes/geo_custom.py
+│   │   │   ├── ./backend/app/routes/health.py
+│   │   │   ├── ./backend/app/routes/logs.py
+│   │   │   ├── ./backend/app/routes/operators.py
+│   │   │   ├── ./backend/app/routes/reports.py
+│   │   │   ├── ./backend/app/routes/supplies.py
+│   │   │   ├── ./backend/app/routes/sync.py
+│   │   │   ├── ./backend/app/routes/uploads.py
+│   │   │   └── ./backend/app/routes/users.py
+│   │   ├── ./backend/app/services
+│   │   │   ├── ./backend/app/services/ethnic_group_service.py
+│   │   │   ├── ./backend/app/services/farmer_service.py
+│   │   │   ├── ./backend/app/services/gridfs_service.py
+│   │   │   ├── ./backend/app/services/idcard_service.py
+│   │   │   ├── ./backend/app/services/logging_service.py
+│   │   │   ├── ./backend/app/services/photo_service.py
+│   │   │   └── ./backend/app/services/report_service.py
+│   │   ├── ./backend/app/tasks
+│   │   │   ├── ./backend/app/tasks/celery_app.py
+│   │   │   ├── ./backend/app/tasks/id_card_task.py
+│   │   │   ├── ./backend/app/tasks/log_cleanup_task.py
+│   │   │   └── ./backend/app/tasks/sync_tasks.py
+│   │   └── ./backend/app/utils
+│   │       ├── ./backend/app/utils/crypto_utils.py
+│   │       └── ./backend/app/utils/security.py
+│   ├── ./backend/data
+│   │   ├── ./backend/data/chiefdoms.csv
+│   │   ├── ./backend/data/districts.csv
+│   │   └── ./backend/data/provinces.csv
+│   ├── ./backend/requirements-test.txt
+│   ├── ./backend/requirements.txt
+│   ├── ./backend/scripts
+│   │   ├── ./backend/scripts/add_admin.py
+│   │   ├── ./backend/scripts/backup_database.py
+│   │   ├── ./backend/scripts/check_admin.py
+│   │   ├── ./backend/scripts/check_database_state.py
+│   │   ├── ./backend/scripts/check_farmer_data.py
+│   │   ├── ./backend/scripts/clean_and_seed_all.py
+│   │   ├── ./backend/scripts/clean_and_seed_complete.py
+│   │   ├── ./backend/scripts/clean_database.py
+│   │   ├── ./backend/scripts/create_test_users.py
+│   │   ├── ./backend/scripts/fix_admin_password_field.py
+│   │   ├── ./backend/scripts/fix_mongo_roles.py
+│   │   ├── ./backend/scripts/fix_null_documents.py
+│   │   ├── ./backend/scripts/fix_operator_districts.py
+│   │   ├── ./backend/scripts/fix_roles_uppercase.py
+│   │   ├── ./backend/scripts/quick_seed.py
+│   │   ├── ./backend/scripts/seed_admin.py
+│   │   ├── ./backend/scripts/seed_geo_from_csv.py
+│   │   ├── ./backend/scripts/test_auth.py
+│   │   ├── ./backend/scripts/test_login.py
+│   │   └── ./backend/scripts/update_admin_direct.py
+│   ├── ./backend/test_password.py
+│   ├── ./backend/tests
+│   │   ├── ./backend/tests/__init__.py
+│   │   ├── ./backend/tests/conftest.py
+│   │   ├── ./backend/tests/test_admin_operations.py
+│   │   ├── ./backend/tests/test_auth.py
+│   │   ├── ./backend/tests/test_geo_data.py
+│   │   └── ./backend/tests/test_logging.py
+│   └── ./backend/uploads
+├── ./cem-deployment-key.pem
+├── ./cem_structure.txt
+├── ./cropdetials.html
+├── ./docker-compose.prod.yml
+├── ./docker-compose.yml
+├── ./ecs-deploy-policy.json
+├── ./ecs-task-definition.json
+├── ./fly.toml
+├── ./frontend
+│   ├── ./frontend/BUILD_GUIDE.md
+│   ├── ./frontend/Dockerfile
+│   ├── ./frontend/MOBILE_README.md
+│   ├── ./frontend/SIGNING_CONFIG.md
+│   ├── ./frontend/android
+│   │   ├── ./frontend/android/app
+│   │   │   ├── ./frontend/android/app/build.gradle
+│   │   │   ├── ./frontend/android/app/capacitor.build.gradle
+│   │   │   ├── ./frontend/android/app/proguard-rules.pro
+│   │   │   └── ./frontend/android/app/src
+│   │   │       ├── ./frontend/android/app/src/androidTest
+│   │   │       ├── ./frontend/android/app/src/main
+│   │   │       └── ./frontend/android/app/src/test
+│   │   ├── ./frontend/android/build.gradle
+│   │   ├── ./frontend/android/capacitor-cordova-android-plugins
+│   │   │   ├── ./frontend/android/capacitor-cordova-android-plugins/build.gradle
+│   │   │   ├── ./frontend/android/capacitor-cordova-android-plugins/cordova.variables.gradle
+│   │   │   └── ./frontend/android/capacitor-cordova-android-plugins/src
+│   │   │       └── ./frontend/android/capacitor-cordova-android-plugins/src/main
+│   │   ├── ./frontend/android/capacitor.settings.gradle
+│   │   ├── ./frontend/android/gradle
+│   │   │   └── ./frontend/android/gradle/wrapper
+│   │   │       ├── ./frontend/android/gradle/wrapper/gradle-wrapper.jar
+│   │   │       └── ./frontend/android/gradle/wrapper/gradle-wrapper.properties
+│   │   ├── ./frontend/android/gradle.properties
+│   │   ├── ./frontend/android/gradlew
+│   │   ├── ./frontend/android/gradlew.bat
+│   │   ├── ./frontend/android/settings.gradle
+│   │   └── ./frontend/android/variables.gradle
+│   ├── ./frontend/capacitor.config.ts
+│   ├── ./frontend/design-system-reference.html
+│   ├── ./frontend/eslint.config.js
+│   ├── ./frontend/index.html
+│   ├── ./frontend/ios
+│   │   └── ./frontend/ios/App
+│   │       ├── ./frontend/ios/App/App
+│   │       │   ├── ./frontend/ios/App/App/AppDelegate.swift
+│   │       │   ├── ./frontend/ios/App/App/Assets.xcassets
+│   │       │   ├── ./frontend/ios/App/App/Base.lproj
+│   │       │   └── ./frontend/ios/App/App/Info.plist
+│   │       ├── ./frontend/ios/App/App.xcodeproj
+│   │       │   └── ./frontend/ios/App/App.xcodeproj/project.pbxproj
+│   │       ├── ./frontend/ios/App/App.xcworkspace
+│   │       │   └── ./frontend/ios/App/App.xcworkspace/xcshareddata
+│   │       └── ./frontend/ios/App/Podfile
+│   ├── ./frontend/package-lock.json
+│   ├── ./frontend/package.json
+│   ├── ./frontend/postcss.config.cjs
+│   ├── ./frontend/public
+│   │   ├── ./frontend/public/cem-logo.svg
+│   │   ├── ./frontend/public/icons
+│   │   │   ├── ./frontend/public/icons/icon-128x128.png
+│   │   │   ├── ./frontend/public/icons/icon-128x128.png.svg
+│   │   │   ├── ./frontend/public/icons/icon-144x144.png
+│   │   │   ├── ./frontend/public/icons/icon-144x144.png.svg
+│   │   │   ├── ./frontend/public/icons/icon-152x152.png
+│   │   │   ├── ./frontend/public/icons/icon-152x152.png.svg
+│   │   │   ├── ./frontend/public/icons/icon-192x192.png
+│   │   │   ├── ./frontend/public/icons/icon-192x192.png.svg
+│   │   │   ├── ./frontend/public/icons/icon-384x384.png
+│   │   │   ├── ./frontend/public/icons/icon-384x384.png.svg
+│   │   │   ├── ./frontend/public/icons/icon-512x512.png
+│   │   │   ├── ./frontend/public/icons/icon-512x512.png.svg
+│   │   │   ├── ./frontend/public/icons/icon-72x72.png
+│   │   │   ├── ./frontend/public/icons/icon-72x72.png.svg
+│   │   │   ├── ./frontend/public/icons/icon-96x96.png
+│   │   │   └── ./frontend/public/icons/icon-96x96.png.svg
+│   │   ├── ./frontend/public/manifest.json
+│   │   ├── ./frontend/public/service-worker.js
+│   │   ├── ./frontend/public/test-connection.html
+│   │   └── ./frontend/public/vite.svg
+│   ├── ./frontend/scripts
+│   │   ├── ./frontend/scripts/build-android.sh
+│   │   ├── ./frontend/scripts/build-ios.sh
+│   │   ├── ./frontend/scripts/bump-version.js
+│   │   ├── ./frontend/scripts/create-keystore.sh
+│   │   └── ./frontend/scripts/quick-build.sh
+│   ├── ./frontend/src
+│   │   ├── ./frontend/src/App.css
+│   │   ├── ./frontend/src/App.tsx
+│   │   ├── ./frontend/src/assets
+│   │   │   ├── ./frontend/src/assets/cem-logo.png
+│   │   │   ├── ./frontend/src/assets/react.svg
+│   │   │   └── ./frontend/src/assets/rocket-animation.json
+│   │   ├── ./frontend/src/components
+│   │   │   ├── ./frontend/src/components/Button.tsx
+│   │   │   ├── ./frontend/src/components/ErrorBoundary.tsx
+│   │   │   ├── ./frontend/src/components/FarmerIDCardPreview.tsx
+│   │   │   ├── ./frontend/src/components/FormInput.tsx
+│   │   │   ├── ./frontend/src/components/GeoSelectWithOther.tsx
+│   │   │   ├── ./frontend/src/components/Header.tsx
+│   │   │   ├── ./frontend/src/components/Notification.tsx
+│   │   │   ├── ./frontend/src/components/PageHeader.tsx
+│   │   │   ├── ./frontend/src/components/PermissionRequest.tsx
+│   │   │   ├── ./frontend/src/components/PhoneInput.tsx
+│   │   │   ├── ./frontend/src/components/ProtectedRoute.tsx
+│   │   │   ├── ./frontend/src/components/RoleRoute.tsx
+│   │   │   ├── ./frontend/src/components/SessionTimeout.tsx
+│   │   │   ├── ./frontend/src/components/SessionTimeoutModal.tsx
+│   │   │   ├── ./frontend/src/components/ToastContainer.tsx
+│   │   │   └── ./frontend/src/components/ui
+│   │   │       ├── ./frontend/src/components/ui/Badge.tsx
+│   │   │       ├── ./frontend/src/components/ui/Button.tsx
+│   │   │       ├── ./frontend/src/components/ui/Card.tsx
+│   │   │       ├── ./frontend/src/components/ui/DashboardLayout.tsx
+│   │   │       ├── ./frontend/src/components/ui/FormInput.tsx
+│   │   │       ├── ./frontend/src/components/ui/FormSelect.tsx
+│   │   │       ├── ./frontend/src/components/ui/Sidebar.tsx
+│   │   │       ├── ./frontend/src/components/ui/StatCard.tsx
+│   │   │       ├── ./frontend/src/components/ui/Table.tsx
+│   │   │       ├── ./frontend/src/components/ui/TopBar.tsx
+│   │   │       ├── ./frontend/src/components/ui/WizardSteps.tsx
+│   │   │       └── ./frontend/src/components/ui/index.ts
+│   │   ├── ./frontend/src/config
+│   │   │   ├── ./frontend/src/config/mobile.ts
+│   │   │   └── ./frontend/src/config/navigation.ts
+│   │   ├── ./frontend/src/contexts
+│   │   │   ├── ./frontend/src/contexts/NotificationContext.tsx
+│   │   │   └── ./frontend/src/contexts/ThemeContext.tsx
+│   │   ├── ./frontend/src/hooks
+│   │   │   └── ./frontend/src/hooks/useBackButton.ts
+│   │   ├── ./frontend/src/index.css
+│   │   ├── ./frontend/src/main.tsx
+│   │   ├── ./frontend/src/pages
+│   │   │   ├── ./frontend/src/pages/AdminDashboard.tsx
+│   │   │   ├── ./frontend/src/pages/AdminReports.tsx
+│   │   │   ├── ./frontend/src/pages/AdminSettings.tsx
+│   │   │   ├── ./frontend/src/pages/AdminSupplyRequests.tsx
+│   │   │   ├── ./frontend/src/pages/AnalyticsDashboard.tsx
+│   │   │   ├── ./frontend/src/pages/CreateOperator.tsx
+│   │   │   ├── ./frontend/src/pages/Dashboard.tsx
+│   │   │   ├── ./frontend/src/pages/DocumentViewer.tsx
+│   │   │   ├── ./frontend/src/pages/EditFarmer.tsx
+│   │   │   ├── ./frontend/src/pages/ExampleDashboard.tsx
+│   │   │   ├── ./frontend/src/pages/FarmerDashboard.tsx
+│   │   │   ├── ./frontend/src/pages/FarmerDetails.tsx
+│   │   │   ├── ./frontend/src/pages/FarmerEdit.tsx
+│   │   │   ├── ./frontend/src/pages/FarmerIDCard.tsx
+│   │   │   ├── ./frontend/src/pages/FarmerRegistration
+│   │   │   │   ├── ./frontend/src/pages/FarmerRegistration/Step1Personal.tsx
+│   │   │   │   ├── ./frontend/src/pages/FarmerRegistration/Step2Address.tsx
+│   │   │   │   ├── ./frontend/src/pages/FarmerRegistration/Step3Farm.tsx
+│   │   │   │   ├── ./frontend/src/pages/FarmerRegistration/Step4Preview.tsx
+│   │   │   │   ├── ./frontend/src/pages/FarmerRegistration/Step5PhotoUpload.tsx
+│   │   │   │   ├── ./frontend/src/pages/FarmerRegistration/Step6DocumentUpload.tsx
+│   │   │   │   ├── ./frontend/src/pages/FarmerRegistration/Step7Completion.tsx
+│   │   │   │   └── ./frontend/src/pages/FarmerRegistration/index.tsx
+│   │   │   ├── ./frontend/src/pages/FarmerSupplyRequests.tsx
+│   │   │   ├── ./frontend/src/pages/FarmersList.tsx
+│   │   │   ├── ./frontend/src/pages/IDCardViewer.tsx
+│   │   │   ├── ./frontend/src/pages/LogViewer.tsx
+│   │   │   ├── ./frontend/src/pages/Login.tsx
+│   │   │   ├── ./frontend/src/pages/OperatorDashboard.tsx
+│   │   │   ├── ./frontend/src/pages/OperatorDetails.tsx
+│   │   │   ├── ./frontend/src/pages/OperatorEdit.tsx
+│   │   │   ├── ./frontend/src/pages/OperatorManagement.tsx
+│   │   │   └── ./frontend/src/pages/OperatorsList.tsx
+│   │   ├── ./frontend/src/registerSW.ts
+│   │   ├── ./frontend/src/services
+│   │   │   ├── ./frontend/src/services/auth.service.ts
+│   │   │   ├── ./frontend/src/services/dashboard.service.ts
+│   │   │   ├── ./frontend/src/services/ethnicGroup.service.ts
+│   │   │   ├── ./frontend/src/services/farmer.service.ts
+│   │   │   ├── ./frontend/src/services/geo.service.ts
+│   │   │   ├── ./frontend/src/services/logs.service.ts
+│   │   │   ├── ./frontend/src/services/operator.service.ts
+│   │   │   ├── ./frontend/src/services/update.service.ts
+│   │   │   └── ./frontend/src/services/user.service.ts
+│   │   ├── ./frontend/src/store
+│   │   │   └── ./frontend/src/store/authStore.ts
+│   │   ├── ./frontend/src/styles
+│   │   │   └── ./frontend/src/styles/shared.css
+│   │   ├── ./frontend/src/types
+│   │   │   └── ./frontend/src/types/types.ts
+│   │   ├── ./frontend/src/utils
+│   │   │   ├── ./frontend/src/utils/axios.ts
+│   │   │   ├── ./frontend/src/utils/debug.ts
+│   │   │   ├── ./frontend/src/utils/logger.ts
+│   │   │   ├── ./frontend/src/utils/networkProbe.ts
+│   │   │   ├── ./frontend/src/utils/nrcFormatter.ts
+│   │   │   └── ./frontend/src/utils/version.ts
+│   │   └── ./frontend/src/vite-env.d.ts
+│   ├── ./frontend/tailwind.config.js
+│   ├── ./frontend/tsconfig.app.json
+│   ├── ./frontend/tsconfig.json
+│   ├── ./frontend/tsconfig.node.json
+│   ├── ./frontend/tsconfig.tsbuildinfo
+│   ├── ./frontend/vite.config.d.ts
+│   ├── ./frontend/vite.config.js
+│   └── ./frontend/vite.config.ts
+├── ./infra
+│   └── ./infra/terraform
+│       ├── ./infra/terraform/main.tf
+│       ├── ./infra/terraform/outputs.tf
+│       └── ./infra/terraform/variables.tf
+├── ./login.json
+├── ./mongo_backup_prod
+│   ├── ./mongo_backup_prod/prelude.json
+│   └── ./mongo_backup_prod/zambian_farmer_db
+│       ├── ./mongo_backup_prod/zambian_farmer_db/cem_files.chunks.bson
+│       ├── ./mongo_backup_prod/zambian_farmer_db/cem_files.chunks.metadata.json
+│       ├── ./mongo_backup_prod/zambian_farmer_db/cem_files.files.bson
+│       ├── ./mongo_backup_prod/zambian_farmer_db/cem_files.files.metadata.json
+│       ├── ./mongo_backup_prod/zambian_farmer_db/chiefdoms.bson
+│       ├── ./mongo_backup_prod/zambian_farmer_db/chiefdoms.metadata.json
+│       ├── ./mongo_backup_prod/zambian_farmer_db/districts.bson
+│       ├── ./mongo_backup_prod/zambian_farmer_db/districts.metadata.json
+│       ├── ./mongo_backup_prod/zambian_farmer_db/ethnic_groups.bson
+│       ├── ./mongo_backup_prod/zambian_farmer_db/ethnic_groups.metadata.json
+│       ├── ./mongo_backup_prod/zambian_farmer_db/farmers.bson
+│       ├── ./mongo_backup_prod/zambian_farmer_db/farmers.metadata.json
+│       ├── ./mongo_backup_prod/zambian_farmer_db/operators.bson
+│       ├── ./mongo_backup_prod/zambian_farmer_db/operators.metadata.json
+│       ├── ./mongo_backup_prod/zambian_farmer_db/provinces.bson
+│       ├── ./mongo_backup_prod/zambian_farmer_db/provinces.metadata.json
+│       ├── ./mongo_backup_prod/zambian_farmer_db/supply_requests.bson
+│       ├── ./mongo_backup_prod/zambian_farmer_db/supply_requests.metadata.json
+│       ├── ./mongo_backup_prod/zambian_farmer_db/system_logs.bson
+│       ├── ./mongo_backup_prod/zambian_farmer_db/system_logs.metadata.json
+│       ├── ./mongo_backup_prod/zambian_farmer_db/users.bson
+│       └── ./mongo_backup_prod/zambian_farmer_db/users.metadata.json
+├── ./mongo_clean.json
+├── ./mongo_output.json
+├── ./mongo_output.log
+├── ./package-lock.json
+├── ./package.json
+├── ./project_structure.txt
+├── ./project_structure_dirs_only.txt
+├── ./project_structure_full_paths.txt
+├── ./project_structure_with_sizes.txt
+├── ./qr_check.json
+├── ./qr_test.json
+├── ./qr_verify.json
+├── ./scripts
+│   ├── ./scripts/AWS_PROFILE=default [aws_cleanup.sh](htt
+│   └── ./scripts/run_crud_test.py
+├── ./session-manager-plugin.deb
+├── ./sync_payload.json
+├── ./test_farmer.json
+├── ./test_uploads
+│   └── ./test_uploads/photo.jpg
+└── ./uploads
+    ├── ./uploads/ZM11674FFE
+    │   └── ./uploads/ZM11674FFE/photos
+    │       └── ./uploads/ZM11674FFE/photos/photo.jpg
+    ├── ./uploads/ZM2EC5197E
+    │   └── ./uploads/ZM2EC5197E/photos
+    │       └── ./uploads/ZM2EC5197E/photos/photo.jpg
+    ├── ./uploads/ZM2F48ABB4
+    │   └── ./uploads/ZM2F48ABB4/photos
+    │       └── ./uploads/ZM2F48ABB4/photos/photo.jpg
+    ├── ./uploads/ZM38228A63
+    │   └── ./uploads/ZM38228A63/photos
+    │       └── ./uploads/ZM38228A63/photos/photo.jpg
+    ├── ./uploads/ZM499C54E2
+    │   └── ./uploads/ZM499C54E2/photos
+    │       └── ./uploads/ZM499C54E2/photos/photo.jpg
+    ├── ./uploads/ZM49AB9C7D
+    │   └── ./uploads/ZM49AB9C7D/photos
+    │       └── ./uploads/ZM49AB9C7D/photos/photo.jpg
+    ├── ./uploads/ZM4F35996B
+    │   └── ./uploads/ZM4F35996B/photos
+    │       └── ./uploads/ZM4F35996B/photos/photo.jpg
+    ├── ./uploads/ZM5E5BEB24
+    │   └── ./uploads/ZM5E5BEB24/photos
+    │       ├── ./uploads/ZM5E5BEB24/photos/ZM5E5BEB24_photo.JPG
+    │       └── ./uploads/ZM5E5BEB24/photos/ZM5E5BEB24_photo.png
+    ├── ./uploads/ZM669E6ED7
+    │   └── ./uploads/ZM669E6ED7/photos
+    │       └── ./uploads/ZM669E6ED7/photos/photo.jpg
+    ├── ./uploads/ZM70C67477
+    │   └── ./uploads/ZM70C67477/photos
+    │       └── ./uploads/ZM70C67477/photos/photo.png
+    ├── ./uploads/ZM7EC0E8BC
+    │   └── ./uploads/ZM7EC0E8BC/photos
+    │       └── ./uploads/ZM7EC0E8BC/photos/photo.jpg
+    ├── ./uploads/ZM9D6E4DA2
+    │   └── ./uploads/ZM9D6E4DA2/photos
+    │       └── ./uploads/ZM9D6E4DA2/photos/photo.jpg
+    ├── ./uploads/ZMB740531F
+    │   ├── ./uploads/ZMB740531F/idcards
+    │   │   └── ./uploads/ZMB740531F/idcards/ZMB740531F_card.pdf
+    │   ├── ./uploads/ZMB740531F/photos
+    │   │   └── ./uploads/ZMB740531F/photos/photo.jpg
+    │   └── ./uploads/ZMB740531F/qr
+    │       └── ./uploads/ZMB740531F/qr/ZMB740531F_qr.png
+    ├── ./uploads/ZMBA8334DF
+    │   └── ./uploads/ZMBA8334DF/photos
+    │       └── ./uploads/ZMBA8334DF/photos/photo.jpg
+    ├── ./uploads/ZME5F36B64
+    │   └── ./uploads/ZME5F36B64/photos
+    │       └── ./uploads/ZME5F36B64/photos/photo.png
+    ├── ./uploads/ZMF0A6216E
+    │   ├── ./uploads/ZMF0A6216E/idcards
+    │   │   └── ./uploads/ZMF0A6216E/idcards/ZMF0A6216E_card.pdf
+    │   └── ./uploads/ZMF0A6216E/qr
+    │       └── ./uploads/ZMF0A6216E/qr/ZMF0A6216E_qr.png
+    ├── ./uploads/ZMF274261F
+    │   └── ./uploads/ZMF274261F/photos
+    │       └── ./uploads/ZMF274261F/photos/photo.jpg
+    ├── ./uploads/documents
+    │   └── ./uploads/documents/ZM8AC3063F
+    │       ├── ./uploads/documents/ZM8AC3063F/ZM8AC3063F_land_title.pdf
+    │       ├── ./uploads/documents/ZM8AC3063F/ZM8AC3063F_license.pdf
+    │       └── ./uploads/documents/ZM8AC3063F/ZM8AC3063F_nrc.pdf
+    ├── ./uploads/farmers
+    │   └── ./uploads/farmers/documents
+    │       ├── ./uploads/farmers/documents/ZM11674FFE_nrc_1763714739.jpg
+    │       ├── ./uploads/farmers/documents/ZM2EC5197E_nrc_1763540293.pdf
+    │       ├── ./uploads/farmers/documents/ZM2F48ABB4_land_title_1763536788.jpg
+    │       ├── ./uploads/farmers/documents/ZM2F48ABB4_nrc_1763536772.jpg
+    │       ├── ./uploads/farmers/documents/ZM2F48ABB4_nrc_1763536898.jpg
+    │       ├── ./uploads/farmers/documents/ZM38228A63_land_title_1763973635.jpg
+    │       ├── ./uploads/farmers/documents/ZM38228A63_land_title_1763982476.pdf
+    │       ├── ./uploads/farmers/documents/ZM38228A63_nrc_1763973627.jpg
+    │       ├── ./uploads/farmers/documents/ZM38228A63_nrc_1763981943.jpg
+    │       ├── ./uploads/farmers/documents/ZM38228A63_nrc_1763982189.pdf
+    │       ├── ./uploads/farmers/documents/ZM38228A63_nrc_1763982378.pdf
+    │       ├── ./uploads/farmers/documents/ZM38228A63_nrc_1763982465.pdf
+    │       ├── ./uploads/farmers/documents/ZM38228A63_nrc_1763983262.pdf
+    │       ├── ./uploads/farmers/documents/ZM49AB9C7D_land_title_1764158998.pdf
+    │       ├── ./uploads/farmers/documents/ZM49AB9C7D_nrc_1764158987.pdf
+    │       ├── ./uploads/farmers/documents/ZM4F35996B_certificate_1763535754.png
+    │       ├── ./uploads/farmers/documents/ZM4F35996B_land_title_1763535680.pdf
+    │       ├── ./uploads/farmers/documents/ZM4F35996B_license_1763535715.jpg
+    │       ├── ./uploads/farmers/documents/ZM4F35996B_nrc_1763535670.pdf
+    │       ├── ./uploads/farmers/documents/ZM4F35996B_nrc_1763535683.pdf
+    │       ├── ./uploads/farmers/documents/ZM669E6ED7_nrc_1763537065.pdf
+    │       ├── ./uploads/farmers/documents/ZM7CDA7186_nrc_1766725652.pdf
+    │       ├── ./uploads/farmers/documents/ZM7EC0E8BC_land_title_1764154829.pdf
+    │       ├── ./uploads/farmers/documents/ZM7EC0E8BC_nrc_1764154816.pdf
+    │       ├── ./uploads/farmers/documents/ZM9D6E4DA2_land_title_1763536426.jpg
+    │       ├── ./uploads/farmers/documents/ZM9D6E4DA2_license_1763536437.pdf
+    │       ├── ./uploads/farmers/documents/ZM9D6E4DA2_nrc_1763536396.pdf
+    │       ├── ./uploads/farmers/documents/ZMB740531F_nrc_1764154930.pdf
+    │       ├── ./uploads/farmers/documents/ZMBA8334DF_land_title_1764154510.pdf
+    │       ├── ./uploads/farmers/documents/ZMBA8334DF_nrc_1764154492.pdf
+    │       ├── ./uploads/farmers/documents/ZMBA8334DF_nrc_1764154501.pdf
+    │       ├── ./uploads/farmers/documents/ZMDDECBC28_nrc_1766726425.pdf
+    │       ├── ./uploads/farmers/documents/ZME5F36B64_nrc_1765003017.png
+    │       ├── ./uploads/farmers/documents/ZMF0A6216E_nrc_1764155767.pdf
+    │       ├── ./uploads/farmers/documents/ZMF274261F_nrc_1763728398.jpg
+    │       └── ./uploads/farmers/documents/ZMFAC6E98B_nrc_1766725245.pdf
+    ├── ./uploads/idcards
+    │   ├── ./uploads/idcards/ZM1BFFA0F9_card.pdf
+    │   ├── ./uploads/idcards/ZM5CC08BB8_card.pdf
+    │   ├── ./uploads/idcards/ZM6AAC0450_card.pdf
+    │   ├── ./uploads/idcards/ZM880CB4DC_card.pdf
+    │   ├── ./uploads/idcards/ZM8AC3063F_card.pdf
+    │   ├── ./uploads/idcards/ZMB740531F_card.pdf
+    │   ├── ./uploads/idcards/ZME5F36B64_card.pdf
+    │   ├── ./uploads/idcards/ZMF0A6216E_card.pdf
+    │   └── ./uploads/idcards/ZMFA1E5ECF_card.pdf
+    ├── ./uploads/photos
+    │   ├── ./uploads/photos/ZM1BFFA0F9
+    │   │   └── ./uploads/photos/ZM1BFFA0F9/ZM1BFFA0F9_photo.jpg
+    │   ├── ./uploads/photos/ZM3880A741
+    │   │   └── ./uploads/photos/ZM3880A741/ZM3880A741_photo.jpg
+    │   ├── ./uploads/photos/ZM5CA6FCB0
+    │   │   └── ./uploads/photos/ZM5CA6FCB0/ZM5CA6FCB0_photo.jpg
+    │   ├── ./uploads/photos/ZM5CC08BB8
+    │   │   └── ./uploads/photos/ZM5CC08BB8/ZM5CC08BB8_photo.jpg
+    │   └── ./uploads/photos/ZM6AAC0450
+    │       └── ./uploads/photos/ZM6AAC0450/ZM6AAC0450_photo.jpg
+    └── ./uploads/qr
+        ├── ./uploads/qr/ZM1BFFA0F9_qr.png
+        ├── ./uploads/qr/ZM5CC08BB8_qr.png
+        ├── ./uploads/qr/ZM6AAC0450_qr.png
+        ├── ./uploads/qr/ZM880CB4DC_qr.png
+        ├── ./uploads/qr/ZM8AC3063F_qr.png
+        ├── ./uploads/qr/ZMB740531F_qr.png
+        ├── ./uploads/qr/ZME5F36B64_qr.png
+        ├── ./uploads/qr/ZMF0A6216E_qr.png
+        └── ./uploads/qr/ZMFA1E5ECF_qr.png
+
+108 directories, 378 files

@@ -1,0 +1,111 @@
+.
+├── artifacts
+├── aws-deployment
+├── backend
+│   ├── app
+│   │   ├── dependencies
+│   │   ├── middleware
+│   │   ├── models
+│   │   ├── routes
+│   │   ├── services
+│   │   ├── tasks
+│   │   └── utils
+│   ├── data
+│   ├── scripts
+│   ├── tests
+│   └── uploads
+├── frontend
+│   ├── android
+│   │   ├── app
+│   │   │   └── src
+│   │   │       ├── androidTest
+│   │   │       ├── main
+│   │   │       └── test
+│   │   ├── capacitor-cordova-android-plugins
+│   │   │   └── src
+│   │   │       └── main
+│   │   └── gradle
+│   │       └── wrapper
+│   ├── ios
+│   │   └── App
+│   │       ├── App
+│   │       │   ├── Assets.xcassets
+│   │       │   └── Base.lproj
+│   │       ├── App.xcodeproj
+│   │       └── App.xcworkspace
+│   │           └── xcshareddata
+│   ├── public
+│   │   └── icons
+│   ├── scripts
+│   └── src
+│       ├── assets
+│       ├── components
+│       │   └── ui
+│       ├── config
+│       ├── contexts
+│       ├── hooks
+│       ├── pages
+│       │   └── FarmerRegistration
+│       ├── services
+│       ├── store
+│       ├── styles
+│       ├── types
+│       └── utils
+├── infra
+│   └── terraform
+├── mongo_backup_prod
+│   └── zambian_farmer_db
+├── scripts
+├── test_uploads
+└── uploads
+    ├── ZM11674FFE
+    │   └── photos
+    ├── ZM2EC5197E
+    │   └── photos
+    ├── ZM2F48ABB4
+    │   └── photos
+    ├── ZM38228A63
+    │   └── photos
+    ├── ZM499C54E2
+    │   └── photos
+    ├── ZM49AB9C7D
+    │   └── photos
+    ├── ZM4F35996B
+    │   └── photos
+    ├── ZM5E5BEB24
+    │   └── photos
+    ├── ZM669E6ED7
+    │   └── photos
+    ├── ZM70C67477
+    │   └── photos
+    ├── ZM7EC0E8BC
+    │   └── photos
+    ├── ZM9D6E4DA2
+    │   └── photos
+    ├── ZMB740531F
+    │   ├── idcards
+    │   ├── photos
+    │   └── qr
+    ├── ZMBA8334DF
+    │   └── photos
+    ├── ZME5F36B64
+    │   └── photos
+    ├── ZMF0A6216E
+    │   ├── idcards
+    │   └── qr
+    ├── ZMF274261F
+    │   └── photos
+    ├── documents
+    │   └── ZM8AC3063F
+    ├── farmers
+    │   └── documents
+    ├── idcards
+    ├── photos
+    │   ├── ZM1BFFA0F9
+    │   ├── ZM3880A741
+    │   ├── ZM5CA6FCB0
+    │   ├── ZM5CC08BB8
+    │   └── ZM6AAC0450
+    └── qr
+
+108 directories

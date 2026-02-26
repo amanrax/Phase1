@@ -1,0 +1,487 @@
+.
+├── [8.7K]  CONFIGURATION_SUMMARY.txt
+├── [ 14K]  DEPLOYMENT_GUIDE.txt
+├── [2.0K]  Importantcommandsandlinks.txt
+├── [6.7K]  MOBILE_CONNECTION_FIX.txt
+├── [7.1K]  SEEDED_CREDENTIALS.txt
+├── [4.0K]  artifacts
+├── [4.0K]  aws-deployment
+│   ├── [1.1K]  []?') || true
+│   ├── [1.6K]  cloudfront-distribution.yml
+│   ├── [4.0K]  ecs-task-definition.json
+│   ├── [ 13K]  elbv2 describe-rules --listener-arn  --output json
+│   ├── [2.2K]  sts get-caller-identity --output json
+│   └── [4.2K]  task-def-4gb.json
+├── [4.0K]  backend
+│   ├── [1.1K]  Dockerfile
+│   ├── [5.9K]  FARMER_LOGIN_CREDENTIALS.txt
+│   ├── [4.0K]  app
+│   │   ├── [ 10K]  config.py
+│   │   ├── [4.7K]  database.py
+│   │   ├── [4.0K]  dependencies
+│   │   │   └── [ 11K]  roles.py
+│   │   ├── [ 14K]  main.py
+│   │   ├── [1003]  main.py.backup2
+│   │   ├── [2.1K]  main.py.backup_cors
+│   │   ├── [4.0K]  middleware
+│   │   │   └── [2.7K]  logging_middleware.py
+│   │   ├── [4.0K]  models
+│   │   │   ├── [2.5K]  ethnic_group.py
+│   │   │   ├── [ 14K]  farmer.py
+│   │   │   └── [ 11K]  user.py
+│   │   ├── [4.0K]  routes
+│   │   │   ├── [1.0K]  app_version.py
+│   │   │   ├── [ 18K]  auth.py
+│   │   │   ├── [ 10K]  dashboard.py
+│   │   │   ├── [4.1K]  ethnic_groups.py
+│   │   │   ├── [3.0K]  farmer_idcards.py
+│   │   │   ├── [1.7K]  farmer_photos.py
+│   │   │   ├── [   0]  farmer_reports.py 
+│   │   │   ├── [ 36K]  farmers.py
+│   │   │   ├── [4.4K]  farmers_qr.py
+│   │   │   ├── [3.7K]  files.py
+│   │   │   ├── [ 17K]  geo.py
+│   │   │   ├── [7.0K]  geo_custom.py
+│   │   │   ├── [2.2K]  health.py
+│   │   │   ├── [2.2K]  logs.py
+│   │   │   ├── [ 16K]  operators.py
+│   │   │   ├── [8.2K]  reports.py
+│   │   │   ├── [9.5K]  supplies.py
+│   │   │   ├── [1.6K]  sync.py
+│   │   │   ├── [5.5K]  uploads.py
+│   │   │   └── [ 13K]  users.py
+│   │   ├── [4.0K]  services
+│   │   │   ├── [4.5K]  ethnic_group_service.py
+│   │   │   ├── [ 23K]  farmer_service.py
+│   │   │   ├── [9.1K]  gridfs_service.py
+│   │   │   ├── [7.0K]  idcard_service.py
+│   │   │   ├── [2.6K]  logging_service.py
+│   │   │   ├── [2.4K]  photo_service.py
+│   │   │   └── [4.5K]  report_service.py
+│   │   ├── [4.0K]  tasks
+│   │   │   ├── [ 846]  celery_app.py
+│   │   │   ├── [ 15K]  id_card_task.py
+│   │   │   ├── [1.6K]  log_cleanup_task.py
+│   │   │   └── [3.1K]  sync_tasks.py
+│   │   └── [4.0K]  utils
+│   │       ├── [8.8K]  crypto_utils.py
+│   │       └── [8.4K]  security.py
+│   ├── [4.0K]  data
+│   │   ├── [ 14K]  chiefdoms.csv
+│   │   ├── [5.1K]  districts.csv
+│   │   └── [ 369]  provinces.csv
+│   ├── [ 106]  requirements-test.txt
+│   ├── [ 667]  requirements.txt
+│   ├── [4.0K]  scripts
+│   │   ├── [2.7K]  add_admin.py
+│   │   ├── [2.6K]  backup_database.py
+│   │   ├── [2.3K]  check_admin.py
+│   │   ├── [2.5K]  check_database_state.py
+│   │   ├── [1.0K]  check_farmer_data.py
+│   │   ├── [ 15K]  clean_and_seed_all.py
+│   │   ├── [ 17K]  clean_and_seed_complete.py
+│   │   ├── [5.2K]  clean_database.py
+│   │   ├── [1.7K]  create_test_users.py
+│   │   ├── [1004]  fix_admin_password_field.py
+│   │   ├── [3.5K]  fix_mongo_roles.py
+│   │   ├── [ 698]  fix_null_documents.py
+│   │   ├── [2.0K]  fix_operator_districts.py
+│   │   ├── [3.6K]  fix_roles_uppercase.py
+│   │   ├── [5.2K]  quick_seed.py
+│   │   ├── [1.0K]  seed_admin.py
+│   │   ├── [2.5K]  seed_geo_from_csv.py
+│   │   ├── [1.8K]  test_auth.py
+│   │   ├── [1.6K]  test_login.py
+│   │   └── [2.4K]  update_admin_direct.py
+│   ├── [ 444]  test_password.py
+│   ├── [4.0K]  tests
+│   │   ├── [  24]  __init__.py
+│   │   ├── [5.3K]  conftest.py
+│   │   ├── [6.1K]  test_admin_operations.py
+│   │   ├── [5.0K]  test_auth.py
+│   │   ├── [4.6K]  test_geo_data.py
+│   │   └── [6.3K]  test_logging.py
+│   └── [4.0K]  uploads
+├── [1.6K]  cem-deployment-key.pem
+├── [ 18K]  cem_structure.txt
+├── [ 41K]  cropdetials.html
+├── [1.4K]  docker-compose.prod.yml
+├── [2.0K]  docker-compose.yml
+├── [ 469]  ecs-deploy-policy.json
+├── [3.1K]  ecs-task-definition.json
+├── [ 369]  fly.toml
+├── [4.0K]  frontend
+│   ├── [6.2K]  BUILD_GUIDE.md
+│   ├── [ 185]  Dockerfile
+│   ├── [7.7K]  MOBILE_README.md
+│   ├── [3.2K]  SIGNING_CONFIG.md
+│   ├── [4.0K]  android
+│   │   ├── [4.0K]  app
+│   │   │   ├── [2.6K]  build.gradle
+│   │   │   ├── [ 610]  capacitor.build.gradle
+│   │   │   ├── [ 751]  proguard-rules.pro
+│   │   │   └── [4.0K]  src
+│   │   │       ├── [4.0K]  androidTest
+│   │   │       ├── [4.0K]  main
+│   │   │       └── [4.0K]  test
+│   │   ├── [ 722]  build.gradle
+│   │   ├── [4.0K]  capacitor-cordova-android-plugins
+│   │   │   ├── [1.6K]  build.gradle
+│   │   │   ├── [ 312]  cordova.variables.gradle
+│   │   │   └── [4.0K]  src
+│   │   │       └── [4.0K]  main
+│   │   ├── [ 835]  capacitor.settings.gradle
+│   │   ├── [4.0K]  gradle
+│   │   │   └── [4.0K]  wrapper
+│   │   │       ├── [ 62K]  gradle-wrapper.jar
+│   │   │       └── [ 251]  gradle-wrapper.properties
+│   │   ├── [1.1K]  gradle.properties
+│   │   ├── [8.3K]  gradlew
+│   │   ├── [2.8K]  gradlew.bat
+│   │   ├── [ 208]  settings.gradle
+│   │   └── [ 496]  variables.gradle
+│   ├── [ 971]  capacitor.config.ts
+│   ├── [ 18K]  design-system-reference.html
+│   ├── [ 621]  eslint.config.js
+│   ├── [1.6K]  index.html
+│   ├── [4.0K]  ios
+│   │   └── [4.0K]  App
+│   │       ├── [4.0K]  App
+│   │       │   ├── [3.0K]  AppDelegate.swift
+│   │       │   ├── [4.0K]  Assets.xcassets
+│   │       │   ├── [4.0K]  Base.lproj
+│   │       │   └── [1.6K]  Info.plist
+│   │       ├── [4.0K]  App.xcodeproj
+│   │       │   └── [ 16K]  project.pbxproj
+│   │       ├── [4.0K]  App.xcworkspace
+│   │       │   └── [4.0K]  xcshareddata
+│   │       └── [ 988]  Podfile
+│   ├── [216K]  package-lock.json
+│   ├── [2.5K]  package.json
+│   ├── [  83]  postcss.config.cjs
+│   ├── [4.0K]  public
+│   │   ├── [1.2K]  cem-logo.svg
+│   │   ├── [4.0K]  icons
+│   │   │   ├── [  70]  icon-128x128.png
+│   │   │   ├── [ 803]  icon-128x128.png.svg
+│   │   │   ├── [  70]  icon-144x144.png
+│   │   │   ├── [ 804]  icon-144x144.png.svg
+│   │   │   ├── [  70]  icon-152x152.png
+│   │   │   ├── [ 804]  icon-152x152.png.svg
+│   │   │   ├── [  70]  icon-192x192.png
+│   │   │   ├── [ 804]  icon-192x192.png.svg
+│   │   │   ├── [  70]  icon-384x384.png
+│   │   │   ├── [ 807]  icon-384x384.png.svg
+│   │   │   ├── [  70]  icon-512x512.png
+│   │   │   ├── [ 810]  icon-512x512.png.svg
+│   │   │   ├── [  70]  icon-72x72.png
+│   │   │   ├── [ 787]  icon-72x72.png.svg
+│   │   │   ├── [  70]  icon-96x96.png
+│   │   │   └── [ 792]  icon-96x96.png.svg
+│   │   ├── [1.8K]  manifest.json
+│   │   ├── [2.9K]  service-worker.js
+│   │   ├── [8.6K]  test-connection.html
+│   │   └── [1.5K]  vite.svg
+│   ├── [4.0K]  scripts
+│   │   ├── [2.5K]  build-android.sh
+│   │   ├── [2.0K]  build-ios.sh
+│   │   ├── [4.3K]  bump-version.js
+│   │   ├── [2.1K]  create-keystore.sh
+│   │   └── [5.5K]  quick-build.sh
+│   ├── [4.0K]  src
+│   │   ├── [ 606]  App.css
+│   │   ├── [9.4K]  App.tsx
+│   │   ├── [4.0K]  assets
+│   │   │   ├── [ 37K]  cem-logo.png
+│   │   │   ├── [4.0K]  react.svg
+│   │   │   └── [4.8K]  rocket-animation.json
+│   │   ├── [4.0K]  components
+│   │   │   ├── [ 738]  Button.tsx
+│   │   │   ├── [2.5K]  ErrorBoundary.tsx
+│   │   │   ├── [ 19K]  FarmerIDCardPreview.tsx
+│   │   │   ├── [ 995]  FormInput.tsx
+│   │   │   ├── [ 12K]  GeoSelectWithOther.tsx
+│   │   │   ├── [1.2K]  Header.tsx
+│   │   │   ├── [5.0K]  Notification.tsx
+│   │   │   ├── [ 749]  PageHeader.tsx
+│   │   │   ├── [3.0K]  PermissionRequest.tsx
+│   │   │   ├── [4.9K]  PhoneInput.tsx
+│   │   │   ├── [ 605]  ProtectedRoute.tsx
+│   │   │   ├── [ 835]  RoleRoute.tsx
+│   │   │   ├── [2.4K]  SessionTimeout.tsx
+│   │   │   ├── [3.9K]  SessionTimeoutModal.tsx
+│   │   │   ├── [2.1K]  ToastContainer.tsx
+│   │   │   └── [4.0K]  ui
+│   │   │       ├── [ 853]  Badge.tsx
+│   │   │       ├── [1.3K]  Button.tsx
+│   │   │       ├── [ 681]  Card.tsx
+│   │   │       ├── [2.1K]  DashboardLayout.tsx
+│   │   │       ├── [1.2K]  FormInput.tsx
+│   │   │       ├── [1.4K]  FormSelect.tsx
+│   │   │       ├── [4.0K]  Sidebar.tsx
+│   │   │       ├── [1.7K]  StatCard.tsx
+│   │   │       ├── [4.4K]  Table.tsx
+│   │   │       ├── [2.5K]  TopBar.tsx
+│   │   │       ├── [1.8K]  WizardSteps.tsx
+│   │   │       └── [ 611]  index.ts
+│   │   ├── [4.0K]  config
+│   │   │   ├── [3.4K]  mobile.ts
+│   │   │   └── [1.2K]  navigation.ts
+│   │   ├── [4.0K]  contexts
+│   │   │   ├── [4.5K]  NotificationContext.tsx
+│   │   │   └── [4.1K]  ThemeContext.tsx
+│   │   ├── [4.0K]  hooks
+│   │   │   └── [3.1K]  useBackButton.ts
+│   │   ├── [ 15K]  index.css
+│   │   ├── [3.0K]  main.tsx
+│   │   ├── [4.0K]  pages
+│   │   │   ├── [ 27K]  AdminDashboard.tsx
+│   │   │   ├── [ 22K]  AdminReports.tsx
+│   │   │   ├── [ 44K]  AdminSettings.tsx
+│   │   │   ├── [ 16K]  AdminSupplyRequests.tsx
+│   │   │   ├── [ 15K]  AnalyticsDashboard.tsx
+│   │   │   ├── [ 11K]  CreateOperator.tsx
+│   │   │   ├── [6.0K]  Dashboard.tsx
+│   │   │   ├── [ 16K]  DocumentViewer.tsx
+│   │   │   ├── [ 33K]  EditFarmer.tsx
+│   │   │   ├── [5.8K]  ExampleDashboard.tsx
+│   │   │   ├── [ 27K]  FarmerDashboard.tsx
+│   │   │   ├── [ 34K]  FarmerDetails.tsx
+│   │   │   ├── [ 24K]  FarmerEdit.tsx
+│   │   │   ├── [ 26K]  FarmerIDCard.tsx
+│   │   │   ├── [4.0K]  FarmerRegistration
+│   │   │   │   ├── [ 13K]  Step1Personal.tsx
+│   │   │   │   ├── [2.7K]  Step2Address.tsx
+│   │   │   │   ├── [8.1K]  Step3Farm.tsx
+│   │   │   │   ├── [9.2K]  Step4Preview.tsx
+│   │   │   │   ├── [8.0K]  Step5PhotoUpload.tsx
+│   │   │   │   ├── [9.2K]  Step6DocumentUpload.tsx
+│   │   │   │   ├── [4.0K]  Step7Completion.tsx
+│   │   │   │   └── [6.2K]  index.tsx
+│   │   │   ├── [ 15K]  FarmerSupplyRequests.tsx
+│   │   │   ├── [ 34K]  FarmersList.tsx
+│   │   │   ├── [ 15K]  IDCardViewer.tsx
+│   │   │   ├── [ 12K]  LogViewer.tsx
+│   │   │   ├── [ 19K]  Login.tsx
+│   │   │   ├── [ 18K]  OperatorDashboard.tsx
+│   │   │   ├── [8.5K]  OperatorDetails.tsx
+│   │   │   ├── [ 18K]  OperatorEdit.tsx
+│   │   │   ├── [ 64K]  OperatorManagement.tsx
+│   │   │   └── [ 12K]  OperatorsList.tsx
+│   │   ├── [1.6K]  registerSW.ts
+│   │   ├── [4.0K]  services
+│   │   │   ├── [4.7K]  auth.service.ts
+│   │   │   ├── [4.2K]  dashboard.service.ts
+│   │   │   ├── [1.5K]  ethnicGroup.service.ts
+│   │   │   ├── [ 20K]  farmer.service.ts
+│   │   │   ├── [1.8K]  geo.service.ts
+│   │   │   ├── [1.5K]  logs.service.ts
+│   │   │   ├── [2.6K]  operator.service.ts
+│   │   │   ├── [2.0K]  update.service.ts
+│   │   │   └── [1.6K]  user.service.ts
+│   │   ├── [4.0K]  store
+│   │   │   └── [5.3K]  authStore.ts
+│   │   ├── [4.0K]  styles
+│   │   │   └── [6.6K]  shared.css
+│   │   ├── [4.0K]  types
+│   │   │   └── [1.2K]  types.ts
+│   │   ├── [4.0K]  utils
+│   │   │   ├── [4.3K]  axios.ts
+│   │   │   ├── [ 366]  debug.ts
+│   │   │   ├── [3.3K]  logger.ts
+│   │   │   ├── [2.8K]  networkProbe.ts
+│   │   │   ├── [ 988]  nrcFormatter.ts
+│   │   │   └── [ 450]  version.ts
+│   │   └── [ 188]  vite-env.d.ts
+│   ├── [1.2K]  tailwind.config.js
+│   ├── [ 732]  tsconfig.app.json
+│   ├── [ 575]  tsconfig.json
+│   ├── [ 677]  tsconfig.node.json
+│   ├── [2.3K]  tsconfig.tsbuildinfo
+│   ├── [  76]  vite.config.d.ts
+│   ├── [1.3K]  vite.config.js
+│   └── [1.1K]  vite.config.ts
+├── [4.0K]  infra
+│   └── [4.0K]  terraform
+│       ├── [4.2K]  main.tf
+│       ├── [ 714]  outputs.tf
+│       └── [ 613]  variables.tf
+├── [ 843]  login.json
+├── [4.0K]  mongo_backup_prod
+│   ├── [  51]  prelude.json
+│   └── [4.0K]  zambian_farmer_db
+│       ├── [5.1M]  cem_files.chunks.bson
+│       ├── [ 307]  cem_files.chunks.metadata.json
+│       ├── [ 24K]  cem_files.files.bson
+│       ├── [ 310]  cem_files.files.metadata.json
+│       ├── [ 52K]  chiefdoms.bson
+│       ├── [ 176]  chiefdoms.metadata.json
+│       ├── [ 19K]  districts.bson
+│       ├── [ 176]  districts.metadata.json
+│       ├── [1.2K]  ethnic_groups.bson
+│       ├── [ 180]  ethnic_groups.metadata.json
+│       ├── [   0]  farmers.bson
+│       ├── [ 174]  farmers.metadata.json
+│       ├── [   0]  operators.bson
+│       ├── [ 176]  operators.metadata.json
+│       ├── [1.2K]  provinces.bson
+│       ├── [ 176]  provinces.metadata.json
+│       ├── [   0]  supply_requests.bson
+│       ├── [ 182]  supply_requests.metadata.json
+│       ├── [150M]  system_logs.bson
+│       ├── [ 178]  system_logs.metadata.json
+│       ├── [ 552]  users.bson
+│       └── [ 172]  users.metadata.json
+├── [ 148]  mongo_clean.json
+├── [ 155]  mongo_output.json
+├── [  34]  mongo_output.log
+├── [184K]  package-lock.json
+├── [ 121]  package.json
+├── [ 20K]  project_structure.txt
+├── [   0]  project_structure_with_sizes.txt
+├── [ 124]  qr_check.json
+├── [ 124]  qr_test.json
+├── [ 118]  qr_verify.json
+├── [4.0K]  scripts
+│   ├── [ 159]  AWS_PROFILE=default [aws_cleanup.sh](htt
+│   └── [5.6K]  run_crud_test.py
+├── [3.9M]  session-manager-plugin.deb
+├── [ 651]  sync_payload.json
+├── [ 255]  test_farmer.json
+├── [4.0K]  test_uploads
+│   └── [3.7K]  photo.jpg
+└── [4.0K]  uploads
+    ├── [4.0K]  ZM11674FFE
+    │   └── [4.0K]  photos
+    │       └── [ 11K]  photo.jpg
+    ├── [4.0K]  ZM2EC5197E
+    │   └── [4.0K]  photos
+    │       └── [ 11K]  photo.jpg
+    ├── [4.0K]  ZM2F48ABB4
+    │   └── [4.0K]  photos
+    │       └── [ 11K]  photo.jpg
+    ├── [4.0K]  ZM38228A63
+    │   └── [4.0K]  photos
+    │       └── [ 11K]  photo.jpg
+    ├── [4.0K]  ZM499C54E2
+    │   └── [4.0K]  photos
+    │       └── [ 16K]  photo.jpg
+    ├── [4.0K]  ZM49AB9C7D
+    │   └── [4.0K]  photos
+    │       └── [ 11K]  photo.jpg
+    ├── [4.0K]  ZM4F35996B
+    │   └── [4.0K]  photos
+    │       └── [ 16K]  photo.jpg
+    ├── [4.0K]  ZM5E5BEB24
+    │   └── [4.0K]  photos
+    │       ├── [ 16K]  ZM5E5BEB24_photo.JPG
+    │       └── [ 38K]  ZM5E5BEB24_photo.png
+    ├── [4.0K]  ZM669E6ED7
+    │   └── [4.0K]  photos
+    │       └── [ 11K]  photo.jpg
+    ├── [4.0K]  ZM70C67477
+    │   └── [4.0K]  photos
+    │       └── [1.1M]  photo.png
+    ├── [4.0K]  ZM7EC0E8BC
+    │   └── [4.0K]  photos
+    │       └── [498K]  photo.jpg
+    ├── [4.0K]  ZM9D6E4DA2
+    │   └── [4.0K]  photos
+    │       └── [ 11K]  photo.jpg
+    ├── [4.0K]  ZMB740531F
+    │   ├── [4.0K]  idcards
+    │   │   └── [ 20K]  ZMB740531F_card.pdf
+    │   ├── [4.0K]  photos
+    │   │   └── [ 11K]  photo.jpg
+    │   └── [4.0K]  qr
+    │       └── [1.5K]  ZMB740531F_qr.png
+    ├── [4.0K]  ZMBA8334DF
+    │   └── [4.0K]  photos
+    │       └── [498K]  photo.jpg
+    ├── [4.0K]  ZME5F36B64
+    │   └── [4.0K]  photos
+    │       └── [1.1M]  photo.png
+    ├── [4.0K]  ZMF0A6216E
+    │   ├── [4.0K]  idcards
+    │   │   └── [ 19K]  ZMF0A6216E_card.pdf
+    │   └── [4.0K]  qr
+    │       └── [1.5K]  ZMF0A6216E_qr.png
+    ├── [4.0K]  ZMF274261F
+    │   └── [4.0K]  photos
+    │       └── [ 11K]  photo.jpg
+    ├── [4.0K]  documents
+    │   └── [4.0K]  ZM8AC3063F
+    │       ├── [ 454]  ZM8AC3063F_land_title.pdf
+    │       ├── [ 303]  ZM8AC3063F_license.pdf
+    │       └── [ 454]  ZM8AC3063F_nrc.pdf
+    ├── [4.0K]  farmers
+    │   └── [4.0K]  documents
+    │       ├── [ 11K]  ZM11674FFE_nrc_1763714739.jpg
+    │       ├── [944K]  ZM2EC5197E_nrc_1763540293.pdf
+    │       ├── [  19]  ZM2F48ABB4_land_title_1763536788.jpg
+    │       ├── [  19]  ZM2F48ABB4_nrc_1763536772.jpg
+    │       ├── [  19]  ZM2F48ABB4_nrc_1763536898.jpg
+    │       ├── [ 11K]  ZM38228A63_land_title_1763973635.jpg
+    │       ├── [333K]  ZM38228A63_land_title_1763982476.pdf
+    │       ├── [ 11K]  ZM38228A63_nrc_1763973627.jpg
+    │       ├── [ 11K]  ZM38228A63_nrc_1763981943.jpg
+    │       ├── [944K]  ZM38228A63_nrc_1763982189.pdf
+    │       ├── [944K]  ZM38228A63_nrc_1763982378.pdf
+    │       ├── [944K]  ZM38228A63_nrc_1763982465.pdf
+    │       ├── [333K]  ZM38228A63_nrc_1763983262.pdf
+    │       ├── [604K]  ZM49AB9C7D_land_title_1764158998.pdf
+    │       ├── [604K]  ZM49AB9C7D_nrc_1764158987.pdf
+    │       ├── [172K]  ZM4F35996B_certificate_1763535754.png
+    │       ├── [4.0K]  ZM4F35996B_land_title_1763535680.pdf
+    │       ├── [  19]  ZM4F35996B_license_1763535715.jpg
+    │       ├── [4.0K]  ZM4F35996B_nrc_1763535670.pdf
+    │       ├── [4.0K]  ZM4F35996B_nrc_1763535683.pdf
+    │       ├── [ 45K]  ZM669E6ED7_nrc_1763537065.pdf
+    │       ├── [  12]  ZM7CDA7186_nrc_1766725652.pdf
+    │       ├── [377K]  ZM7EC0E8BC_land_title_1764154829.pdf
+    │       ├── [377K]  ZM7EC0E8BC_nrc_1764154816.pdf
+    │       ├── [  19]  ZM9D6E4DA2_land_title_1763536426.jpg
+    │       ├── [ 45K]  ZM9D6E4DA2_license_1763536437.pdf
+    │       ├── [ 45K]  ZM9D6E4DA2_nrc_1763536396.pdf
+    │       ├── [604K]  ZMB740531F_nrc_1764154930.pdf
+    │       ├── [377K]  ZMBA8334DF_land_title_1764154510.pdf
+    │       ├── [377K]  ZMBA8334DF_nrc_1764154492.pdf
+    │       ├── [377K]  ZMBA8334DF_nrc_1764154501.pdf
+    │       ├── [  12]  ZMDDECBC28_nrc_1766726425.pdf
+    │       ├── [1.1M]  ZME5F36B64_nrc_1765003017.png
+    │       ├── [604K]  ZMF0A6216E_nrc_1764155767.pdf
+    │       ├── [ 11K]  ZMF274261F_nrc_1763728398.jpg
+    │       └── [  12]  ZMFAC6E98B_nrc_1766725245.pdf
+    ├── [4.0K]  idcards
+    │   ├── [7.3K]  ZM1BFFA0F9_card.pdf
+    │   ├── [7.3K]  ZM5CC08BB8_card.pdf
+    │   ├── [7.3K]  ZM6AAC0450_card.pdf
+    │   ├── [ 22K]  ZM880CB4DC_card.pdf
+    │   ├── [ 23K]  ZM8AC3063F_card.pdf
+    │   ├── [ 35K]  ZMB740531F_card.pdf
+    │   ├── [1.4M]  ZME5F36B64_card.pdf
+    │   ├── [ 23K]  ZMF0A6216E_card.pdf
+    │   └── [ 23K]  ZMFA1E5ECF_card.pdf
+    ├── [4.0K]  photos
+    │   ├── [4.0K]  ZM1BFFA0F9
+    │   │   └── [3.7K]  ZM1BFFA0F9_photo.jpg
+    │   ├── [4.0K]  ZM3880A741
+    │   │   └── [3.7K]  ZM3880A741_photo.jpg
+    │   ├── [4.0K]  ZM5CA6FCB0
+    │   │   └── [3.7K]  ZM5CA6FCB0_photo.jpg
+    │   ├── [4.0K]  ZM5CC08BB8
+    │   │   └── [3.7K]  ZM5CC08BB8_photo.jpg
+    │   └── [4.0K]  ZM6AAC0450
+    │       └── [3.7K]  ZM6AAC0450_photo.jpg
+    └── [4.0K]  qr
+        ├── [ 945]  ZM1BFFA0F9_qr.png
+        ├── [ 947]  ZM5CC08BB8_qr.png
+        ├── [ 967]  ZM6AAC0450_qr.png
+        ├── [1.5K]  ZM880CB4DC_qr.png
+        ├── [1.5K]  ZM8AC3063F_qr.png
+        ├── [1.6K]  ZMB740531F_qr.png
+        ├── [1.5K]  ZME5F36B64_qr.png
+        ├── [1.5K]  ZMF0A6216E_qr.png
+        └── [1.6K]  ZMFA1E5ECF_qr.png
+
+108 directories, 376 files

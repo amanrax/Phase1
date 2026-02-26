@@ -31,6 +31,9 @@ qrcode[pil]==8.0
 reportlab==4.2.5
 fpdf2==2.8.1
 
+# Excel Generation
+openpyxl==3.1.2
+
 # HTTP Client
 httpx==0.28.1
 
