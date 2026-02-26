@@ -152,7 +152,34 @@ html.dark .min-h-screen {
 html.dark .ring-gray-200 { --tw-ring-color: #374151; }
 html.dark .ring-gray-300 { --tw-ring-color: #4b5563; }
 
-/* ── FarmerRegistration wizard card — force white inputs even in dark mode ── */
+/* ── FarmerRegistration wizard card — restore light-mode vars + force white inputs ── */
+
+/* 1. Re-scope all CSS custom properties to light values inside the card */
+html.dark .farmer-reg-card {
+  --text-primary-hex: #111827;
+  --text-secondary-hex: #4b5563;
+  --text-muted-hex: #9ca3af;
+  --bg-surface: #f8f9fa;
+  --bg-surface-subtle: #f0f0f0;
+  --border-light: #e0e0e0;
+  --border-lighter: #ccc;
+}
+
+/* 2. Override the global html.dark label rule (higher specificity wins) */
+html.dark .farmer-reg-card label,
+html.dark .farmer-reg-card h2,
+html.dark .farmer-reg-card h3,
+html.dark .farmer-reg-card h4,
+html.dark .farmer-reg-card p,
+html.dark .farmer-reg-card small,
+html.dark .farmer-reg-card span:not([class*="text-white"]):not([class*="text-red"]):not([class*="text-green"]):not([class*="text-blue"]) {
+  color: #111827 !important;
+}
+
+/* 3. Keep the required * red */
+html.dark .farmer-reg-card span[style*="#dc3545"] { color: #dc3545 !important; }
+
+/* 4. Force white inputs */
 html.dark .farmer-reg-card input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 html.dark .farmer-reg-card textarea,
 html.dark .farmer-reg-card select {
