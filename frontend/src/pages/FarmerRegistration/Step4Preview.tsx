@@ -115,10 +115,10 @@ export default function Step4Preview({
   return (
     <div>
       <h3>Preview</h3>
-      <div style={{ padding: 12, background: "#f3f4f6", borderRadius: 6 }}>
+      <div style={{ padding: 12, background: "var(--bg-surface)", borderRadius: 6 }}>
         {/* Personal Information */}
         <div style={{ marginBottom: 16 }}>
-          <h4 style={{ fontSize: 16, fontWeight: "bold", color: "#374151", marginBottom: 8 }}>👤 Personal Information</h4>
+          <h4 style={{ fontSize: 16, fontWeight: "bold", color: "var(--text-primary-hex)", marginBottom: 8 }}>👤 Personal Information</h4>
           <div><strong>Name:</strong> {data.personal.first_name} {data.personal.last_name}</div>
           <div><strong>Primary Phone:</strong> {data.personal.phone_primary || "-"}</div>
           {data.personal.phone_secondary && (
@@ -137,7 +137,7 @@ export default function Step4Preview({
 
         {/* Address */}
         <div style={{ marginBottom: 16 }}>
-          <h4 style={{ fontSize: 16, fontWeight: "bold", color: "#374151", marginBottom: 8 }}>📍 Address</h4>
+          <h4 style={{ fontSize: 16, fontWeight: "bold", color: "var(--text-primary-hex)", marginBottom: 8 }}>📍 Address</h4>
           <div><strong>Province:</strong> {data.address.province_name || "-"}</div>
           <div><strong>District:</strong> {data.address.district_name || "-"}</div>
           {data.address.chiefdom_name && (
@@ -149,7 +149,7 @@ export default function Step4Preview({
         {/* Farm Information */}
         {(data.farm?.size_hectares || data.farm?.crops || data.farm?.livestock || data.farm?.years_farming) && (
           <div style={{ marginBottom: 16 }}>
-            <h4 style={{ fontSize: 16, fontWeight: "bold", color: "#374151", marginBottom: 8 }}>🌾 Farm Information</h4>
+            <h4 style={{ fontSize: 16, fontWeight: "bold", color: "var(--text-primary-hex)", marginBottom: 8 }}>🌾 Farm Information</h4>
             {data.farm?.size_hectares && (
               <div><strong>Farm Size:</strong> {data.farm.size_hectares} hectares</div>
             )}
@@ -169,7 +169,7 @@ export default function Step4Preview({
         {/* Household Information */}
         {(data.farm?.household_size || data.farm?.dependents || data.farm?.primary_income) && (
           <div>
-            <h4 style={{ fontSize: 16, fontWeight: "bold", color: "#374151", marginBottom: 8 }}>🏠 Household Information</h4>
+            <h4 style={{ fontSize: 16, fontWeight: "bold", color: "var(--text-primary-hex)", marginBottom: 8 }}>🏠 Household Information</h4>
             {data.farm?.household_size && (
               <div><strong>Household Size:</strong> {data.farm.household_size} people</div>
             )}

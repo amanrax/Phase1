@@ -152,46 +152,46 @@ html.dark .min-h-screen {
 html.dark .ring-gray-200 { --tw-ring-color: #374151; }
 html.dark .ring-gray-300 { --tw-ring-color: #4b5563; }
 
-/* ── FarmerRegistration wizard card — restore light-mode vars + force white inputs ── */
+/* ── FarmerRegistration wizard card — dark-mode aware (matches Create Operator modal) ── */
 
-/* 1. Re-scope all CSS custom properties to light values inside the card */
+/* 1. Card container: dark bg, update CSS vars to light-on-dark values */
 html.dark .farmer-reg-card {
-  --text-primary-hex: #111827;
-  --text-secondary-hex: #4b5563;
+  background-color: #1f2937 !important; /* gray-800 */
+  --text-primary-hex: #f9fafb;
+  --text-secondary-hex: #d1d5db;
   --text-muted-hex: #9ca3af;
-  --bg-surface: #f8f9fa;
-  --bg-surface-subtle: #f0f0f0;
-  --border-light: #e0e0e0;
-  --border-lighter: #ccc;
+  --bg-surface: #374151;
+  --bg-surface-subtle: #4b5563;
+  --border-light: #4b5563;
+  --border-lighter: #6b7280;
 }
 
-/* 2. Override the global html.dark label rule (higher specificity wins) */
-html.dark .farmer-reg-card label,
+/* 2. Labels and text inside card: white/light */
+html.dark .farmer-reg-card label { color: #d1d5db !important; }
 html.dark .farmer-reg-card h2,
 html.dark .farmer-reg-card h3,
-html.dark .farmer-reg-card h4,
+html.dark .farmer-reg-card h4 { color: #f9fafb !important; }
 html.dark .farmer-reg-card p,
-html.dark .farmer-reg-card small,
-html.dark .farmer-reg-card span:not([class*="text-white"]):not([class*="text-red"]):not([class*="text-green"]):not([class*="text-blue"]) {
-  color: #111827 !important;
-}
+html.dark .farmer-reg-card small { color: #9ca3af !important; }
 
-/* 3. Keep the required * red */
-html.dark .farmer-reg-card span[style*="#dc3545"] { color: #dc3545 !important; }
-
-/* 4. Force white inputs */
+/* 3. Inputs: dark bg + light text (matches operator modal inputCls) */
 html.dark .farmer-reg-card input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 html.dark .farmer-reg-card textarea,
 html.dark .farmer-reg-card select {
-  background-color: #ffffff !important;
-  color: #1a1a1a !important;
-  border-color: #999 !important;
-  color-scheme: light;
+  background-color: #374151 !important; /* gray-700 */
+  color: #f9fafb !important;
+  border-color: #4b5563 !important;
+  color-scheme: dark;
 }
 html.dark .farmer-reg-card input::placeholder,
-html.dark .farmer-reg-card textarea::placeholder {
-  color: #888 !important;
+html.dark .farmer-reg-card textarea::placeholder { color: #6b7280 !important; }
+html.dark .farmer-reg-card select option {
+  background-color: #1f2937;
+  color: #f9fafb;
 }
+
+/* 4. Progress bar inactive segments */
+html.dark .farmer-reg-card .progress-inactive { background-color: #374151 !important; }
 
 /* ================================================================
    LIGHT MODE EXPLICIT RESETS

@@ -93,7 +93,7 @@ export default function FarmerRegistrationWizard() {
       </div>
       
       <div style={{ maxWidth: "900px", margin: "0 auto", padding: "0 20px 40px 20px" }}>
-        <div style={{ background: "white", borderRadius: "15px", padding: "40px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", colorScheme: "light" }} className="farmer-reg-card">
+        <div className="farmer-reg-card bg-white dark:bg-gray-800" style={{ borderRadius: "15px", padding: "40px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
         {/* Progress Bar */}
         <div style={{ marginBottom: "40px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
@@ -103,7 +103,7 @@ export default function FarmerRegistrationWizard() {
                 style={{
                   flex: 1,
                   height: "8px",
-                  backgroundColor: currentStep >= step ? "#667eea" : "#e5e7eb",
+                  backgroundColor: currentStep >= step ? "#667eea" : "var(--bg-surface-subtle)",
                   marginRight: step < 7 ? "8px" : "0",
                   borderRadius: "4px",
                   transition: "background-color 0.3s",
