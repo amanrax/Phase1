@@ -1,6 +1,9 @@
 // src/pages/FarmerRegistrationWizard/Step1Personal.tsx
 import { useState, useEffect } from "react";
 import { ethnicGroupService, type EthnicGroup } from "@/services/ethnicGroup.service";
+import { logger } from "@/utils/logger";
+
+const COMPONENT = "Step1Personal";
 
 type PersonalData = {
   first_name?: string;
@@ -49,7 +52,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
       const groups = await ethnicGroupService.getAll(true);
       setEthnicGroups(groups);
     } catch (error) {
-      console.error("Failed to fetch ethnic groups:", error);
+      logger.error(COMPONENT, "fetchEthnicGroups failed", { error });
       setErr("Failed to load ethnic groups");
     } finally {
       setLoadingEthnicGroups(false);
@@ -121,7 +124,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
           id="firstName"
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           aria-required="true"
         />
       </div>
@@ -133,7 +136,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
           id="lastName"
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           aria-required="true"
         />
       </div>
@@ -146,7 +149,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
           type="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           placeholder="0977000000 or +260977000000"
           pattern="(\+260|0)[0-9]{9}"
           title="Phone must be +260XXXXXXXXX or 0XXXXXXXXX"
@@ -164,7 +167,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
           type="tel"
           value={phoneSecondary}
           onChange={(e) => setPhoneSecondary(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           placeholder="0966000000 (optional)"
           pattern="(\+260|0)[0-9]{9}"
           title="Phone must be +260XXXXXXXXX or 0XXXXXXXXX"
@@ -179,7 +182,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
           id="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           placeholder="farmer@example.com"
           type="email"
         />
@@ -193,7 +196,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
           id="nrc"
           value={nrc}
           onChange={(e) => setNrc(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           placeholder="123456/12/1"
           pattern="\d{6}/\d{2}/\d"
           title="NRC must be in format: 123456/12/1"
@@ -210,7 +213,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
           id="dob"
           value={dob}
           onChange={(e) => setDob(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           type="date"
           aria-required="true"
         />
@@ -224,7 +227,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
           id="gender"
           value={gender}
           onChange={(e) => setGender(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           aria-required="true"
         >
           <option value="">-- select gender --</option>
@@ -251,7 +254,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
                 setEthnicGroup(e.target.value);
               }
             }}
-            style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+            style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
             disabled={loadingEthnicGroups}
           >
             <option value="">-- select ethnic group (optional) --</option>
@@ -273,7 +276,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
             }}
             onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
             placeholder="Enter custom ethnic group name"
-            style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+            style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           />
         )}
         {loadingEthnicGroups && (

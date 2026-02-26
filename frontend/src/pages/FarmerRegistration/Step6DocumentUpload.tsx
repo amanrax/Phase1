@@ -2,6 +2,9 @@
 import { useState } from "react";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
+import { logger } from "@/utils/logger";
+
+const COMPONENT = "Step6DocumentUpload";
 
 interface Step6Props {
   farmerId: string;
@@ -63,7 +66,7 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
 
       success(`${doc.label} uploaded successfully!`);
     } catch (error: any) {
-      console.error("Upload failed:", error);
+      logger.error(COMPONENT, "document upload failed", { error, docType: doc.type });
       showError(error.message || `Failed to upload ${doc.label}`);
 
       newDocuments[index] = { ...newDocuments[index], uploading: false };

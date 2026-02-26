@@ -39,7 +39,7 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
           id="farmSize"
           value={size}
           onChange={(e) => setSize(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           placeholder="e.g. 1.5"
           type="number"
           min="0"
@@ -59,7 +59,7 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
           id="mainCrops"
           value={crops}
           onChange={(e) => setCrops(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           placeholder="maize, groundnuts, cassava"
           aria-describedby="mainCropsDesc"
         />
@@ -76,7 +76,7 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
           id="livestock"
           value={livestock}
           onChange={(e) => setLivestock(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           placeholder="cattle, goats, chickens"
         />
         <small style={{ color: "var(--text-secondary-hex)" }}>
@@ -92,7 +92,7 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
           id="yearsFarming"
           value={yearsFarming}
           onChange={(e) => setYearsFarming(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           placeholder="e.g. 5"
           type="number"
           min="0"
@@ -123,7 +123,7 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
           id="householdSize"
           value={householdSize}
           onChange={(e) => setHouseholdSize(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           placeholder="Number of people in household"
           type="number"
           min="1"
@@ -138,7 +138,7 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
           id="dependents"
           value={dependents}
           onChange={(e) => setDependents(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           placeholder="Number of dependents"
           type="number"
           min="0"
@@ -153,7 +153,7 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
           id="primaryIncome"
           value={primaryIncome}
           onChange={(e) => setPrimaryIncome(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
           placeholder="e.g. farming, business"
         />
       </div>

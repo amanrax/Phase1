@@ -2,6 +2,9 @@
 import { useState } from "react";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
+import { logger } from "@/utils/logger";
+
+const COMPONENT = "Step5PhotoUpload";
 
 interface Step5Props {
   farmerId: string;
@@ -10,6 +13,7 @@ interface Step5Props {
 }
 
 export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Props) {
+  const { success, error: showError } = useNotification();
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -21,15 +25,13 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      const { error } = useNotification();
-      error("Please select an image file (JPG, PNG)");
+      showError("Please select an image file (JPG, PNG)");
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      const { error } = useNotification();
-      error("File size must be less than 5MB");
+      showError("File size must be less than 5MB");
       return;
     }
 
@@ -45,8 +47,7 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
 
   const handleUpload = async () => {
     if (!photo) {
-      const { error } = useNotification();
-      error("Please select a photo first");
+      showError("Please select a photo first");
       return;
     }
 
@@ -54,12 +55,10 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
     try {
       await farmerService.uploadPhoto(farmerId, photo);
       setUploaded(true);
-      const { success } = useNotification();
       success("Photo uploaded successfully!");
-    } catch (error: any) {
-      console.error("Upload failed:", error);
-      const { error: showError } = useNotification();
-      showError(error.message || "Failed to upload photo");
+    } catch (err: any) {
+      logger.error(COMPONENT, "photo upload failed", { err });
+      showError(err.message || "Failed to upload photo");
     } finally {
       setUploading(false);
     }

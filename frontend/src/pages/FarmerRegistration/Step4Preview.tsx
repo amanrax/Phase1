@@ -1,7 +1,10 @@
 // src/pages/FarmerRegistrationWizard/Step4Preview.tsx
 import { useState } from "react";
 import { farmerService } from "@/services/farmer.service";
+import { logger } from "@/utils/logger";
 import { WizardState } from "."; // Import type
+
+const COMPONENT = "Step4Preview";
 
 type Props = {
   data: WizardState;
@@ -78,7 +81,7 @@ export default function Step4Preview({
         };
       }
 
-      console.log("Submitting payload:", JSON.stringify(payload, null, 2));
+      logger.info(COMPONENT, "submitting payload", { payload });
       const res = await farmerService.create(payload);
       if (res.farmer_id) {
         onSuccess(res.farmer_id);
@@ -86,10 +89,7 @@ export default function Step4Preview({
         setError("Failed to get farmer ID after creation.");
       }
     } catch (err: any) {
-      console.error("Full error object:", err);
-      console.error("Error response:", err.response);
-      console.error("Error response data:", err.response?.data);
-      console.error("Validation errors:", JSON.stringify(err.response?.data?.detail, null, 2));
+      logger.error(COMPONENT, "registration submit failed", { err, detail: err.response?.data?.detail });
       // Handle validation errors (422) which come as array of error objects
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
