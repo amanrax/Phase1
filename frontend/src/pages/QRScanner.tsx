@@ -77,8 +77,9 @@ const QRScanner: React.FC = () => {
     setErrorMessage("");
     setFarmerResult(null);
     try {
-      // @ts-expect-error — optional mobile-only Capacitor plugin
-      const mod = await import("@capacitor-community/barcode-scanner").catch(() => null) as Record<string, unknown> | null;
+      // @ts-expect-error — optional mobile-only Capacitor plugin, not installed in web builds
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const mod = await import(/* @vite-ignore */ "@capacitor-community/barcode-scanner").catch(() => null) as Record<string, unknown> | null;
       type BS = {
         checkPermission: (o: { force: boolean }) => Promise<{ granted: boolean }>;
         hideBackground: () => void;
