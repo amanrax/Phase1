@@ -34,7 +34,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex flex-col md:flex-row" style={{ backgroundColor: 'var(--bg-main)' }}>
+    <div className="min-h-screen flex flex-col md:flex-row">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 

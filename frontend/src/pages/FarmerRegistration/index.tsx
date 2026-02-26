@@ -84,7 +84,7 @@ export default function FarmerRegistrationWizard() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-page)", backgroundAttachment: "fixed" }}>
       <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
         <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
           🌾 Chiefdom Management Model
@@ -93,7 +93,7 @@ export default function FarmerRegistrationWizard() {
       </div>
       
       <div style={{ maxWidth: "900px", margin: "0 auto", padding: "0 20px 40px 20px" }}>
-        <div style={{ background: "white", borderRadius: "15px", padding: "40px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", colorScheme: "light" }}>
+        <div style={{ background: "white", borderRadius: "15px", padding: "40px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", colorScheme: "light" }} className="farmer-reg-card">
         {/* Progress Bar */}
         <div style={{ marginBottom: "40px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
