@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import BackButton from "@/components/BackButton";
 import { farmerService } from "@/services/farmer.service";
-import useAuthStore from "@/store/authStore";
 import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
 
@@ -222,9 +221,7 @@ const ConfirmDialog = ({ state, onCancel }: { state: ConfirmState; onCancel: () 
 export default function FarmerDetails() {
   const { farmerId } = useParams<{ farmerId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
   const { success: showSuccess, error: showError, info: showInfo } = useNotification();
-
   const [farmer, setFarmer] = useState<Farmer | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
@@ -235,11 +232,8 @@ export default function FarmerDetails() {
   });
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false, title: "", message: "", onConfirm: () => {} });
 
-  const getBackPath = () => user?.roles?.includes("FARMER") ? "/farmer-dashboard" : "/farmers";
-
   // ─── load farmer ──────────────────────────────────────────────────────────────
   const loadFarmerData = useCallback(async () => {
-    logger.info(COMPONENT, "loadFarmerData", { farmerId });
     try {
       setLoading(true);
       const data = await farmerService.getFarmer(farmerId!);
@@ -473,7 +467,7 @@ export default function FarmerDetails() {
         <div className="text-center">
           <div className="text-8xl mb-6">❌</div>
           <p className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Farmer not found</p>
-          <BackButton to={getBackPath()} />
+          <BackButton />
         </div>
       </div>
     );
@@ -497,10 +491,10 @@ export default function FarmerDetails() {
 
         {/* Top Actions */}
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <BackButton to={getBackPath()} />
+          <BackButton />
           <div className="flex flex-wrap gap-2">
             <button onClick={handleGenerateIDCard} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
-              🎴 Generate ID Card
+              🎴 Gener
             </button>
             <button onClick={handleDownloadIDCard} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
               ⬇️ Download ID
