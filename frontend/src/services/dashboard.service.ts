@@ -93,7 +93,6 @@ export const dashboardService = {
    */
   async getDashboardReport(): Promise<ReportDashboard> {
     const { data } = await axiosClient.get<ReportDashboard>("/reports/dashboard");
-    console.log('[DashboardService] Got dashboard report:', data);
     return data;
   },
 
