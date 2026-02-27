@@ -2,7 +2,11 @@
  * Frontend Logger Utility
  * Writes structured logs to console with levels, timestamps and optional
  * storage to localStorage (last 200 entries, capped at 500 KB).
+ * On Capacitor native builds (Android/iOS) logs are also written to daily
+ * files in the app-specific external storage directory and cleaned up after 7 days.
  */
+
+import { Capacitor } from "@capacitor/core";
 
 export type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'CRITICAL';
 
@@ -27,6 +31,62 @@ function persist(level: LogLevel, module: string, message: string, data?: unknow
   } catch {
     // localStorage may be full or unavailable — ignore
   }
+}
+
+/* ─── Capacitor Filesystem — mobile only ──────────────────────────────── */
+
+/** Date string for the current day: YYYY-MM-DD */
+function today(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+/**
+ * Append a log line to the daily log file using Capacitor Filesystem.
+ * Uses Directory.External (app-specific external storage on Android,
+ * Documents on iOS) so the files are accessible without root.
+ * This function is fire-and-forget (never throws, never blocks).
+ */
+async function mobileAppend(line: string): Promise<void> {
+  try {
+    const { Filesystem, Directory, Encoding } = await import("@capacitor/filesystem");
+    const path = `logs/${today()}.log`;
+    try {
+      await Filesystem.appendFile({ path, data: line + "\n", directory: Directory.External, encoding: Encoding.UTF8 });
+    } catch {
+      // File may not exist yet — create it
+      await Filesystem.writeFile({ path, data: line + "\n", directory: Directory.External, encoding: Encoding.UTF8, recursive: true });
+    }
+  } catch {
+    // Capacitor plugin not available or permission denied — swallow silently
+  }
+}
+
+/**
+ * Delete log files older than 7 days from the native logs directory.
+ * Called once at module load on native platforms.
+ */
+async function cleanOldMobileLogs(): Promise<void> {
+  try {
+    const { Filesystem, Directory } = await import("@capacitor/filesystem");
+    const result = await Filesystem.readdir({ path: "logs", directory: Directory.External });
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    for (const entry of result.files) {
+      // entry.name is like "2024-01-15.log"
+      const name = typeof entry === "string" ? entry : (entry as { name: string }).name;
+      const dateStr = name.replace(".log", "");
+      const fileTime = new Date(dateStr).getTime();
+      if (!isNaN(fileTime) && fileTime < cutoff) {
+        await Filesystem.deleteFile({ path: `logs/${name}`, directory: Directory.External }).catch(() => {/* noop */});
+      }
+    }
+  } catch {
+    // Directory may not exist yet on first run — ignore
+  }
+}
+
+// On native platforms: clean old logs once at startup
+if (Capacitor.isNativePlatform()) {
+  cleanOldMobileLogs();
 }
 
 /** Style map for console output */
@@ -56,6 +116,12 @@ function emit(level: LogLevel, module: string, message: string, data?: unknown) 
   // Always persist WARN and above; persist INFO/DEBUG only in dev
   if (level === 'WARN' || level === 'ERROR' || level === 'CRITICAL' || IS_DEV) {
     persist(level, module, message, data);
+  }
+
+  // On native platforms: also write to daily log file (fire-and-forget)
+  if (Capacitor.isNativePlatform()) {
+    const dataStr = data ? " | " + JSON.stringify(data) : "";
+    mobileAppend(`${formatted}${dataStr}`);
   }
 }
 

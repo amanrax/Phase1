@@ -6,6 +6,7 @@ import { farmerService } from "@/services/farmer.service";
 import { operatorService } from "@/services/operator.service";
 import axios from "@/utils/axios";
 import { useNotification } from "@/contexts/NotificationContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface Farmer {
   _id: string;
@@ -42,6 +43,7 @@ export default function OperatorDashboard() {
   const { logout } = useAuthStore();
   const navigate = useNavigate();
   const { error: showError, info: showInfo } = useNotification();
+  const { toggleTheme, isDark } = useTheme();
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -117,7 +119,15 @@ export default function OperatorDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 pb-8 transition-all duration-300">
       {/* Header */}
-      <div className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4">
+      <div className="relative text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4">
+        {/* Dark Mode Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all active:scale-90"
+          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          <span className="text-lg">{isDark ? '☀️' : '🌙'}</span>
+        </button>
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold drop-shadow-lg mb-2">
           🌾 Chiefdom Management Model
         </h1>
@@ -202,6 +212,13 @@ export default function OperatorDashboard() {
                 className="px-2 sm:px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
               >
                 🚪 Logout
+              </button>
+              <button
+                onClick={toggleTheme}
+                className="px-2 sm:px-4 py-2 bg-gray-700 hover:bg-gray-600 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
+                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDark ? '☀️ Light' : '🌙 Dark'}
               </button>
             </div>
           </div>

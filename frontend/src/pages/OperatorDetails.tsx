@@ -69,6 +69,9 @@ export default function OperatorDetails() {
     );
   }
 
+  // Smart back: respect browser history so users return to where they came from
+  const goBack = () => navigate(-1);
+
   if (error || !operator) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center">
@@ -76,10 +79,10 @@ export default function OperatorDetails() {
           <p className="text-6xl mb-4">❌</p>
           <p className="text-xl text-red-600 mb-6">{error || "Operator not found"}</p>
           <button
-            onClick={() => navigate("/operators/manage")}
+            onClick={goBack}
             className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-6 rounded-lg"
           >
-            ← Back to Operators
+            ← Go Back
           </button>
         </div>
       </div>
@@ -93,8 +96,8 @@ export default function OperatorDetails() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => navigate("/operators/manage")} 
-              className="text-green-700 hover:text-green-800 font-bold text-sm"
+              onClick={goBack}
+              className="text-green-700 dark:text-green-400 hover:text-green-800 font-bold text-sm"
             >
               ← BACK
             </button>

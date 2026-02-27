@@ -99,27 +99,65 @@ export default function Login() {
       console.log("[Login] Executing navigation to:", targetRoute);
       navigate(targetRoute, { replace: true });
     } catch (err: any) {
-      console.error("[Login] Login failed:", err);
-      const errorMsg = err.response?.data?.detail || err.message || 'Invalid credentials. Please try again.';
-      console.error("[Login] Error message:", errorMsg);
-      showError(errorMsg, 5000);
+      const status   = err?.response?.status;
+      const detail   = err?.response?.data?.detail || err?.response?.data?.message || '';
+      const lower    = detail.toLowerCase();
 
-      // Diagnostic info for troubleshooting
+      let errorMessage: string;
+      let errorDuration = 6000;
+
+      if (!err.response || err.message === 'Network Error' || err.code === 'ERR_NETWORK' || err.code === 'ECONNREFUSED') {
+        // No server response at all — network / connection issue
+        errorMessage = '📡 Cannot reach the server. Please check your internet connection and try again.';
+        errorDuration = 8000;
+      } else if (status === 401) {
+        if (lower.includes('pending') || lower.includes('verification') || lower.includes('not verified')) {
+          errorMessage = '⏳ Your account is pending verification. Please wait for administrator approval.';
+        } else if (lower.includes('deactivat') || lower.includes('inactive') || lower.includes('disabled')) {
+          errorMessage = '🚫 Your account is deactivated. Please contact your administrator.';
+        } else if (lower.includes('role') || lower.includes('wrong role') || lower.includes('not an')) {
+          errorMessage = '🔒 Incorrect role selected. Please choose the right tab for your account type.';
+        } else {
+          errorMessage = '🔑 Invalid credentials. Please check your username and password.';
+        }
+      } else if (status === 403) {
+        if (lower.includes('pending') || lower.includes('verification')) {
+          errorMessage = '⏳ Account is pending verification. Contact your administrator for approval.';
+        } else if (lower.includes('deactivat') || lower.includes('inactive')) {
+          errorMessage = '🚫 Your account has been deactivated. Please contact your administrator.';
+        } else if (lower.includes('role') || lower.includes('not an')) {
+          errorMessage = '🔒 Wrong role selected. Please choose the correct tab and try again.';
+        } else {
+          errorMessage = '🔒 Access denied. You do not have permission to access this area.';
+        }
+      } else if (status === 404) {
+        errorMessage = '👤 Account not found. Please verify your credentials or contact support.';
+      } else if (status === 422) {
+        errorMessage = '⚠️ Invalid input format. Please check your email address or password.';
+      } else if (status === 429) {
+        errorMessage = '⏱️ Too many login attempts. Please wait a moment and try again.';
+        errorDuration = 8000;
+      } else if (status >= 500) {
+        errorMessage = '🔧 Server error. Please try again in a few moments.';
+      } else {
+        errorMessage = detail || '⚠️ Login failed. Please check your credentials and try again.';
+      }
+
+      showError(errorMessage, errorDuration);
+
+      // Diagnostic info for troubleshooting (dev only)
       try {
         const axiosBase = axiosClient?.defaults?.baseURL || null;
         const configuredUrl = getApiBaseUrl();
         const diagObj = {
-          message: errorMsg,
+          message: errorMessage,
           axiosBase,
           configuredUrl,
           errorResponse: err.response?.data || null,
           status: err.response?.status || null,
         };
         setDiag(JSON.stringify(diagObj, null, 2));
-        console.log('[Login DIAG]', diagObj);
-      } catch (dErr) {
-        console.warn('[Login] Failed to gather diag info', dErr);
-      }
+      } catch (_) { /* ignore diag errors */ }
     }
   };
   

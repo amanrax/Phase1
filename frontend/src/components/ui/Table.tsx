@@ -35,7 +35,7 @@ export const Table: React.FC<TableProps> = ({
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
       {/* Toolbar */}
       {(title || onAddClick) && (
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800">
           {title && <h3 className="font-bold text-xl text-gray-800 dark:text-gray-100">{title}</h3>}
           {onAddClick && (
             <button 

@@ -5,6 +5,7 @@ import useAuthStore from "@/store/authStore";
 import { dashboardService } from "@/services/dashboard.service";
 import { operatorService } from "@/services/operator.service";
 import { useNotification } from "@/contexts/NotificationContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { logger } from "@/utils/logger";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -63,12 +64,9 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value, sub, color, loading, onClick }: StatCardProps) {
   if (loading) return <Skeleton className="h-24" />;
-  return (
-    <button
-      onClick={onClick}
-      className={`relative flex flex-col justify-between p-4 rounded-2xl text-left w-full
-        ${color} text-white shadow-lg active:scale-95 transition-transform duration-150 select-none`}
-    >
+
+  const inner = (
+    <>
       <div className="flex justify-between items-start">
         <span className="text-2xl">{icon}</span>
         <span className="text-3xl font-extrabold tracking-tight leading-none">{value}</span>
@@ -77,6 +75,22 @@ function StatCard({ icon, label, value, sub, color, loading, onClick }: StatCard
         <p className="text-xs font-semibold uppercase tracking-wide opacity-90">{label}</p>
         {sub && <p className="text-xs opacity-70 mt-0.5">{sub}</p>}
       </div>
+    </>
+  );
+
+  if (!onClick) {
+    return (
+      <div className={`relative flex flex-col justify-between p-4 rounded-2xl text-left w-full ${color} text-white shadow-lg select-none`}>
+        {inner}
+      </div>
+    );
+  }
+  return (
+    <button
+      onClick={onClick}
+      className={`relative flex flex-col justify-between p-4 rounded-2xl text-left w-full ${color} text-white shadow-lg active:scale-95 transition-transform duration-150 select-none`}
+    >
+      {inner}
     </button>
   );
 }
@@ -198,6 +212,7 @@ export default function AdminDashboard() {
   const { logout, user } = useAuthStore();
   const navigate = useNavigate();
   const notify = useNotification();
+  const { toggleTheme, isDark } = useTheme();
 
   const [activeTab, setActiveTab] = useState<NavTab>("home");
   const [loading, setLoading] = useState(true);
@@ -358,6 +373,13 @@ export default function AdminDashboard() {
                 <span className={`text-sm ${refreshing ? "animate-spin" : ""}`}>🔄</span>
               </button>
               <button
+                onClick={toggleTheme}
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:scale-90 transition-transform"
+              >
+                <span className="text-sm">{isDark ? "☀️" : "🌙"}</span>
+              </button>
+              <button
                 onClick={() => { logger.info("AdminDashboard", "Logout pressed"); logout(); }}
                 aria-label="Logout"
                 className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:scale-90 transition-transform"
@@ -404,30 +426,27 @@ export default function AdminDashboard() {
               sub={`${stats.activeUsers} active · ${stats.totalAdmins} admins`}
               color="bg-gradient-to-br from-indigo-500 to-purple-600"
               loading={loading}
-              onClick={() => { logger.info("AdminDashboard", "Stat tapped: Users"); navigate("/admin/settings"); }}
             />
             <StatCard
               icon="👨‍💼" label="Operators" value={loading ? "—" : stats.totalOperators}
               sub={`${stats.activeOperators} active`}
               color="bg-gradient-to-br from-blue-500 to-cyan-600"
               loading={loading}
-              onClick={() => { logger.info("AdminDashboard", "Stat tapped: Operators"); navigate("/operators/manage"); }}
             />
             <StatCard
               icon="👨‍🌾" label="Farmers" value={loading ? "—" : stats.totalFarmers}
               sub={`${stats.activeFarmers} active`}
               color="bg-gradient-to-br from-green-500 to-emerald-600"
               loading={loading}
-              onClick={() => { logger.info("AdminDashboard", "Stat tapped: Farmers"); navigate("/farmers"); }}
             />
             <StatCard
               icon="⏳" label="Pending" value={loading ? "—" : stats.pendingFarmers}
-              sub="Awaiting verification"
+              sub="Tap to review"
               color={stats.pendingFarmers > 0
                 ? "bg-gradient-to-br from-amber-500 to-orange-600"
                 : "bg-gradient-to-br from-gray-400 to-slate-500"}
               loading={loading}
-              onClick={() => { logger.info("AdminDashboard", "Stat tapped: Pending"); navigate("/farmers"); }}
+              onClick={() => { logger.info("AdminDashboard", "Stat tapped: Pending"); navigate("/farmers?status=pending"); }}
             />
           </div>
         </div>
@@ -471,8 +490,13 @@ export default function AdminDashboard() {
                   key={op.operator_id || op._id}
                   op={op}
                   onClick={() => {
-                    logger.info("AdminDashboard", "Operator card tapped", { id: op.operator_id });
-                    navigate("/operators/manage");
+                    const id = op.operator_id || op._id;
+                    logger.info("AdminDashboard", "Operator card tapped", { id });
+                    if (!id) {
+                      notify.error("Operator ID is missing — cannot open details.");
+                      return;
+                    }
+                    navigate(`/operators/${id}`);
                   }}
                 />
               ))}

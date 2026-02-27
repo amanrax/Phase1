@@ -21,11 +21,16 @@ celery_app.conf.update(
     imports=[
         'app.tasks.sync_tasks',
         'app.tasks.id_card_task',
+        'app.tasks.report_tasks',
     ]
 )
 
 # Optional: route tasks to specific queues for better load management
 celery_app.conf.task_routes = {
-    "app.tasks.id_card_task.generate_id_card": {"queue": "celery"},
-    # Add more routes as needed
+    "app.tasks.id_card_task.generate_id_card":             {"queue": "celery"},
+    "app.tasks.report_tasks.generate_farmer_pdf":         {"queue": "celery"},
+    "app.tasks.report_tasks.generate_operator_pdf":       {"queue": "celery"},
+    "app.tasks.report_tasks.generate_summary_pdf":        {"queue": "celery"},
+    "app.tasks.report_tasks.generate_farmers_excel":      {"queue": "celery"},
+    "app.tasks.report_tasks.generate_summary_excel":      {"queue": "celery"},
 }

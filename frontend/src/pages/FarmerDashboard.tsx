@@ -7,6 +7,7 @@ import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
 import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
 import { logger } from "@/utils/logger";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const COMPONENT = "FarmerDashboard";
 
@@ -14,6 +15,7 @@ export default function FarmerDashboard() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
+  const { toggleTheme, isDark } = useTheme();
 
   const [farmerData, setFarmerData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -214,7 +216,15 @@ export default function FarmerDashboard() {
     <>
       <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 pb-8 transition-all duration-300">
         {/* Header */}
-        <div className="text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4">
+        <div className="relative text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4">
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all active:scale-90"
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            <span className="text-lg">{isDark ? '☀️' : '🌙'}</span>
+          </button>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg">
             🌾 Chiefdom Empowerment Model
           </h1>
@@ -312,6 +322,13 @@ export default function FarmerDashboard() {
                       className="px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
                     >
                       🚪 Logout
+                    </button>
+                    <button
+                      onClick={toggleTheme}
+                      className="px-3 sm:px-4 py-2 bg-gray-700 hover:bg-gray-600 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
+                      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                    >
+                      {isDark ? '☀️ Light' : '🌙 Dark'}
                     </button>
                   </div>
                 </div>

@@ -6,6 +6,7 @@ import { GeoSelectWithOther } from "@/components/GeoSelectWithOther";
 import PhoneInput from "@/components/PhoneInput";
 import { logger } from "@/utils/logger";
 import { useNotification } from "@/contexts/NotificationContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface Operator {
   _id: string;
@@ -186,6 +187,7 @@ export default function OperatorManagement() {
   const navigate = useNavigate();
   const location = useLocation();
   const notify   = useNotification();
+  const { toggleTheme, isDark } = useTheme();
 
   const [operators,        setOperators]        = useState<Operator[]>([]);
   const [loading,          setLoading]          = useState(false);
@@ -193,6 +195,9 @@ export default function OperatorManagement() {
   const [submitting,       setSubmitting]       = useState(false);
 
   const [showCreateModal,  setShowCreateModal]  = useState(false);
+  // Initialize fromDashboard directly from router location state so it's
+  // true from the very first render (no race with useEffect)
+  const [fromDashboard,    setFromDashboard]    = useState(() => !!(location.state as any)?.openCreate);
   const [showViewModal,    setShowViewModal]    = useState(false);
   const [showEditModal,    setShowEditModal]    = useState(false);
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
@@ -247,6 +252,7 @@ export default function OperatorManagement() {
     // If navigated here from Dashboard's "Add Operator" quick action, auto-open create modal
     if ((location.state as any)?.openCreate) {
       openCreateModal();
+      setFromDashboard(true);
       // Clear the state so refresh doesn't re-open the modal
       window.history.replaceState({}, "");
     }
@@ -561,6 +567,13 @@ export default function OperatorManagement() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-base hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+            >
+              {isDark ? '☀️' : '🌙'}
+            </button>
+            <button
               onClick={() => { logger.info("OperatorManagement", "Manual refresh triggered"); loadOperators(currentPage); }}
               disabled={loading}
               className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition"
@@ -845,7 +858,7 @@ export default function OperatorManagement() {
               <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center rounded-t-2xl">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white">➕ Create New Operator</h2>
                 <button
-                  onClick={() => { setShowCreateModal(false); setCreateError(""); setShowCreatePwd(false); setShowCreateConfirmPwd(false); }}
+                  onClick={() => { setShowCreateModal(false); setCreateError(""); setShowCreatePwd(false); setShowCreateConfirmPwd(false); if (fromDashboard) { setFromDashboard(false); navigate(-1); } }}
                   className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl leading-none transition"
                 >×</button>
               </div>
@@ -949,7 +962,7 @@ export default function OperatorManagement() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setShowCreateModal(false); setCreateError(""); setShowCreatePwd(false); setShowCreateConfirmPwd(false); }}
+                    onClick={() => { setShowCreateModal(false); setCreateError(""); setShowCreatePwd(false); setShowCreateConfirmPwd(false); if (fromDashboard) { setFromDashboard(false); navigate(-1); } }}
                     className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-3 px-4 rounded-lg transition"
                   >Cancel</button>
                 </div>

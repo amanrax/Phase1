@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { logger } from "@/utils/logger";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -287,6 +288,7 @@ function FarmerCard({ farmer, actioningId, onView, onEdit, onReview, onToggleAct
 export default function FarmersList() {
   const navigate = useNavigate();
   const notify   = useNotification();
+  const { toggleTheme, isDark } = useTheme();
 
   const [allFarmers,      setAllFarmers]      = useState<Farmer[]>([]);
   const [filteredFarmers, setFilteredFarmers] = useState<Farmer[]>([]);
@@ -418,6 +420,13 @@ export default function FarmersList() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition active:scale-90"
+            >
+              <span className="block">{isDark ? '☀️' : '🌙'}</span>
+            </button>
             <button
               onClick={() => { logger.info("FarmersList", "Refresh triggered"); loadFarmers(currentPage, true); }}
               disabled={refreshing || loading}

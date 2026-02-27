@@ -1,9 +1,11 @@
 # backend/app/routes/reports.py
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from datetime import datetime, timedelta
 from app.database import get_db
 from app.dependencies.roles import require_role
 from app.services.logging_service import log_event
+import io
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
@@ -228,3 +230,103 @@ async def farmers_details_report(db=Depends(get_db)):
         "total_farmers": len(formatted_farmers),
         "farmers": formatted_farmers
     }
+
+
+# ── PDF/Excel download endpoints (Celery-backed) ─────────────────────────────
+
+@router.post("/farmer-pdf/{farmer_id}", dependencies=[Depends(require_role(["ADMIN", "OPERATOR"]))])
+async def trigger_farmer_pdf(farmer_id: str, current_user: dict = Depends(require_role(["ADMIN", "OPERATOR"]))):
+    """Enqueue farmer profile PDF generation. Returns task_id for polling."""
+    from app.tasks.report_tasks import generate_farmer_pdf
+    task = generate_farmer_pdf.delay(farmer_id)
+    await log_event(level="INFO", module="reports", action="trigger_farmer_pdf",
+                    endpoint=f"/api/reports/farmer-pdf/{farmer_id}",
+                    user_id=current_user.get("email"), role=current_user.get("role"))
+    return {"task_id": task.id, "status": "queued",
+            "message": "PDF generation started. Poll /reports/task/{task_id} for status."}
+
+
+@router.post("/operator-pdf/{operator_id}", dependencies=[Depends(require_role(["ADMIN"]))])
+async def trigger_operator_pdf(operator_id: str, current_user: dict = Depends(require_role(["ADMIN"]))):
+    """Enqueue operator report PDF generation."""
+    from app.tasks.report_tasks import generate_operator_pdf
+    task = generate_operator_pdf.delay(operator_id)
+    await log_event(level="INFO", module="reports", action="trigger_operator_pdf",
+                    endpoint=f"/api/reports/operator-pdf/{operator_id}",
+                    user_id=current_user.get("email"), role="ADMIN")
+    return {"task_id": task.id, "status": "queued",
+            "message": "PDF generation started. Poll /reports/task/{task_id} for status."}
+
+
+@router.post("/summary-pdf", dependencies=[Depends(require_role(["ADMIN"]))])
+async def trigger_summary_pdf(current_user: dict = Depends(require_role(["ADMIN"]))):
+    """Enqueue admin summary PDF generation."""
+    from app.tasks.report_tasks import generate_summary_pdf
+    task = generate_summary_pdf.delay()
+    await log_event(level="INFO", module="reports", action="trigger_summary_pdf",
+                    endpoint="/api/reports/summary-pdf",
+                    user_id=current_user.get("email"), role="ADMIN")
+    return {"task_id": task.id, "status": "queued",
+            "message": "PDF generation started. Poll /reports/task/{task_id} for status."}
+
+
+@router.post("/farmers-excel", dependencies=[Depends(require_role(["ADMIN"]))])
+async def trigger_farmers_excel(province: str = None, current_user: dict = Depends(require_role(["ADMIN"]))):
+    """Enqueue farmers Excel export. Optionally filter by province."""
+    from app.tasks.report_tasks import generate_farmers_excel
+    task = generate_farmers_excel.delay(province)
+    await log_event(level="INFO", module="reports", action="trigger_farmers_excel",
+                    endpoint="/api/reports/farmers-excel",
+                    user_id=current_user.get("email"), role="ADMIN")
+    return {"task_id": task.id, "status": "queued",
+            "message": "Excel export started. Poll /reports/task/{task_id} for status."}
+
+
+@router.post("/summary-excel", dependencies=[Depends(require_role(["ADMIN"]))])
+async def trigger_summary_excel(current_user: dict = Depends(require_role(["ADMIN"]))):
+    """Enqueue admin summary Excel export."""
+    from app.tasks.report_tasks import generate_summary_excel
+    task = generate_summary_excel.delay()
+    await log_event(level="INFO", module="reports", action="trigger_summary_excel",
+                    endpoint="/api/reports/summary-excel",
+                    user_id=current_user.get("email"), role="ADMIN")
+    return {"task_id": task.id, "status": "queued",
+            "message": "Excel export started. Poll /reports/task/{task_id} for status."}
+
+
+@router.get("/task/{task_id}", dependencies=[Depends(require_role(["ADMIN", "OPERATOR"]))])
+async def poll_report_task(task_id: str):
+    """Poll Celery task status. Returns file_id when complete."""
+    from celery.result import AsyncResult
+    from app.tasks.celery_app import celery_app
+    result = AsyncResult(task_id, app=celery_app)
+    if result.state == "PENDING":
+        return {"task_id": task_id, "status": "pending"}
+    elif result.state == "STARTED":
+        return {"task_id": task_id, "status": "processing"}
+    elif result.state == "SUCCESS":
+        return {"task_id": task_id, "status": "completed", **result.result}
+    elif result.state == "FAILURE":
+        return {"task_id": task_id, "status": "failed", "error": str(result.result)}
+    return {"task_id": task_id, "status": result.state.lower()}
+
+
+@router.get("/download/{file_id}", dependencies=[Depends(require_role(["ADMIN", "OPERATOR"]))])
+async def download_report(file_id: str):
+    """Stream a completed report file from GridFS by file_id."""
+    from app.services.gridfs_service import gridfs_service
+    try:
+        file_data, metadata = await gridfs_service.download_file(file_id)
+        filename    = metadata.get("filename", "report")
+        content_type = metadata.get("content_type", "application/octet-stream")
+        if filename.endswith(".pdf"):
+            content_type = "application/pdf"
+        elif filename.endswith(".xlsx"):
+            content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        return StreamingResponse(
+            io.BytesIO(file_data),
+            media_type=content_type,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Report file not found: {str(e)}")
