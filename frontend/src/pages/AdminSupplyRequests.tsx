@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import BackButton from "@/components/BackButton";
 import axios from "@/utils/axios";
 import { useNotification } from "@/contexts/NotificationContext";
 
@@ -19,7 +19,6 @@ interface SupplyRequest {
 }
 
 export default function AdminSupplyRequests() {
-  const navigate = useNavigate();
   const { success: showSuccess, error: showError } = useNotification();
   const [allRequests, setAllRequests] = useState<SupplyRequest[]>([]);
   const [filteredRequests, setFilteredRequests] = useState<SupplyRequest[]>([]);
@@ -158,9 +157,7 @@ export default function AdminSupplyRequests() {
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/admin-dashboard")} className="text-green-700 hover:text-green-800 font-bold text-sm">
-              ← BACK
-            </button>
+            <BackButton to="/admin-dashboard" />
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">📦 Requests</h1>
           </div>
           {pendingCount > 0 && (

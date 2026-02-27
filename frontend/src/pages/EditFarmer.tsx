@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import BackButton from "@/components/BackButton";
 import { farmerService } from "@/services/farmer.service";
 import geoService from "@/services/geo.service";
 import { handleNRCChange } from "@/utils/nrcFormatter";
@@ -311,132 +312,105 @@ export default function EditFarmer() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{
-          width: "50px", height: "50px", border: "4px solid white", borderTop: "4px solid transparent",
-          borderRadius: "50%", animation: "spin 1s linear infinite"
-        }}></div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
-      <div style={{ textAlign: "center", color: "white", paddingTop: "20px", paddingBottom: "20px" }}>
-        <h1 style={{ fontSize: "clamp(1.5rem, 5vw, 2.8rem)", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
-          🌾 Chiefdom Management Model
-        </h1>
-        <p style={{ fontSize: "clamp(14px, 3vw, 18px)", opacity: 0.9 }}>Edit Farmer</p>
-      </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900 transition-colors duration-300">
+      {/* Header */}
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
+          <BackButton />
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">✏️ Edit Farmer</h1>
+        </div>
+      </header>
 
-      <div style={{ maxWidth: "900px", margin: "0 auto", padding: "0 15px 40px 15px" }}>
-        <button
-          onClick={() => navigate(-1)}
-          style={{
-            padding: "10px 20px", background: "white", color: "#667eea", border: "none",
-            borderRadius: "8px", fontSize: "14px", fontWeight: "600", cursor: "pointer",
-            marginBottom: "20px", transition: "all 0.3s"
-          }}
-          onMouseOver={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
-          onMouseOut={(e) => e.currentTarget.style.transform = "translateY(0)"}
-        >
-          ← Back
-        </button>
-
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-12">
         {error && (
-          <div style={{ background: "#f8d7da", color: "#721c24", padding: "12px", borderRadius: "8px", marginBottom: "20px", border: "1px solid #f5c6cb" }}>
+          <div className="mb-5 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 border-l-4 border-l-red-500 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm">
             ❌ {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Personal Info */}
-          <div style={{ background: "white", padding: "clamp(15px, 4vw, 25px)", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
-            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 sm:p-6 border border-gray-100 dark:border-gray-700">
+            <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 mb-5 pb-2 border-b-2 border-indigo-400">
               👤 Personal Information
             </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
-                  First Name <span style={{ color: "#dc3545" }}>*</span>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                  First Name <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text" required value={formData.first_name}
+                <input type="text" required value={formData.first_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
-                  Last Name <span style={{ color: "#dc3545" }}>*</span>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                  Last Name <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text" required value={formData.last_name}
+                <input type="text" required value={formData.last_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
-                  Phone Primary <span style={{ color: "#dc3545" }}>*</span>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                  Phone Primary <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="tel" required value={formData.phone_primary}
+                <input type="tel" required value={formData.phone_primary}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone_primary: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
                   Phone Secondary
                 </label>
-                <input
-                  type="tel" value={formData.phone_secondary}
+                <input type="tel" value={formData.phone_secondary}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone_secondary: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Email</label>
-                <input
-                  type="email" value={formData.email}
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Email</label>
+                <input type="email" value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
-                  NRC <span style={{ color: "#dc3545" }}>*</span>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                  NRC <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text" required value={formData.nrc}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, nrc: handleNRCChange(e.target.value) }))
-                  }
-                  placeholder="123456/78/9"
-                  maxLength={12}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                <input type="text" required value={formData.nrc}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, nrc: handleNRCChange(e.target.value) }))}
+                  placeholder="123456/78/9" maxLength={12}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
-                  Date of Birth <span style={{ color: "#dc3545" }}>*</span>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                  Date of Birth <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="date" required value={formData.date_of_birth}
+                <input type="date" required value={formData.date_of_birth}
                   onChange={(e) => setFormData(prev => ({ ...prev, date_of_birth: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
-                  Gender <span style={{ color: "#dc3545" }}>*</span>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                  Gender <span className="text-red-500">*</span>
                 </label>
-                <select
-                  required value={formData.gender}
+                <select required value={formData.gender}
                   onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 >
                   <option value="">Select Gender</option>
                   <option value="male">Male</option>
@@ -444,31 +418,27 @@ export default function EditFarmer() {
                   <option value="other">Other</option>
                 </select>
               </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
-                  Ethnic Group
-                </label>
-                <input
-                  type="text" value={formData.ethnic_group}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Ethnic Group</label>
+                <input type="text" value={formData.ethnic_group}
                   onChange={(e) => setFormData(prev => ({ ...prev, ethnic_group: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
             </div>
           </div>
 
           {/* Address */}
-          <div style={{ background: "white", padding: "clamp(15px, 4vw, 25px)", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
-            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 sm:p-6 border border-gray-100 dark:border-gray-700">
+            <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 mb-5 pb-2 border-b-2 border-indigo-400">
               📍 Address
             </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Province</label>
-                <select
-                  value={formData.province_code}
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Province</label>
+                <select value={formData.province_code}
                   onChange={(e) => handleProvinceChange(e.target.value)}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 >
                   <option value="">Select Province</option>
                   {provinces.map(p => <option key={p.code} value={p.code}>{p.name}</option>)}
@@ -477,21 +447,19 @@ export default function EditFarmer() {
               </div>
               {showCustomProvince && (
                 <div>
-                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Custom Province</label>
-                  <input
-                    type="text" value={customProvince}
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Custom Province</label>
+                  <input type="text" value={customProvince}
                     onChange={(e) => setCustomProvince(e.target.value)}
-                    style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                   />
                 </div>
               )}
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>District</label>
-                <select
-                  value={formData.district_code}
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">District</label>
+                <select value={formData.district_code}
                   onChange={(e) => handleDistrictChange(e.target.value)}
                   disabled={!formData.province_code}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px", opacity: formData.province_code ? 1 : 0.5 }}
+                  className={`w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition ${!formData.province_code ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   <option value="">Select District</option>
                   {districts.map(d => <option key={d.code} value={d.code}>{d.name}</option>)}
@@ -500,21 +468,19 @@ export default function EditFarmer() {
               </div>
               {showCustomDistrict && (
                 <div>
-                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Custom District</label>
-                  <input
-                    type="text" value={customDistrict}
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Custom District</label>
+                  <input type="text" value={customDistrict}
                     onChange={(e) => setCustomDistrict(e.target.value)}
-                    style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                   />
                 </div>
               )}
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Chiefdom</label>
-                <select
-                  value={formData.chiefdom_code}
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Chiefdom</label>
+                <select value={formData.chiefdom_code}
                   onChange={(e) => handleChiefdomChange(e.target.value)}
                   disabled={!formData.district_code}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px", opacity: formData.district_code ? 1 : 0.5 }}
+                  className={`w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition ${!formData.district_code ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   <option value="">Select Chiefdom</option>
                   {chiefdoms.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
@@ -523,75 +489,68 @@ export default function EditFarmer() {
               </div>
               {showCustomChiefdom && (
                 <div>
-                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Custom Chiefdom</label>
-                  <input
-                    type="text" value={customChiefdom}
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Custom Chiefdom</label>
+                  <input type="text" value={customChiefdom}
                     onChange={(e) => setCustomChiefdom(e.target.value)}
-                    style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                   />
                 </div>
               )}
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Village</label>
-                <input
-                  type="text" value={formData.village}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Village</label>
+                <input type="text" value={formData.village}
                   onChange={(e) => setFormData(prev => ({ ...prev, village: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
             </div>
           </div>
 
           {/* Farm Info */}
-          <div style={{ background: "white", padding: "clamp(15px, 4vw, 25px)", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
-            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 sm:p-6 border border-gray-100 dark:border-gray-700">
+            <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 mb-5 pb-2 border-b-2 border-indigo-400">
               🌾 Farm Information
             </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Farm Size (hectares)</label>
-                <input
-                  type="number" step="0.01" value={formData.farm_size_hectares}
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Farm Size (hectares)</label>
+                <input type="number" step="0.01" value={formData.farm_size_hectares}
                   onChange={(e) => setFormData(prev => ({ ...prev, farm_size_hectares: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Years Farming</label>
-                <input
-                  type="number" value={formData.years_farming}
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Years Farming</label>
+                <input type="number" value={formData.years_farming}
                   onChange={(e) => setFormData(prev => ({ ...prev, years_farming: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
-                  Crops Grown (comma-separated)
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                  Crops Grown <span className="text-gray-400 normal-case font-normal">(comma-separated)</span>
                 </label>
-                <input
-                  type="text" value={formData.crops_grown}
+                <input type="text" value={formData.crops_grown}
                   onChange={(e) => setFormData(prev => ({ ...prev, crops_grown: e.target.value }))}
                   placeholder="e.g., Maize, Beans, Cassava"
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>
-                  Livestock Types (comma-separated)
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                  Livestock Types <span className="text-gray-400 normal-case font-normal">(comma-separated)</span>
                 </label>
-                <input
-                  type="text" value={formData.livestock_types}
+                <input type="text" value={formData.livestock_types}
                   onChange={(e) => setFormData(prev => ({ ...prev, livestock_types: e.target.value }))}
                   placeholder="e.g., Cattle, Goats, Chickens"
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "flex", alignItems: "center", fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", cursor: "pointer" }}>
-                  <input
-                    type="checkbox" checked={formData.has_irrigation}
+              <div className="sm:col-span-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                  <input type="checkbox" checked={formData.has_irrigation}
                     onChange={(e) => setFormData(prev => ({ ...prev, has_irrigation: e.target.checked }))}
-                    style={{ marginRight: "8px", width: "18px", height: "18px", cursor: "pointer" }}
+                    className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                   />
                   Has Irrigation
                 </label>
@@ -600,62 +559,44 @@ export default function EditFarmer() {
           </div>
 
           {/* Household Info */}
-          <div style={{ background: "white", padding: "clamp(15px, 4vw, 25px)", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", marginBottom: "20px" }}>
-            <h3 style={{ fontSize: "clamp(16px, 4vw, 18px)", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 sm:p-6 border border-gray-100 dark:border-gray-700">
+            <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 mb-5 pb-2 border-b-2 border-indigo-400">
               🏠 Household Information
             </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Household Size</label>
-                <input
-                  type="number" value={formData.household_size}
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Household Size</label>
+                <input type="number" value={formData.household_size}
                   onChange={(e) => setFormData(prev => ({ ...prev, household_size: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Number of Dependents</label>
-                <input
-                  type="number" value={formData.number_of_dependents}
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Number of Dependents</label>
+                <input type="number" value={formData.number_of_dependents}
                   onChange={(e) => setFormData(prev => ({ ...prev, number_of_dependents: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "6px" }}>Primary Income Source</label>
-                <input
-                  type="text" value={formData.primary_income_source}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Primary Income Source</label>
+                <input type="text" value={formData.primary_income_source}
                   onChange={(e) => setFormData(prev => ({ ...prev, primary_income_source: e.target.value }))}
-                  style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: "flex", gap: "15px", justifyContent: "flex-end", flexWrap: "wrap" }}>
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              style={{
-                padding: "12px 30px", background: "var(--text-secondary-hex)", color: "white", border: "none",
-                borderRadius: "8px", fontSize: "clamp(13px, 2vw, 15px)", fontWeight: "600", cursor: "pointer", transition: "all 0.3s", flex: "1 1 120px", minWidth: "120px"
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = "#5a6268"}
-              onMouseOut={(e) => e.currentTarget.style.background = "#6c757d"}
+          <div className="flex gap-3 justify-end flex-wrap pt-2">
+            <button type="button" onClick={() => navigate(-1)}
+              className="flex-1 sm:flex-none px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold rounded-lg text-sm transition active:scale-95"
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={saving}
-              style={{
-                padding: "12px 30px", background: saving ? "#ccc" : "#28a745", color: "white",
-                border: "none", borderRadius: "8px", fontSize: "clamp(13px, 2vw, 15px)", fontWeight: "600",
-                cursor: saving ? "not-allowed" : "pointer", transition: "all 0.3s", flex: "1 1 120px", minWidth: "120px"
-              }}
-              onMouseOver={(e) => !saving && (e.currentTarget.style.background = "#218838")}
-              onMouseOut={(e) => !saving && (e.currentTarget.style.background = "#28a745")}
+            <button type="submit" disabled={saving}
+              className="flex-1 sm:flex-none px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold rounded-lg text-sm transition active:scale-95"
             >
               {saving ? "Saving..." : "💾 Save Changes"}
             </button>

@@ -1,6 +1,7 @@
 // src/pages/FarmersList.tsx — Peak-functionality farmers list
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import BackButton from "@/components/BackButton";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -409,11 +410,7 @@ export default function FarmersList() {
       <header className="sticky top-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="px-4 py-3 flex items-center justify-between max-w-4xl mx-auto">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 text-lg transition active:scale-90"
-              aria-label="Go back"
-            >←</button>
+            <BackButton />
             <div>
               <h1 className="text-base font-extrabold text-gray-800 dark:text-gray-100">👨‍🌾 Farmers</h1>
               {!loading && <p className="text-[11px] text-gray-500 dark:text-gray-400">{totalCount} total</p>}

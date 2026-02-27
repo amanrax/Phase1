@@ -1,7 +1,7 @@
 // src/pages/FarmerDetails.tsx
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { safeNavigate } from "@/config/navigation";
+import BackButton from "@/components/BackButton";
 import { farmerService } from "@/services/farmer.service";
 import useAuthStore from "@/store/authStore";
 import { useNotification } from "@/contexts/NotificationContext";
@@ -473,12 +473,7 @@ export default function FarmerDetails() {
         <div className="text-center">
           <div className="text-8xl mb-6">❌</div>
           <p className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Farmer not found</p>
-          <button
-            onClick={() => navigate(getBackPath())}
-            className="px-8 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl font-semibold text-lg shadow transition-all active:scale-95"
-          >
-            Back
-          </button>
+          <BackButton to={getBackPath()} />
         </div>
       </div>
     );
@@ -502,12 +497,7 @@ export default function FarmerDetails() {
 
         {/* Top Actions */}
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <button
-            onClick={() => safeNavigate(navigate, getBackPath())}
-            className="px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 text-indigo-700 dark:text-indigo-400 font-semibold text-sm rounded-xl shadow transition-all active:scale-95"
-          >
-            ← Back
-          </button>
+          <BackButton to={getBackPath()} />
           <div className="flex flex-wrap gap-2">
             <button onClick={handleGenerateIDCard} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
               🎴 Generate ID Card

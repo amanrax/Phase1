@@ -1,6 +1,6 @@
 // frontend/src/pages/AdminSettings.tsx - FIXED VERSION
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import BackButton from "@/components/BackButton";
 import axios from "@/utils/axios";
 import useAuthStore from "@/store/authStore";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -162,8 +162,6 @@ function AppearanceTab() {
 }
 
 export default function AdminSettings() {
-  const navigate = useNavigate();
-  
   const [activeTab, setActiveTab] = useState<SettingsTab>("users");
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
@@ -528,9 +526,7 @@ export default function AdminSettings() {
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/admin-dashboard")} className="text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 font-bold text-sm">
-              ← BACK
-            </button>
+            <BackButton to="/admin-dashboard" />
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white">⚙️ Settings</h1>
           </div>
           <div className="flex items-center gap-2">

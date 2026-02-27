@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import BackButton from '@/components/BackButton';
 import { fetchLogs, fetchLogStats, exportCsv, LogItem } from '../services/logs.service';
 
 const levels = ['DEBUG','INFO','WARNING','ERROR','CRITICAL'] as const;
 
 export const LogViewer: React.FC = () => {
-  const navigate = useNavigate();
   const [items, setItems] = useState<LogItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -56,12 +55,7 @@ export const LogViewer: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm">
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => navigate("/admin-dashboard")} 
-              className="text-green-700 hover:text-green-800 font-bold text-sm"
-            >
-              ← BACK
-            </button>
+            <BackButton to="/admin-dashboard" />
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-100">📋 System Logs</h1>
           </div>
         </div>

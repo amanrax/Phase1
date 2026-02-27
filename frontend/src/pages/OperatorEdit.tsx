@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import BackButton from "@/components/BackButton";
 import { operatorService } from "@/services/operator.service";
 import geoService from "@/services/geo.service";
 import { useNotification } from '@/contexts/NotificationContext';
@@ -182,166 +183,86 @@ export default function OperatorEdit() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", color: "white" }}>
-          <div style={{
-            width: "60px",
-            height: "60px",
-            border: "5px solid rgba(255,255,255,0.3)",
-            borderTop: "5px solid white",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-            margin: "0 auto 20px"
-          }}></div>
-          <p style={{ fontSize: "18px" }}>Loading operator data...</p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", color: "white" }}>
-          <div style={{ fontSize: "80px", marginBottom: "20px" }}>❌</div>
-          <p style={{ fontSize: "24px", marginBottom: "20px" }}>{error}</p>
-          <button
-            onClick={() => navigate("/operators/manage")}
-            style={{
-              padding: "12px 30px",
-              background: "white",
-              color: "#667eea",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "16px",
-              fontWeight: "600",
-              cursor: "pointer"
-            }}
-          >
-            ← Back
-          </button>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="text-7xl mb-5">❌</div>
+          <p className="text-2xl mb-6">{error}</p>
+          <BackButton to="/operators/manage" />
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
-      <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
-        <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
-          🌾 Chiefdom Management Model
-        </h1>
-        <p style={{ fontSize: "18px", opacity: 0.9 }}>Edit Operator</p>
-      </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900 transition-colors duration-300">
+      {/* Header */}
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
+          <BackButton to="/operators/manage" />
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">✏️ Edit Operator</h1>
+        </div>
+      </header>
 
-      <div style={{ maxWidth: "800px", margin: "0 auto", padding: "0 20px 40px 20px" }}>
-        <button
-          onClick={() => navigate("/operators/manage")}
-          style={{
-            padding: "10px 20px",
-            background: "white",
-            color: "#667eea",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "14px",
-            fontWeight: "600",
-            cursor: "pointer",
-            marginBottom: "20px",
-            transition: "all 0.3s"
-          }}
-          onMouseOver={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
-          onMouseOut={(e) => e.currentTarget.style.transform = "translateY(0)"}
-        >
-          ← Back
-        </button>
-
-        <div style={{ background: "white", padding: "40px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
-          <h2 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "30px", color: "var(--text-primary-hex)" }}>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-12">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 sm:p-8 border border-gray-100 dark:border-gray-700">
+          <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-6 pb-2 border-b-2 border-indigo-400">
             👨‍💼 Operator Information
           </h2>
 
-          <div style={{ display: "grid", gap: "20px" }}>
+          <div className="space-y-5">
             <div>
-              <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "8px" }}>
-                Full Name <span style={{ color: "#dc3545" }}>*</span>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                Full Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.full_name}
                 onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: "2px solid #e0e0e0",
-                  borderRadius: "8px",
-                  fontSize: "15px",
-                  transition: "border 0.3s"
-                }}
-                onFocus={(e) => e.currentTarget.style.borderColor = "#667eea"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "#e0e0e0"}
+                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
               />
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "8px" }}>
-                Email <span style={{ color: "#dc3545" }}>*</span>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: "2px solid #e0e0e0",
-                  borderRadius: "8px",
-                  fontSize: "15px",
-                  transition: "border 0.3s"
-                }}
-                onFocus={(e) => e.currentTarget.style.borderColor = "#667eea"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "#e0e0e0"}
+                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
               />
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "8px" }}>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
                 Phone
               </label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: "2px solid #e0e0e0",
-                  borderRadius: "8px",
-                  fontSize: "15px",
-                  transition: "border 0.3s"
-                }}
-                onFocus={(e) => e.currentTarget.style.borderColor = "#667eea"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "#e0e0e0"}
+                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "8px" }}>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
                   Province
                 </label>
                 <select
                   value={showCustomProvince ? 'OTHER' : selectedProvince}
                   onChange={(e) => handleProvinceChange(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "2px solid #e0e0e0",
-                    borderRadius: "8px",
-                    fontSize: "15px",
-                    transition: "border 0.3s"
-                  }}
-                  onFocus={(e) => e.currentTarget.style.borderColor = "#667eea"}
-                  onBlur={(e) => e.currentTarget.style.borderColor = "#e0e0e0"}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 >
                   <option value="">Select Province</option>
                   {provinces.map(p => (
@@ -355,37 +276,20 @@ export default function OperatorEdit() {
                     value={customProvince}
                     onChange={(e) => setCustomProvince(e.target.value)}
                     placeholder="Enter province name"
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      border: "2px solid #e0e0e0",
-                      borderRadius: "8px",
-                      fontSize: "15px",
-                      marginTop: "8px"
-                    }}
+                    className="w-full mt-2 px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                   />
                 )}
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", marginBottom: "8px" }}>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
                   Assigned District
                 </label>
                 <select
                   value={showCustomDistrict ? 'OTHER' : formData.assigned_district}
                   onChange={(e) => handleDistrictChange(e.target.value)}
                   disabled={showCustomProvince || (!selectedProvince && !customProvince)}
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "2px solid #e0e0e0",
-                    borderRadius: "8px",
-                    fontSize: "15px",
-                    transition: "border 0.3s",
-                    opacity: (showCustomProvince || (!selectedProvince && !customProvince)) ? 0.5 : 1
-                  }}
-                  onFocus={(e) => e.currentTarget.style.borderColor = "#667eea"}
-                  onBlur={(e) => e.currentTarget.style.borderColor = "#e0e0e0"}
+                  className={`w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition ${(showCustomProvince || (!selectedProvince && !customProvince)) ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   <option value="">All Districts</option>
                   {districts.map(d => (
@@ -399,85 +303,45 @@ export default function OperatorEdit() {
                     value={customDistrict}
                     onChange={(e) => setCustomDistrict(e.target.value)}
                     placeholder="Enter district name"
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      border: "2px solid #e0e0e0",
-                      borderRadius: "8px",
-                      fontSize: "15px",
-                      marginTop: "8px"
-                    }}
+                    className="w-full mt-2 px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                   />
                 )}
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <input
-                type="checkbox"
-                id="is_active"
-                checked={formData.is_active}
-                onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
-                style={{ width: "20px", height: "20px", cursor: "pointer" }}
-              />
-              <label htmlFor="is_active" style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)", cursor: "pointer" }}>
+            <div>
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  id="is_active"
+                  checked={formData.is_active}
+                  onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                  className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                />
                 Active Operator
               </label>
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "15px", marginTop: "30px", justifyContent: "flex-end" }}>
+          <div className="flex gap-3 justify-end mt-8 flex-wrap">
             <button
+              type="button"
               onClick={() => navigate("/operators/manage")}
-              style={{
-                padding: "12px 30px",
-                background: "var(--text-secondary-hex)",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "15px",
-                fontWeight: "600",
-                cursor: "pointer",
-                transition: "all 0.3s"
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = "#5a6268"}
-              onMouseOut={(e) => e.currentTarget.style.background = "#6c757d"}
+              className="flex-1 sm:flex-none px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold rounded-lg text-sm transition active:scale-95"
             >
               Cancel
             </button>
-
             <button
+              type="button"
               onClick={handleSave}
               disabled={saving}
-              style={{
-                padding: "12px 30px",
-                background: saving ? "#999" : "#28a745",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "15px",
-                fontWeight: "600",
-                cursor: saving ? "not-allowed" : "pointer",
-                transition: "all 0.3s"
-              }}
-              onMouseOver={(e) => {
-                if (!saving) e.currentTarget.style.background = "#218838";
-              }}
-              onMouseOut={(e) => {
-                if (!saving) e.currentTarget.style.background = "#28a745";
-              }}
+              className="flex-1 sm:flex-none px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold rounded-lg text-sm transition active:scale-95"
             >
               {saving ? "⏳ Saving..." : "💾 Save Changes"}
             </button>
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

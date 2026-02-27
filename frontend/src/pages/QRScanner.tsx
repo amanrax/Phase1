@@ -2,6 +2,7 @@
 // QR code scanner page — uses Capacitor barcode scanner on mobile, manual on web
 import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import BackButton from "@/components/BackButton";
 import axiosClient from "@/utils/axios";
 import useAuthStore from "@/store/authStore";
 
@@ -227,9 +228,7 @@ const QRScanner: React.FC = () => {
 
             <div className="text-center text-xs text-gray-500">
               {isAuthenticated ? (
-                <button onClick={() => navigate(-1)} className="text-indigo-400 underline underline-offset-2">
-                  ← Back
-                </button>
+                <BackButton />
               ) : (
                 <span>
                   <button

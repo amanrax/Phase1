@@ -22,7 +22,7 @@ export default function Header({
         <div className="flex items-center gap-4">
           {showBack && (
             <button
-              onClick={() => navigate(backTo || -1)}
+              onClick={() => { if (backTo) navigate(backTo); else navigate(-1); }}
               className="flex items-center gap-2 hover:bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg transition"
               aria-label="Go back"
             >

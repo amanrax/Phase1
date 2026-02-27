@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { safeNavigate } from '@/config/navigation';
+import BackButton from "@/components/BackButton";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
@@ -328,32 +329,13 @@ const FarmerIDCard: React.FC = () => {
     setShowPreview(true);
   };
 
-  const handleViewDocument = (docType: string, docUrl: string | null) => {
-    if (!docUrl) {
-      showError('Document not available', 3000);
-      return;
-    }
-
-    const titles: Record<string, string> = {
-      nrc: 'NRC Document',
-      land_title: 'Land Title',
-      license: 'License',
-      certificate: 'Certificate',
-    };
-
-    logger.info(COMPONENT, `handleViewDocument ${docType}`, { url: docUrl.substring(0, 50) });
-    sessionStorage.setItem('doc_view_path', docUrl);
-    sessionStorage.setItem('doc_view_title', titles[docType] || 'Document');
-    safeNavigate(navigate, '/document-viewer');
-  };
-
   const formatDate = (dateString?: string) => {
     if (!dateString) return "N/A";
     try {
-      return new Date(dateString).toLocaleDateString("en-US", { 
-        year: "numeric", 
-        month: "short", 
-        day: "numeric" 
+      return new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
     } catch {
       return dateString;
@@ -393,12 +375,7 @@ const FarmerIDCard: React.FC = () => {
           <div className="text-4xl mb-4">❌</div>
           <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-3">Error</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
-          <button
-            onClick={() => safeNavigate(navigate, "/farmer-dashboard")}
-            className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-6 rounded-lg transition active:scale-95"
-          >
-            ← Back to Dashboard
-          </button>
+          <BackButton to="/farmer-dashboard" label="Back to Dashboard" />
         </div>
       </div>
     );
@@ -411,12 +388,7 @@ const FarmerIDCard: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => safeNavigate(navigate, "/farmer-dashboard")} 
-                className="text-green-700 hover:text-green-800 font-bold text-sm transition active:scale-95"
-              >
-                ← BACK
-              </button>
+              <BackButton to="/farmer-dashboard" />
               <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">🆔 Farmer ID Card Management</h1>
             </div>
           </div>
@@ -557,6 +529,20 @@ const FarmerIDCard: React.FC = () => {
                       className="w-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 text-sm sm:text-base"
                     >
                       <span>🎴</span> Preview Card
+                    </button>
+
+                    <button
+                      onClick={handleViewIDCard}
+                      disabled={viewLoading}
+                      className={`w-full font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 text-sm sm:text-base ${
+                        viewLoading ? "bg-blue-400 cursor-not-allowed text-white" : "bg-blue-600 hover:bg-blue-700 active:scale-95 text-white"
+                      }`}
+                    >
+                      {viewLoading ? (
+                        <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div><span>Loading...</span></>
+                      ) : (
+                        <><span>📄</span> View PDF</>
+                      )}
                     </button>
 
                     <button

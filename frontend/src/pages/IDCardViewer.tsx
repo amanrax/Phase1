@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
+import BackButton from '@/components/BackButton';
 
 const IDCardViewer: React.FC = () => {
   const navigate = useNavigate();
@@ -11,7 +12,6 @@ const IDCardViewer: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [pdfError, setPdfError] = useState(false);
   const [isNative, setIsNative] = useState(false);
-  const [autoDownloading, setAutoDownloading] = useState(false);
   const [viewingNatively, setViewingNatively] = useState(false);
 
   useEffect(() => {
@@ -96,7 +96,7 @@ const IDCardViewer: React.FC = () => {
       const filename = `ID_Card_${farmerName.replace(/\s+/g, '_')}_${timestamp}.pdf`;
       
       // Save to Downloads folder
-      const result = await Filesystem.writeFile({
+      await Filesystem.writeFile({
         path: filename,
         data: base64,
         directory: Directory.External,
@@ -165,7 +165,7 @@ const IDCardViewer: React.FC = () => {
           
           try {
             console.log('[IDCardViewer] Trying Documents folder as fallback...');
-            const fallbackResult = await Filesystem.writeFile({
+            await Filesystem.writeFile({
               path: `CEM/${filename}`,
               data: base64,
               directory: Directory.Documents,
@@ -245,12 +245,7 @@ const IDCardViewer: React.FC = () => {
           <div className="text-6xl mb-4">⚠️</div>
           <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">No ID Card Found</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6">Unable to load the ID card</p>
-          <button
-            onClick={() => navigate(-1)}
-            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition"
-          >
-            ← Go Back
-          </button>
+          <BackButton />
         </div>
       </div>
     );
@@ -262,12 +257,7 @@ const IDCardViewer: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => navigate(-1)} 
-                className="text-green-700 hover:text-green-800 font-bold text-sm transition active:scale-95"
-              >
-                ← BACK
-              </button>
+              <BackButton />
               <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">
                 🆔 {farmerName}'s ID Card
               </h1>
@@ -310,7 +300,7 @@ const IDCardViewer: React.FC = () => {
                   disabled={viewingNatively}
                   className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  ← Go Back
+                  ← Back
                 </button>
               </div>
               <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 text-left max-w-sm mx-auto">

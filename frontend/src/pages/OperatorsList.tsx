@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import BackButton from "@/components/BackButton";
 import { operatorService } from "@/services/operator.service";
 // dashboardCache removed – dashboard reloads fresh on each mount
 
@@ -89,12 +90,7 @@ export default function OperatorsList() {
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => navigate("/")} 
-              className="text-green-700 hover:text-green-800 font-bold text-sm"
-            >
-              ← BACK
-            </button>
+            <BackButton />
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white">📋 Field Operators</h1>
           </div>
         </div>

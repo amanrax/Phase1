@@ -1,6 +1,7 @@
 // AdminReports page — client-side quick exports + server-side Celery PDF/Excel generation
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import BackButton from "@/components/BackButton";
 import axios from "axios";
 import { logger } from "@/utils/logger";
 import dashboardService, {
@@ -121,7 +122,7 @@ export default function AdminReports() {
       doc.text(`${activeReport.charAt(0).toUpperCase()+activeReport.slice(1)} Report`, 14, 28);
       doc.setFontSize(10); doc.setTextColor(100,100,100);
       doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 35);
-      autoTable(doc, { startY:45, head:[Object.keys(data[0])], body:data.map(r=>Object.values(r)) as unknown[][], theme:"striped", headStyles:{fillColor:[21,128,61]}, styles:{fontSize:8} });
+      autoTable(doc, { startY:45, head:[Object.keys(data[0])], body:data.map(r=>Object.values(r) as any[]), theme:"striped", headStyles:{fillColor:[21,128,61]}, styles:{fontSize:8} });
       const pc = doc.getNumberOfPages();
       for (let i=1;i<=pc;i++) {
         doc.setPage(i); doc.setFontSize(8); doc.setTextColor(150,150,150);
@@ -194,9 +195,7 @@ export default function AdminReports() {
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/admin-dashboard")} className="text-green-700 dark:text-green-400 hover:text-green-800 font-bold text-sm">
-              &larr; BACK
-            </button>
+            <BackButton to="/admin-dashboard" />
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Reports &amp; Analytics</h1>
           </div>
 

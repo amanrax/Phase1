@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
+import BackButton from '@/components/BackButton';
 
 const DocumentViewer: React.FC = () => {
   const navigate = useNavigate();
@@ -11,7 +12,6 @@ const DocumentViewer: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [viewError, setViewError] = useState(false);
   const [isNative, setIsNative] = useState(false);
-  const [autoDownloading, setAutoDownloading] = useState(false);
   const [viewingNatively, setViewingNatively] = useState(false);
 
   useEffect(() => {
@@ -102,7 +102,7 @@ const DocumentViewer: React.FC = () => {
       const filename = `${docTitle.replace(/\s+/g, '_')}_${timestamp}.${ext}`;
       
       // Save to Downloads folder
-      const result = await Filesystem.writeFile({
+      await Filesystem.writeFile({
         path: filename,
         data: base64,
         directory: Directory.External,
@@ -273,12 +273,7 @@ const DocumentViewer: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => navigate(-1)} 
-                className="text-green-700 hover:text-green-800 font-bold text-sm transition active:scale-95"
-              >
-                ← BACK
-              </button>
+              <BackButton />
               <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">{docTitle}</h1>
             </div>
           </div>
@@ -339,7 +334,7 @@ const DocumentViewer: React.FC = () => {
                   disabled={viewingNatively}
                   className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  ← Go Back
+                  ← Back
                 </button>
               </div>
               <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 text-left max-w-sm mx-auto">

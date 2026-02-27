@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import BackButton from "@/components/BackButton";
 import { operatorService } from "@/services/operator.service";
 
 interface OperatorData {
@@ -69,21 +70,13 @@ export default function OperatorDetails() {
     );
   }
 
-  // Smart back: respect browser history so users return to where they came from
-  const goBack = () => navigate(-1);
-
   if (error || !operator) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <p className="text-6xl mb-4">❌</p>
           <p className="text-xl text-red-600 mb-6">{error || "Operator not found"}</p>
-          <button
-            onClick={goBack}
-            className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-6 rounded-lg"
-          >
-            ← Go Back
-          </button>
+          <BackButton />
         </div>
       </div>
     );
@@ -95,12 +88,7 @@ export default function OperatorDetails() {
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button 
-              onClick={goBack}
-              className="text-green-700 dark:text-green-400 hover:text-green-800 font-bold text-sm"
-            >
-              ← BACK
-            </button>
+            <BackButton />
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">👨‍💼 Operator Details</h1>
           </div>
           <div className="flex gap-2">
