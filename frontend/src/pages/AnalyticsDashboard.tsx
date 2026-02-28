@@ -1,5 +1,5 @@
 // src/pages/AnalyticsDashboard.tsx
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import dashboardService from "@/services/dashboard.service";
@@ -91,6 +91,35 @@ export default function AnalyticsDashboard() {
     loadData();
   }, [loadData]);
 
+  // --- Filters ---
+  const [filterMonths, setFilterMonths] = useState<number>(0); // 0 = all time
+  const [filterProvince, setFilterProvince] = useState<string>("");
+  const [filterOperator, setFilterOperator] = useState<string>("");
+
+  const provinceOptions = useMemo<string[]>(
+    () => (analytics?.farmers_by_province ?? []).map((p: any) => p.province as string),
+    [analytics]
+  );
+  const operatorOptions = useMemo<string[]>(
+    () => (analytics?.farmers_by_operator ?? []).map((o: any) => o.operator as string),
+    [analytics]
+  );
+
+  const filteredMonthly = useMemo(() => {
+    const data: any[] = analytics?.monthly_registrations ?? [];
+    return filterMonths === 0 ? data : data.slice(-filterMonths);
+  }, [analytics, filterMonths]);
+
+  const filteredByProvince = useMemo(() => {
+    const data: any[] = analytics?.farmers_by_province ?? [];
+    return filterProvince ? data.filter((p: any) => p.province === filterProvince) : data;
+  }, [analytics, filterProvince]);
+
+  const filteredByOperator = useMemo(() => {
+    const data: any[] = analytics?.farmers_by_operator ?? [];
+    return filterOperator ? data.filter((o: any) => o.operator === filterOperator) : data;
+  }, [analytics, filterOperator]);
+
   const gridText = isDark ? "#9ca3af" : "#6b7280";
   const gridLine = isDark ? "#374151" : "#e5e7eb";
 
@@ -144,6 +173,60 @@ export default function AnalyticsDashboard() {
           </div>
         )}
 
+        {/* Filters */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">🔍 Filters:</span>
+            {/* Day range buttons */}
+            <div className="flex items-center gap-1 flex-wrap">
+              {([0, 3, 6, 12] as const).map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setFilterMonths(n)}
+                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors ${
+                    filterMonths === n
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                  }`}
+                >
+                  {n === 0 ? "All time" : `Last ${n}mo`}
+                </button>
+              ))}
+            </div>
+            {/* Province selector */}
+            <select
+              value={filterProvince}
+              onChange={e => setFilterProvince(e.target.value)}
+              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">All Provinces</option>
+              {provinceOptions.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            {/* Operator selector */}
+            <select
+              value={filterOperator}
+              onChange={e => setFilterOperator(e.target.value)}
+              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">All Operators</option>
+              {operatorOptions.map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+            {/* Reset */}
+            {(filterMonths !== 0 || filterProvince || filterOperator) && (
+              <button
+                onClick={() => { setFilterMonths(0); setFilterProvince(""); setFilterOperator(""); }}
+                className="text-xs px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 font-medium transition-colors"
+              >
+                ✕ Reset
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Total Farmers" value={stats?.farmers?.total ?? "—"} icon="👨‍🌾" color="bg-indigo-50 dark:bg-indigo-900/30" loading={loading} />
@@ -157,9 +240,9 @@ export default function AnalyticsDashboard() {
           <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             📅 Monthly Farmer Registrations
           </h2>
-          {loading ? <ChartSkeleton /> : (analytics?.monthly_registrations?.length > 0 ? (
+          {loading ? <ChartSkeleton /> : (filteredMonthly.length > 0 ? (
             <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={analytics.monthly_registrations}>
+              <AreaChart data={filteredMonthly}>
                 <defs>
                   <linearGradient id="colorFarmers" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
@@ -192,9 +275,9 @@ export default function AnalyticsDashboard() {
           {/* Farmers by Province */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
             <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">🗺️ Farmers by Province</h2>
-          {loading ? <ChartSkeleton /> : (analytics?.farmers_by_province?.length > 0 ? (
+          {loading ? <ChartSkeleton /> : (filteredByProvince.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={analytics.farmers_by_province} layout="vertical">
+                <BarChart data={filteredByProvince} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke={gridLine} />
                   <XAxis type="number" tick={{ fill: gridText, fontSize: 11 }} />
                   <YAxis type="category" dataKey="province" tick={{ fill: gridText, fontSize: 10 }} width={120} />
@@ -316,6 +399,32 @@ export default function AnalyticsDashboard() {
               </BarChart>
             </ResponsiveContainer>
           )}
+        </div>
+
+        {/* Farmers by Operator */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+          <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">👔 Farmers by Operator</h2>
+          {loading ? <ChartSkeleton /> : (filteredByOperator.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={filteredByOperator} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke={gridLine} />
+                <XAxis type="number" tick={{ fill: gridText, fontSize: 11 }} />
+                <YAxis type="category" dataKey="operator" tick={{ fill: gridText, fontSize: 10 }} width={160} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: isDark ? "#1f2937" : "#fff",
+                    borderRadius: "12px",
+                    color: isDark ? "#fff" : "#111"
+                  }}
+                />
+                <Bar dataKey="farmers" fill="#8b5cf6" radius={[0, 6, 6, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 text-sm">
+              No operator data available
+            </div>
+          ))}
         </div>
 
         <p className="text-center text-xs text-gray-400 dark:text-gray-600 dark:text-gray-400 pb-4">
