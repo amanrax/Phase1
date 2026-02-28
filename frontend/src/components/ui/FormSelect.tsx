@@ -34,7 +34,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
         onChange={(e) => onChange(e.target.value)}
         required={required}
         disabled={disabled}
-        className="w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg mt-2 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none disabled:bg-gray-100 dark:bg-gray-700 disabled:cursor-not-allowed transition-all duration-300"
+        className="w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg mt-2 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-300"
       >
         {placeholder && <option value="">{placeholder}</option>}
         {options.map((option) => (

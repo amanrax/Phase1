@@ -27,11 +27,11 @@ async function fetchGridFSFile(fileIdOrPath: string): Promise<string | null> {
     // Check cache first
     const cached = blobCache.get(fileIdOrPath);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log('[GridFS] ⚡ Cache hit for:', fileIdOrPath);
+      logger.info('GridFS', 'Cache hit', { key: fileIdOrPath });
       return cached.blobUrl;
     }
     
-    console.log('[GridFS] Fetching file:', fileIdOrPath);
+    logger.info('GridFS', 'Fetching file', { key: fileIdOrPath });
     
     const baseURL = import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev";
     
@@ -45,7 +45,7 @@ async function fetchGridFSFile(fileIdOrPath: string): Promise<string | null> {
       url = fileIdOrPath.startsWith('/') ? `${baseURL}${fileIdOrPath}` : `${baseURL}/${fileIdOrPath}`;
     }
     
-    console.log('[GridFS] Fetching from:', url);
+    logger.info('GridFS', 'Fetching from', { url });
     
     const response = await fetch(url, {
       headers: {
@@ -64,7 +64,7 @@ async function fetchGridFSFile(fileIdOrPath: string): Promise<string | null> {
     // Store in cache
     blobCache.set(fileIdOrPath, { blobUrl, timestamp: Date.now() });
     
-    console.log('[GridFS] ✅ File loaded, blob URL created and cached');
+    logger.info('GridFS', 'File loaded and cached');
     return blobUrl;
   } catch (error) {
     logger.error("GridFS", "Error fetching file", { path: fileIdOrPath, error: (error as any)?.message });
@@ -80,11 +80,11 @@ function clearBlobCache() {
     try {
       URL.revokeObjectURL(blobUrl);
     } catch (e) {
-      console.warn('[GridFS] Failed to revoke blob URL:', e);
+      logger.warn('GridFS', 'Failed to revoke blob URL', { error: String(e) });
     }
   });
   blobCache.clear();
-  console.log('[GridFS] Cache cleared');
+  logger.info('GridFS', 'Cache cleared');
 }
 
 export const farmerService = {
@@ -183,7 +183,7 @@ export const farmerService = {
    * Backend: POST /api/farmers/{farmer_id}/upload-photo
    */
   async uploadPhoto(farmerId: string, file: File): Promise<any> {
-    console.log(`[farmer.service] Uploading photo for ${farmerId}`);
+    logger.info('farmerService', 'Uploading photo for');
     const formData = new FormData();
     formData.append("file", file);
     const response = await api.post(
@@ -191,7 +191,7 @@ export const farmerService = {
       formData,
       { headers: { "Content-Type": "multipart/form-data" } }
     );
-    console.log(`[farmer.service] ✅ Photo uploaded successfully`);
+    logger.info('farmerService', '✅ Photo uploaded successfully');
     return response.data;
   },
 
@@ -204,7 +204,7 @@ export const farmerService = {
     docType: "nrc" | "land_title" | "license" | "certificate",
     file: File
   ): Promise<any> {
-    console.log(`[farmer.service] Uploading ${docType} document for ${farmerId}`);
+    logger.info('farmerService', 'Uploading  document for');
     const formData = new FormData();
     formData.append("file", file);
     const response = await api.post(
@@ -212,7 +212,7 @@ export const farmerService = {
       formData,
       { headers: { "Content-Type": "multipart/form-data" } }
     );
-    console.log(`[farmer.service] ✅ Document uploaded successfully`);
+    logger.info('farmerService', '✅ Document uploaded successfully');
     return response.data;
   },
 
@@ -221,9 +221,9 @@ export const farmerService = {
    * Backend: DELETE /api/farmers/{farmer_id}/photo
    */
   async deletePhoto(farmerId: string): Promise<any> {
-    console.log(`[farmer.service] Deleting photo for ${farmerId}`);
+    logger.info('farmerService', 'Deleting photo for');
     const response = await api.delete(`/farmers/${farmerId}/photo`);
-    console.log(`[farmer.service] ✅ Photo deleted`);
+    logger.info('farmerService', '✅ Photo deleted');
     return response.data;
   },
 
@@ -232,11 +232,11 @@ export const farmerService = {
    * Backend: DELETE /api/farmers/{farmer_id}/documents/{doc_type}
    */
   async deleteDocument(farmerId: string, docType: string): Promise<any> {
-    console.log(`[farmer.service] Deleting ${docType} document for ${farmerId}`);
+    logger.info('farmerService', 'Deleting  document for');
     const response = await api.delete(
       `/farmers/${farmerId}/documents/${docType}`
     );
-    console.log(`[farmer.service] ✅ Document deleted`);
+    logger.info('farmerService', '✅ Document deleted');
     return response.data;
   },
 
@@ -245,9 +245,9 @@ export const farmerService = {
    * Backend: POST /api/farmers/{farmer_id}/generate-idcard
    */
   async generateIDCard(farmerId: string): Promise<any> {
-    console.log(`[farmer.service] Generating ID card for ${farmerId}`);
+    logger.info('farmerService', 'Generating ID card for');
     const response = await api.post(`/farmers/${farmerId}/generate-idcard`);
-    console.log(`[farmer.service] ✅ ID card generation queued:`, response.data);
+    logger.info('farmerService', `[farmer.service] ✅ ID card generation queued:`, response.data);
     return response.data;
   },
 
@@ -257,7 +257,7 @@ export const farmerService = {
    * Returns: DownloadResult with download details
    */
   async downloadIDCard(farmerId: string): Promise<DownloadResult> {
-    console.log(`[farmer.service] Downloading ID card for ${farmerId}`);
+    logger.info('farmerService', 'Downloading ID card for');
     
     const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
       responseType: "blob",
@@ -272,7 +272,7 @@ export const farmerService = {
       const { Capacitor } = await import("@capacitor/core");
 
       if (Capacitor?.isNativePlatform?.()) {
-        console.log(`[farmer.service] Running on native platform, attempting native save`);
+        logger.info('farmerService', 'Running on native platform, attempting native save');
         
         const { Filesystem, Directory } = await import("@capacitor/filesystem");
 
@@ -299,7 +299,7 @@ export const farmerService = {
           });
 
           const savedPath = (result as any).uri || `Documents/CEM/${filename}`;
-          console.log(`[farmer.service] ✅ File saved to Documents/CEM:`, savedPath);
+          logger.info('farmerService', `[farmer.service] ✅ File saved to Documents/CEM:`, savedPath);
           
           return {
             downloaded: true,
@@ -308,7 +308,7 @@ export const farmerService = {
             method: 'native'
           };
         } catch (docsErr) {
-          console.warn(`[farmer.service] Documents/CEM failed, trying External:`, docsErr);
+          logger.warn('farmerService', `[farmer.service] Documents/CEM failed, trying External:`, docsErr);
 
           // Fallback: External directory (Android Downloads)
           try {
@@ -320,7 +320,7 @@ export const farmerService = {
             });
 
             const savedPath = (result as any).uri || `Download/CEM/${filename}`;
-            console.log(`[farmer.service] ✅ File saved to Download/CEM:`, savedPath);
+            logger.info('farmerService', `[farmer.service] ✅ File saved to Download/CEM:`, savedPath);
             
             return {
               downloaded: true,
@@ -329,17 +329,17 @@ export const farmerService = {
               method: 'native'
             };
           } catch (extErr) {
-            console.error(`[farmer.service] ❌ Both native methods failed:`, extErr);
+            logger.error('farmerService', `[farmer.service] ❌ Both native methods failed:`, extErr);
             throw new Error('Failed to save file. Please check storage permissions.');
           }
         }
       }
     } catch (capacitorErr) {
-      console.log(`[farmer.service] Not on native platform or Capacitor unavailable, using web download`);
+      logger.info('farmerService', 'Not on native platform or Capacitor unavailable, using web download');
     }
 
     // Web fallback: browser download
-    console.log(`[farmer.service] Using web browser download`);
+    logger.info('farmerService', 'Using web browser download');
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -349,7 +349,7 @@ export const farmerService = {
     link.remove();
     window.URL.revokeObjectURL(url);
     
-    console.log(`[farmer.service] ✅ Browser download triggered`);
+    logger.info('farmerService', '✅ Browser download triggered');
     
     return {
       downloaded: true,
@@ -363,7 +363,7 @@ export const farmerService = {
    * Returns a blob URL or base64 data URL for displaying PDF.
    */
   async viewIDCard(farmerId: string): Promise<string> {
-    console.log(`[farmer.service] Fetching ID card for viewing: ${farmerId}`);
+    logger.info('farmerService', 'Fetching ID card for viewing:');
     
     try {
       const response = await api.get(`/farmers/${farmerId}/download-idcard`, {
@@ -375,14 +375,14 @@ export const farmerService = {
       }
       
       const blob = new Blob([response.data], { type: "application/pdf" });
-      console.log(`[farmer.service] PDF blob received, size: ${blob.size} bytes`);
+      logger.info('farmerService', 'PDF blob received, size: ${blob.size} bytes');
 
       // For native mobile, use base64 data URL (more reliable in WebView)
       try {
         const { Capacitor } = await import("@capacitor/core");
         
         if (Capacitor?.isNativePlatform?.()) {
-          console.log(`[farmer.service] Native platform detected, converting to base64`);
+          logger.info('farmerService', 'Native platform detected, converting to base64');
           
           const toBase64 = (b: Blob) =>
             new Promise<string>((resolve, reject) => {
@@ -393,20 +393,20 @@ export const farmerService = {
             });
 
           const dataUrl = await toBase64(blob);
-          console.log(`[farmer.service] ✅ Base64 data URL created (${dataUrl.length} chars)`);
+          logger.info('farmerService', '✅ Base64 data URL created (${dataUrl.length} chars)');
           return dataUrl;
         }
       } catch (capacitorErr) {
-        console.log(`[farmer.service] Capacitor check failed, using blob URL`);
+        logger.info('farmerService', 'Capacitor check failed, using blob URL');
       }
 
       // Web: use blob URL
       const url = window.URL.createObjectURL(blob);
-      console.log(`[farmer.service] ✅ Blob URL created:`, url.substring(0, 50));
+      logger.info('farmerService', `[farmer.service] ✅ Blob URL created:`, url.substring(0, 50));
       return url;
       
     } catch (error: any) {
-      console.error(`[farmer.service] ❌ Failed to fetch ID card:`, error);
+      logger.error('farmerService', `[farmer.service] ❌ Failed to fetch ID card:`, error);
       
       if (error.response?.status === 404) {
         throw new Error('ID card not found. Please generate it first.');
@@ -429,16 +429,16 @@ export const farmerService = {
     const photoFileId = farmer.photo_file_id || farmer.documents?.photo_file_id;
 
     if (photoFileId) {
-      console.log('[Photo] Loading from GridFS file_id:', photoFileId);
+      logger.info('farmerService', '[Photo] Loading from GridFS file_id:', photoFileId);
       return await fetchGridFSFile(photoFileId);
     }
 
     if (photoPath) {
-      console.log('[Photo] Loading from path:', photoPath);
+      logger.info('farmerService', '[Photo] Loading from path:', photoPath);
       return await fetchGridFSFile(photoPath);
     }
 
-    console.log('[Photo] No photo available');
+    logger.info('farmerService', '[Photo] No photo available');
     return null;
   },
 
@@ -452,23 +452,23 @@ export const farmerService = {
     const qrPath = farmer.qr_code_path || farmer.qr_code_url;
 
     if (qrFileId) {
-      console.log('[QR] Loading from GridFS file_id:', qrFileId);
+      logger.info('farmerService', '[QR] Loading from GridFS file_id:', qrFileId);
       return await fetchGridFSFile(qrFileId);
     }
 
     if (qrPath) {
-      console.log('[QR] Loading from path:', qrPath);
+      logger.info('farmerService', '[QR] Loading from path:', qrPath);
       return await fetchGridFSFile(qrPath);
     }
 
     // Fallback: try direct API endpoint
     if (farmer.farmer_id) {
-      console.log('[QR] Using API endpoint for:', farmer.farmer_id);
+      logger.info('farmerService', '[QR] Using API endpoint for:', farmer.farmer_id);
       const baseURL = import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev";
       return await fetchGridFSFile(`${baseURL}/api/farmers/${farmer.farmer_id}/qr`);
     }
 
-    console.log('[QR] No QR code available');
+    logger.info('farmerService', '[QR] No QR code available');
     return null;
   },
 
@@ -480,11 +480,11 @@ export const farmerService = {
     if (farmer?.identification_documents && Array.isArray(farmer.identification_documents)) {
       const doc = farmer.identification_documents.find((d: any) => d.doc_type === docType);
       if (doc?.file_id) {
-        console.log(`[Document] Loading ${docType} from identification_documents (GridFS):`, doc.file_id);
+        logger.info('farmerService', `[Document] Loading ${docType} from identification_documents (GridFS):`, doc.file_id);
         return await fetchGridFSFile(doc.file_id);
       }
       if (doc?.file_path) {
-        console.log(`[Document] Loading ${docType} from identification_documents (path):`, doc.file_path);
+        logger.info('farmerService', `[Document] Loading ${docType} from identification_documents (path):`, doc.file_path);
         // Extract file ID from path like "/api/files/123abc"
         const match = doc.file_path.match(/\/files\/([a-f0-9]+)/i);
         if (match) {
@@ -495,7 +495,7 @@ export const farmerService = {
 
     // FALLBACK: Old structure (documents object)
     if (!farmer?.documents) {
-      console.log(`[Document] No ${docType} document available`);
+      logger.info('farmerService', `[Document] No ${docType} document available`);
       return null;
     }
 
@@ -503,16 +503,16 @@ export const farmerService = {
     const docPath = farmer.documents[docType];
 
     if (docFileId) {
-      console.log(`[Document] Loading ${docType} from GridFS:`, docFileId);
+      logger.info('farmerService', `[Document] Loading ${docType} from GridFS:`, docFileId);
       return await fetchGridFSFile(docFileId);
     }
 
     if (docPath) {
-      console.log(`[Document] Loading ${docType} from path:`, docPath);
+      logger.info('farmerService', `[Document] Loading ${docType} from path:`, docPath);
       return await fetchGridFSFile(docPath);
     }
 
-    console.log(`[Document] No ${docType} document available`);
+    logger.info('farmerService', `[Document] No ${docType} document available`);
     return null;
   },
 
@@ -570,7 +570,7 @@ export const farmerService = {
         const url = window.URL.createObjectURL(blob);
         return url;
       } catch (e) {
-        console.warn('Failed to fetch QR from GridFS', e);
+        logger.warn('farmerService', 'Failed to fetch QR from GridFS', e);
         return null;
       }
     }

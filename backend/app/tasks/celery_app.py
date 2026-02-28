@@ -22,6 +22,7 @@ celery_app.conf.update(
         'app.tasks.sync_tasks',
         'app.tasks.id_card_task',
         'app.tasks.report_tasks',
+        'app.tasks.log_cleanup_task',
     ]
 )
 

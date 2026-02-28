@@ -255,14 +255,12 @@ export default function FarmerDetails() {
   // ─── load photo ───────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!farmer) return;
-    let blobUrl: string | null = null;
     const loadPhoto = async () => {
       logger.info(COMPONENT, "loadPhoto", { farmer_id: farmer.farmer_id });
       try {
         setPhotoError(false);
         const url = await farmerService.getPhotoUrl(farmer);
         if (url) {
-          blobUrl = url;
           setPhotoUrl(url);
           logger.info(COMPONENT, "loadPhoto success");
         } else {
@@ -276,10 +274,7 @@ export default function FarmerDetails() {
     };
     loadPhoto();
     return () => {
-      if (blobUrl && blobUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(blobUrl);
-        logger.info(COMPONENT, "loadPhoto cleanup - blob revoked");
-      }
+      // blob URL is owned by blobCache in farmer.service.ts — do not revoke here
     };
   }, [farmer?.farmer_id]);
 
@@ -308,11 +303,7 @@ export default function FarmerDetails() {
     };
     loadDocuments();
     return () => {
-      blobUrls.forEach((url) => {
-        if (url.startsWith("blob:")) {
-          URL.revokeObjectURL(url);
-        }
-      });
+      // blob URLs are owned by blobCache in farmer.service.ts — do not revoke here
     };
   }, [farmer?.farmer_id, farmer?.identification_documents]);
 

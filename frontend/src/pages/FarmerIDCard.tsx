@@ -136,13 +136,8 @@ const FarmerIDCard: React.FC = () => {
 
     loadPhoto();
 
-    // Cleanup on unmount
-    return () => {
-      if (photoUrl && photoUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(photoUrl);
-        logger.info(COMPONENT, 'Photo blob URL revoked');
-      }
-    };
+    // Cleanup on unmount — blob URL lifetime managed by blobCache in farmer.service.ts
+    return () => {};
   }, [farmer?.farmer_id]); // ✅ Only depend on farmer_id
 
   // Load QR code
@@ -169,13 +164,8 @@ const FarmerIDCard: React.FC = () => {
 
     loadQRCode();
 
-    // Cleanup on unmount
-    return () => {
-      if (qrUrl && qrUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(qrUrl);
-        logger.info(COMPONENT, 'QR blob URL revoked');
-      }
-    };
+    // Cleanup on unmount — blob URL lifetime managed by blobCache in farmer.service.ts
+    return () => {};
   }, [farmer?.farmer_id, farmer?.qr_code_file_id]); // ✅ Reload when QR file changes
 
   const handleGenerateIDCard = async () => {

@@ -96,13 +96,13 @@ async def farmers_by_district(db: AsyncIOMotorDatabase) -> list[dict]:
 
 async def crops_distribution(db: AsyncIOMotorDatabase) -> list[dict]:
     all_farmers = await db.farmers.find(
-        {}, {"farm_details.crops": 1, "personal_info.crops": 1}
+        {}, {"farm_info.crops_grown": 1}
     ).to_list(length=5000)
 
     crop_counts: dict[str, int] = defaultdict(int)
     for f in all_farmers:
-        fd = f.get("farm_details") or f.get("personal_info") or {}
-        for c in (fd.get("crops") or []):
+        fd = f.get("farm_info") or {}
+        for c in (fd.get("crops_grown") or []):
             if c:
                 crop_counts[str(c).strip()] += 1
 
@@ -115,13 +115,13 @@ async def crops_distribution(db: AsyncIOMotorDatabase) -> list[dict]:
 
 async def livestock_distribution(db: AsyncIOMotorDatabase) -> list[dict]:
     all_farmers = await db.farmers.find(
-        {}, {"farm_details.livestock": 1}
+        {}, {"farm_info.livestock_types": 1}
     ).to_list(length=5000)
 
     counts: dict[str, int] = defaultdict(int)
     for f in all_farmers:
-        fd = f.get("farm_details") or {}
-        for a in (fd.get("livestock") or []):
+        fd = f.get("farm_info") or {}
+        for a in (fd.get("livestock_types") or []):
             if a:
                 counts[str(a).strip()] += 1
 
@@ -143,17 +143,19 @@ async def status_breakdown(db: AsyncIOMotorDatabase) -> list[dict]:
 
 async def farmers_by_operator(db: AsyncIOMotorDatabase) -> list[dict]:
     pipeline = [
-        {"$match": {"operator_id": {"$ne": None}}},
-        {"$group": {"_id": "$operator_id", "count": {"$sum": 1}}},
+        {"$match": {"created_by": {"$exists": True, "$nin": [None, ""]}}},
+        {"$group": {"_id": "$created_by", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}},
         {"$limit": 10},
     ]
     raw = await db.farmers.aggregate(pipeline).to_list(length=10)
     result = []
     for r in raw:
-        op = await db.operators.find_one({"operator_id": r["_id"]}, {"full_name": 1})
+        # created_by stores email — look up operator or user by email
+        op = await db.operators.find_one({"email": r["_id"]}, {"full_name": 1})
+        name = op.get("full_name", r["_id"]) if op else r["_id"]
         result.append({
-            "operator": op.get("full_name", r["_id"]) if op else r["_id"],
+            "operator": name,
             "farmers": r["count"],
         })
     return result
