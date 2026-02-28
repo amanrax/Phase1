@@ -5,6 +5,10 @@ import { farmerService } from "@/services/farmer.service";
 import geoService from "@/services/geo.service";
 import { handleNRCChange } from "@/utils/nrcFormatter";
 import PhoneInput from "@/components/PhoneInput";
+import { useNotification } from "@/contexts/NotificationContext";
+import { logger } from "@/utils/logger";
+
+const COMPONENT = "EditFarmer";
 
 const getErrorMessage = (err: unknown): string => {
   if (typeof err === "object" && err !== null) {
@@ -57,6 +61,7 @@ interface Chiefdom { code: string; name: string }
 export default function EditFarmer() {
   const navigate = useNavigate();
   const { farmerId } = useParams<{ farmerId: string }>();
+  const { success: showSuccess, error: showError } = useNotification();
   
   const [formData, setFormData] = useState<FarmerFormData>({
     first_name: "", last_name: "", phone_primary: "", phone_secondary: "",
@@ -83,6 +88,7 @@ export default function EditFarmer() {
   const [customChiefdom, setCustomChiefdom] = useState("");
 
   useEffect(() => {
+    logger.info(COMPONENT, 'Component mounted', { farmerId });
     loadProvinces();
     if (farmerId) {
       fetchFarmer();
@@ -302,10 +308,14 @@ export default function EditFarmer() {
       }
 
       await farmerService.update(farmerId!, payload);
-      alert("✅ Farmer updated successfully!");
-      navigate(-1);
+      logger.info(COMPONENT, 'Farmer updated successfully', { farmerId });
+      showSuccess('Farmer updated successfully!', 4000);
+      setTimeout(() => navigate(-1), 500);
     } catch (err: unknown) {
-      setError(getErrorMessage(err));
+      const msg = getErrorMessage(err);
+      logger.error(COMPONENT, 'Update failed', { farmerId, error: msg });
+      setError(msg);
+      showError(msg, 5000);
     } finally {
       setSaving(false);
     }
@@ -313,8 +323,11 @@ export default function EditFarmer() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 dark:border-gray-600 border-t-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading farmer data...</p>
+        </div>
       </div>
     );
   }

@@ -95,6 +95,9 @@ function clearBlobCache() {
 }
 
 export const farmerService = {
+  /** Clear blob URL cache (useful on logout or memory pressure) */
+  clearBlobCache,
+
   /**
    * Fetch a paginated list of farmers.
    * Backend: GET /api/farmers?limit=10&skip=0

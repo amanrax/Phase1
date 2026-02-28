@@ -54,7 +54,9 @@ export default function FarmerRegistrationWizard() {
   const [form, setForm] = useState<WizardState>(initialState);
   const [loading, setLoading] = useState(false);
   const [newFarmerId, setNewFarmerId] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [farmerName, setFarmerName] = useState<string>("");
+  void setFarmerName; // Used by Step4 completion (TODO: wire up)
 
   const update = <K extends keyof WizardState>(
     section: K,
@@ -66,18 +68,17 @@ export default function FarmerRegistrationWizard() {
     }));
   };
 
-  const handleStep4Complete = async (formValues: any) => {
-    try {
-      // const response = await farmerService.create(formValues);
-      setNewFarmerId("123"); // response.farmer_id
-      setFarmerName(
-        `${formValues.personal_info.first_name} ${formValues.personal_info.last_name}`
-      );
-      setCurrentStep(5);
-    } catch (err: any) {
-      // ...existing error handling...
-    }
-  };
+  // TODO: Re-enable when Step4 submission is wired up
+  // const handleStep4Complete = async (formValues: any) => {
+  //   try {
+  //     const response = await farmerService.create(formValues);
+  //     setNewFarmerId(response.farmer_id);
+  //     setFarmerName(`${formValues.personal_info.first_name} ${formValues.personal_info.last_name}`);
+  //     setCurrentStep(5);
+  //   } catch (err: any) {
+  //     // ...existing error handling...
+  //   }
+  // };
 
   const handleStep6Complete = () => {
     setCurrentStep(7);

@@ -4,6 +4,9 @@ import { useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import dashboardService from "@/services/dashboard.service";
 import { useTheme } from "@/contexts/ThemeContext";
+import BackButton from "@/components/BackButton";
+
+const roleBackPath = (role?: string) => role === "operator" ? "/operator-dashboard" : "/admin-dashboard";
 import { logger } from "@/utils/logger";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -54,7 +57,8 @@ function StatCard({ label, value, icon, color, loading }: {
 export default function AnalyticsDashboard() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
+  const backPath = roleBackPath(user?.role);
 
   const [stats, setStats] = useState<any>(null);
   const [analytics, setAnalytics] = useState<any>(null);
@@ -129,12 +133,7 @@ export default function AnalyticsDashboard() {
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/admin-dashboard")}
-              className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              ←
-            </button>
+            <BackButton to={backPath} />
             <div>
               <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 📈 Analytics Dashboard
@@ -264,7 +263,7 @@ export default function AnalyticsDashboard() {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 dark:text-gray-400 text-sm">
+            <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-500 text-sm">
               No registration data available
             </div>
           ))}
@@ -280,7 +279,7 @@ export default function AnalyticsDashboard() {
                 <BarChart data={filteredByProvince} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke={gridLine} />
                   <XAxis type="number" tick={{ fill: gridText, fontSize: 11 }} />
-                  <YAxis type="category" dataKey="province" tick={{ fill: gridText, fontSize: 10 }} width={120} />
+                  <YAxis type="category" dataKey="province" tick={{ fill: gridText, fontSize: 9 }} width={90} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: isDark ? "#1f2937" : "#fff",
@@ -292,7 +291,7 @@ export default function AnalyticsDashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 dark:text-gray-400 text-sm">
+              <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-500 text-sm">
                 No province data available
               </div>
             ))}
@@ -352,7 +351,7 @@ export default function AnalyticsDashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 dark:text-gray-400 text-sm">
+              <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-500 text-sm">
                 No crop data available
               </div>
             ))}
@@ -374,7 +373,7 @@ export default function AnalyticsDashboard() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-600 dark:text-gray-400 text-sm">
+              <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-500 text-sm">
                 No livestock data available
               </div>
             ))}
@@ -409,7 +408,7 @@ export default function AnalyticsDashboard() {
               <BarChart data={filteredByOperator} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke={gridLine} />
                 <XAxis type="number" tick={{ fill: gridText, fontSize: 11 }} />
-                <YAxis type="category" dataKey="operator" tick={{ fill: gridText, fontSize: 10 }} width={160} />
+                <YAxis type="category" dataKey="operator" tick={{ fill: gridText, fontSize: 9 }} width={100} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: isDark ? "#1f2937" : "#fff",
@@ -427,7 +426,7 @@ export default function AnalyticsDashboard() {
           ))}
         </div>
 
-        <p className="text-center text-xs text-gray-400 dark:text-gray-600 dark:text-gray-400 pb-4">
+        <p className="text-center text-xs text-gray-400 dark:text-gray-500 pb-4">
           CEM Farmer System v2.0.0 - Analytics ({analytics?.generated_at ? new Date(analytics.generated_at).toLocaleString() : "—"})
         </p>
       </div>

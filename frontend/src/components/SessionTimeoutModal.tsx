@@ -1,7 +1,5 @@
 // src/components/SessionTimeoutModal.tsx
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import useAuthStore from '@/store/authStore';
 
 interface SessionTimeoutModalProps {
   show: boolean;

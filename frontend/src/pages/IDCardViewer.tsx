@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
 import BackButton from '@/components/BackButton';
+import { logger } from '@/utils/logger';
+
+const COMPONENT = 'IDCardViewer';
 
 const IDCardViewer: React.FC = () => {
   const navigate = useNavigate();
@@ -15,7 +18,7 @@ const IDCardViewer: React.FC = () => {
   const [viewingNatively, setViewingNatively] = useState(false);
 
   useEffect(() => {
-    console.log('[IDCardViewer] Component mounted');
+    logger.info(COMPONENT, 'Component mounted');
     
     const checkPlatform = async () => {
       try {
@@ -25,7 +28,7 @@ const IDCardViewer: React.FC = () => {
         
         // If mobile, offer to open with native app instead of auto-downloading
         if (native) {
-          console.log('[IDCardViewer] Mobile detected - will offer native app opening');
+          logger.info(COMPONENT, 'Mobile detected - will offer native app opening');
         }
       } catch (e) {
         setIsNative(false);
@@ -37,12 +40,12 @@ const IDCardViewer: React.FC = () => {
     const storedUrl = sessionStorage.getItem('idcard_view_url');
     const storedName = sessionStorage.getItem('idcard_farmer_name');
     
-    console.log('[IDCardViewer] URL from sessionStorage:', storedUrl?.substring(0, 80));
-    console.log('[IDCardViewer] URL type:', storedUrl?.startsWith('blob:') ? 'Blob URL' : storedUrl?.startsWith('data:') ? 'Data URL' : storedUrl?.startsWith('http') ? 'HTTP URL' : 'Unknown');
-    console.log('[IDCardViewer] Farmer name:', storedName);
+    logger.info(COMPONENT, 'URL from sessionStorage:', storedUrl?.substring(0, 80));
+    logger.info(COMPONENT, 'URL type:', storedUrl?.startsWith('blob:') ? 'Blob URL' : storedUrl?.startsWith('data:') ? 'Data URL' : storedUrl?.startsWith('http') ? 'HTTP URL' : 'Unknown');
+    logger.info(COMPONENT, 'Farmer name:', storedName);
 
     if (!storedUrl) {
-      console.error('[IDCardViewer] No URL found in sessionStorage');
+      logger.error(COMPONENT, 'No URL found in sessionStorage');
       showError('No ID card to display. Please try again.', 4000);
       setTimeout(() => navigate(-1), 1500);
       return;
@@ -53,14 +56,14 @@ const IDCardViewer: React.FC = () => {
     setLoading(false);
 
     return () => {
-      console.log('[IDCardViewer] Component unmounting, cleaning up');
+      logger.info(COMPONENT, 'Component unmounting, cleaning up');
       const u = sessionStorage.getItem('idcard_view_url');
       if (u && u.startsWith('blob:')) {
         try {
           URL.revokeObjectURL(u);
-          console.log('[IDCardViewer] Blob URL revoked');
+          logger.info(COMPONENT, 'Blob URL revoked');
         } catch (e) {
-          console.warn('[IDCardViewer] Failed to revoke URL:', e);
+          logger.warn(COMPONENT, 'Failed to revoke URL:', e);
         }
       }
       sessionStorage.removeItem('idcard_view_url');
@@ -103,13 +106,13 @@ const IDCardViewer: React.FC = () => {
         recursive: false,
       });
       
-      console.log('[IDCardViewer] ✅ Saved to Downloads:', filename);
+      logger.info(COMPONENT, '✅ Saved to Downloads:', filename);
       
       setViewingNatively(false);
       showSuccess(`Saved to Downloads\n\nTap notification or open File Manager > Downloads > ${filename}`, 6000);
       
     } catch (error) {
-      console.error('[IDCardViewer] Failed to save:', error);
+      logger.error(COMPONENT, 'Failed to save:', error);
       setViewingNatively(false);
       showError('Could not save PDF. Try downloading instead.', 4000);
     }
@@ -124,7 +127,7 @@ const IDCardViewer: React.FC = () => {
     let downloadNotifId: string | undefined;
     try {
       downloadNotifId = showInfo('Downloading...', 5000);
-      console.log('[IDCardViewer] Starting download');
+      logger.info(COMPONENT, 'Starting download');
 
       if (isNative) {
         const { Filesystem, Directory } = await import('@capacitor/filesystem');
@@ -146,7 +149,7 @@ const IDCardViewer: React.FC = () => {
         const filename = `ID_Card_${farmerName.replace(/\s+/g, '_')}_${timestamp}.pdf`;
         
         try {
-          console.log('[IDCardViewer] Attempting to save to Downloads folder...');
+          logger.info(COMPONENT, 'Attempting to save to Downloads folder...');
           const result = await Filesystem.writeFile({
             path: filename,
             data: base64,
@@ -155,16 +158,16 @@ const IDCardViewer: React.FC = () => {
           });
 
           const savedPath = (result as any).uri || `Downloads/${filename}`;
-          console.log('[IDCardViewer] ✅ File saved to Downloads:', savedPath);
+          logger.info(COMPONENT, '✅ File saved to Downloads:', savedPath);
           
           if (downloadNotifId) dismiss(downloadNotifId);
           showSuccess('Downloaded to Downloads folder', 4000);
 
         } catch (fsErr: any) {
-          console.error('[IDCardViewer] External storage write failed:', fsErr);
+          logger.error(COMPONENT, 'External storage write failed:', fsErr);
           
           try {
-            console.log('[IDCardViewer] Trying Documents folder as fallback...');
+            logger.info(COMPONENT, 'Trying Documents folder as fallback...');
             await Filesystem.writeFile({
               path: `CEM/${filename}`,
               data: base64,
@@ -179,7 +182,7 @@ const IDCardViewer: React.FC = () => {
               8000
             );
           } catch (docErr: any) {
-            console.error('[IDCardViewer] Both External and Documents failed:', docErr);
+            logger.error(COMPONENT, 'Both External and Documents failed:', docErr);
             if (downloadNotifId) dismiss(downloadNotifId);
             
             // Show helpful error message
@@ -211,17 +214,17 @@ const IDCardViewer: React.FC = () => {
         
         if (downloadNotifId) dismiss(downloadNotifId);
         showSuccess('✅ Download started! Check your Downloads folder.', 4000);
-        console.log('[IDCardViewer] ✅ Web download completed');
+        logger.info(COMPONENT, '✅ Web download completed');
       }
     } catch (error: any) {
-      console.error('[IDCardViewer] ❌ Download failed:', error);
+      logger.error(COMPONENT, '❌ Download failed:', error);
       if (downloadNotifId) dismiss(downloadNotifId);
       showError(error.message || 'Download failed. Please try again.', 5000);
     }
   };
 
   const handleRetry = () => {
-    console.log('[IDCardViewer] Retrying...');
+    logger.info(COMPONENT, 'Retrying...');
     setPdfError(false);
     setLoading(true);
     setTimeout(() => setLoading(false), 500);
@@ -331,25 +334,17 @@ const IDCardViewer: React.FC = () => {
             </div>
           ) : (
             // Desktop: Show PDF viewer
-            <div style={{ 
-              width: '100%', 
-              height: '75vh', 
-              minHeight: '500px',
-              border: '1px solid #e5e7eb', 
-              borderRadius: '8px', 
-              overflow: 'hidden',
-              backgroundColor: '#f9fafb'
-            }}>
+            <div className="w-full border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800" style={{ height: '75vh', minHeight: '500px' }}>
               {url.startsWith('data:') ? (
                 <embed
                   src={url}
                   type="application/pdf"
                   width="100%"
                   height="100%"
-                  style={{ border: 'none' }}
-                  onLoad={() => console.log('[IDCardViewer] ✅ PDF loaded (embed)')}
+                  className="border-0"
+                  onLoad={() => logger.info(COMPONENT, '✅ PDF loaded (embed)')}
                   onError={() => {
-                    console.error('[IDCardViewer] ❌ PDF failed to load (embed)');
+                    logger.error(COMPONENT, '❌ PDF failed to load (embed)');
                     setPdfError(true);
                   }}
                 />
@@ -357,10 +352,10 @@ const IDCardViewer: React.FC = () => {
                 <iframe
                   src={`${url}#toolbar=1&navpanes=0&scrollbar=1`}
                   title="ID Card PDF"
-                  style={{ width: '100%', height: '100%', border: 'none' }}
-                  onLoad={() => console.log('[IDCardViewer] ✅ PDF loaded (iframe)')}
+                  className="w-full h-full border-0"
+                  onLoad={() => logger.info(COMPONENT, '✅ PDF loaded (iframe)')}
                   onError={() => {
-                    console.error('[IDCardViewer] ❌ PDF failed to load (iframe)');
+                    logger.error(COMPONENT, '❌ PDF failed to load (iframe)');
                     setPdfError(true);
                   }}
                 />
@@ -369,8 +364,8 @@ const IDCardViewer: React.FC = () => {
           )}
           
           {!isNative && (
-            <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4">
-              <p className="text-sm text-blue-800">
+            <div className="mt-4 bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
                 <strong>💡 Tip:</strong> If the PDF doesn't display, click "Download" to save it to your device.
               </p>
             </div>

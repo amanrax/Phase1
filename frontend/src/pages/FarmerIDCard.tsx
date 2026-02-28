@@ -620,13 +620,13 @@ const FarmerIDCard: React.FC = () => {
                       }}
                     />
                   ) : qrError ? (
-                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex flex-col items-center justify-center text-sm text-gray-500 dark:text-gray-500 dark:text-gray-500">
+                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex flex-col items-center justify-center text-sm text-gray-500 dark:text-gray-400">
                       <div className="text-4xl mb-2">📱</div>
                       <p>QR unavailable</p>
                       <p className="text-xs mt-1">Generate ID card</p>
                     </div>
                   ) : (
-                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex flex-col items-center justify-center text-sm text-gray-500 dark:text-gray-500 dark:text-gray-500">
+                    <div className="w-40 h-40 sm:w-48 sm:h-48 flex flex-col items-center justify-center text-sm text-gray-500 dark:text-gray-400">
                       <div className="text-4xl mb-2">📱</div>
                       <p>No QR code yet</p>
                       <p className="text-xs mt-1">Generate ID card first</p>
@@ -634,8 +634,8 @@ const FarmerIDCard: React.FC = () => {
                   )}
                 </div>
               </div>
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-3">
-                <p className="text-xs text-blue-800">
+              <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-3">
+                <p className="text-xs text-blue-800 dark:text-blue-300">
                   <strong>💡 Tip:</strong> Keep your ID card safe for agricultural support services.
                 </p>
               </div>

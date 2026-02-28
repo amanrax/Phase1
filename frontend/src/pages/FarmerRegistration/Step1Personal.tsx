@@ -1,7 +1,9 @@
-// src/pages/FarmerRegistrationWizard/Step1Personal.tsx
+// src/pages/FarmerRegistration/Step1Personal.tsx — Personal info step with PhoneInput + NRC auto-format
 import { useState, useEffect } from "react";
 import { ethnicGroupService, type EthnicGroup } from "@/services/ethnicGroup.service";
 import { logger } from "@/utils/logger";
+import PhoneInput from "@/components/PhoneInput";
+import { handleNRCChange, isValidNRC } from "@/utils/nrcFormatter";
 
 const COMPONENT = "Step1Personal";
 
@@ -23,6 +25,10 @@ type Props = {
   onBack?: () => void;
 };
 
+const inputClass = "w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition placeholder:text-gray-400";
+const labelClass = "block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5";
+const requiredStar = <span className="text-red-500 font-bold">*</span>;
+
 export default function Step1Personal({ data, onNext, onBack }: Props) {
   const [firstName, setFirstName] = useState(data.first_name || "");
   const [lastName, setLastName] = useState(data.last_name || "");
@@ -35,13 +41,11 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
   const [ethnicGroup, setEthnicGroup] = useState(data.ethnic_group || "");
   const [err, setErr] = useState("");
   
-  // Ethnic groups state
   const [ethnicGroups, setEthnicGroups] = useState<EthnicGroup[]>([]);
   const [loadingEthnicGroups, setLoadingEthnicGroups] = useState(true);
   const [showCustomEthnicGroup, setShowCustomEthnicGroup] = useState(false);
   const [customEthnicGroup, setCustomEthnicGroup] = useState("");
 
-  // Fetch ethnic groups on component mount
   useEffect(() => {
     fetchEthnicGroups();
   }, []);
@@ -59,7 +63,7 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
     }
   };
 
-    const handleNext = () => {
+  const handleNext = () => {
     if (!firstName.trim() || !lastName.trim() || !phone.trim()) {
       setErr("First name, last name, and primary phone are required.");
       return;
@@ -68,28 +72,12 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
       setErr("NRC, Date of Birth, and Gender are required.");
       return;
     }
-    
-    // Validate NRC format
-    const nrcPattern = /^\d{6}\/\d{2}\/\d$/;
-    if (!nrcPattern.test(nrc.trim())) {
-      setErr("NRC must be in format: 123456/12/1");
+    if (!isValidNRC(nrc.trim())) {
+      setErr("NRC must be in format: 123456/78/1");
       return;
     }
-    
-    // Validate primary phone format
-    const phonePattern = /^(\+260|0)[0-9]{9}$/;
-    if (!phonePattern.test(phone.trim())) {
-      setErr("Primary phone must be +260XXXXXXXXX or 0XXXXXXXXX");
-      return;
-    }
-    
-    // Validate secondary phone if provided
-    if (phoneSecondary.trim() && !phonePattern.test(phoneSecondary.trim())) {
-      setErr("Secondary phone must be +260XXXXXXXXX or 0XXXXXXXXX");
-      return;
-    }
-    
     setErr("");
+    logger.info(COMPONENT, "Personal info submitted");
     onNext({
       first_name: firstName.trim(),
       last_name: lastName.trim(),
@@ -104,143 +92,84 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
   };
 
   return (
-    <div>
-      <h3 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
+    <div className="space-y-4">
+      <h3 className="text-xl font-bold text-gray-800 dark:text-white border-b-2 border-green-500 pb-2.5">
         👤 Personal Information
       </h3>
+
       {err && (
-        <div
-          role="alert"
-          style={{ background: "#f8d7da", color: "#721c24", padding: "12px", borderRadius: "8px", marginBottom: "20px", border: "1px solid #f5c6cb", fontWeight: "600" }}
-        >
+        <div role="alert" className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm font-semibold border-l-4 border-red-500">
           ❌ {err}
         </div>
       )}
-      <div style={{ marginTop: "15px" }}>
-        <label htmlFor="firstName" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
-          First name <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span>
-        </label>
-        <input
-          id="firstName"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
-          aria-required="true"
-        />
-      </div>
-      <div style={{ marginTop: 12 }}>
-        <label htmlFor="lastName" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
-          Last name <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span>
-        </label>
-        <input
-          id="lastName"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
-          aria-required="true"
-        />
-      </div>
-      <div style={{ marginTop: 12 }}>
-        <label htmlFor="phone" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
-          Primary Phone <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span> <span style={{ fontWeight: "normal", fontSize: "0.85em", color: "var(--text-secondary-hex)" }}>(+260 or 0 + 9 digits)</span>
-        </label>
-        <input
-          id="phone"
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
-          placeholder="0977000000 or +260977000000"
-          pattern="(\+260|0)[0-9]{9}"
-          title="Phone must be +260XXXXXXXXX or 0XXXXXXXXX"
-          required
-          aria-required="true"
-        />
+
+      {/* Name Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="firstName" className={labelClass}>First Name {requiredStar}</label>
+          <input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputClass} aria-required="true" placeholder="Enter first name" />
+        </div>
+        <div>
+          <label htmlFor="lastName" className={labelClass}>Last Name {requiredStar}</label>
+          <input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputClass} aria-required="true" placeholder="Enter last name" />
+        </div>
       </div>
 
-      <div style={{ marginTop: 12 }}>
-        <label htmlFor="phoneSecondary" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
-          Secondary Phone
-        </label>
-        <input
-          id="phoneSecondary"
-          type="tel"
-          value={phoneSecondary}
-          onChange={(e) => setPhoneSecondary(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
-          placeholder="0966000000 (optional)"
-          pattern="(\+260|0)[0-9]{9}"
-          title="Phone must be +260XXXXXXXXX or 0XXXXXXXXX"
-        />
+      {/* Phone Numbers */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className={labelClass}>Primary Phone {requiredStar}</label>
+          <PhoneInput value={phone} onChange={setPhone} />
+        </div>
+        <div>
+          <label className={labelClass}>Secondary Phone</label>
+          <PhoneInput value={phoneSecondary} onChange={setPhoneSecondary} />
+        </div>
       </div>
 
-      <div style={{ marginTop: 12 }}>
-        <label htmlFor="email" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
-          Email
-        </label>
-        <input
-          id="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
-          placeholder="farmer@example.com"
-          type="email"
-        />
+      {/* Email */}
+      <div>
+        <label htmlFor="email" className={labelClass}>Email</label>
+        <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} placeholder="farmer@example.com" />
       </div>
 
-      <div style={{ marginTop: 12 }}>
-        <label htmlFor="nrc" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
-          NRC Number <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span> <span style={{ fontWeight: "normal", fontSize: "0.85em", color: "var(--text-secondary-hex)" }}>(format: 123456/12/1)</span>
+      {/* NRC with auto-format */}
+      <div>
+        <label htmlFor="nrc" className={labelClass}>
+          NRC Number {requiredStar} <span className="text-gray-400 dark:text-gray-500 font-normal text-[11px] ml-1">(auto-formats as you type)</span>
         </label>
         <input
           id="nrc"
           value={nrc}
-          onChange={(e) => setNrc(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
-          placeholder="123456/12/1"
-          pattern="\d{6}/\d{2}/\d"
-          title="NRC must be in format: 123456/12/1"
-          required
+          onChange={(e) => setNrc(handleNRCChange(e.target.value))}
+          className={inputClass}
+          placeholder="______/__/_"
+          maxLength={11}
           aria-required="true"
         />
+        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Format: 123456/78/1 — just type digits, slashes are added automatically</p>
       </div>
 
-      <div style={{ marginTop: 12 }}>
-        <label htmlFor="dob" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
-          Date of Birth <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span>
-        </label>
-        <input
-          id="dob"
-          value={dob}
-          onChange={(e) => setDob(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
-          type="date"
-          aria-required="true"
-        />
+      {/* DOB + Gender Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="dob" className={labelClass}>Date of Birth {requiredStar}</label>
+          <input id="dob" type="date" value={dob} onChange={(e) => setDob(e.target.value)} className={inputClass} aria-required="true" />
+        </div>
+        <div>
+          <label htmlFor="gender" className={labelClass}>Gender {requiredStar}</label>
+          <select id="gender" value={gender} onChange={(e) => setGender(e.target.value)} className={inputClass} aria-required="true">
+            <option value="">-- select gender --</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
       </div>
 
-      <div style={{ marginTop: 12 }}>
-        <label htmlFor="gender" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
-          Gender <span style={{ color: "#dc3545", fontWeight: "bold" }}>*</span>
-        </label>
-        <select
-          id="gender"
-          value={gender}
-          onChange={(e) => setGender(e.target.value)}
-          style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
-          aria-required="true"
-        >
-          <option value="">-- select gender --</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-
-      <div style={{ marginTop: 12 }}>
-        <label htmlFor="ethnicGroup" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--text-primary-hex)", marginBottom: "6px" }}>
-          Ethnic Group
-        </label>
+      {/* Ethnic Group */}
+      <div>
+        <label htmlFor="ethnicGroup" className={labelClass}>Ethnic Group</label>
         {!showCustomEthnicGroup ? (
           <select
             id="ethnicGroup"
@@ -254,99 +183,53 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
                 setEthnicGroup(e.target.value);
               }
             }}
-            style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
+            className={inputClass}
             disabled={loadingEthnicGroups}
           >
             <option value="">-- select ethnic group (optional) --</option>
             {ethnicGroups.map((group) => (
-              <option key={group._id} value={group.name}>
-                {group.name}
-              </option>
+              <option key={group._id} value={group.name}>{group.name}</option>
             ))}
             <option value="OTHER">Other (specify below)</option>
           </select>
         ) : (
-          <input
-            id="ethnicGroup"
-            type="text"
-            value={customEthnicGroup}
-            onChange={(e) => {
-              setCustomEthnicGroup(e.target.value);
-              setEthnicGroup(e.target.value);
-            }}
-            onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
-            placeholder="Enter custom ethnic group name"
-            style={{ width: "100%", padding: "10px", border: "1px solid #999", borderRadius: "4px", fontSize: "14px", boxSizing: "border-box", backgroundColor: "#ffffff", color: "#1a1a1a" }}
-          />
+          <div className="space-y-2">
+            <input
+              id="ethnicGroup"
+              type="text"
+              value={customEthnicGroup}
+              onChange={(e) => { setCustomEthnicGroup(e.target.value); setEthnicGroup(e.target.value); }}
+              onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+              placeholder="Enter custom ethnic group name"
+              className={inputClass}
+            />
+            <button
+              type="button"
+              onClick={() => { setShowCustomEthnicGroup(false); setCustomEthnicGroup(""); setEthnicGroup(""); }}
+              className="text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition"
+            >
+              ← Back to list
+            </button>
+          </div>
         )}
-        {loadingEthnicGroups && (
-          <small style={{ color: "var(--text-secondary-hex)", marginTop: "4px", display: "block" }}>
-            Loading ethnic groups...
-          </small>
-        )}
-        {showCustomEthnicGroup && (
-          <button
-            type="button"
-            onClick={() => {
-              setShowCustomEthnicGroup(false);
-              setCustomEthnicGroup("");
-              setEthnicGroup("");
-            }}
-            style={{
-              marginTop: "8px",
-              padding: "6px 12px",
-              background: "var(--text-secondary-hex)",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontWeight: "600",
-              fontSize: "12px",
-            }}
-          >
-            Back to list
-          </button>
-        )}
+        {loadingEthnicGroups && <p className="text-xs text-gray-400 mt-1">Loading ethnic groups...</p>}
       </div>
 
-      <div style={{ display: "flex", gap: "15px", marginTop: "25px" }}>
+      {/* Navigation Buttons */}
+      <div className="flex gap-3 pt-4">
         {onBack && (
           <button
             onClick={onBack}
-            style={{ 
-              padding: "12px 30px",
-              background: "var(--text-secondary-hex)",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "15px",
-              fontWeight: "600",
-              cursor: "pointer",
-              transition: "all 0.3s"
-            }}
-            onMouseOver={(e) => e.currentTarget.style.background = "#5a6268"}
-            onMouseOut={(e) => e.currentTarget.style.background = "#6c757d"}
+            className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold text-sm rounded-lg transition active:scale-95"
             aria-label="Go back to previous page"
           >
             ← Back
           </button>
         )}
-        <div style={{ flex: 1 }} />
+        <div className="flex-1" />
         <button
           onClick={handleNext}
-          style={{ 
-            padding: "12px 30px",
-            background: "#28a745",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "15px",
-            fontWeight: "600",
-            cursor: "pointer",
-            transition: "all 0.3s"
-          }}
-          onMouseOver={(e) => e.currentTarget.style.background = "#218838"}
-          onMouseOut={(e) => e.currentTarget.style.background = "#28a745"}
+          className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold text-sm rounded-lg transition active:scale-95 shadow-sm"
           aria-label="Proceed to next step"
         >
           Next →

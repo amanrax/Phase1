@@ -1,41 +1,205 @@
-// src/pages/FarmerDashboard.tsx
+// src/pages/FarmerDashboard.tsx — Mobile-first modern farmer dashboard (matches AdminDashboard)
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { safeNavigate } from '@/config/navigation';
+import { safeNavigate } from "@/config/navigation";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import type { Theme } from "@/contexts/ThemeContext";
 import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
 import { logger } from "@/utils/logger";
-import { useTheme } from "@/contexts/ThemeContext";
 
 const COMPONENT = "FarmerDashboard";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+type NavTab = "home" | "idcard" | "supplies" | "settings";
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+function Skeleton({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-2xl ${className}`} />;
+}
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+function StatCard({ icon, label, value, sub, color, loading, onClick }: {
+  icon: string; label: string; value: number | string; sub?: string; color: string; loading?: boolean; onClick?: () => void;
+}) {
+  if (loading) return <Skeleton className="h-24" />;
+  const inner = (
+    <>
+      <div className="flex justify-between items-start">
+        <span className="text-2xl">{icon}</span>
+        <span className="text-3xl font-extrabold tracking-tight leading-none">{value}</span>
+      </div>
+      <div className="mt-2">
+        <p className="text-xs font-semibold uppercase tracking-wide opacity-90">{label}</p>
+        {sub && <p className="text-xs opacity-70 mt-0.5">{sub}</p>}
+      </div>
+    </>
+  );
+  if (!onClick) {
+    return <div className={`relative flex flex-col justify-between p-4 rounded-2xl text-left w-full ${color} text-white shadow-lg select-none`}>{inner}</div>;
+  }
+  return (
+    <button onClick={onClick} className={`relative flex flex-col justify-between p-4 rounded-2xl text-left w-full ${color} text-white shadow-lg active:scale-95 transition-transform duration-150 select-none`}>
+      {inner}
+    </button>
+  );
+}
+
+// ─── Quick Action Tile ────────────────────────────────────────────────────────
+function QuickAction({ icon, label, bg, onPress }: { icon: string; label: string; bg: string; onPress: () => void }) {
+  return (
+    <button onClick={onPress} className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl ${bg} text-white shadow-md active:scale-95 transition-transform duration-150 select-none`}>
+      <span className="text-2xl leading-none">{icon}</span>
+      <span className="text-[11px] font-semibold text-center leading-tight">{label}</span>
+    </button>
+  );
+}
+
+// ─── Bottom Nav Item ──────────────────────────────────────────────────────────
+function NavItem({ icon, label, active, onClick }: { icon: string; label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className={`flex flex-col items-center justify-center flex-1 py-2 gap-0.5 transition-colors duration-150 ${active ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"}`}>
+      <span className={`text-xl leading-none ${active ? "scale-110" : "scale-100"} transition-transform duration-150`}>{icon}</span>
+      <span className={`text-[10px] font-semibold ${active ? "opacity-100" : "opacity-70"}`}>{label}</span>
+      {active && <span className="w-1 h-1 rounded-full bg-green-500 dark:bg-green-400 mt-0.5" />}
+    </button>
+  );
+}
+
+// ─── Info Card ────────────────────────────────────────────────────────────────
+function InfoCard({ icon, label, value, borderColor }: { icon: string; label: string; value: string; borderColor: string }) {
+  return (
+    <div className={`p-3.5 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-l-4 ${borderColor}`}>
+      <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">{icon} {label}</p>
+      <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{value}</p>
+    </div>
+  );
+}
+
+// ─── Section Header ───────────────────────────────────────────────────────────
+function SectionHeader({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
+  return (
+    <div className="flex justify-between items-center px-4 mb-2">
+      <h2 className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">{title}</h2>
+      {action && (
+        <button onClick={onAction} className="text-xs font-semibold text-green-600 dark:text-green-400 active:opacity-70">
+          {action} →
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Settings Panel ───────────────────────────────────────────────────────────
+function SettingsPanel() {
+  const { theme, setTheme, isDark } = useTheme();
+  const { logout, user } = useAuthStore();
+  const themeOptions: { value: Theme; icon: string; label: string }[] = [
+    { value: "light", icon: "☀️", label: "Light" },
+    { value: "dark", icon: "🌙", label: "Dark" },
+    { value: "system", icon: "🖥️", label: "System" },
+  ];
+
+  return (
+    <div className="px-4 space-y-4">
+      {/* Theme */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
+        <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">🎨 Appearance</h3>
+        <div className="grid grid-cols-3 gap-2">
+          {themeOptions.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => {
+                setTheme(opt.value);
+                logger.info(COMPONENT, `Theme changed to ${opt.value}`);
+              }}
+              className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${
+                theme === opt.value
+                  ? "border-green-500 bg-green-50 dark:bg-green-900/30"
+                  : "border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
+              }`}
+            >
+              <span className="text-xl">{opt.icon}</span>
+              <span className="text-[10px] font-bold text-gray-700 dark:text-gray-200">{opt.label}</span>
+            </button>
+          ))}
+        </div>
+        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 text-center">
+          Currently: <strong>{isDark ? "Dark" : "Light"}</strong> mode
+        </p>
+      </div>
+
+      {/* Account */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
+        <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">👤 Account</h3>
+        <div className="space-y-2 mb-3">
+          <div className="flex justify-between text-xs">
+            <span className="text-gray-500 dark:text-gray-400">Email</span>
+            <span className="font-semibold text-gray-700 dark:text-gray-300 truncate ml-2">{user?.email || "—"}</span>
+          </div>
+        </div>
+        <button
+          onClick={() => { logger.info(COMPONENT, "Logout pressed"); logout(); }}
+          className="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-bold active:scale-95 transition-all"
+        >
+          🚪 Logout
+        </button>
+      </div>
+
+      {/* App Info */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
+        <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">ℹ️ About</h3>
+        <div className="space-y-1">
+          {[
+            { k: "Version", v: "2.0.0" },
+            { k: "Role", v: "Farmer" },
+            { k: "Environment", v: "Development" },
+          ].map(({ k, v }) => (
+            <div key={k} className="flex justify-between text-xs">
+              <span className="text-gray-500 dark:text-gray-400">{k}</span>
+              <span className="font-semibold text-gray-700 dark:text-gray-300">{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── Main Component ───────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 export default function FarmerDashboard() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-  const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
-  const { toggleTheme, isDark } = useTheme();
+  const notify = useNotification();
 
-  const [farmerData, setFarmerData] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<NavTab>("home");
+  const [farmerData, setFarmerData] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [qrError, setQrError] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [photoError, setPhotoError] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
-  // Use ref to track if we've already loaded data
   const hasLoadedRef = useRef(false);
+  const loadingRef = useRef(false);
 
-  // Stable callback that doesn't depend on showError
-  const loadFarmerData = useCallback(async () => {
+  // ─── Load Data ────────────────────────────────────────────────────────────
+  const loadFarmerData = useCallback(async (isRefresh = false) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+
     try {
-      setLoading(true);
-
       if (!user?.farmer_id) {
-        logger.error(COMPONENT, "No farmer_id in JWT token - authentication issue");
-        showError("Authentication error. Please login again.", 5000);
+        logger.error(COMPONENT, "No farmer_id in JWT");
+        notify.error("Authentication error. Please login again.", 5000);
         setFarmerData(null);
         return;
       }
@@ -45,550 +209,360 @@ export default function FarmerDashboard() {
       logger.info(COMPONENT, "loadFarmerData success");
       setFarmerData(fullData);
       hasLoadedRef.current = true;
+      if (isRefresh) notify.success("Profile refreshed.");
     } catch (error: any) {
-      logger.error(COMPONENT, "loadFarmerData failed", { error });
-      showError("Failed to load profile. Please retry.", 5000);
+      logger.error(COMPONENT, "loadFarmerData failed", { error: error?.message });
+      if (error?.response?.status === 401) {
+        notify.error("Session expired. Please login again.");
+        logout();
+        return;
+      }
+      notify.error("Failed to load profile. Please retry.", 5000);
       setFarmerData(null);
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      loadingRef.current = false;
     }
-  }, [user?.farmer_id, showError]);
+  }, [user?.farmer_id, notify, logout]);
 
-  // Load data once on mount
   useEffect(() => {
-    if (!hasLoadedRef.current) {
-      loadFarmerData();
-    }
+    if (!hasLoadedRef.current) loadFarmerData();
   }, [loadFarmerData]);
 
-  // Load farmer photo as blob with authentication
+  // ─── Load Photo ───────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!farmerData) return;
+    const photoPath = farmerData?.documents?.photo || farmerData?.photo_path;
+    if (!photoPath) { setPhotoError(true); return; }
+
+    let blobUrl: string | null = null;
     const loadPhoto = async () => {
-      if (!farmerData) return;
-
-      const photoPath = farmerData?.documents?.photo || farmerData?.photo_path;
-      if (!photoPath) {
-        logger.info(COMPONENT, 'loadPhoto - no path');
-        return;
-      }
-
       try {
-        logger.info(COMPONENT, 'loadPhoto start', { photoPath });
         setPhotoError(false);
-        
-        const baseURL = import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev";
-        const fullUrl = photoPath.startsWith('http') ? photoPath : `${baseURL}${photoPath}`;
-        
+        const baseURL = import.meta.env.VITE_API_BASE_URL || "";
+        const fullUrl = photoPath.startsWith("http") ? photoPath : `${baseURL}${photoPath}`;
         const response = await fetch(fullUrl, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
         });
-
-        if (!response.ok) {
-          throw new Error(`Photo fetch failed: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`Photo fetch ${response.status}`);
         const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        
-        logger.info(COMPONENT, 'loadPhoto success');
+        blobUrl = URL.createObjectURL(blob);
         setPhotoUrl(blobUrl);
-
-        // Cleanup on unmount
-        return () => {
-          if (blobUrl) {
-            URL.revokeObjectURL(blobUrl);
-          }
-        };
-      } catch (error) {
-        logger.error(COMPONENT, 'loadPhoto failed', { error });
+        logger.info(COMPONENT, "Photo loaded");
+      } catch (err) {
+        logger.error(COMPONENT, "Photo load failed", { error: err });
         setPhotoError(true);
       }
     };
-
     loadPhoto();
+    return () => { if (blobUrl) URL.revokeObjectURL(blobUrl); };
   }, [farmerData]);
 
-  // Load QR code - Use blob with authentication for better mobile support
+  // ─── Load QR Code ─────────────────────────────────────────────────────────
   useEffect(() => {
-    const loadQRCode = async () => {
-      if (!farmerData) return;
-
+    if (!farmerData) return;
+    let blobUrl: string | null = null;
+    const loadQR = async () => {
       try {
-        logger.info(COMPONENT, 'loadQRCode start', { farmer_id: farmerData.farmer_id });
         setQrError(false);
-        
-        // Fetch QR code with authentication
-        const baseURL = import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev";
+        const baseURL = import.meta.env.VITE_API_BASE_URL || "";
         const response = await fetch(`${baseURL}/api/farmers/${farmerData.farmer_id}/qr`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
         });
-
-        if (!response.ok) {
-          throw new Error(`QR fetch failed: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`QR fetch ${response.status}`);
         const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        
-        logger.info(COMPONENT, 'loadQRCode success');
+        blobUrl = URL.createObjectURL(blob);
         setQrCodeUrl(blobUrl);
-
-        // Cleanup function
-        return () => {
-          if (blobUrl) {
-            URL.revokeObjectURL(blobUrl);
-          }
-        };
-      } catch (error) {
-        logger.error(COMPONENT, 'loadQRCode failed', { error });
+        logger.info(COMPONENT, "QR loaded");
+      } catch (err) {
+        logger.error(COMPONENT, "QR load failed", { error: err });
         setQrError(true);
       }
     };
-
-    loadQRCode();
+    loadQR();
+    return () => { if (blobUrl) URL.revokeObjectURL(blobUrl); };
   }, [farmerData]);
 
+  // ─── Handlers ─────────────────────────────────────────────────────────────
   const handleDownloadIDCard = async () => {
-    let downloadNotifId: string | undefined;
+    let nid: string | undefined;
     try {
       const farmerId = farmerData?.farmer_id;
-      if (!farmerId) {
-        showError("Farmer ID not available", 4000);
-        return;
-      }
-
-      downloadNotifId = showInfo("📥 Preparing download...", 8000);
-      logger.info(COMPONENT, "handleDownloadIDCard start", { farmerId });
-      
+      if (!farmerId) { notify.error("Farmer ID not available"); return; }
+      nid = notify.info("📥 Preparing download...", 8000);
+      logger.info(COMPONENT, "handleDownloadIDCard", { farmerId });
       const result = await farmerService.downloadIDCard(farmerId);
-      
-      if (downloadNotifId) dismiss(downloadNotifId);
-      
-      if (result?.savedPath) {
-        // Mobile - file was saved to device
-        showSuccess(`✅ ID card saved to:\n${result.savedPath}`, 8000);
-      } else if (result?.downloaded) {
-        // Web - browser download
-        showSuccess("Downloaded to Downloads folder", 3000);
-      } else {
-        showError("Download failed. Please try again.", 4000);
-      }
+      if (nid) notify.dismiss(nid);
+      if (result?.savedPath) notify.success(`✅ ID card saved to:\n${result.savedPath}`, 8000);
+      else if (result?.downloaded) notify.success("Downloaded to Downloads folder", 3000);
+      else notify.error("Download failed. Please try again.");
     } catch (error: any) {
-      logger.error(COMPONENT, "handleDownloadIDCard failed", { error });
-      if (downloadNotifId) dismiss(downloadNotifId);
-      const errorMsg = error.response?.data?.detail || "ID card not available yet. Generate it first.";
-      showError(errorMsg, 5000);
+      logger.error(COMPONENT, "handleDownloadIDCard failed", { error: error?.message });
+      if (nid) notify.dismiss(nid);
+      notify.error(error?.response?.data?.detail || "ID card not available yet.", 5000);
     }
   };
 
-  const handleViewIDCard = () => {
-    if (!farmerData?.farmer_id) {
-      showError("Farmer ID not available", 4000);
-      return;
-    }
-    
-    logger.info(COMPONENT, "handleViewIDCard open preview");
-    setShowPreview(true);
+  const handleTabChange = (tab: NavTab) => {
+    logger.info(COMPONENT, "Tab navigation", { tab });
+    if (tab === "home") { setActiveTab("home"); return; }
+    if (tab === "idcard") { safeNavigate(navigate, "/farmer-idcard"); return; }
+    if (tab === "supplies") { safeNavigate(navigate, "/farmer/supply-requests"); return; }
+    if (tab === "settings") { setActiveTab("settings"); return; }
   };
 
-  const handleRetry = () => {
-    logger.info(COMPONENT, "handleRetry triggered");
-    hasLoadedRef.current = false;
-    loadFarmerData();
+  const getGreeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 18) return "Good afternoon";
+    return "Good evening";
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 flex items-center justify-center p-4 transition-all duration-300">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
-          <p className="text-lg sm:text-xl">Loading your profile...</p>
-        </div>
-      </div>
-    );
-  }
+  const firstName = farmerData?.personal_info?.first_name || user?.full_name?.split(" ")[0] || "Farmer";
 
+  // ─── Quick Actions ────────────────────────────────────────────────────────
+  const quickActions = [
+    { icon: "📄", label: "Full Profile", bg: "bg-gradient-to-br from-blue-500 to-indigo-600", onPress: () => safeNavigate(navigate, `/farmers/${farmerData?.farmer_id}`) },
+    { icon: "✏️", label: "Edit Details", bg: "bg-gradient-to-br from-amber-500 to-orange-600", onPress: () => safeNavigate(navigate, `/farmers/edit/${farmerData?.farmer_id}`) },
+    { icon: "🆔", label: "ID Card", bg: "bg-gradient-to-br from-emerald-500 to-green-600", onPress: () => safeNavigate(navigate, "/farmer-idcard") },
+    { icon: "👁️", label: "Preview ID", bg: "bg-gradient-to-br from-purple-500 to-violet-600", onPress: () => setShowPreview(true) },
+    { icon: "📥", label: "Download ID", bg: "bg-gradient-to-br from-cyan-500 to-teal-600", onPress: handleDownloadIDCard },
+    { icon: "🛒", label: "Supplies", bg: "bg-gradient-to-br from-rose-500 to-pink-600", onPress: () => safeNavigate(navigate, "/farmer/supply-requests") },
+  ];
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ─── Render ─────────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 pb-8 transition-all duration-300">
-        {/* Header */}
-        <div className="relative text-center text-white pt-6 sm:pt-8 pb-6 sm:pb-8 px-4">
-          {/* Dark Mode Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all active:scale-90"
-            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            <span className="text-lg">{isDark ? '☀️' : '🌙'}</span>
-          </button>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg">
-            🌾 Chiefdom Empowerment Model
-          </h1>
-          <p className="text-sm sm:text-base opacity-90">Farmer Dashboard</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        <div className="overflow-y-auto pb-24">
 
-        {/* Main Content Container */}
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6">
-          {!farmerData ? (
-            // Error State
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 sm:p-8 shadow-xl text-center">
-              <div className="text-6xl mb-4">⚠️</div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                Unable to load farmer profile
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                Your farmer profile could not be found. Please contact your operator or administrator.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          {/* ── Hero Banner ──────────────────────────────────────────────── */}
+          <div className="relative bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700 px-5 pt-12 pb-10 overflow-hidden">
+            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-4 -left-4 w-24 h-24 rounded-full bg-white/10 blur-xl pointer-events-none" />
+
+            {/* Top bar */}
+            <div className="relative flex justify-between items-center mb-6">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                  <span className="text-sm">🌾</span>
+                </div>
+                <span className="text-white/80 text-xs font-semibold tracking-widest uppercase">CEM Farmer</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={handleRetry}
-                  className="px-4 sm:px-6 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-sm font-semibold transition-all"
+                  onClick={() => loadFarmerData(true)}
+                  disabled={refreshing}
+                  aria-label="Refresh"
+                  className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
                 >
-                  🔄 Retry
+                  <span className={`text-sm ${refreshing ? "animate-spin" : ""}`}>🔄</span>
                 </button>
                 <button
-                  onClick={logout}
-                  className="px-4 sm:px-6 py-2 bg-gray-600 hover:bg-gray-700 active:scale-95 text-white rounded-lg text-sm font-semibold transition-all"
+                  onClick={() => { logger.info(COMPONENT, "Logout pressed"); logout(); }}
+                  aria-label="Logout"
+                  className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:scale-90 transition-transform"
                 >
-                  🚪 Logout
+                  <span className="text-sm">🚪</span>
                 </button>
               </div>
             </div>
-          ) : (
+
+            {/* Greeting + Photo */}
+            <div className="relative flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-white/20 border-2 border-white/40 overflow-hidden flex items-center justify-center flex-shrink-0">
+                {photoError || !photoUrl ? (
+                  <span className="text-3xl">👨‍🌾</span>
+                ) : (
+                  <img src={photoUrl} alt="Photo" className="w-full h-full object-cover"
+                    onError={() => setPhotoError(true)} />
+                )}
+              </div>
+              <div>
+                <p className="text-white/70 text-sm font-medium">{getGreeting()},</p>
+                <h1 className="text-white text-2xl font-extrabold tracking-tight mt-0.5">{firstName} 👋</h1>
+                <p className="text-white/60 text-xs mt-1">
+                  ID: {farmerData?.farmer_id || "Loading..."}
+                </p>
+              </div>
+            </div>
+
+            {/* Status pill */}
+            <div className="relative mt-4 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+              <span className={`w-1.5 h-1.5 rounded-full ${farmerData?.registration_status === "verified" ? "bg-green-300 animate-pulse" : "bg-yellow-300 animate-pulse"}`} />
+              <span className="text-white/90 text-[11px] font-semibold">
+                {farmerData?.registration_status === "verified" ? "✅ Verified" : "⏳ Pending Verification"}
+              </span>
+            </div>
+          </div>
+
+          {/* ── Loading State ──────────────────────────────────────────── */}
+          {loading && (
+            <div className="px-4 mt-5 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
+              </div>
+              <Skeleton className="h-40" />
+            </div>
+          )}
+
+          {/* ── Error State ────────────────────────────────────────────── */}
+          {!loading && !farmerData && (
+            <div className="px-4 mt-6">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center border border-gray-100 dark:border-gray-700">
+                <div className="text-5xl mb-3">⚠️</div>
+                <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-2">Unable to load profile</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Contact your operator or administrator.</p>
+                <button onClick={() => { hasLoadedRef.current = false; loadFarmerData(); }}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-bold active:scale-95 transition-all">
+                  🔄 Retry
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Settings Tab ───────────────────────────────────────────── */}
+          {activeTab === "settings" && !loading && (
+            <div className="mt-5">
+              <div className="px-4 mb-4 flex items-center gap-2">
+                <button onClick={() => setActiveTab("home")} className="text-gray-600 dark:text-gray-300 active:scale-90 transition-transform">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><polyline points="15 18 9 12 15 6" /></svg>
+                </button>
+                <h2 className="text-lg font-bold text-gray-800 dark:text-white">⚙️ Settings</h2>
+              </div>
+              <SettingsPanel />
+            </div>
+          )}
+
+          {/* ── Home Content ───────────────────────────────────────────── */}
+          {activeTab === "home" && !loading && farmerData && (
             <>
               {/* Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
-                {/* Registration Status Card */}
-                <div className="bg-gradient-to-br from-green-600 to-emerald-600 text-white p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all">
-                  <div className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
-                    {farmerData?.registration_status === "verified" ? "✅ Verified" : "⏳ Pending"}
-                  </div>
-                  <div className="opacity-90 text-xs sm:text-sm">Registration Status</div>
-                </div>
-
-                {/* Farm Size Card */}
-                <div className="bg-gradient-to-br from-blue-600 to-cyan-600 text-white p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all">
-                  <div className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
-                    🌾 {farmerData?.farm_info?.farm_size_hectares || 0} ha
-                  </div>
-                  <div className="opacity-90 text-xs sm:text-sm">Farm Size</div>
-                </div>
-
-                {/* Crops Count Card */}
-                <div className="bg-gradient-to-br from-yellow-600 to-orange-600 text-white p-4 sm:p-6 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all">
-                  <div className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
-                    🌱 {(farmerData?.farm_info?.crops_grown?.length || 0)}
-                  </div>
-                  <div className="opacity-90 text-xs sm:text-sm">Crops Grown</div>
+              <div className="px-4 mt-5">
+                <SectionHeader title="My Farm Overview" />
+                <div className="grid grid-cols-2 gap-3">
+                  <StatCard
+                    icon="📋" label="Status" value={farmerData?.registration_status === "verified" ? "Verified" : "Pending"}
+                    color={farmerData?.registration_status === "verified"
+                      ? "bg-gradient-to-br from-green-500 to-emerald-600"
+                      : "bg-gradient-to-br from-amber-500 to-orange-600"}
+                    loading={false}
+                  />
+                  <StatCard
+                    icon="🌾" label="Farm Size" value={`${farmerData?.farm_info?.farm_size_hectares || 0} ha`}
+                    sub={`${farmerData?.farm_info?.years_farming || farmerData?.farm_info?.farming_experience_years || 0} yrs exp`}
+                    color="bg-gradient-to-br from-blue-500 to-cyan-600" loading={false}
+                  />
+                  <StatCard
+                    icon="🌱" label="Crops" value={farmerData?.farm_info?.crops_grown?.length || 0}
+                    sub={farmerData?.farm_info?.crops_grown?.slice(0, 2).join(", ") || "None"}
+                    color="bg-gradient-to-br from-violet-500 to-purple-600" loading={false}
+                  />
+                  <StatCard
+                    icon="🐄" label="Livestock" value={(farmerData?.farm_info?.livestock_types?.length || farmerData?.farm_info?.livestock?.length || 0)}
+                    sub={farmerData?.farm_info?.has_irrigation ? "Irrigated" : "Rainfed"}
+                    color="bg-gradient-to-br from-rose-500 to-pink-600" loading={false}
+                  />
                 </div>
               </div>
 
-              {/* Main Content Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 sm:p-6 md:p-8">
-                {/* Header with Actions */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white">👨‍🌾 My Profile</h2>
-                  <div className="flex flex-wrap gap-2 sm:gap-3">
-                    <button
-                      onClick={() => safeNavigate(navigate, `/farmers/edit/${farmerData?.farmer_id}`)}
-                      className="px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button
-                      onClick={() => safeNavigate(navigate, "/farmer-idcard")}
-                      className="px-3 sm:px-4 py-2 bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
-                    >
-                      🆔 Manage ID
-                    </button>
-                    <button
-                      onClick={handleViewIDCard}
-                      className="px-3 sm:px-4 py-2 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
-                    >
-                      👁️ Preview ID
-                    </button>
-                    <button
-                      onClick={handleDownloadIDCard}
-                      className="px-3 sm:px-4 py-2 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
-                    >
-                      📥 Download
-                    </button>
-                    <button
-                      onClick={logout}
-                      className="px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
-                    >
-                      🚪 Logout
-                    </button>
-                    <button
-                      onClick={toggleTheme}
-                      className="px-3 sm:px-4 py-2 bg-gray-700 hover:bg-gray-600 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
-                      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                    >
-                      {isDark ? '☀️ Light' : '🌙 Dark'}
-                    </button>
+              {/* Quick Actions */}
+              <div className="px-4 mt-6">
+                <SectionHeader title="Quick Actions" />
+                <div className="grid grid-cols-3 gap-3">
+                  {quickActions.map((a) => (
+                    <QuickAction key={a.label} {...a} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Personal Info */}
+              <div className="px-4 mt-6">
+                <SectionHeader title="Personal Information" />
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4">
+                    <InfoCard icon="📱" label="Phone" value={farmerData?.personal_info?.phone_primary || "N/A"} borderColor="border-l-blue-500" />
+                    <InfoCard icon="🆔" label="NRC" value={farmerData?.personal_info?.nrc || "N/A"} borderColor="border-l-green-500" />
+                    <InfoCard icon="👤" label="Gender" value={farmerData?.personal_info?.gender || "N/A"} borderColor="border-l-purple-500" />
+                    <InfoCard icon="📅" label="Date of Birth" value={farmerData?.personal_info?.date_of_birth || "N/A"} borderColor="border-l-red-500" />
                   </div>
                 </div>
+              </div>
 
-                {/* Profile Content */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Photo and Basic Info - Left Column */}
-                  <div className="lg:col-span-1">
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 text-center">
-                      <div style={{
-                        width: "150px",
-                        height: "150px",
-                        margin: "0 auto 15px",
-                        background: "var(--bg-surface-subtle)",
-                        borderRadius: "50%",
-                        overflow: "hidden",
-                        boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center"
-                      }}>
-                        {photoError || !photoUrl ? (
-                          <div style={{ fontSize: "4rem" }}>👨‍🌾</div>
-                        ) : (
-                          <img
-                            src={photoUrl}
-                            alt="Farmer"
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                            onLoad={() => logger.info(COMPONENT, 'photo image displayed')}
-                            onError={() => {
-                              logger.error(COMPONENT, 'photo image display failed');
-                              setPhotoError(true);
-                            }}
-                          />
-                        )}
+              {/* Address Info */}
+              <div className="px-4 mt-6">
+                <SectionHeader title="Address" />
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+                  <div className="grid grid-cols-2 gap-3 p-4">
+                    <InfoCard icon="🏛️" label="Province" value={farmerData?.address?.province_name || "N/A"} borderColor="border-l-blue-500" />
+                    <InfoCard icon="🏘️" label="District" value={farmerData?.address?.district_name || "N/A"} borderColor="border-l-green-500" />
+                    <InfoCard icon="🏠" label="Chiefdom" value={farmerData?.address?.chiefdom_name || "N/A"} borderColor="border-l-purple-500" />
+                    <InfoCard icon="📍" label="Village" value={farmerData?.address?.village || "N/A"} borderColor="border-l-orange-500" />
+                  </div>
+                </div>
+              </div>
+
+              {/* QR Code */}
+              <div className="px-4 mt-6">
+                <SectionHeader title="Your QR Code" />
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5 flex flex-col items-center">
+                  <div className="w-48 h-48 rounded-xl border-[3px] border-green-500 p-3 bg-white flex items-center justify-center shadow-md">
+                    {qrError ? (
+                      <div className="text-center">
+                        <span className="text-4xl block mb-2">📱</span>
+                        <p className="text-xs text-gray-500">QR unavailable</p>
                       </div>
-                      <h3 style={{ fontSize: "18px", fontWeight: "700", color: "var(--text-primary-hex)", marginBottom: "5px" }}>
-                        {farmerData?.personal_info?.first_name} {farmerData?.personal_info?.last_name}
-                      </h3>
-                      <p style={{ fontSize: "13px", color: "var(--text-secondary-hex)", marginBottom: "15px" }}>
-                        ID: {farmerData?.farmer_id}
-                      </p>
-                      <button
-                        onClick={() => safeNavigate(navigate, `/farmers/${farmerData?.farmer_id}`)}
-                        className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all"
-                      >
-                        📄 Full Profile
-                      </button>
+                    ) : qrCodeUrl ? (
+                      <img src={qrCodeUrl} alt="QR Code" className="max-w-full max-h-full object-contain"
+                        onError={() => setQrError(true)} />
+                    ) : (
+                      <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-300 border-t-green-600" />
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+                    {qrError ? "Contact your operator to generate QR" : "Present this code for quick identification"}
+                  </p>
+                </div>
+              </div>
+
+              {/* System Strip */}
+              <div className="mx-4 mt-6 bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700">
+                <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">System</p>
+                <div className="flex flex-wrap gap-x-6 gap-y-1.5">
+                  {[
+                    { k: "Version", v: "2.0.0" },
+                    { k: "Role", v: "Farmer" },
+                    { k: "Farmer ID", v: farmerData?.farmer_id ?? "—" },
+                  ].map(({ k, v }) => (
+                    <div key={k}>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500">{k}: </span>
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{v}</span>
                     </div>
-                  </div>
-
-                  {/* Info Columns */}
-                  <div className="lg:col-span-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div style={{
-                        padding: "15px",
-                        background: "var(--bg-surface)",
-                        borderRadius: "8px",
-                        borderLeft: "4px solid #2563eb"
-                      }}>
-                        <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Phone</p>
-                        <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.personal_info?.phone_primary || "N/A"}</p>
-                      </div>
-                      <div style={{
-                        padding: "15px",
-                        background: "var(--bg-surface)",
-                        borderRadius: "8px",
-                        borderLeft: "4px solid #059669"
-                      }}>
-                        <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>NRC Number</p>
-                        <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.personal_info?.nrc || "N/A"}</p>
-                      </div>
-                      <div style={{
-                        padding: "15px",
-                        background: "var(--bg-surface)",
-                        borderRadius: "8px",
-                        borderLeft: "4px solid #9333ea"
-                      }}>
-                        <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Gender</p>
-                        <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.personal_info?.gender || "N/A"}</p>
-                      </div>
-                      <div style={{
-                        padding: "15px",
-                        background: "var(--bg-surface)",
-                        borderRadius: "8px",
-                        borderLeft: "4px solid #dc2626"
-                      }}>
-                        <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>DOB</p>
-                        <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.personal_info?.date_of_birth || "N/A"}</p>
-                      </div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              </div>
-
-              {/* Address Information */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 sm:p-6 md:p-8 mt-6">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-6 border-b-2 border-blue-600 pb-3">
-                  📍 Address Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div style={{
-                    padding: "15px",
-                    background: "var(--bg-surface)",
-                    borderRadius: "8px",
-                    borderLeft: "4px solid #2563eb"
-                  }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Province</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.address?.province_name || "N/A"}</p>
-                  </div>
-                  <div style={{
-                    padding: "15px",
-                    background: "var(--bg-surface)",
-                    borderRadius: "8px",
-                    borderLeft: "4px solid #059669"
-                  }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>District</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.address?.district_name || "N/A"}</p>
-                  </div>
-                  <div style={{
-                    padding: "15px",
-                    background: "var(--bg-surface)",
-                    borderRadius: "8px",
-                    borderLeft: "4px solid #9333ea"
-                  }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Chiefdom</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.address?.chiefdom_name || "N/A"}</p>
-                  </div>
-                  <div style={{
-                    padding: "15px",
-                    background: "var(--bg-surface)",
-                    borderRadius: "8px",
-                    borderLeft: "4px solid #dc2626"
-                  }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Village</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.address?.village || "N/A"}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Farm Information */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 sm:p-6 md:p-8 mt-6">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-6 border-b-2 border-green-600 pb-3">
-                  🌾 Farm Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div style={{
-                    padding: "15px",
-                    background: "var(--bg-surface)",
-                    borderRadius: "8px",
-                    borderLeft: "4px solid #16a34a"
-                  }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Farm Size (ha)</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.farm_info?.farm_size_hectares || 0}</p>
-                  </div>
-                  <div style={{
-                    padding: "15px",
-                    background: "var(--bg-surface)",
-                    borderRadius: "8px",
-                    borderLeft: "4px solid #0891b2"
-                  }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Crops</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{(farmerData?.farm_info?.crops_grown?.length || 0)} types</p>
-                  </div>
-                  <div style={{
-                    padding: "15px",
-                    background: "var(--bg-surface)",
-                    borderRadius: "8px",
-                    borderLeft: "4px solid #ca8a04"
-                  }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Livestock</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{(farmerData?.farm_info?.livestock_types?.length || farmerData?.farm_info?.livestock?.length || 0) > 0 ? "Yes" : "None"}</p>
-                  </div>
-                  <div style={{
-                    padding: "15px",
-                    background: "var(--bg-surface)",
-                    borderRadius: "8px",
-                    borderLeft: "4px solid #7c3aed"
-                  }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Experience</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.farm_info?.years_farming || farmerData?.farm_info?.farming_experience_years || "N/A"} years</p>
-                  </div>
-                  <div style={{
-                    padding: "15px",
-                    background: "var(--bg-surface)",
-                    borderRadius: "8px",
-                    borderLeft: "4px solid #ea580c"
-                  }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Irrigation</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary-hex)" }}>{farmerData?.farm_info?.has_irrigation ? "Yes" : "No"}</p>
-                  </div>
-                  <div style={{
-                    padding: "15px",
-                    background: "var(--bg-surface)",
-                    borderRadius: "8px",
-                    borderLeft: "4px solid #06b6d4"
-                  }}>
-                    <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-secondary-hex)", textTransform: "uppercase", marginBottom: "8px" }}>Status</p>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: farmerData?.registration_status === "verified" ? "#16a34a" : "#ca8a04" }}>
-                      {farmerData?.registration_status === "verified" ? "✅ Verified" : "⏳ Pending"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* QR Code Section */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 sm:p-8 text-center mt-6">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-6">🔐 Your QR Code</h3>
-                <div style={{ 
-                  width: "220px", 
-                  height: "220px", 
-                  margin: "0 auto 15px", 
-                  border: "3px solid #16a34a", 
-                  borderRadius: "12px", 
-                  padding: "15px",
-                  backgroundColor: "var(--bg-card)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-                }}>
-                  {qrError ? (
-                    <div style={{ textAlign: "center", color: "var(--text-muted-hex)" }}>
-                      <div style={{ fontSize: "3rem", marginBottom: "10px" }}>📱</div>
-                      <p style={{ fontSize: "12px" }}>QR code unavailable</p>
-                    </div>
-                  ) : qrCodeUrl ? (
-                    <img 
-                      src={qrCodeUrl} 
-                      alt="QR Code" 
-                      style={{ 
-                        maxWidth: "100%", 
-                        maxHeight: "100%",
-                        objectFit: "contain"
-                      }}
-                      onLoad={() => logger.info(COMPONENT, 'QR image loaded')}
-                      onError={() => {
-                        logger.error(COMPONENT, 'QR image display failed');
-                        setQrError(true);
-                      }}
-                    />
-                  ) : (
-                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 dark:border-gray-600 border-t-green-600"></div>
-                  )}
-                </div>
-                <p style={{ fontSize: "13px", color: "var(--text-secondary-hex)" }}>
-                  {qrError ? "Contact operator to generate QR code" : "Present this QR code for quick identification"}
-                </p>
               </div>
             </>
           )}
-        </div>
+
+        </div>{/* end scrollable */}
+
+        {/* ── Bottom Navigation Bar ─────────────────────────────────────── */}
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+          <div className="flex max-w-lg mx-auto">
+            <NavItem icon="🏠" label="Home" active={activeTab === "home"} onClick={() => handleTabChange("home")} />
+            <NavItem icon="🆔" label="ID Card" active={activeTab === "idcard"} onClick={() => handleTabChange("idcard")} />
+            <NavItem icon="🛒" label="Supplies" active={activeTab === "supplies"} onClick={() => handleTabChange("supplies")} />
+            <NavItem icon="⚙️" label="Settings" active={activeTab === "settings"} onClick={() => handleTabChange("settings")} />
+          </div>
+        </nav>
       </div>
 
       {/* ID Card Preview Modal */}
       {showPreview && farmerData && (
-        <FarmerIDCardPreview 
-          farmer={farmerData}
-          onClose={() => setShowPreview(false)}
-        />
+        <FarmerIDCardPreview farmer={farmerData as Record<string, any> & { farmer_id: string }} onClose={() => setShowPreview(false)} />
       )}
     </>
   );

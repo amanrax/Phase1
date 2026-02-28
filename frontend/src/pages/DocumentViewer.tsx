@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
 import BackButton from '@/components/BackButton';
+import { logger } from '@/utils/logger';
+
+const COMPONENT = 'DocumentViewer';
 
 const DocumentViewer: React.FC = () => {
   const navigate = useNavigate();
@@ -15,7 +18,7 @@ const DocumentViewer: React.FC = () => {
   const [viewingNatively, setViewingNatively] = useState(false);
 
   useEffect(() => {
-    console.log('[DocViewer] Component mounted');
+    logger.info(COMPONENT, 'Component mounted');
     
     const checkPlatform = async () => {
       try {
@@ -25,7 +28,7 @@ const DocumentViewer: React.FC = () => {
         
         // If mobile, offer native app opening
         if (native) {
-          console.log('[DocViewer] Mobile detected - will offer native app opening');
+          logger.info(COMPONENT, 'Mobile detected');
         }
       } catch (e) {
         setIsNative(false);
@@ -37,12 +40,10 @@ const DocumentViewer: React.FC = () => {
     const storedUrl = sessionStorage.getItem('doc_view_path');
     const storedTitle = sessionStorage.getItem('doc_view_title');
     
-    console.log('[DocViewer] URL from sessionStorage:', storedUrl?.substring(0, 80));
-    console.log('[DocViewer] URL type:', storedUrl?.startsWith('blob:') ? 'Blob URL' : storedUrl?.startsWith('data:') ? 'Data URL' : storedUrl?.startsWith('http') ? 'HTTP URL' : 'Unknown');
-    console.log('[DocViewer] Title:', storedTitle);
+    logger.info(COMPONENT, 'URL from sessionStorage', { urlPrefix: storedUrl?.substring(0, 80), title: storedTitle });
 
     if (!storedUrl) {
-      console.error('[DocViewer] No document URL found');
+      logger.error(COMPONENT, 'No document URL found');
       showError('No document to display', 3000);
       setTimeout(() => navigate(-1), 1500);
       return;
@@ -53,13 +54,13 @@ const DocumentViewer: React.FC = () => {
     setLoading(false);
 
     return () => {
-      console.log('[DocViewer] Component unmounting');
+      logger.info(COMPONENT, 'Component unmounting');
       if (storedUrl && storedUrl.startsWith('blob:')) {
         try {
           URL.revokeObjectURL(storedUrl);
-          console.log('[DocViewer] Blob URL revoked');
+          logger.info(COMPONENT, 'Blob URL revoked');
         } catch (e) {
-          console.warn('[DocViewer] Failed to revoke URL:', e);
+          logger.warn(COMPONENT, 'Failed to revoke URL', { error: e });
         }
       }
       sessionStorage.removeItem('doc_view_path');
@@ -109,13 +110,13 @@ const DocumentViewer: React.FC = () => {
         recursive: false,
       });
       
-      console.log('[DocViewer] ✅ Saved to Downloads:', filename);
+      logger.info(COMPONENT, 'Saved to Downloads', { filename });
       
       setViewingNatively(false);
       showSuccess(`Saved to Downloads\n\nTap notification or open File Manager > Downloads > ${filename}`, 6000);
       
     } catch (error) {
-      console.error('[DocViewer] Failed to save:', error);
+      logger.error(COMPONENT, 'Failed to save', { error });
       setViewingNatively(false);
       showError('Could not save document. Try downloading instead.', 4000);
     }
@@ -130,7 +131,7 @@ const DocumentViewer: React.FC = () => {
     let downloadNotifId: string | undefined;
     try {
       downloadNotifId = showInfo('Downloading...', 5000);
-      console.log('[DocViewer] Starting download');
+      logger.info(COMPONENT, 'Starting download');
 
       if (isNative) {
         const { Filesystem, Directory } = await import('@capacitor/filesystem');
@@ -160,27 +161,25 @@ const DocumentViewer: React.FC = () => {
         const filename = `${docTitle.replace(/\s+/g, '_')}_${timestamp}.${ext}`;
 
         try {
-          // ✅ TRY 1: External storage (Downloads folder) - Most user-friendly
-          console.log('[DocViewer] Attempting to save to Downloads folder...');
+          logger.info(COMPONENT, 'Attempting to save to Downloads folder');
           const result = await Filesystem.writeFile({
-            path: filename, // No subdirectory for Downloads
+            path: filename,
             data: base64,
             directory: Directory.External,
             recursive: false,
           });
 
           const savedPath = (result as any).uri || `Downloads/${filename}`;
-          console.log('[DocViewer] ✅ File saved to Downloads:', savedPath);
+          logger.info(COMPONENT, 'File saved to Downloads', { savedPath });
           
           if (downloadNotifId) dismiss(downloadNotifId);
           showSuccess('Saved to Downloads', 3000);
 
         } catch (fsErr: any) {
-          console.error('[DocViewer] External storage write failed:', fsErr);
+          logger.error(COMPONENT, 'External storage write failed', { error: fsErr });
           
-          // ✅ TRY 2: Documents/CEM folder - Fallback
           try {
-            console.log('[DocViewer] Trying Documents folder as fallback...');
+            logger.info(COMPONENT, 'Trying Documents folder as fallback');
             const fallbackResult = await Filesystem.writeFile({
               path: `CEM/${filename}`,
               data: base64,
@@ -189,12 +188,12 @@ const DocumentViewer: React.FC = () => {
             });
             
             const fallbackPath = (fallbackResult as any).uri || `Documents/CEM/${filename}`;
-            console.log('[DocViewer] ✅ Saved to Documents folder:', fallbackPath);
+            logger.info(COMPONENT, 'Saved to Documents folder', { fallbackPath });
             
             if (downloadNotifId) dismiss(downloadNotifId);
             showSuccess('Saved to Documents/CEM', 3000);
           } catch (docErr: any) {
-            console.error('[DocViewer] Both External and Documents failed:', docErr);
+            logger.error(COMPONENT, 'Both External and Documents failed', { error: docErr });
             if (downloadNotifId) dismiss(downloadNotifId);
             
             // Show helpful error message
@@ -232,18 +231,18 @@ const DocumentViewer: React.FC = () => {
         setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
         
         if (downloadNotifId) dismiss(downloadNotifId);
-        showSuccess('✅ Download started! Check your Downloads folder.', 4000);
-        console.log('[DocViewer] ✅ Web download completed');
+        showSuccess('Download started! Check your Downloads folder.', 4000);
+        logger.info(COMPONENT, 'Web download completed');
       }
     } catch (error: any) {
-      console.error('[DocViewer] ❌ Download failed:', error);
+      logger.error(COMPONENT, 'Download failed', { error });
       if (downloadNotifId) dismiss(downloadNotifId);
       showError(error.message || 'Download failed. Please try again.', 5000);
     }
   };
 
   const handleRetry = () => {
-    console.log('[DocViewer] Retrying...');
+    logger.info(COMPONENT, 'Retrying');
     setViewError(false);
     setLoading(true);
     setTimeout(() => setLoading(false), 500);
@@ -345,22 +344,14 @@ const DocumentViewer: React.FC = () => {
             </div>
           ) : isPDF ? (
             // Desktop PDF viewer
-            <div style={{ 
-              width: '100%', 
-              height: '75vh', 
-              minHeight: '500px',
-              border: '1px solid #e5e7eb', 
-              borderRadius: '8px', 
-              overflow: 'hidden',
-              backgroundColor: '#f9fafb'
-            }}>
+            <div className="w-full border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800" style={{ height: '75vh', minHeight: '500px' }}>
               <iframe 
                 src={`${docUrl}#toolbar=1&navpanes=0&scrollbar=1`}
                 title="Document" 
-                style={{ width: '100%', height: '100%', border: 'none' }}
-                onLoad={() => console.log('[DocViewer] ✅ PDF loaded')}
+                className="w-full h-full border-0"
+                onLoad={() => logger.info(COMPONENT, 'PDF loaded')}
                 onError={() => {
-                  console.error('[DocViewer] ❌ PDF failed to load');
+                  logger.error(COMPONENT, 'PDF failed to load');
                   setViewError(true);
                 }}
               />
@@ -371,10 +362,10 @@ const DocumentViewer: React.FC = () => {
               <img 
                 src={docUrl} 
                 alt={docTitle}
-                style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px' }}
-                onLoad={() => console.log('[DocViewer] ✅ Image loaded')}
+                className="max-w-full h-auto rounded-lg"
+                onLoad={() => logger.info(COMPONENT, 'Image loaded')}
                 onError={() => {
-                  console.error('[DocViewer] ❌ Image failed to load');
+                  logger.error(COMPONENT, 'Image failed to load');
                   setViewError(true);
                 }}
               />
@@ -382,8 +373,8 @@ const DocumentViewer: React.FC = () => {
           )}
           
           {!isNative && (
-            <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4">
-              <p className="text-sm text-blue-800">
+            <div className="mt-4 bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
                 <strong>💡 Tip:</strong> If the document doesn't display, click "Download" to save it to your device.
               </p>
             </div>

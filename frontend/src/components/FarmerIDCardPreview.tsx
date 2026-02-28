@@ -1,5 +1,8 @@
 import { useRef, useState, useEffect } from "react";
 import { farmerService } from "@/services/farmer.service";
+import { logger } from "@/utils/logger";
+
+const COMPONENT = "FarmerIDCardPreview";
 
 interface FarmerIDCardPreviewProps {
   farmer: {
@@ -49,10 +52,10 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
         const url = await farmerService.getQRCodeBlobUrl(farmer);
         if (mounted && url) {
           setQrCodeUrl(url);
-          console.log('[Preview] QR code loaded');
+          logger.info(COMPONENT, 'QR code loaded');
         }
       } catch (error) {
-        console.error('[Preview] Failed to load QR code:', error);
+        logger.error(COMPONENT, 'Failed to load QR code', error);
       } finally {
         if (mounted) setQrLoading(false);
       }
@@ -79,10 +82,10 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
         const url = await farmerService.getPhotoUrl(farmer);
         if (mounted && url) {
           setPhotoUrl(url);
-          console.log('[Preview] Photo loaded');
+          logger.info(COMPONENT, 'Photo loaded');
         }
       } catch (error) {
-        console.error('[Preview] Failed to load photo:', error);
+        logger.error(COMPONENT, 'Failed to load photo', error);
       } finally {
         if (mounted) setPhotoLoading(false);
       }
@@ -100,49 +103,13 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
   }, [farmer?.farmer_id]);
 
   return (
-    <div 
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 50,
-        padding: '16px',
-        overflow: 'auto'
-      }}
-    >
-      <div 
-        style={{
-          background: 'white',
-          borderRadius: '16px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          maxWidth: '95vw',
-          width: '100%',
-          padding: '24px',
-          position: 'relative',
-          maxHeight: '90vh',
-          overflowY: 'auto'
-        }}
-      >
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-[95vw] w-full p-6 relative max-h-[90vh] overflow-y-auto">
         {/* Close Button */}
         {onClose && (
           <button
             onClick={onClose}
-            style={{
-              position: 'absolute',
-              top: '16px',
-              right: '16px',
-              color: '#9ca3af',
-              fontSize: '24px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '8px',
-              lineHeight: 1
-            }}
+            className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 text-2xl bg-transparent border-none cursor-pointer p-2 leading-none hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label="Close"
           >
             ✕
@@ -150,17 +117,17 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
         )}
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: 'clamp(20px, 5vw, 30px)', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>
+        <div className="text-center mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-2">
             🆔 Farmer ID Card Preview
           </h2>
-          <p style={{ color: '#6b7280', fontSize: 'clamp(14px, 4vw, 16px)' }}>
+          <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">
             {farmer.personal_info?.first_name} {farmer.personal_info?.last_name}
           </p>
         </div>
 
         {/* Card Display */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
+        <div className="flex justify-center mb-8 overflow-x-auto">
           <div style={{ position: 'relative', perspective: '1000px' }}>
             {/* ID Card */}
             <div
@@ -446,30 +413,10 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+        <div className="flex gap-4 justify-center">
           <button
             onClick={() => setShowBack(!showBack)}
-            style={{
-              background: 'linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%)',
-              color: 'white',
-              padding: '12px 24px',
-              borderRadius: '8px',
-              fontWeight: '600',
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(90deg, #1d4ed8 0%, #1e40af 100%)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%)';
-            }}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg flex items-center gap-2 text-sm hover:from-blue-700 hover:to-blue-800 transition-all active:scale-95"
           >
             <span>🔄</span>
             {showBack ? "Show Front" : "Show Back"}
@@ -477,8 +424,8 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
         </div>
 
         {/* Instructions */}
-        <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '13px', color: '#6b7280' }}>
-          <p style={{ margin: 0 }}>💡 Click "Show Back" to flip the card and see QR code</p>
+        <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p>💡 Click "Show Back" to flip the card and see QR code</p>
         </div>
       </div>
     </div>

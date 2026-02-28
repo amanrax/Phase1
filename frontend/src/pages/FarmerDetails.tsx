@@ -485,7 +485,7 @@ export default function FarmerDetails() {
           <BackButton />
           <div className="flex flex-wrap gap-2">
             <button onClick={handleGenerateIDCard} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
-              🎴 Gener
+              🎴 Generate ID
             </button>
             <button onClick={handleDownloadIDCard} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
               ⬇️ Download ID

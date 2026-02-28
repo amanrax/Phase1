@@ -44,13 +44,13 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
   };
 
   return (
-    <div>
-      <h3 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "16px", color: "var(--text-primary-hex)" }}>
+    <div className="space-y-4">
+      <h3 className="text-xl font-bold text-gray-800 dark:text-white border-b-2 border-green-500 pb-2.5">
         📍 Address &amp; Location
       </h3>
       {err && (
-        <div role="alert" style={{ background: "#fee", color: "#900", padding: 10, borderRadius: 6, marginBottom: 12 }}>
-          {err}
+        <div role="alert" className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm font-semibold border-l-4 border-red-500">
+          ❌ {err}
         </div>
       )}
 
@@ -63,36 +63,18 @@ export default function Step2Address({ data, onBack, onNext }: Props) {
         onVillageChange={setVillage}
       />
 
-      <div style={{ display: "flex", gap: "15px", marginTop: "25px" }}>
+      <div className="flex gap-3 pt-4">
         <button
           onClick={onBack}
-          style={{
-            padding: "12px 30px",
-            background: "#6c757d",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "15px",
-            fontWeight: "600",
-            cursor: "pointer",
-          }}
+          className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold text-sm rounded-lg transition active:scale-95"
           aria-label="Back to previous step"
         >
           ← Back
         </button>
-        <div style={{ flex: 1 }} />
+        <div className="flex-1" />
         <button
           onClick={handleNext}
-          style={{
-            padding: "12px 30px",
-            background: "#28a745",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "15px",
-            fontWeight: "600",
-            cursor: "pointer",
-          }}
+          className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold text-sm rounded-lg transition active:scale-95 shadow-sm"
           aria-label="Proceed to next step"
         >
           Next →

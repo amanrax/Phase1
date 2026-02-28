@@ -4,6 +4,9 @@ import BackButton from "@/components/BackButton";
 import { operatorService } from "@/services/operator.service";
 import geoService from "@/services/geo.service";
 import { useNotification } from '@/contexts/NotificationContext';
+import { logger } from '@/utils/logger';
+
+const COMPONENT = 'OperatorEdit';
 
 const getErrorMessage = (err: unknown): string => {
   if (typeof err === "object" && err !== null) {
@@ -65,7 +68,7 @@ export default function OperatorEdit() {
       const data = await geoService.provinces();
       setProvinces(data);
     } catch (err) {
-      console.error("Failed to load provinces", err);
+      logger.error(COMPONENT, 'Failed to load provinces', { error: err });
     }
   };
 
@@ -74,7 +77,7 @@ export default function OperatorEdit() {
       const data = await geoService.districts(provinceCode);
       setDistricts(data);
     } catch (err) {
-      console.error("Failed to load districts", err);
+      logger.error(COMPONENT, 'Failed to load districts', { error: err });
     }
   };
 

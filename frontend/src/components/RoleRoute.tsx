@@ -18,7 +18,7 @@ export const RoleRoute = ({ children, requiredRole }: RoleRouteProps) => {
   const userRoles = user?.roles?.map((role: string) => role.toUpperCase()) ?? [];
 
   // Check if user has one of the required roles
-  const hasRole = userRoles.some((role) => allowedRoles.includes(role));
+  const hasRole = userRoles.some((role: string) => allowedRoles.includes(role));
 
   if (!hasRole) {
     return <Navigate to="/login" replace />;

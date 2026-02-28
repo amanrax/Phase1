@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import BackButton from "@/components/BackButton";
 import { operatorService } from "@/services/operator.service";
+import { useNotification } from "@/contexts/NotificationContext";
+import { logger } from "@/utils/logger";
+
+const COMPONENT = "OperatorDetails";
 
 interface OperatorData {
   operator_id: string;
@@ -20,6 +24,7 @@ interface OperatorData {
 export default function OperatorDetails() {
   const { operatorId } = useParams<{ operatorId: string }>();
   const navigate = useNavigate();
+  const { success: showSuccess, error: showError } = useNotification();
   const [operator, setOperator] = useState<OperatorData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,8 +40,11 @@ export default function OperatorDetails() {
       setError(null);
       const data = await operatorService.getOperator(operatorId!);
       setOperator(data);
+      logger.info(COMPONENT, 'Operator data loaded', { operatorId });
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to load operator details");
+      const msg = err.response?.data?.detail || "Failed to load operator details";
+      logger.error(COMPONENT, 'Load failed', { operatorId, error: msg });
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -50,10 +58,13 @@ export default function OperatorDetails() {
     try {
       setUpdating(true);
       await operatorService.update(operator.operator_id, { is_active: !operator.is_active });
-      alert(`✅ Operator ${action}d successfully`);
+      logger.info(COMPONENT, `Operator ${action}d`, { operatorId: operator.operator_id });
+      showSuccess(`Operator ${action}d successfully`, 4000);
       await loadOperatorData();
     } catch (err: any) {
-      alert(err.response?.data?.detail || `Failed to ${action} operator`);
+      const msg = err.response?.data?.detail || `Failed to ${action} operator`;
+      logger.error(COMPONENT, `Toggle status failed`, { error: msg });
+      showError(msg, 5000);
     } finally {
       setUpdating(false);
     }

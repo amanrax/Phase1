@@ -212,7 +212,7 @@ export default function AdminDashboard() {
   const { logout, user } = useAuthStore();
   const navigate = useNavigate();
   const notify = useNotification();
-  const { toggleTheme, isDark } = useTheme();
+  useTheme(); // Ensure theme context is active
 
   const [activeTab, setActiveTab] = useState<NavTab>("home");
   const [loading, setLoading] = useState(true);
@@ -334,7 +334,7 @@ export default function AdminDashboard() {
     { icon: "🧑‍💼", label: "Add Operator", bg: "bg-gradient-to-br from-blue-500 to-indigo-600",    onPress: () => { logger.info("AdminDashboard", "QuickAction: Add Operator"); navigate("/operators/manage", { state: { openCreate: true } }); } },
     { icon: "📈", label: "Analytics",    bg: "bg-gradient-to-br from-violet-500 to-purple-600",  onPress: () => { logger.info("AdminDashboard", "QuickAction: Analytics");          navigate("/admin/analytics"); } },
     { icon: "🛒", label: "Supply Req.",  bg: "bg-gradient-to-br from-rose-500 to-pink-600",      onPress: () => { logger.info("AdminDashboard", "QuickAction: Supply Requests");   navigate("/admin/supply-requests"); } },
-    { icon: "📋", label: "System Logs", bg: "bg-gradient-to-br from-gray-600 to-slate-700",     onPress: () => { logger.info("AdminDashboard", "QuickAction: Logs");              navigate("/admin/logs"); } },
+
   ];
 
   const getGreeting = () => {
@@ -371,13 +371,6 @@ export default function AdminDashboard() {
                 className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
               >
                 <span className={`text-sm ${refreshing ? "animate-spin" : ""}`}>🔄</span>
-              </button>
-              <button
-                onClick={toggleTheme}
-                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-                className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:scale-90 transition-transform"
-              >
-                <span className="text-sm">{isDark ? "☀️" : "🌙"}</span>
               </button>
               <button
                 onClick={() => { logger.info("AdminDashboard", "Logout pressed"); logout(); }}

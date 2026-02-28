@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BackButton from "@/components/BackButton";
-import axios from "axios";
+import axios from "@/utils/axios";
+import useAuthStore from "@/store/authStore";
 import { logger } from "@/utils/logger";
 import dashboardService, {
   type ReportDashboard,
@@ -18,6 +19,8 @@ type ReportType = "dashboard" | "region" | "operators" | "trends";
 
 export default function AdminReports() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const backPath = user?.role === "operator" ? "/operator-dashboard" : "/admin-dashboard";
   const [activeReport, setActiveReport] = useState<ReportType>("dashboard");
 
   const [dashboardData, setDashboardData] = useState<ReportDashboard | null>(null);
@@ -195,7 +198,7 @@ export default function AdminReports() {
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <BackButton to="/admin-dashboard" />
+            <BackButton to={backPath} />
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Reports &amp; Analytics</h1>
           </div>
 

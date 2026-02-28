@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import BackButton from "@/components/BackButton";
 import axios from "@/utils/axios";
 import { useNotification } from "@/contexts/NotificationContext";
+import { logger } from "@/utils/logger";
+
+const COMPONENT = 'AdminSupplyRequests';
 
 interface SupplyRequest {
   id: string;
@@ -55,7 +58,7 @@ export default function AdminSupplyRequests() {
     } catch (error: any) {
       const errorMsg = error.response?.data?.detail || error.response?.data?.message || "Failed to load supply requests";
       showError(errorMsg, 5000);
-      console.error("Error loading requests:", error);
+      logger.error(COMPONENT, 'Error loading requests', { error });
     } finally {
       setLoading(false);
     }
@@ -94,7 +97,7 @@ export default function AdminSupplyRequests() {
     } catch (error: any) {
       const errorMsg = error.response?.data?.detail || error.response?.data?.message || "Failed to update request";
       showError(errorMsg, 5000);
-      console.error("Error updating request:", error);
+      logger.error(COMPONENT, 'Error updating request', { error });
     } finally {
       setLoading(false);
     }
@@ -110,7 +113,7 @@ export default function AdminSupplyRequests() {
     } catch (error: any) {
       const errorMsg = error.response?.data?.detail || error.response?.data?.message || "Failed to delete request";
       showError(errorMsg, 5000);
-      console.error("Error deleting request:", error);
+      logger.error(COMPONENT, 'Error deleting request', { id, error });
     } finally {
       setLoading(false);
     }

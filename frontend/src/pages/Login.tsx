@@ -6,9 +6,11 @@ import useAuthStore from "@/store/authStore";
 import axiosClient from "@/utils/axios";
 import { getApiBaseUrl } from "@/config/mobile";
 import { useNotification } from "@/contexts/NotificationContext";
-import { useBackButton } from '@/hooks/useBackButton';
 import { App } from '@capacitor/app';
 import { handleNRCChange } from '@/utils/nrcFormatter';
+import { logger } from '@/utils/logger';
+
+const COMPONENT = 'Login';
 
 const roles = ["admin", "operator", "farmer"];
 
@@ -29,20 +31,24 @@ export default function Login() {
 
   // Custom back button handler for login page - exit app
   useEffect(() => {
-    const handler = App.addListener('backButton', () => {
-      console.log('[Login] Back button pressed - exiting app');
-      App.exitApp();
-    });
+    let listener: { remove: () => void } | null = null;
+    const setup = async () => {
+      listener = await App.addListener('backButton', () => {
+        logger.info(COMPONENT, 'Back button pressed - exiting app');
+        App.exitApp();
+      });
+    };
+    setup();
 
     return () => {
-      handler.remove();
+      listener?.remove();
     };
   }, []);
 
   // Check if already logged in and redirect
   useEffect(() => {
     if (token && user && !isLoading) {
-      console.log("[Login] Already logged in, redirecting...", { user: user.email, roles: user.roles });
+      logger.info(COMPONENT, 'Already logged in, redirecting...', { user: user.email, roles: user.roles });
       const targetRoute = user.roles?.includes("ADMIN") 
         ? '/admin-dashboard'
         : user.roles?.includes("OPERATOR")
@@ -51,14 +57,14 @@ export default function Login() {
         ? '/farmer-dashboard'
         : '/dashboard';
       
-      console.log("[Login] Target route:", targetRoute);
+      logger.info(COMPONENT, 'Target route:', targetRoute);
       navigate(targetRoute, { replace: true });
     }
   }, [token, user, isLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("[Login] Form submitted with:", { email, password: '***', userType });
+    logger.info(COMPONENT, 'Form submitted with:', { email, password: '***', userType });
     
     if (!email || !password) {
       showError("Please fill in all fields", 4000);
@@ -69,15 +75,15 @@ export default function Login() {
       // Send password as-is (date picker already gives YYYY-MM-DD format)
       const passwordToSend = password;
       
-      console.log("[Login] Starting login process...");
+      logger.info(COMPONENT, 'Starting login process...');
       await login(email, passwordToSend, userType);
       
       const user = useAuthStore.getState().user;
       const token = useAuthStore.getState().token;
-      console.log("[Login] Login successful!");
-      console.log("[Login] User:", JSON.stringify(user));
-      console.log("[Login] Token present:", !!token);
-      console.log("[Login] User roles:", user?.roles);
+      logger.info(COMPONENT, 'Login successful!');
+      logger.info(COMPONENT, 'User:', JSON.stringify(user));
+      logger.info(COMPONENT, 'Token present:', !!token);
+      logger.info(COMPONENT, 'User roles:', user?.roles);
       
       // Determine target route
       let targetRoute = '/dashboard';
@@ -89,14 +95,14 @@ export default function Login() {
         targetRoute = '/farmer-dashboard';
       }
       
-      console.log("[Login] Target route:", targetRoute);
+      logger.info(COMPONENT, 'Target route:', targetRoute);
       
       // Show success message
       const welcomeName = user?.full_name || user?.email || 'User';
       showSuccess(`Welcome back, ${welcomeName}!`, 4000);
       
       // Navigate
-      console.log("[Login] Executing navigation to:", targetRoute);
+      logger.info(COMPONENT, 'Executing navigation to:', targetRoute);
       navigate(targetRoute, { replace: true });
     } catch (err: any) {
       const status   = err?.response?.status;
@@ -192,7 +198,7 @@ export default function Login() {
                   className="w-full h-full"
                   onError={(e) => {
                     // Fallback if logo not found
-                    console.warn('[Login] Logo not found, using emoji fallback');
+                    logger.warn(COMPONENT, 'Logo not found, using emoji fallback');
                     e.currentTarget.style.display = 'none';
                     const parent = e.currentTarget.parentElement;
                     if (parent && !parent.querySelector('.logo-fallback')) {
@@ -227,7 +233,7 @@ export default function Login() {
                       setUserType(newRole);
                       // Save to localStorage for persistence across refreshes
                       localStorage.setItem('lastSelectedRole', newRole);
-                      console.log('[Login] Role changed to:', newRole);
+                      logger.info(COMPONENT, 'Role changed to:', newRole);
                       // Only clear diagnostic info, preserve user input
                       setDiag(null);
                     }}
