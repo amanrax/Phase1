@@ -22,7 +22,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
  * Use this for photos, documents, and QR codes stored in GridFS
  * Now with caching to improve performance
  */
-async function fetchGridFSFile(fileIdOrPath: string): Promise<string | null> {
+async function fetchGridFSFile(fileIdOrPath: string, forceMime?: string): Promise<string | null> {
   try {
     // Check cache first
     const cached = blobCache.get(fileIdOrPath);
@@ -58,13 +58,20 @@ async function fetchGridFSFile(fileIdOrPath: string): Promise<string | null> {
       return null;
     }
 
-    const blob = await response.blob();
+    // Use forceMime if server returns generic binary type (GridFS metadata gap)
+    const serverType = response.headers.get('Content-Type') || '';
+    const mimeType = (forceMime && (!serverType || serverType === 'application/octet-stream'))
+      ? forceMime
+      : serverType || 'application/octet-stream';
+
+    const arrayBuffer = await response.arrayBuffer();
+    const blob = new Blob([arrayBuffer], { type: mimeType });
     const blobUrl = URL.createObjectURL(blob);
     
     // Store in cache
     blobCache.set(fileIdOrPath, { blobUrl, timestamp: Date.now() });
     
-    logger.info('GridFS', 'File loaded and cached');
+    logger.info('GridFS', 'File loaded and cached', { mimeType });
     return blobUrl;
   } catch (error) {
     logger.error("GridFS", "Error fetching file", { path: fileIdOrPath, error: (error as any)?.message });
@@ -430,12 +437,12 @@ export const farmerService = {
 
     if (photoFileId) {
       logger.info('farmerService', '[Photo] Loading from GridFS file_id:', photoFileId);
-      return await fetchGridFSFile(photoFileId);
+      return await fetchGridFSFile(photoFileId, 'image/jpeg');
     }
 
     if (photoPath) {
       logger.info('farmerService', '[Photo] Loading from path:', photoPath);
-      return await fetchGridFSFile(photoPath);
+      return await fetchGridFSFile(photoPath, 'image/jpeg');
     }
 
     logger.info('farmerService', '[Photo] No photo available');
@@ -453,12 +460,12 @@ export const farmerService = {
 
     if (qrFileId) {
       logger.info('farmerService', '[QR] Loading from GridFS file_id:', qrFileId);
-      return await fetchGridFSFile(qrFileId);
+      return await fetchGridFSFile(qrFileId, 'image/png');
     }
 
     if (qrPath) {
       logger.info('farmerService', '[QR] Loading from path:', qrPath);
-      return await fetchGridFSFile(qrPath);
+      return await fetchGridFSFile(qrPath, 'image/png');
     }
 
     // Fallback: try direct API endpoint
