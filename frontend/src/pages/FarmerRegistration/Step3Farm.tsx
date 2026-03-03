@@ -1,10 +1,15 @@
 // src/pages/FarmerRegistration/Step3Farm.tsx — Farm details with Tailwind
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Combobox from "@/components/ui/Combobox";
+import axios from "@/utils/axios";
+
+const DEFAULT_CROPS = ["maize","sorghum","groundnuts","soybean","sunflower","cotton","cassava","sweet potato","vegetables","tobacco","wheat","beans"];
+const DEFAULT_LIVESTOCK = ["cattle","goats","sheep","pigs","chickens","ducks","rabbits","fish","bees"];
 
 type FarmData = {
   size_hectares?: string;
-  crops?: string;
-  livestock?: string;
+  crops?: string | string[];
+  livestock?: string | string[];
   has_irrigation?: boolean;
   years_farming?: string;
   household_size?: string;
@@ -23,13 +28,29 @@ const labelClass = "block text-xs font-bold text-gray-700 dark:text-gray-300 mb-
 
 export default function Step3Farm({ data, onBack, onNext }: Props) {
   const [size, setSize] = useState(data?.size_hectares || "");
-  const [crops, setCrops] = useState(data?.crops || "");
-  const [livestock, setLivestock] = useState(data?.livestock || "");
+  const [crops, setCrops] = useState<string[]>(
+    Array.isArray(data?.crops) ? data.crops : (typeof data?.crops === "string" && data.crops ? data.crops.split(",").map(s => s.trim()).filter(Boolean) : [])
+  );
+  const [livestock, setLivestock] = useState<string[]>(
+    Array.isArray(data?.livestock) ? data.livestock : (typeof data?.livestock === "string" && data.livestock ? data.livestock.split(",").map(s => s.trim()).filter(Boolean) : [])
+  );
+  const [cropOptions, setCropOptions] = useState<string[]>(DEFAULT_CROPS);
+  const [livestockOptions, setLivestockOptions] = useState<string[]>(DEFAULT_LIVESTOCK);
   const [hasIrrigation, setHasIrrigation] = useState(data?.has_irrigation || false);
   const [yearsFarming, setYearsFarming] = useState(data?.years_farming || "");
   const [householdSize, setHouseholdSize] = useState(data?.household_size || "");
   const [dependents, setDependents] = useState(data?.dependents || "");
   const [primaryIncome, setPrimaryIncome] = useState(data?.primary_income || "");
+
+  // Load reference data from backend (best-effort)
+  useEffect(() => {
+    axios.get<{items: {value: string}[]}>("/api/reference-data?type=crops").then(r => {
+      if (r.data?.items?.length) setCropOptions(r.data.items.map((i: {value: string}) => i.value));
+    }).catch(() => {});
+    axios.get<{items: {value: string}[]}>("/api/reference-data?type=livestock").then(r => {
+      if (r.data?.items?.length) setLivestockOptions(r.data.items.map((i: {value: string}) => i.value));
+    }).catch(() => {});
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -51,13 +72,25 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
       </div>
 
       <div>
-        <label htmlFor="mainCrops" className={labelClass}>Main Crops (comma separated)</label>
-        <input id="mainCrops" value={crops} onChange={(e) => setCrops(e.target.value)} className={inputClass} placeholder="maize, groundnuts, cassava" />
+        <Combobox
+          label="Main Crops"
+          placeholder="Type or select crops…"
+          value={crops}
+          onChange={setCrops}
+          options={cropOptions}
+          allowCustom
+        />
       </div>
 
       <div>
-        <label htmlFor="livestock" className={labelClass}>Livestock (comma separated)</label>
-        <input id="livestock" value={livestock} onChange={(e) => setLivestock(e.target.value)} className={inputClass} placeholder="cattle, goats, chickens" />
+        <Combobox
+          label="Livestock"
+          placeholder="Type or select livestock…"
+          value={livestock}
+          onChange={setLivestock}
+          options={livestockOptions}
+          allowCustom
+        />
       </div>
 
       <label className="flex items-center gap-2.5 mt-2 cursor-pointer">
@@ -90,7 +123,7 @@ export default function Step3Farm({ data, onBack, onNext }: Props) {
         </button>
         <div className="flex-1" />
         <button
-          onClick={() => onNext({ size_hectares: size, crops, livestock, has_irrigation: hasIrrigation, years_farming: yearsFarming, household_size: householdSize, dependents, primary_income: primaryIncome })}
+          onClick={() => onNext({ size_hectares: size, crops: crops.join(", "), livestock: livestock.join(", "), has_irrigation: hasIrrigation, years_farming: yearsFarming, household_size: householdSize, dependents, primary_income: primaryIncome })}
           className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold text-sm rounded-lg transition active:scale-95 shadow-sm"
           aria-label="Go to next step"
         >

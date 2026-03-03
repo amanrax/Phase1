@@ -3,6 +3,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import BackButton from "@/components/BackButton";
 import { farmerService } from "@/services/farmer.service";
+import { verificationService, type VerificationDocument } from "@/services/verification.service";
+import useAuthStore from "@/store/authStore";
 import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
 
@@ -233,6 +235,18 @@ export default function FarmerDetails() {
   });
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false, title: "", message: "", onConfirm: () => {} });
   const [verificationOpen, setVerificationOpen] = useState(false);
+
+  // P2 — document review state
+  const { user } = useAuthStore();
+  const canReview = user?.role === "ADMIN" || user?.role === "OPERATOR";
+  const [reviewDocs, setReviewDocs] = useState<VerificationDocument[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [statusNotes, setStatusNotes] = useState("");
+  const [savingStatus, setSavingStatus] = useState(false);
+  const [rejectInputs, setRejectInputs] = useState<Record<string, string>>({});
+  const [rejectOpen, setRejectOpen] = useState<Record<string, boolean>>({});
+  const [docActing, setDocActing] = useState<Record<string, boolean>>({});
 
   // ─── load farmer ──────────────────────────────────────────────────────────────
   const loadFarmerData = useCallback(async () => {
@@ -670,21 +684,186 @@ export default function FarmerDetails() {
               <span className="text-gray-400 dark:text-gray-500 text-sm">{verificationOpen ? "▲ Hide" : "▼ Show"}</span>
             </button>
 
-            {verificationOpen && (
-              <div className="px-6 pb-6 border-t border-gray-100 dark:border-gray-700 pt-4 space-y-2">
-                <InfoRow label="Verification Status" value={farmer.verification_status ?? "pending"} />
-                <InfoRow label="Reviewed By"         value={farmer.reviewed_by} />
-                <InfoRow label="Reviewed At"         value={farmer.reviewed_at ? new Date(farmer.reviewed_at).toLocaleString() : undefined} />
-                {farmer.review_notes && (
-                  <div className="py-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 block mb-1">Review Notes</span>
-                    <p className="text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">{farmer.review_notes}</p>
+          {verificationOpen && (
+            <div className="px-6 pb-6 border-t border-gray-100 dark:border-gray-700 pt-4 space-y-4">
+
+              {/* Master status selector */}
+              {canReview && (
+                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">📋 Set Farmer Status</h3>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <select
+                      value={selectedStatus}
+                      onChange={e => setSelectedStatus(e.target.value)}
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 outline-none"
+                    >
+                      <option value="">— select new status —</option>
+                      {["registered","documents_uploaded","under_review","verified","rejected","incomplete"].map(s => (
+                        <option key={s} value={s}>{s.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase())}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Review notes (optional)"
+                      value={statusNotes}
+                      onChange={e => setStatusNotes(e.target.value)}
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 outline-none"
+                    />
+                    <button
+                      disabled={!selectedStatus || savingStatus}
+                      onClick={async () => {
+                        if (!selectedStatus || !farmer) return;
+                        setSavingStatus(true);
+                        try {
+                          await verificationService.updateStatus(farmer.farmer_id, { status: selectedStatus, notes: statusNotes || undefined });
+                          showSuccess(`Status updated to "${selectedStatus}"`);
+                          setFarmer(f => f ? { ...f, verification_status: selectedStatus, registration_status: selectedStatus } : f);
+                          setSelectedStatus("");
+                          setStatusNotes("");
+                        } catch (err) { showError(getErrorMessage(err)); }
+                        finally { setSavingStatus(false); }
+                      }}
+                      className="px-5 py-2 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:opacity-50 transition"
+                    >
+                      {savingStatus ? "Saving…" : "Save Status"}
+                    </button>
                   </div>
-                )}
-                <p className="text-xs text-gray-400 dark:text-gray-500 italic pt-2">
-                  Full document-level approval and audit trail available via the verification endpoints.
-                </p>
+                </div>
+              )}
+
+              {/* Document list */}
+              {canReview && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">📄 Document Review</h3>
+                    <button
+                      onClick={async () => {
+                        if (!farmer) return;
+                        setReviewLoading(true);
+                        try {
+                          const res = await verificationService.getDocuments(farmer.farmer_id);
+                          setReviewDocs(res.documents);
+                          if (!selectedStatus && res.verification_status) setSelectedStatus(res.verification_status);
+                        } catch { /* already shown on open */ }
+                        finally { setReviewLoading(false); }
+                      }}
+                      className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+                    >
+                      🔄 Load Documents
+                    </button>
+                  </div>
+                  {reviewLoading && (
+                    <div className="space-y-2">
+                      {[1,2,3].map(i => <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />)}
+                    </div>
+                  )}
+                  {!reviewLoading && reviewDocs.length === 0 && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 italic">No documents loaded yet — click "Load Documents" above.</p>
+                  )}
+                  {!reviewLoading && reviewDocs.length > 0 && (
+                    <div className="space-y-3">
+                      {reviewDocs.map(doc => (
+                        <div key={doc.doc_type} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                            {/* thumbnail or icon */}
+                            <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                              {doc.url && /\.(jpe?g|png|webp)$/i.test(doc.url) ? (
+                                <img src={doc.url} alt={doc.doc_type} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-2xl">{doc.url ? "📄" : "❌"}</span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 capitalize">{doc.doc_type.replace(/_/g," ")}</p>
+                              {doc.uploaded_at && <p className="text-xs text-gray-400">{new Date(doc.uploaded_at).toLocaleDateString()}</p>}
+                              <span className={`inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full ${
+                                doc.status === "approved" ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300" :
+                                doc.status === "rejected" ? "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300" :
+                                "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300"
+                              }`}>{doc.status}</span>
+                              {doc.rejection_reason && <p className="text-xs text-red-500 mt-1">Reason: {doc.rejection_reason}</p>}
+                            </div>
+                            <div className="flex gap-2 flex-shrink-0">
+                              <button
+                                disabled={docActing[doc.doc_type] || doc.status === "approved"}
+                                onClick={async () => {
+                                  if (!farmer) return;
+                                  setDocActing(a => ({ ...a, [doc.doc_type]: true }));
+                                  try {
+                                    await verificationService.approveDocument(farmer.farmer_id, doc.doc_type);
+                                    setReviewDocs(d => d.map(x => x.doc_type === doc.doc_type ? { ...x, status: "approved" } : x));
+                                    showSuccess(`"${doc.doc_type}" approved`);
+                                  } catch (err) { showError(getErrorMessage(err)); }
+                                  finally { setDocActing(a => ({ ...a, [doc.doc_type]: false })); }
+                                }}
+                                className="px-3 py-1.5 text-xs font-bold bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-40 transition"
+                              >
+                                ✓ Approve
+                              </button>
+                              <button
+                                disabled={docActing[doc.doc_type]}
+                                onClick={() => setRejectOpen(r => ({ ...r, [doc.doc_type]: !r[doc.doc_type] }))}
+                                className="px-3 py-1.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-40 transition"
+                              >
+                                ✗ Reject
+                              </button>
+                            </div>
+                          </div>
+                          {/* inline rejection reason input */}
+                          {rejectOpen[doc.doc_type] && (
+                            <div className="mt-3 flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="Rejection reason (required)"
+                                value={rejectInputs[doc.doc_type] ?? ""}
+                                onChange={e => setRejectInputs(r => ({ ...r, [doc.doc_type]: e.target.value }))}
+                                className="flex-1 px-3 py-1.5 text-xs border border-red-300 dark:border-red-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-400 outline-none"
+                              />
+                              <button
+                                disabled={!(rejectInputs[doc.doc_type]?.trim()) || docActing[doc.doc_type]}
+                                onClick={async () => {
+                                  if (!farmer) return;
+                                  const reason = rejectInputs[doc.doc_type]?.trim();
+                                  if (!reason) return;
+                                  setDocActing(a => ({ ...a, [doc.doc_type]: true }));
+                                  try {
+                                    await verificationService.rejectDocument(farmer.farmer_id, doc.doc_type, reason);
+                                    setReviewDocs(d => d.map(x => x.doc_type === doc.doc_type ? { ...x, status: "rejected", rejection_reason: reason } : x));
+                                    setRejectOpen(r => ({ ...r, [doc.doc_type]: false }));
+                                    showSuccess(`"${doc.doc_type}" rejected`);
+                                  } catch (err) { showError(getErrorMessage(err)); }
+                                  finally { setDocActing(a => ({ ...a, [doc.doc_type]: false })); }
+                                }}
+                                className="px-3 py-1.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-40 transition"
+                              >
+                                Confirm Reject
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Audit trail — last action */}
+              <div className="mt-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+                <h3 className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">Last Review Action</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between"><span className="text-gray-500">Status</span><span className="font-semibold text-gray-800 dark:text-gray-100">{farmer?.verification_status ?? "pending"}</span></div>
+                  {farmer?.reviewed_by && <div className="flex justify-between"><span className="text-gray-500">Reviewed by</span><span className="font-semibold text-gray-800 dark:text-gray-100">{farmer.reviewed_by}</span></div>}
+                  {farmer?.reviewed_at && <div className="flex justify-between"><span className="text-gray-500">Reviewed at</span><span className="font-semibold text-gray-800 dark:text-gray-100">{new Date(farmer.reviewed_at).toLocaleString()}</span></div>}
+                  {farmer?.review_notes && <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg"><p className="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{farmer.review_notes}</p></div>}
+                </div>
               </div>
-            )}
+
+            </div>
+          )}
           </div>
 
+        </div>{/* /grid */}
+      </div>{/* /max-w-6xl */}
+    </div>
+  );
+}

@@ -54,9 +54,8 @@ export async function checkAndRequestPermission(
 export async function openAppSettings(): Promise<void> {
   try {
     // Barcode scanner plugin has openAppSettings
-    const mod = await import(
-      /* @vite-ignore */ /* @ts-ignore */ "@capacitor-community/barcode-scanner"
-    ).catch(() => null) as Record<string, unknown> | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mod = await import("@capacitor-community/barcode-scanner").catch(() => null) as any;
     const bs = mod?.BarcodeScanner as { openAppSettings?: () => Promise<void> } | undefined;
     if (bs?.openAppSettings) {
       await bs.openAppSettings();
@@ -75,14 +74,12 @@ export async function openAppSettings(): Promise<void> {
 
 async function _checkCameraPermission(): Promise<{ granted: boolean; permanent: boolean }> {
   try {
-    const mod = await import(
-      /* @vite-ignore */ /* @ts-ignore */ "@capacitor-community/barcode-scanner"
-    ).catch(() => null) as Record<string, unknown> | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mod = await import("@capacitor-community/barcode-scanner").catch(() => null) as any;
 
-    type BS = {
+    const BarcodeScanner = mod?.BarcodeScanner as {
       checkPermission: (o: { force: boolean }) => Promise<{ granted?: boolean; denied?: boolean; neverAsked?: boolean }>;
-    };
-    const BarcodeScanner = mod?.BarcodeScanner as BS | undefined;
+    } | undefined;
     if (!BarcodeScanner) {
       _cache.set("camera", true); // plugin absent = web build, treat as granted
       return { granted: true, permanent: false };

@@ -85,37 +85,34 @@ export default function FarmerRegistrationWizard() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-page)", backgroundAttachment: "fixed" }}>
-      <div style={{ textAlign: "center", color: "white", paddingTop: "30px", paddingBottom: "30px" }}>
-        <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}>
-          🌾 Chiefdom Management Model
-        </h1>
-        <p style={{ fontSize: "18px", opacity: 0.9 }}>Farmer Registration</p>
+    <div className="min-h-screen bg-gradient-to-br from-green-700 via-green-800 to-emerald-900">
+      {/* Header */}
+      <div className="text-center text-white pt-8 pb-6 px-4">
+        <h1 className="text-4xl font-extrabold mb-2 drop-shadow-lg">🌾 Chiefdom Management Model</h1>
+        <p className="text-lg opacity-90">Farmer Registration</p>
       </div>
-      
-      <div style={{ maxWidth: "900px", margin: "0 auto", padding: "0 20px 40px 20px" }}>
-        <div className="farmer-reg-card bg-white dark:bg-gray-800" style={{ borderRadius: "15px", padding: "40px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}>
-        {/* Progress Bar */}
-        <div style={{ marginBottom: "40px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
-            {[1, 2, 3, 4, 5, 6, 7].map((step) => (
-              <div
-                key={step}
-                style={{
-                  flex: 1,
-                  height: "8px",
-                  backgroundColor: currentStep >= step ? "#667eea" : "var(--bg-surface-subtle)",
-                  marginRight: step < 7 ? "8px" : "0",
-                  borderRadius: "4px",
-                  transition: "background-color 0.3s",
-                }}
-              />
-            ))}
+
+      <div className="max-w-3xl mx-auto px-4 pb-12">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-10">
+
+          {/* Progress Bar */}
+          <div className="mb-8">
+            <div className="flex gap-1.5 mb-3">
+              {[1, 2, 3, 4, 5, 6, 7].map((step) => (
+                <div
+                  key={step}
+                  className={`flex-1 h-2 rounded-full transition-all duration-300 ${
+                    currentStep > step  ? "bg-green-500" :
+                    currentStep === step ? "bg-indigo-500" :
+                    "bg-gray-200 dark:bg-gray-700"
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="text-center text-sm font-semibold text-gray-500 dark:text-gray-400">
+              Step <span className="text-gray-800 dark:text-gray-100 font-bold">{currentStep}</span> of 7
+            </p>
           </div>
-          <p style={{ textAlign: "center", color: "var(--text-secondary-hex)", fontSize: "15px", fontWeight: "600" }}>
-            Step {currentStep} of 7
-          </p>
-        </div>
 
         {/* Step Content */}
         {currentStep === 1 && (
@@ -185,12 +182,12 @@ export default function FarmerRegistrationWizard() {
 
         {/* Loading indicator */}
         {loading && (
-          <div style={{ marginTop: "16px", padding: "12px", background: "#e3f2fd", color: "#1976d2", borderRadius: "8px", textAlign: "center", fontWeight: "600" }}>
-            ⏳ Submitting farmer registration...
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-xl text-center font-semibold text-sm">
+            ⏳ Submitting farmer registration…
           </div>
         )}
-        </div>
-      </div>
+        </div>{/* /card */}
+      </div>{/* /content-wrapper */}
     </div>
   );
 }
