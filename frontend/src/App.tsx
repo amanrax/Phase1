@@ -34,6 +34,7 @@ import AdminSupplyRequests from "@/pages/AdminSupplyRequests";
 import FarmerSupplyRequests from "@/pages/FarmerSupplyRequests";
 import LogViewer from "@/pages/LogViewer";
 import QRScanner from "@/pages/QRScanner";
+import AdminGeoManagement from "@/pages/AdminGeoManagement";
 
 function App() {
   const token = useAuthStore((state) => state.token);
@@ -173,6 +174,16 @@ function App() {
               <ProtectedRoute>
                 <RoleRoute requiredRole="admin">
                   <LogViewer />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/geo"
+            element={
+              <ProtectedRoute>
+                <RoleRoute requiredRole="admin">
+                  <AdminGeoManagement />
                 </RoleRoute>
               </ProtectedRoute>
             }

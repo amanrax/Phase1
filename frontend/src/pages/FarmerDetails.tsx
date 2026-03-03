@@ -88,6 +88,7 @@ interface Farmer {
   review_notes?: string;
   reviewed_by?: string;
   reviewed_at?: string;
+  verification_status?: string;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -231,6 +232,7 @@ export default function FarmerDetails() {
     nrc: null, land_title: null, license: null, certificate: null,
   });
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false, title: "", message: "", onConfirm: () => {} });
+  const [verificationOpen, setVerificationOpen] = useState(false);
 
   // ─── load farmer ──────────────────────────────────────────────────────────────
   const loadFarmerData = useCallback(async () => {
@@ -376,6 +378,21 @@ export default function FarmerDetails() {
     }
   };
 
+  // ─── generate QR code ─────────────────────────────────────────────────────────
+  const handleGenerateQR = async () => {
+    logger.info(COMPONENT, "handleGenerateQR", { farmerId });
+    try {
+      const response = await farmerService.generateQR(farmerId!);
+      logger.info(COMPONENT, "handleGenerateQR success");
+      showSuccess(response?.message ?? "QR code generated.", 4000);
+      await loadFarmerData();
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err);
+      logger.error(COMPONENT, "handleGenerateQR failed", { msg });
+      showError(msg, 5000);
+    }
+  };
+
   // ─── download ID card ─────────────────────────────────────────────────────────
   const handleDownloadIDCard = async () => {
     logger.info(COMPONENT, "handleDownloadIDCard", { farmerId });
@@ -489,6 +506,9 @@ export default function FarmerDetails() {
             </button>
             <button onClick={handleDownloadIDCard} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
               ⬇️ Download ID
+            </button>
+            <button onClick={handleGenerateQR} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
+              📷 Generate QR
             </button>
             <button onClick={() => navigate(`/farmers/edit/${farmerId}`)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
               ✏️ Edit Farmer
@@ -627,8 +647,44 @@ export default function FarmerDetails() {
             <p className="mt-3 text-xs text-gray-400 dark:text-gray-600">Accepted formats: PDF · JPG · PNG | Max size: 10 MB per file</p>
           </div>
 
-        </div>
-      </div>
-    </div>
-  );
-}
+          {/* Verification Status (collapsible) */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border-l-4 border-yellow-500 sm:col-span-2 lg:col-span-3">
+            <button
+              onClick={() => setVerificationOpen(v => !v)}
+              className="w-full flex items-center justify-between p-6 text-left"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🔍</span>
+                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">Verification Status</h2>
+                {farmer.verification_status && (
+                  <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                    farmer.verification_status === "verified"     ? "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300" :
+                    farmer.verification_status === "rejected"     ? "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300" :
+                    farmer.verification_status === "under_review" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300" :
+                    "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300"
+                  }`}>
+                    {farmer.verification_status.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                  </span>
+                )}
+              </div>
+              <span className="text-gray-400 dark:text-gray-500 text-sm">{verificationOpen ? "▲ Hide" : "▼ Show"}</span>
+            </button>
+
+            {verificationOpen && (
+              <div className="px-6 pb-6 border-t border-gray-100 dark:border-gray-700 pt-4 space-y-2">
+                <InfoRow label="Verification Status" value={farmer.verification_status ?? "pending"} />
+                <InfoRow label="Reviewed By"         value={farmer.reviewed_by} />
+                <InfoRow label="Reviewed At"         value={farmer.reviewed_at ? new Date(farmer.reviewed_at).toLocaleString() : undefined} />
+                {farmer.review_notes && (
+                  <div className="py-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 block mb-1">Review Notes</span>
+                    <p className="text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">{farmer.review_notes}</p>
+                  </div>
+                )}
+                <p className="text-xs text-gray-400 dark:text-gray-500 italic pt-2">
+                  Full document-level approval and audit trail available via the verification endpoints.
+                </p>
+              </div>
+            )}
+          </div>
+

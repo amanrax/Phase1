@@ -9,6 +9,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import type { Theme } from "@/contexts/ThemeContext";
 import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
 import { logger } from "@/utils/logger";
+import { loadFeedbackPrefs, saveFeedbackPrefs } from "@/utils/feedback";
 
 const COMPONENT = "FarmerDashboard";
 
@@ -96,6 +97,15 @@ function SectionHeader({ title, action, onAction }: { title: string; action?: st
 function SettingsPanel() {
   const { theme, setTheme, isDark } = useTheme();
   const { logout, user } = useAuthStore();
+  const [feedbackPrefs, setFeedbackPrefs] = useState(loadFeedbackPrefs);
+  function toggleSound() {
+    const next = { ...feedbackPrefs, soundEnabled: !feedbackPrefs.soundEnabled };
+    setFeedbackPrefs(next); saveFeedbackPrefs(next);
+  }
+  function toggleHaptics() {
+    const next = { ...feedbackPrefs, hapticsEnabled: !feedbackPrefs.hapticsEnabled };
+    setFeedbackPrefs(next); saveFeedbackPrefs(next);
+  }
   const themeOptions: { value: Theme; icon: string; label: string }[] = [
     { value: "light", icon: "☀️", label: "Light" },
     { value: "dark", icon: "🌙", label: "Dark" },
@@ -146,6 +156,33 @@ function SettingsPanel() {
         >
           🚪 Logout
         </button>
+      </div>
+
+      {/* Sound & Vibration */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
+        <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">🔔 Sound &amp; Vibration</h3>
+        <div className="space-y-3">
+          <label className="flex items-center justify-between cursor-pointer select-none">
+            <div>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">🔊 Sound Effects</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400">Chimes on QR scan and actions</p>
+            </div>
+            <button role="switch" aria-checked={feedbackPrefs.soundEnabled} onClick={toggleSound}
+              className={`relative w-11 h-6 rounded-full transition-colors ${feedbackPrefs.soundEnabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${feedbackPrefs.soundEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+          </label>
+          <label className="flex items-center justify-between cursor-pointer select-none">
+            <div>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">📳 Vibration</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400">Haptic feedback — mobile only</p>
+            </div>
+            <button role="switch" aria-checked={feedbackPrefs.hapticsEnabled} onClick={toggleHaptics}
+              className={`relative w-11 h-6 rounded-full transition-colors ${feedbackPrefs.hapticsEnabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${feedbackPrefs.hapticsEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+          </label>
+        </div>
       </div>
 
       {/* App Info */}

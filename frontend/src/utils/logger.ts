@@ -154,3 +154,22 @@ export const logger = {
 };
 
 export default logger;
+
+// ─── useMobileLogger hook ────────────────────────────────────────────────────
+/**
+ * useMobileLogger — convenience wrapper for use inside React components.
+ * Binds a module name so callers only need to pass message + optional data.
+ *
+ * @example
+ * const log = useMobileLogger("MyComponent");
+ * log.info("Loaded", { count: 5 });
+ */
+export function useMobileLogger(module: string) {
+  return {
+    debug:    (msg: string, data?: unknown) => logger.debug(module, msg, data),
+    info:     (msg: string, data?: unknown) => logger.info(module, msg, data),
+    warn:     (msg: string, data?: unknown) => logger.warn(module, msg, data),
+    error:    (msg: string, data?: unknown) => logger.error(module, msg, data),
+    critical: (msg: string, data?: unknown) => logger.critical(module, msg, data),
+  };
+}

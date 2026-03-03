@@ -2,6 +2,7 @@
 // QR code scanner page — uses Capacitor barcode scanner on mobile, manual on web
 import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import BackButton from "@/components/BackButton";
 import axiosClient from "@/utils/axios";
 import useAuthStore from "@/store/authStore";
@@ -13,11 +14,12 @@ interface PublicFarmerSummary {
   nrc: string | null;
   province: string | null;
   district: string | null;
+  photo_url: string | null;
   registered_date: string | null;
   operator_name: string | null;
 }
 
-type ScanStatus = "idle" | "scanning" | "loading" | "result" | "error";
+type ScanStatus = "idle" | "scanning" | "loading" | "result" | "error" | "permission_denied";
 
 const QRScanner: React.FC = () => {
   const navigate = useNavigate();
@@ -77,6 +79,13 @@ const QRScanner: React.FC = () => {
     setStatus("scanning");
     setErrorMessage("");
     setFarmerResult(null);
+
+    if (!Capacitor.isNativePlatform()) {
+      setErrorMessage("Camera scanning is only available in the mobile app. Use manual entry below.");
+      setStatus("error");
+      return;
+    }
+
     try {
       // Optional mobile-only Capacitor plugin — not installed in web builds.
       // Path is split to prevent Vite static import-analysis from trying to resolve it.
@@ -85,17 +94,23 @@ const QRScanner: React.FC = () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const mod = await import(/* @vite-ignore */ /* @ts-ignore */ pluginPath).catch(() => null) as Record<string, unknown> | null;
       type BS = {
-        checkPermission: (o: { force: boolean }) => Promise<{ granted: boolean }>;
+        checkPermission: (o: { force: boolean }) => Promise<{ granted: boolean; denied?: boolean; neverAsked?: boolean }>;
         hideBackground: () => void;
         showBackground: () => void;
         startScan: () => Promise<{ hasContent: boolean; content: string }>;
+        openAppSettings: () => Promise<void>;
       };
       const BarcodeScanner = mod?.BarcodeScanner as BS | undefined;
       if (!BarcodeScanner) throw new Error("Plugin not available");
 
       const perm = await BarcodeScanner.checkPermission({ force: true });
       if (!perm.granted) {
-        setErrorMessage("Camera permission required. Enable it in device settings.");
+        if (perm.denied) {
+          // Permanently denied — direct user to settings
+          setStatus("permission_denied");
+          return;
+        }
+        setErrorMessage("Camera permission is required to scan QR codes.");
         setStatus("error");
         return;
       }
@@ -152,6 +167,15 @@ const QRScanner: React.FC = () => {
               <span className="text-2xl">✅</span>
               <h2 className="text-lg font-semibold text-green-800 dark:text-green-300">Verified Farmer</h2>
             </div>
+            {farmerResult.photo_url && (
+              <div className="mb-4 flex justify-center">
+                <img
+                  src={farmerResult.photo_url}
+                  alt={farmerResult.name}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-green-300 dark:border-green-700"
+                />
+              </div>
+            )}
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               {(
                 [
@@ -175,6 +199,28 @@ const QRScanner: React.FC = () => {
                 </React.Fragment>
               ))}
             </dl>
+          </div>
+        )}
+
+        {status === "permission_denied" && (
+          <div className="rounded-xl border border-orange-300 bg-orange-50 p-5 dark:border-orange-700 dark:bg-orange-900/20 text-center space-y-3">
+            <p className="text-2xl">📷</p>
+            <p className="text-sm font-semibold text-orange-800 dark:text-orange-200">Camera Permission Denied</p>
+            <p className="text-xs text-orange-700 dark:text-orange-300">
+              Camera access was permanently denied. Please open device Settings and enable camera permission for CEM.
+            </p>
+            <button
+              onClick={async () => {
+                try {
+                  const mod = await import(/* @vite-ignore */ /* @ts-ignore */ "@capacitor-community/barcode-scanner").catch(() => null) as Record<string, unknown> | null;
+                  const bs = mod?.BarcodeScanner as { openAppSettings?: () => Promise<void> } | undefined;
+                  await bs?.openAppSettings?.();
+                } catch { /* noop */ }
+              }}
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-xl transition"
+            >
+              Open Settings
+            </button>
           </div>
         )}
 

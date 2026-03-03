@@ -3,21 +3,35 @@ import BackButton from '@/components/BackButton';
 import { fetchLogs, fetchLogStats, exportCsv, LogItem } from '../services/logs.service';
 
 const levels = ['DEBUG','INFO','WARNING','ERROR','CRITICAL'] as const;
+const HTTP_METHODS = ['GET','POST','PUT','PATCH','DELETE'] as const;
 
 export const LogViewer: React.FC = () => {
   const [items, setItems] = useState<LogItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(50);
   const [level, setLevel] = useState<string>('');
   const [module, setModule] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
   const [role, setRole] = useState<string>('');
+  const [httpMethod, setHttpMethod] = useState<string>('');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [stats, setStats] = useState<Array<{ _id: { level: string; module: string }; count: number }>>([]);
 
   const load = async () => {
-    const data = await fetchLogs({ level: level || undefined, module: module || undefined, user_id: userId || undefined, role: role || undefined, page, page_size: pageSize });
+    const data = await fetchLogs({
+      level: level || undefined,
+      module: module || undefined,
+      user_id: userId || undefined,
+      role: role || undefined,
+      http_method: httpMethod || undefined,
+      date_from: dateFrom || undefined,
+      date_to: dateTo || undefined,
+      page,
+      page_size: pageSize,
+    });
     setItems(data.items);
     setTotal(data.total);
     const s = await fetchLogStats();
@@ -31,10 +45,10 @@ export const LogViewer: React.FC = () => {
 
   useEffect(() => {
     if (!autoRefresh) return;
-    const id = setInterval(load, 5000);
+    const id = setInterval(load, 30_000); // 30-second auto-refresh per spec
     return () => clearInterval(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRefresh, level, module, userId, role, page, pageSize]);
+  }, [autoRefresh, level, module, userId, role, httpMethod, dateFrom, dateTo, page, pageSize]);
 
   const csv = useMemo(() => exportCsv(items), [items]);
 
@@ -59,29 +73,44 @@ export const LogViewer: React.FC = () => {
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-100">📋 System Logs</h1>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div>
             <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Level</label>
-            <select value={level} onChange={e=>setLevel(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm">
+            <select value={level} onChange={e=>setLevel(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm">
               <option value="">All</option>
               {levels.map(l=> <option key={l} value={l}>{l}</option>)}
             </select>
           </div>
           <div>
+            <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Method</label>
+            <select value={httpMethod} onChange={e=>setHttpMethod(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm">
+              <option value="">All</option>
+              {HTTP_METHODS.map(m=> <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div>
             <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Module</label>
-            <input value={module} onChange={e=>setModule(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="middleware, auth, farmers" />
+            <input value={module} onChange={e=>setModule(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="middleware, auth…" />
           </div>
           <div>
             <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">User</label>
-            <input value={userId} onChange={e=>setUserId(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="email or id" />
+            <input value={userId} onChange={e=>setUserId(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="email or id" />
           </div>
           <div>
             <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Role</label>
-            <input value={role} onChange={e=>setRole(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="ADMIN, OPERATOR, FARMER" />
+            <input value={role} onChange={e=>setRole(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="ADMIN, OPERATOR…" />
           </div>
-          <div className="flex items-end">
-            <button onClick={load} className="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-2 sm:py-3 px-3 sm:px-4 rounded-lg transition shadow-lg text-sm sm:text-base">
-              <i className="fa-solid fa-rotate mr-2"/> Refresh
+          <div>
+            <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">From</label>
+            <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" />
+          </div>
+          <div className="flex flex-col justify-between gap-2">
+            <div>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">To</label>
+              <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg mt-1 focus:ring-2 focus:ring-green-500 outline-none text-sm" />
+            </div>
+            <button onClick={() => { setPage(1); load(); }} className="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-3 rounded-lg transition text-sm">
+              🔍 Search
             </button>
           </div>
         </div>

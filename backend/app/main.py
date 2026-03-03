@@ -39,6 +39,9 @@ from app.routes import (
     files,
     app_version,
     ethnic_groups,
+    verification,
+    geo_admin,
+    reference_data,
 )
 
 
@@ -306,6 +309,9 @@ app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
 app.include_router(files.router, prefix="/api", tags=["Files"])
 app.include_router(sync.router, prefix="/api", tags=["Synchronization"])
 app.include_router(farmers_qr.router, prefix="/api", tags=["Farmers QR"])
+app.include_router(verification.router, prefix="/api", tags=["Verification"])
+app.include_router(geo_admin.router, prefix="/api", tags=["Geo Admin"])
+app.include_router(reference_data.router, prefix="/api", tags=["Reference Data"])
 app.include_router(health.router, prefix="/api/health", tags=["Health"])
 app.include_router(logs.router, prefix="/api", tags=["Logs"])
 app.include_router(app_version.router, tags=["App Version"])

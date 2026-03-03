@@ -262,6 +262,18 @@ export const farmerService = {
   },
 
   /**
+   * Generate (or re-generate) a QR code for a farmer.
+   * Backend: POST /api/farmers/{farmer_id}/generate-qr
+   */
+  async generateQR(farmerId: string): Promise<{ farmer_id: string; message: string; qr_url?: string }> {
+    logger.info('farmerService', `generateQR: ${farmerId}`);
+    const response = await api.post<{ farmer_id: string; message: string; qr_url?: string }>(
+      `/farmers/${farmerId}/generate-qr`
+    );
+    return response.data;
+  },
+
+  /**
    * Download an existing farmer ID card (PDF blob).
    * Backend: GET /api/farmers/{farmer_id}/download-idcard
    * Returns: DownloadResult with download details

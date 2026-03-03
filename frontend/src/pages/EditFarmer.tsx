@@ -7,6 +7,8 @@ import { handleNRCChange } from "@/utils/nrcFormatter";
 import PhoneInput from "@/components/PhoneInput";
 import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
+import Combobox from "@/components/ui/Combobox";
+import axiosClient from "@/utils/axios";
 
 const COMPONENT = "EditFarmer";
 
@@ -45,8 +47,8 @@ interface FarmerFormData {
   chiefdom_name: string;
   village: string;
   farm_size_hectares: string;
-  crops_grown: string;
-  livestock_types: string;
+  crops_grown: string[];
+  livestock_types: string[];
   has_irrigation: boolean;
   years_farming: string;
   household_size: string;
@@ -68,7 +70,7 @@ export default function EditFarmer() {
     email: "", nrc: "", date_of_birth: "", gender: "", ethnic_group: "",
     province_code: "", province_name: "", district_code: "", district_name: "",
     chiefdom_code: "", chiefdom_name: "", village: "",
-    farm_size_hectares: "", crops_grown: "", livestock_types: "",
+    farm_size_hectares: "", crops_grown: [], livestock_types: [],
     has_irrigation: false, years_farming: "",
     household_size: "", number_of_dependents: "", primary_income_source: "",
   });
@@ -170,8 +172,11 @@ export default function EditFarmer() {
         chiefdom_name: farmer.address?.chiefdom_name || "",
         village: farmer.address?.village || "",
         farm_size_hectares: farmer.farm_info?.farm_size_hectares?.toString() || "",
-        crops_grown: farmer.farm_info?.crops_grown?.join(", ") || "",
-        livestock_types: farmer.farm_info?.livestock_types?.join(", ") || "",
+        // Prefer livestock_types; fall back to legacy `livestock` field if present
+        crops_grown: farmer.farm_info?.crops_grown ?? [],
+        livestock_types: farmer.farm_info?.livestock_types?.length
+          ? farmer.farm_info.livestock_types
+          : ((farmer.farm_info as Record<string, unknown>)?.livestock as string[] | undefined) ?? [],
         has_irrigation: farmer.farm_info?.has_irrigation || false,
         years_farming: farmer.farm_info?.years_farming?.toString() || "",
         household_size: farmer.household_info?.household_size?.toString() || "",
@@ -288,11 +293,11 @@ export default function EditFarmer() {
       if (formData.ethnic_group) payload.personal_info.ethnic_group = formData.ethnic_group;
       
       // Add farm_info if any field is filled
-      if (formData.farm_size_hectares || formData.crops_grown || formData.livestock_types || formData.years_farming) {
+      if (formData.farm_size_hectares || formData.crops_grown.length || formData.livestock_types.length || formData.years_farming) {
         payload.farm_info = {
           farm_size_hectares: formData.farm_size_hectares ? parseFloat(formData.farm_size_hectares) : 0,
-          crops_grown: formData.crops_grown ? formData.crops_grown.split(",").map((c) => c.trim()).filter(Boolean) : [],
-          livestock_types: formData.livestock_types ? formData.livestock_types.split(",").map((l) => l.trim()).filter(Boolean) : [],
+          crops_grown: formData.crops_grown,
+          livestock_types: formData.livestock_types,
           has_irrigation: formData.has_irrigation,
           years_farming: formData.years_farming ? parseInt(formData.years_farming) : 0,
         };
@@ -542,23 +547,23 @@ export default function EditFarmer() {
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-                  Crops Grown <span className="text-gray-400 normal-case font-normal">(comma-separated)</span>
-                </label>
-                <input type="text" value={formData.crops_grown}
-                  onChange={(e) => setFormData(prev => ({ ...prev, crops_grown: e.target.value }))}
-                  placeholder="e.g., Maize, Beans, Cassava"
-                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
+                <Combobox
+                  label="Crops Grown"
+                  options={["Maize","Sorghum","Groundnuts","Soybean","Sunflower","Cotton","Cassava","Sweet potato","Vegetables","Tobacco","Wheat","Rice"]}
+                  value={formData.crops_grown}
+                  onChange={(v) => setFormData(prev => ({ ...prev, crops_grown: v }))}
+                  placeholder="Type or select crops…"
+                  allowCustom
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-                  Livestock Types <span className="text-gray-400 normal-case font-normal">(comma-separated)</span>
-                </label>
-                <input type="text" value={formData.livestock_types}
-                  onChange={(e) => setFormData(prev => ({ ...prev, livestock_types: e.target.value }))}
-                  placeholder="e.g., Cattle, Goats, Chickens"
-                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
+                <Combobox
+                  label="Livestock Types"
+                  options={["Cattle","Goats","Sheep","Pigs","Chickens","Ducks","Rabbits","Donkeys","Horses"]}
+                  value={formData.livestock_types}
+                  onChange={(v) => setFormData(prev => ({ ...prev, livestock_types: v }))}
+                  placeholder="Type or select livestock…"
+                  allowCustom
                 />
               </div>
               <div className="sm:col-span-2">

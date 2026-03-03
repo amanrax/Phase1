@@ -1,4 +1,5 @@
 # backend/app/routes/farmers_qr.py
+# QR code generation, retrieval, and verification endpoints for farmers
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
 from fastapi.responses import FileResponse
 from app.utils.security import verify_qr_signature
@@ -6,7 +7,7 @@ from app.database import get_db, AsyncIOMotorDatabase
 from app.dependencies.roles import require_role
 from app.services.idcard_service import IDCardService
 from typing import Dict
-
+import asyncio
 import os
 
 router = APIRouter(prefix="/farmers", tags=["Farmers QR & ID"])
@@ -62,6 +63,15 @@ async def verify_farmer_by_id(farmer_id: str, db=Depends(get_db)):
         if op:
             operator_name = op.get("full_name")
 
+    # Build a photo URL from whichever storage location is available
+    photo_url: str | None = None
+    photo_file_id = farmer.get("photo_file_id") or (farmer.get("documents") or {}).get("photo_file_id")
+    photo_path = farmer.get("photo_path") or (farmer.get("documents") or {}).get("photo")
+    if photo_file_id:
+        photo_url = f"/api/files/{photo_file_id}"
+    elif photo_path:
+        photo_url = photo_path if photo_path.startswith("/api/") else f"/api/files/{photo_path}"
+
     return {
         "verified": True,
         "farmer_id": farmer_id,
@@ -69,6 +79,7 @@ async def verify_farmer_by_id(farmer_id: str, db=Depends(get_db)):
         "nrc": personal.get("nrc_number"),
         "province": address.get("province_name"),
         "district": address.get("district_name"),
+        "photo_url": photo_url,
         "registered_date": farmer.get("created_at"),
         "operator_name": operator_name,
     }
@@ -101,6 +112,59 @@ async def generate_idcard(
         dict: Confirmation message that generation is queued
     """
     return await IDCardService.generate(farmer_id, background_tasks, db)
+
+
+@router.post(
+    "/{farmer_id}/generate-qr",
+    summary="Generate QR code for a farmer",
+    description="Generates (or re-generates) the QR code PNG for a farmer. Auth required.",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=dict,
+    dependencies=[Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))]
+)
+async def generate_qr_code_endpoint(
+    farmer_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Generate a QR code image for the farmer and persist it to GridFS.
+    The QR payload encodes farmer_id, name, nrc, and a verify URL.
+    """
+    farmer = await db.farmers.find_one({"farmer_id": farmer_id})
+    if not farmer:
+        raise HTTPException(status_code=404, detail="Farmer not found")
+
+    # Run synchronous QR generation in a thread pool so we don't block the event loop
+    loop = asyncio.get_event_loop()
+    qr_path = await loop.run_in_executor(
+        None, IDCardService.generate_qr_code, farmer, farmer_id
+    )
+
+    # Upload to GridFS and update farmer document
+    try:
+        from app.services.gridfs_service import gridfs_service
+        with open(qr_path, "rb") as f:
+            qr_bytes = f.read()
+        file_id = await gridfs_service.upload_file(
+            file_data=qr_bytes,
+            filename=f"{farmer_id}_qr.png",
+            content_type="image/png",
+            metadata={"farmer_id": farmer_id, "file_type": "qr"},
+        )
+        await db.farmers.update_one(
+            {"farmer_id": farmer_id},
+            {"$set": {"qr_code_file_id": str(file_id), "qr_code_path": qr_path}},
+        )
+        qr_url = f"/api/files/{file_id}"
+    except Exception:
+        # Fallback: QR was saved to filesystem, no GridFS
+        qr_url = f"/api/farmers/{farmer_id}/qr"
+
+    return {
+        "farmer_id": farmer_id,
+        "message": "QR code generated successfully.",
+        "qr_url": qr_url,
+    }
 
 
 @router.get("/{farmer_id}/download-idcard",

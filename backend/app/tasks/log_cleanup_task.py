@@ -1,5 +1,5 @@
 # backend/app/tasks/log_cleanup_task.py
-# Celery beat task: deletes system_logs older than 7 days — runs daily
+# Celery beat task: deletes system_logs older than 7 days — runs daily at 02:00 UTC
 from datetime import datetime, timedelta
 
 from pymongo import MongoClient
@@ -13,11 +13,12 @@ RETENTION_DAYS = 7
 
 @celery_app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-    # Run daily at midnight
+    # Run daily at 02:00 UTC via crontab schedule
+    from celery.schedules import crontab
     sender.add_periodic_task(
-        24 * 60 * 60,
+        crontab(hour=2, minute=0),
         cleanup_logs.s(),
-        name="Cleanup system logs daily",
+        name="Cleanup system logs daily at 02:00 UTC",
     )
 
 

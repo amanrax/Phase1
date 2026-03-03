@@ -19,8 +19,9 @@ export interface LogQuery {
   module?: string;
   user_id?: string;
   role?: string;
-  start?: string; // ISO
-  end?: string;   // ISO
+  http_method?: string;
+  date_from?: string; // ISO date string e.g. 2026-01-01
+  date_to?: string;   // ISO date string e.g. 2026-03-31
   page?: number;
   page_size?: number;
 }

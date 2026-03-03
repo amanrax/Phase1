@@ -8,6 +8,7 @@ import type { Theme } from "@/contexts/ThemeContext";
 import { logger } from "@/utils/logger";
 import { useNotification } from "@/contexts/NotificationContext";
 import { APP_VERSION, PHASE } from "@/utils/version";
+import { loadFeedbackPrefs, saveFeedbackPrefs } from "@/utils/feedback";
 
 interface User {
   _id: string;
@@ -36,6 +37,21 @@ function AppearanceTab() {
   const { theme, setTheme, isDark } = useTheme();
   const [logText, setLogText] = useState<string>('');
   const [showLogs, setShowLogs] = useState(false);
+  const [feedbackPrefs, setFeedbackPrefs] = useState(loadFeedbackPrefs);
+
+  function toggleSound() {
+    const next = { ...feedbackPrefs, soundEnabled: !feedbackPrefs.soundEnabled };
+    setFeedbackPrefs(next);
+    saveFeedbackPrefs(next);
+    logger.info('AppearanceTab', `Sound ${next.soundEnabled ? 'enabled' : 'disabled'}`);
+  }
+
+  function toggleHaptics() {
+    const next = { ...feedbackPrefs, hapticsEnabled: !feedbackPrefs.hapticsEnabled };
+    setFeedbackPrefs(next);
+    saveFeedbackPrefs(next);
+    logger.info('AppearanceTab', `Haptics ${next.hapticsEnabled ? 'enabled' : 'disabled'}`);
+  }
 
   const themeOptions: { value: Theme; icon: string; label: string; desc: string }[] = [
     { value: 'light',  icon: '☀️',  label: 'Light',  desc: 'White backgrounds, high contrast in daylight.' },
@@ -156,6 +172,44 @@ function AppearanceTab() {
             {logText}
           </pre>
         )}
+      </div>
+
+      {/* ── Sound & Vibration ── */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-1">🔔 Sound &amp; Vibration</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+          Control audio and haptic feedback. Settings are saved per device and persist across sessions.
+        </p>
+        <div className="space-y-4">
+          <label className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 cursor-pointer select-none">
+            <div>
+              <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">🔊 Sound Effects</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Chimes on QR scan, registration complete, errors</p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={feedbackPrefs.soundEnabled}
+              onClick={toggleSound}
+              className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 ${feedbackPrefs.soundEnabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${feedbackPrefs.soundEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+            </button>
+          </label>
+          <label className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 cursor-pointer select-none">
+            <div>
+              <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">📳 Vibration (Mobile)</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Haptic pulses on key interactions — Android/iOS only</p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={feedbackPrefs.hapticsEnabled}
+              onClick={toggleHaptics}
+              className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 ${feedbackPrefs.hapticsEnabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${feedbackPrefs.hapticsEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+            </button>
+          </label>
+        </div>
       </div>
     </div>
   );
