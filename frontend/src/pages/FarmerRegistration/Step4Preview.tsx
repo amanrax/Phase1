@@ -1,4 +1,4 @@
-// src/pages/FarmerRegistrationWizard/Step4Preview.tsx
+// src/pages/FarmerRegistration/Step4Preview.tsx — Step 4 of registration wizard: preview all entered data and submit to API
 import { useState } from "react";
 import { farmerService } from "@/services/farmer.service";
 import { logger } from "@/utils/logger";
@@ -23,12 +23,10 @@ export default function Step4Preview({
 }: Props) {
   const [error, setError] = useState<string>("");
 
-  // Helper to convert empty string to undefined for optional fields
   const cleanOptionalField = (value: string | undefined): string | undefined => {
     return value && value.trim() ? value.trim() : undefined;
   };
 
-  // Helper to clean phone numbers (remove spaces, dashes, parentheses)
   const cleanPhone = (phone: string | undefined): string => {
     if (!phone) return "";
     return phone.replace(/[\s\-\(\)]/g, "");
@@ -61,18 +59,16 @@ export default function Step4Preview({
         },
       };
 
-      // Add farm_info if farm data exists
       if (data.farm?.size_hectares || data.farm?.years_farming) {
         payload.farm_info = {
           farm_size_hectares: parseFloat(data.farm.size_hectares || "1") || 1,
           crops_grown: data.farm.crops?.split(",").map((c: string) => c.trim()).filter(Boolean) || [],
           livestock_types: data.farm.livestock?.split(",").map((l: string) => l.trim()).filter(Boolean) || [],
           has_irrigation: data.farm.has_irrigation || false,
-          years_farming: Math.min(parseInt(data.farm.years_farming || "0") || 0, 100), // Cap at 100
+          years_farming: Math.min(parseInt(data.farm.years_farming || "0") || 0, 100),
         };
       }
 
-      // Add household_info if household data exists
       if (data.farm?.household_size || data.farm?.primary_income) {
         payload.household_info = {
           household_size: parseInt(data.farm.household_size || "1") || 1,
@@ -90,16 +86,14 @@ export default function Step4Preview({
       }
     } catch (err: any) {
       logger.error(COMPONENT, "registration submit failed", { err, detail: err.response?.data?.detail });
-      // Handle validation errors (422) which come as array of error objects
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
         if (Array.isArray(detail)) {
-          // Format validation errors into readable message
-          const errorMessages = detail.map((e: any) => 
-            `${e.loc?.join('.') || 'Field'}: ${e.msg || 'Invalid'}`
-          ).join('; ');
+          const errorMessages = detail.map((e: any) =>
+            `${e.loc?.join(".") || "Field"}: ${e.msg || "Invalid"}`
+          ).join("; ");
           setError(errorMessages);
-        } else if (typeof detail === 'string') {
+        } else if (typeof detail === "string") {
           setError(detail);
         } else {
           setError(JSON.stringify(detail));
@@ -112,122 +106,106 @@ export default function Step4Preview({
     }
   };
 
+  const InfoRow = ({ label, value }: { label: string; value?: string | null }) =>
+    value ? (
+      <div className="flex flex-col sm:flex-row sm:gap-2">
+        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide sm:w-36 shrink-0">
+          {label}
+        </span>
+        <span className="text-sm text-gray-800 dark:text-gray-200">{value}</span>
+      </div>
+    ) : null;
+
   return (
-    <div>
-      <h3>Preview</h3>
-      <div style={{ padding: 12, background: "var(--bg-surface)", borderRadius: 6 }}>
-        {/* Personal Information */}
-        <div style={{ marginBottom: 16 }}>
-          <h4 style={{ fontSize: 16, fontWeight: "bold", color: "var(--text-primary-hex)", marginBottom: 8 }}>👤 Personal Information</h4>
-          <div><strong>Name:</strong> {data.personal.first_name} {data.personal.last_name}</div>
-          <div><strong>Primary Phone:</strong> {data.personal.phone_primary || "-"}</div>
-          {data.personal.phone_secondary && (
-            <div><strong>Secondary Phone:</strong> {data.personal.phone_secondary}</div>
-          )}
-          {data.personal.email && (
-            <div><strong>Email:</strong> {data.personal.email}</div>
-          )}
-          <div><strong>NRC:</strong> {data.personal.nrc || "-"}</div>
-          <div><strong>Date of Birth:</strong> {data.personal.date_of_birth || "-"}</div>
-          <div><strong>Gender:</strong> {data.personal.gender || "-"}</div>
-          {data.personal.ethnic_group && (
-            <div><strong>Ethnic Group:</strong> {data.personal.ethnic_group}</div>
-          )}
-        </div>
-
-        {/* Address */}
-        <div style={{ marginBottom: 16 }}>
-          <h4 style={{ fontSize: 16, fontWeight: "bold", color: "var(--text-primary-hex)", marginBottom: 8 }}>📍 Address</h4>
-          <div><strong>Province:</strong> {data.address.province_name || "-"}</div>
-          <div><strong>District:</strong> {data.address.district_name || "-"}</div>
-          {data.address.chiefdom_name && (
-            <div><strong>Chiefdom:</strong> {data.address.chiefdom_name}</div>
-          )}
-          <div><strong>Village:</strong> {data.address.village || "-"}</div>
-        </div>
-
-        {/* Farm Information */}
-        {(data.farm?.size_hectares || data.farm?.crops || data.farm?.livestock || data.farm?.years_farming) && (
-          <div style={{ marginBottom: 16 }}>
-            <h4 style={{ fontSize: 16, fontWeight: "bold", color: "var(--text-primary-hex)", marginBottom: 8 }}>🌾 Farm Information</h4>
-            {data.farm?.size_hectares && (
-              <div><strong>Farm Size:</strong> {data.farm.size_hectares} hectares</div>
-            )}
-            {data.farm?.crops && (
-              <div><strong>Crops:</strong> {data.farm.crops}</div>
-            )}
-            {data.farm?.livestock && (
-              <div><strong>Livestock:</strong> {data.farm.livestock}</div>
-            )}
-            {data.farm?.years_farming && (
-              <div><strong>Farming Experience:</strong> {data.farm.years_farming} years</div>
-            )}
-            <div><strong>Irrigation:</strong> {data.farm?.has_irrigation ? "Yes" : "No"}</div>
-          </div>
-        )}
-
-        {/* Household Information */}
-        {(data.farm?.household_size || data.farm?.dependents || data.farm?.primary_income) && (
-          <div>
-            <h4 style={{ fontSize: 16, fontWeight: "bold", color: "var(--text-primary-hex)", marginBottom: 8 }}>🏠 Household Information</h4>
-            {data.farm?.household_size && (
-              <div><strong>Household Size:</strong> {data.farm.household_size} people</div>
-            )}
-            {data.farm?.dependents && (
-              <div><strong>Dependents:</strong> {data.farm.dependents}</div>
-            )}
-            {data.farm?.primary_income && (
-              <div><strong>Primary Income:</strong> {data.farm.primary_income}</div>
-            )}
-          </div>
-        )}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-green-600 to-emerald-700 rounded-2xl px-6 py-4 text-white">
+        <h2 className="text-xl font-bold">Step 4: Preview &amp; Submit</h2>
+        <p className="text-green-100 text-sm mt-1">Please review all information before submitting.</p>
       </div>
 
+      {/* Personal Information */}
+      <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-2xl p-5 space-y-3">
+        <h3 className="text-sm font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide flex items-center gap-2">
+          <span>&#x1F464;</span> Personal Information
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+          <InfoRow label="Full Name" value={`${data.personal.first_name} ${data.personal.last_name}`} />
+          <InfoRow label="Primary Phone" value={data.personal.phone_primary} />
+          <InfoRow label="Secondary Phone" value={data.personal.phone_secondary} />
+          <InfoRow label="Email" value={data.personal.email} />
+          <InfoRow label="NRC" value={data.personal.nrc} />
+          <InfoRow label="Date of Birth" value={data.personal.date_of_birth} />
+          <InfoRow label="Gender" value={data.personal.gender} />
+          <InfoRow label="Ethnic Group" value={data.personal.ethnic_group} />
+        </div>
+      </div>
+
+      {/* Address */}
+      <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-2xl p-5 space-y-3">
+        <h3 className="text-sm font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide flex items-center gap-2">
+          <span>&#x1F4CD;</span> Address
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+          <InfoRow label="Province" value={data.address.province_name} />
+          <InfoRow label="District" value={data.address.district_name} />
+          <InfoRow label="Chiefdom" value={data.address.chiefdom_name} />
+          <InfoRow label="Village" value={data.address.village} />
+        </div>
+      </div>
+
+      {/* Farm Information */}
+      {(data.farm?.size_hectares || data.farm?.crops || data.farm?.livestock || data.farm?.years_farming) && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-5 space-y-3">
+          <h3 className="text-sm font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wide flex items-center gap-2">
+            <span>&#x1F33E;</span> Farm Information
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+            <InfoRow label="Farm Size" value={data.farm?.size_hectares ? `${data.farm.size_hectares} hectares` : undefined} />
+            <InfoRow label="Crops" value={data.farm?.crops} />
+            <InfoRow label="Livestock" value={data.farm?.livestock} />
+            <InfoRow label="Experience" value={data.farm?.years_farming ? `${data.farm.years_farming} years` : undefined} />
+            <InfoRow label="Irrigation" value={data.farm?.has_irrigation ? "Yes" : "No"} />
+          </div>
+        </div>
+      )}
+
+      {/* Household Information */}
+      {(data.farm?.household_size || data.farm?.dependents || data.farm?.primary_income) && (
+        <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-2xl p-5 space-y-3">
+          <h3 className="text-sm font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide flex items-center gap-2">
+            <span>&#x1F3E0;</span> Household Information
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+            <InfoRow label="Household Size" value={data.farm?.household_size ? `${data.farm.household_size} people` : undefined} />
+            <InfoRow label="Dependents" value={data.farm?.dependents} />
+            <InfoRow label="Primary Income" value={data.farm?.primary_income} />
+          </div>
+        </div>
+      )}
+
+      {/* Error Banner */}
       {error && (
-        <div style={{ marginTop: 12, color: "#B91C1C" }} role="alert">
+        <div role="alert" className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 rounded-xl p-4 text-sm text-red-700 dark:text-red-300">
           {error}
         </div>
       )}
 
-      <div style={{ display: "flex", gap: "15px", marginTop: "25px" }}>
+      {/* Navigation */}
+      <div className="flex gap-3 pt-2">
         <button
           onClick={onBack}
-          style={{ 
-            padding: "12px 30px",
-            background: "var(--text-secondary-hex)",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "15px",
-            fontWeight: "600",
-            cursor: "pointer",
-            transition: "all 0.3s"
-          }}
-          onMouseOver={(e) => e.currentTarget.style.background = "#5a6268"}
-          onMouseOut={(e) => e.currentTarget.style.background = "#6c757d"}
           aria-label="Back to previous step"
+          className="flex-1 py-3 px-6 rounded-xl font-semibold text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
         >
-          ← Back
+          &#x2190; Back
         </button>
-        <div style={{ flex: 1 }} />
         <button
           onClick={handleSubmit}
-          style={{ 
-            padding: "12px 30px",
-            background: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "15px",
-            fontWeight: "600",
-            cursor: "pointer",
-            transition: "all 0.3s"
-          }}
-          onMouseOver={(e) => e.currentTarget.style.background = "#0056b3"}
-          onMouseOut={(e) => e.currentTarget.style.background = "#007bff"}
           aria-label="Submit registration"
+          className="flex-1 py-3 px-6 rounded-xl font-semibold text-sm bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all"
         >
-          💾 Create Farmer & Continue
+          &#x1F4BE; Create Farmer &amp; Continue
         </button>
       </div>
     </div>

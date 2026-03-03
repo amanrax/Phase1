@@ -1,4 +1,4 @@
-// src/pages/FarmerRegistration/Step6DocumentUpload.tsx
+// src/pages/FarmerRegistration/Step6DocumentUpload.tsx — Step 6: upload supporting documents (NRC, land title, license, certificate)
 import { useState } from "react";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
@@ -31,154 +31,110 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
     { type: "certificate", label: "Certificate", file: null, uploaded: false, uploading: false },
   ]);
 
-  const canComplete = documents.some((doc) => doc.uploaded); // At least one document uploaded
+  const uploadedCount = documents.filter((d) => d.uploaded).length;
+  const canComplete = uploadedCount > 0;
 
   const handleFileSelect = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      showError("File size must be less than 10MB");
-      return;
-    }
-
-    const newDocuments = [...documents];
-    newDocuments[index] = { ...newDocuments[index], file };
-    setDocuments(newDocuments);
+    if (file.size > 10 * 1024 * 1024) { showError("File size must be less than 10MB"); return; }
+    const updated = [...documents];
+    updated[index] = { ...updated[index], file };
+    setDocuments(updated);
   };
 
   const handleUpload = async (index: number) => {
     const doc = documents[index];
     if (!doc.file) return;
-
-    const newDocuments = [...documents];
-    newDocuments[index] = { ...newDocuments[index], uploading: true };
-    setDocuments(newDocuments);
-
+    const updated = [...documents];
+    updated[index] = { ...updated[index], uploading: true };
+    setDocuments(updated);
     try {
       await farmerService.uploadDocument(farmerId, doc.type, doc.file);
-
-      // Update state immediately to reflect upload and enable submit button
-      const updatedDocuments = [...documents];
-      updatedDocuments[index] = { ...updatedDocuments[index], uploaded: true, uploading: false, file: null };
-      setDocuments(updatedDocuments);
-
+      const done = [...documents];
+      done[index] = { ...done[index], uploaded: true, uploading: false, file: null };
+      setDocuments(done);
       success(`${doc.label} uploaded successfully!`);
-    } catch (error: any) {
-      logger.error(COMPONENT, "document upload failed", { error, docType: doc.type });
-      showError(error.message || `Failed to upload ${doc.label}`);
-
-      newDocuments[index] = { ...newDocuments[index], uploading: false };
-      setDocuments(newDocuments);
+    } catch (err: any) {
+      logger.error(COMPONENT, "document upload failed", { err, docType: doc.type });
+      showError(err.message || `Failed to upload ${doc.label}`);
+      const reset = [...documents];
+      reset[index] = { ...reset[index], uploading: false };
+      setDocuments(reset);
     }
   };
 
   return (
-    <div>
-      <h2 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "20px", color: "var(--text-primary-hex)", borderBottom: "2px solid #667eea", paddingBottom: "10px" }}>
-        📄 Step 6: Upload Documents
-      </h2>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-violet-600 to-purple-700 rounded-2xl px-6 py-4 text-white">
+        <h2 className="text-xl font-bold">Step 6: Upload Documents</h2>
+        <p className="text-violet-100 text-sm mt-1">Upload supporting documents. At least one is required.</p>
+      </div>
 
       {/* Progress */}
-      <div style={{ marginBottom: "25px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-          <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-secondary-hex)" }}>Documents Uploaded</span>
-          <span style={{ fontSize: "14px", fontWeight: "700", color: "#007bff" }}>
-            {documents.filter((d) => d.uploaded).length} / {documents.length}
-          </span>
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm font-semibold">
+          <span className="text-gray-500 dark:text-gray-400">Documents Uploaded</span>
+          <span className="text-blue-600 dark:text-blue-400">{uploadedCount} / {documents.length}</span>
         </div>
-        <div style={{ width: "100%", background: "var(--border-light)", borderRadius: "20px", height: "8px", overflow: "hidden" }}>
+        <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div
-            style={{
-              background: "#007bff",
-              height: "8px",
-              borderRadius: "20px",
-              transition: "width 0.3s",
-              width: `${(documents.filter((d) => d.uploaded).length / documents.length) * 100}%`
-            }}
+            className="h-2 bg-blue-500 rounded-full transition-all duration-500"
+            style={{ width: `${(uploadedCount / documents.length) * 100}%` }}
           />
         </div>
       </div>
 
       {/* Document List */}
-      <div style={{ display: "grid", gap: "15px", marginBottom: "25px" }}>
+      <div className="space-y-3">
         {documents.map((doc, index) => (
           <div
             key={doc.type}
-            style={{
-              border: "2px solid #e0e0e0",
-              borderRadius: "10px",
-              padding: "16px",
-              background: "var(--bg-surface)",
-              transition: "all 0.3s"
-            }}
+            className={`border rounded-2xl p-4 transition-all ${doc.uploaded
+              ? "border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20"
+              : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+            }`}
           >
-            {/* Document Header */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
-              <span style={{ fontSize: "28px" }}>{doc.uploaded ? "✅" : "📄"}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h3 style={{ fontWeight: "600", color: "var(--text-primary-hex)", fontSize: "15px" }}>{doc.label}</h3>
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-2xl">{doc.uploaded ? "&#x2705;" : "&#x1F4C4;"}</span>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{doc.label}</h3>
                 {doc.file && !doc.uploaded && (
-                  <p style={{ fontSize: "12px", color: "var(--text-secondary-hex)", marginTop: "4px" }}>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                     {doc.file.name} ({(doc.file.size / 1024 / 1024).toFixed(2)} MB)
                   </p>
                 )}
               </div>
+              {doc.uploaded && (
+                <span className="text-xs font-semibold text-green-600 dark:text-green-400 shrink-0">Uploaded &#x2713;</span>
+              )}
             </div>
 
-            {/* Buttons Section */}
-            {doc.uploaded ? (
-              <div style={{ textAlign: "right" }}>
-                <span style={{ color: "#28a745", fontWeight: "600", fontSize: "14px" }}>Uploaded ✓</span>
-              </div>
-            ) : (
-              <div style={{ display: "flex", gap: "10px", flexDirection: "column" }}>
-                <label style={{ width: "100%" }}>
+            {!doc.uploaded && (
+              <div className="space-y-2">
+                <label className="block cursor-pointer">
                   <input
                     type="file"
                     accept="image/*,.pdf"
                     onChange={(e) => handleFileSelect(index, e)}
                     disabled={doc.uploading}
-                    style={{ display: "none" }}
+                    className="hidden"
                     aria-label={`Upload ${doc.label}`}
                   />
-                  <div style={{
-                    textAlign: "center",
-                    padding: "10px",
-                    border: "2px dashed #ddd",
-                    borderRadius: "6px",
-                    cursor: doc.uploading ? "not-allowed" : "pointer",
-                    background: "white",
-                    transition: "all 0.3s",
-                    fontSize: "14px",
-                    color: "var(--text-secondary-hex)"
-                  }}>
-                    {doc.file ? "📎 Change File" : "📁 Choose File"}
+                  <div className="text-center py-2.5 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors">
+                    {doc.file ? "&#x1F4CE; Change File" : "&#x1F4C1; Choose File"}
                   </div>
                 </label>
-
                 {doc.file && (
                   <button
                     onClick={() => handleUpload(index)}
                     disabled={doc.uploading}
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      background: doc.uploading ? "#6c757d" : "#007bff",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: doc.uploading ? "not-allowed" : "pointer",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      transition: "all 0.3s"
-                    }}
-                    onMouseOver={(e) => !doc.uploading && (e.currentTarget.style.background = "#0056b3")}
-                    onMouseOut={(e) => !doc.uploading && (e.currentTarget.style.background = "#007bff")}
                     aria-label={`Upload ${doc.label}`}
+                    className={`w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all
+                      ${doc.uploading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow-md"}`}
                   >
-                    {doc.uploading ? "⏳ Uploading..." : "⬆️ Upload"}
+                    {doc.uploading ? "Uploading..." : "Upload"}
                   </button>
                 )}
               </div>
@@ -188,56 +144,30 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
       </div>
 
       {/* Note */}
-      <div style={{ background: "#fff3cd", border: "1px solid #ffc107", borderRadius: "8px", padding: "15px", marginBottom: "25px" }}>
-        <p style={{ fontSize: "13px", color: "#856404" }}>
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4">
+        <p className="text-xs text-amber-800 dark:text-amber-300">
           <strong>Note:</strong> At least one document is required to complete registration.
-          You can upload additional documents later from the farmer's profile page.
+          Additional documents can be uploaded later from the farmer&apos;s profile page.
         </p>
       </div>
 
       {/* Navigation */}
-      <div style={{ display: "flex", gap: "15px" }}>
+      <div className="flex gap-3 pt-2">
         <button
           onClick={onBack}
-          style={{
-            flex: 1,
-            padding: "14px",
-            background: "var(--text-secondary-hex)",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "15px",
-            fontWeight: "600",
-            cursor: "pointer",
-            transition: "all 0.3s"
-          }}
-          onMouseOver={(e) => e.currentTarget.style.background = "#5a6268"}
-          onMouseOut={(e) => e.currentTarget.style.background = "#6c757d"}
           aria-label="Back to previous step"
+          className="flex-1 py-3 px-6 rounded-xl font-semibold text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
         >
-          ← Back
+          &#x2190; Back
         </button>
-
         <button
           onClick={onComplete}
           disabled={!canComplete}
-          style={{
-            flex: 1,
-            padding: "14px",
-            background: canComplete ? "#28a745" : "#ccc",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "15px",
-            fontWeight: "600",
-            cursor: canComplete ? "pointer" : "not-allowed",
-            transition: "all 0.3s"
-          }}
-          onMouseOver={(e) => canComplete && (e.currentTarget.style.background = "#218838")}
-          onMouseOut={(e) => canComplete && (e.currentTarget.style.background = "#28a745")}
           aria-label="Complete registration"
+          className={`flex-1 py-3 px-6 rounded-xl font-semibold text-sm text-white transition-all
+            ${canComplete ? "bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg" : "bg-gray-300 dark:bg-gray-600 cursor-not-allowed"}`}
         >
-          {canComplete ? "✓ Complete Registration" : `Upload at least 1 document`}
+          {canComplete ? "&#x2713; Complete Registration" : "Upload at least 1 document"}
         </button>
       </div>
     </div>

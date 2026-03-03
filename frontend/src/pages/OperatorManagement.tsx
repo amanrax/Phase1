@@ -7,7 +7,6 @@ import { GeoSelectWithOther } from "@/components/GeoSelectWithOther";
 import PhoneInput from "@/components/PhoneInput";
 import { logger } from "@/utils/logger";
 import { useNotification } from "@/contexts/NotificationContext";
-import { useTheme } from "@/contexts/ThemeContext";
 
 interface Operator {
   _id: string;
@@ -188,7 +187,6 @@ export default function OperatorManagement() {
   const navigate = useNavigate();
   const location = useLocation();
   const notify   = useNotification();
-  const { toggleTheme, isDark } = useTheme();
 
   const [operators,        setOperators]        = useState<Operator[]>([]);
   const [loading,          setLoading]          = useState(false);
@@ -562,13 +560,6 @@ export default function OperatorManagement() {
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white">👨‍💼 Operator Management</h1>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-base hover:bg-gray-200 dark:hover:bg-gray-600 transition"
-            >
-              {isDark ? '☀️' : '🌙'}
-            </button>
             <button
               onClick={() => { logger.info("OperatorManagement", "Manual refresh triggered"); loadOperators(currentPage); }}
               disabled={loading}

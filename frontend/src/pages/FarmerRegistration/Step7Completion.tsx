@@ -1,3 +1,4 @@
+// src/pages/FarmerRegistration/Step7Completion.tsx — Step 7: success screen showing new farmer ID and navigation options
 import { useNavigate } from "react-router-dom";
 
 type Props = {
@@ -9,140 +10,44 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
   const navigate = useNavigate();
 
   return (
-    <div style={{ textAlign: "center", padding: "40px 20px" }}>
-      <div style={{ 
-        fontSize: "80px", 
-        marginBottom: "20px",
-        animation: "bounce 1s ease-in-out"
-      }}>
-        ✅
-      </div>
-      
-      <h2 style={{ 
-        fontSize: "32px", 
-        fontWeight: "bold", 
-        color: "#28a745",
-        marginBottom: "16px"
-      }}>
-        Registration Complete!
-      </h2>
-      
-      <p style={{ 
-        fontSize: "18px", 
-        color: "var(--text-secondary-hex)",
-        marginBottom: "32px"
-      }}>
-        {farmerName} has been successfully registered
-      </p>
+    <div className="flex flex-col items-center text-center space-y-6 py-8 px-4">
+      {/* Success Icon */}
+      <div className="text-8xl animate-bounce">&#x2705;</div>
 
-      <div style={{
-        backgroundColor: "var(--bg-surface)",
-        padding: "24px",
-        borderRadius: "12px",
-        marginBottom: "32px",
-        maxWidth: "500px",
-        marginLeft: "auto",
-        marginRight: "auto",
-        border: "2px solid #667eea"
-      }}>
-        <p style={{ 
-          fontSize: "14px", 
-          color: "var(--text-secondary-hex)",
-          marginBottom: "8px",
-          fontWeight: "600"
-        }}>
-          Farmer ID
-        </p>
-        <p style={{ 
-          fontSize: "28px", 
-          fontWeight: "bold",
-          color: "var(--text-primary-hex)",
-          fontFamily: "monospace",
-          letterSpacing: "2px"
-        }}>
-          {farmerId}
-        </p>
-        <p style={{ 
-          fontSize: "12px", 
-          color: "var(--text-muted-hex)",
-          marginTop: "8px"
-        }}>
-          Save this ID for future reference
-        </p>
+      {/* Title */}
+      <div>
+        <h2 className="text-3xl font-bold text-green-600 dark:text-green-400">Registration Complete!</h2>
+        <p className="text-gray-500 dark:text-gray-400 mt-2">{farmerName} has been successfully registered.</p>
       </div>
 
-      <div style={{ 
-        display: "flex", 
-        flexDirection: "column",
-        gap: "12px",
-        maxWidth: "400px",
-        marginLeft: "auto",
-        marginRight: "auto"
-      }}>
+      {/* Farmer ID Card */}
+      <div className="w-full max-w-sm bg-white dark:bg-gray-800 border-2 border-indigo-300 dark:border-indigo-600 rounded-2xl p-6 shadow-md">
+        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Farmer ID</p>
+        <p className="text-3xl font-bold font-mono tracking-widest text-gray-900 dark:text-white">{farmerId}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Save this ID for future reference</p>
+      </div>
+
+      {/* Actions */}
+      <div className="w-full max-w-sm space-y-3">
         <button
           onClick={() => navigate(`/farmers/${farmerId}`)}
-          style={{
-            padding: "14px 24px",
-            backgroundColor: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "16px",
-            fontWeight: "600",
-            transition: "background-color 0.2s"
-          }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#0056b3"}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#007bff"}
+          className="w-full py-3 px-6 rounded-xl font-semibold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all"
         >
-          👁️ View Farmer Details
+          View Farmer Details
         </button>
-
         <button
           onClick={() => window.location.reload()}
-          style={{
-            padding: "14px 24px",
-            backgroundColor: "#28a745",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "16px",
-            fontWeight: "600",
-            transition: "background-color 0.2s"
-          }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#218838"}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#28a745"}
+          className="w-full py-3 px-6 rounded-xl font-semibold text-sm bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all"
         >
-          ➕ Register Another Farmer
+          Register Another Farmer
         </button>
-
         <button
           onClick={() => navigate("/farmers")}
-          style={{
-            padding: "14px 24px",
-            backgroundColor: "var(--text-secondary-hex)",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "16px",
-            fontWeight: "600",
-            transition: "background-color 0.2s"
-          }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#5a6268"}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#6c757d"}
+          className="w-full py-3 px-6 rounded-xl font-semibold text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
         >
-          📋 Go to Farmers List
+          Go to Farmers List
         </button>
       </div>
-
-      <style>{`
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
-        }
-      `}</style>
     </div>
   );
 }
