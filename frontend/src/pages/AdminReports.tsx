@@ -5,15 +5,12 @@ import BackButton from "@/components/BackButton";
 import axios from "@/utils/axios";
 import useAuthStore from "@/store/authStore";
 import { logger } from "@/utils/logger";
-import dashboardService, {
-  type ReportDashboard,
+import dashboardService, {  type ReportDashboard,
   type FarmerByRegion,
   type OperatorPerformance,
   type ActivityTrend,
 } from "@/services/dashboard.service";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
+// jsPDF + xlsx loaded on-demand to keep the initial JS bundle small (P8)
 
 type ReportType = "dashboard" | "region" | "operators" | "trends";
 
@@ -97,7 +94,7 @@ export default function AdminReports() {
 
   // ─── Client-side exports ───────────────────────────────────────────────────
 
-  const exportReport = (type: "csv" | "excel" | "pdf") => {
+  const exportReport = async (type: "csv" | "excel" | "pdf") => {
     const data = getCurrentData() as Record<string, unknown>[];
     if (!data.length) { setError("No data to export."); return; }
 
@@ -114,10 +111,17 @@ export default function AdminReports() {
       a.download = filename("csv");
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
     } else if (type === "excel") {
+      // Load xlsx (~500 kB) only when first used
+      const XLSX = await import("xlsx");
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), activeReport);
       XLSX.writeFile(wb, filename("xlsx"));
     } else {
+      // Load jsPDF + jspdf-autotable (~300 kB) only when first used
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable"),
+      ]);
       const doc = new jsPDF();
       doc.setFontSize(18); doc.setTextColor(21,128,61);
       doc.text("Chiefdom Empowerment Model", 14, 20);

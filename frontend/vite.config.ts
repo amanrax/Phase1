@@ -18,6 +18,7 @@ export default defineConfig({
         main: path.resolve(__dirname, 'index.html'),
       },
     },
+    chunkSizeWarningLimit: 600,
     // Copy service worker to dist
     copyPublicDir: true,
   },
