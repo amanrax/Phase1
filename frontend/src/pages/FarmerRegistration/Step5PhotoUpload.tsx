@@ -90,7 +90,7 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
             ? "border-green-400 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 cursor-not-allowed"
             : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/10"
           }`}>
-          {uploaded ? "&#x2713; Photo Uploaded" : photo ? "&#x1F4F7; Change Photo" : "&#x1F4C1; Choose Photo"}
+          {uploaded ? "✓ Photo Uploaded" : photo ? "📷 Change Photo" : "📁 Choose Photo"}
         </div>
       </label>
 

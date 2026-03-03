@@ -97,7 +97,7 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
             }`}
           >
             <div className="flex items-center gap-3 mb-3">
-              <span className="text-2xl">{doc.uploaded ? "&#x2705;" : "&#x1F4C4;"}</span>
+              <span className="text-2xl">{doc.uploaded ? "✅" : "📄"}</span>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{doc.label}</h3>
                 {doc.file && !doc.uploaded && (
@@ -123,7 +123,7 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
                     aria-label={`Upload ${doc.label}`}
                   />
                   <div className="text-center py-2.5 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors">
-                    {doc.file ? "&#x1F4CE; Change File" : "&#x1F4C1; Choose File"}
+                    {doc.file ? "📎 Change File" : "📁 Choose File"}
                   </div>
                 </label>
                 {doc.file && (
@@ -167,7 +167,7 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
           className={`flex-1 py-3 px-6 rounded-xl font-semibold text-sm text-white transition-all
             ${canComplete ? "bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg" : "bg-gray-300 dark:bg-gray-600 cursor-not-allowed"}`}
         >
-          {canComplete ? "&#x2713; Complete Registration" : "Upload at least 1 document"}
+          {canComplete ? "✓ Complete Registration" : "Upload at least 1 document"}
         </button>
       </div>
     </div>
