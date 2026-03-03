@@ -441,3 +441,16 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .col-span-2 { grid-column: span 2 / span 2; }
 .space-y-3 > * + * { margin-top: 0.75rem; }
+
+/* ── P8: Page enter transition (250 ms ease-out) ────────────────────────── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: pageEnter 250ms ease-out both;
+}
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter { animation: none; }
+}

@@ -52,7 +52,7 @@ const QRScanner: React.FC = () => {
       }
 
       if (isAuthenticated) {
-        navigate(`/farmers/${farmerId}`);
+        navigate(`/farmers/${farmerId}`, { state: { fromQR: true } });
         return;
       }
 

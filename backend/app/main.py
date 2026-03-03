@@ -77,6 +77,20 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Database connection failed: {e}")
         raise
+
+    # P7 — ensure TTL index on system_logs (7-day retention = 604800 s)
+    try:
+        from app.database import get_database  # noqa: PLC0415
+        _db = get_database()
+        await _db["system_logs"].create_index(
+            "timestamp",
+            expireAfterSeconds=604800,
+            background=True,
+            name="system_logs_ttl_7d",
+        )
+        logger.info("✅ system_logs TTL index ensured (7-day retention)")
+    except Exception as _ttl_err:
+        logger.warning(f"⚠️  TTL index creation skipped: {_ttl_err}")
     
     logger.info("✅ Application startup complete")
     

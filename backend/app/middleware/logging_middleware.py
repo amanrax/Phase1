@@ -48,6 +48,9 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             role=role,
             ip_address=client_ip,
             request_id=request_id,
+            http_method=request.method,
+            path=request.url.path,
+            message=f"{request.method} {request.url.path}",
         )
 
         try:
@@ -71,6 +74,11 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 ip_address=client_ip,
                 request_id=request_id,
                 duration_ms=duration_ms,
+                http_method=request.method,
+                path=request.url.path,
+                status_code=500,
+                response_time_ms=duration_ms,
+                message=f"ERROR {request.method} {request.url.path}: {str(exc)}",
             )
             raise
 
@@ -92,6 +100,11 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             ip_address=client_ip,
             request_id=request_id,
             duration_ms=duration_ms,
+            http_method=request.method,
+            path=request.url.path,
+            status_code=status_code,
+            response_time_ms=duration_ms,
+            message=f"{request.method} {request.url.path} {status_code} ({duration_ms:.1f}ms)",
         )
 
         return response

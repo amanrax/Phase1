@@ -1,6 +1,6 @@
 // src/pages/FarmerDetails.tsx
-import { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import BackButton from "@/components/BackButton";
 import { farmerService } from "@/services/farmer.service";
 import { verificationService, type VerificationDocument } from "@/services/verification.service";
@@ -235,6 +235,16 @@ export default function FarmerDetails() {
   });
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false, title: "", message: "", onConfirm: () => {} });
   const [verificationOpen, setVerificationOpen] = useState(false);
+  const verificationRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+
+  // Auto-open and scroll to verification panel when arriving from QR scan (P1)
+  useEffect(() => {
+    if ((location.state as Record<string, unknown>)?.fromQR) {
+      setVerificationOpen(true);
+      setTimeout(() => verificationRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 400);
+    }
+  }, [location.state]);
 
   // P2 — document review state
   const { user } = useAuthStore();
@@ -662,7 +672,7 @@ export default function FarmerDetails() {
           </div>
 
           {/* Verification Status (collapsible) */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border-l-4 border-yellow-500 sm:col-span-2 lg:col-span-3">
+          <div ref={verificationRef} className="bg-white dark:bg-gray-800 rounded-xl shadow-md border-l-4 border-yellow-500 sm:col-span-2 lg:col-span-3">
             <button
               onClick={() => setVerificationOpen(v => !v)}
               className="w-full flex items-center justify-between p-6 text-left"

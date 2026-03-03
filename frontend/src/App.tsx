@@ -1,5 +1,5 @@
 import { useEffect, useState, lazy, Suspense } from "react";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RoleRoute } from "@/components/RoleRoute";
@@ -89,11 +89,14 @@ function App() {
   const AppContent = () => {
     // ✅ Handle Android back button
     useBackButton();
+    const location = useLocation();
 
     return (
       <>
         <SessionTimeout />
         <ToastContainer />
+        {/* P8 — keyed div restarts page-enter animation on every navigation */}
+        <div key={location.pathname} className="page-enter">
         <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}
@@ -321,6 +324,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
+        </div>{/* /page-enter */}
       </>
     );
   };

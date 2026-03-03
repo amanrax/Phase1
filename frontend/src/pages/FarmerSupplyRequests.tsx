@@ -28,6 +28,17 @@ interface FormItem { name: string; quantity_value: string; quantity_unit: string
 // ─── Constants ───────────────────────────────────────────────────────────────
 const CATEGORIES = ["Seeds","Fertilizers","Pesticides","Tools","Equipment","Storage","Transport","Irrigation","Other"];
 const UNITS      = ["bags","kg","liters","units","tonnes","crates","boxes","pieces","rolls","drums"];
+// P5 — pre-defined supply item suggestions (user can also type custom names)
+const SUPPLY_ITEMS = [
+  "Maize seeds","Soya bean seeds","Groundnut seeds","Wheat seeds","Sunflower seeds",
+  "Fertilizer (Basal D)","Fertilizer (Top dress)","Fertilizer (Compound D)",
+  "Pesticides","Herbicides","Fungicides",
+  "Hoe","Plow","Tractor hire","Land preparation",
+  "Irrigation pipe","Water pump","Drip lines",
+  "Storage bags","Storage drums",
+  "Animal feed","Livestock supplement","Dipping chemical",
+  "Sprayer (knapsack)","Harvesting bags",
+];
 const URGENCIES  = [
   { value:"low",      label:"Low",      color:"text-green-600 dark:text-green-400",  bg:"bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300" },
   { value:"medium",   label:"Medium",   color:"text-amber-600 dark:text-amber-400",  bg:"bg-amber-100  dark:bg-amber-900/30  text-amber-800  dark:text-amber-300" },
@@ -364,11 +375,18 @@ function RequestFormModal({
             <div className="space-y-2">
               {items.map((item, i) => (
                 <div key={i} className="flex gap-2 items-start">
-                  <input
-                    className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 outline-none"
-                    placeholder="Item name (e.g., Maize seeds)"
-                    value={item.name} onChange={e => updateItem(i, "name", e.target.value)}
-                  />
+                  {/* P5 — datalist for supply item name with pre-defined suggestions + custom input */}
+                  <div className="flex-1 min-w-0">
+                    <input
+                      list="supply-items-list"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 outline-none"
+                      placeholder="Item name (e.g., Maize seeds)"
+                      value={item.name} onChange={e => updateItem(i, "name", e.target.value)}
+                    />
+                    <datalist id="supply-items-list">
+                      {SUPPLY_ITEMS.map((s) => <option key={s} value={s} />)}
+                    </datalist>
+                  </div>
                   <input
                     type="number" min="0.1" step="0.1"
                     className={`w-20 px-2 py-2 text-sm border rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 outline-none ${errors[`item_qty_${i}`] ? "border-red-400" : "border-gray-300 dark:border-gray-600"}`}

@@ -22,6 +22,12 @@ async def log_event(
     request_id: Optional[str] = None,
     duration_ms: Optional[float] = None,
     db: Optional[AsyncIOMotorDatabase] = None,
+    # P7 — top-level HTTP fields required by spec
+    http_method: Optional[str] = None,
+    path: Optional[str] = None,
+    status_code: Optional[int] = None,
+    response_time_ms: Optional[float] = None,
+    message: Optional[str] = None,
 ) -> None:
     """Insert a structured log entry into MongoDB.
 
@@ -37,6 +43,11 @@ async def log_event(
         request_id: Correlation id
         duration_ms: Optional performance timing
         db: Optional db handle; if not provided, a collection will be resolved via get_database
+        http_method: HTTP verb (GET, POST, etc.) — top-level per spec
+        path: Request URL path — top-level per spec
+        status_code: HTTP response status code — top-level per spec
+        response_time_ms: Response time in ms — top-level per spec (aliases duration_ms)
+        message: Human-readable log message — top-level per spec
     """
 
     if details is None:
@@ -54,6 +65,12 @@ async def log_event(
         "ip_address": ip_address,
         "request_id": request_id or str(uuid.uuid4()),
         "duration_ms": duration_ms,
+        # P7 — top-level fields required by spec
+        "http_method": http_method,
+        "path": path,
+        "status_code": status_code,
+        "response_time_ms": response_time_ms if response_time_ms is not None else duration_ms,
+        "message": message,
     }
 
     try:

@@ -88,15 +88,27 @@ export default function EditFarmer() {
   const [customDistrict, setCustomDistrict] = useState("");
   const [showCustomChiefdom, setShowCustomChiefdom] = useState(false);
   const [customChiefdom, setCustomChiefdom] = useState("");
+  const [ethnicOptions, setEthnicOptions] = useState<string[]>([]);
 
   useEffect(() => {
     logger.info(COMPONENT, 'Component mounted', { farmerId });
     loadProvinces();
+    loadEthnicGroups();
     if (farmerId) {
       fetchFarmer();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [farmerId]);
+
+  const loadEthnicGroups = async () => {
+    try {
+      const res = await axiosClient.get('/api/ethnic-groups');
+      const raw = res.data as Array<{ name?: string } | string>;
+      setEthnicOptions(raw.map((e) => (typeof e === 'string' ? e : e.name ?? '')).filter(Boolean));
+    } catch (_err) {
+      // non-critical — falls back to free text input
+    }
+  };
 
   const loadProvinces = async () => {
     try {
@@ -440,10 +452,18 @@ export default function EditFarmer() {
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Ethnic Group</label>
-                <input type="text" value={formData.ethnic_group}
+                {/* P5 — datalist provides type-ahead from API + allows custom text */}
+                <input
+                  type="text"
+                  list="ethnic-groups-list"
+                  value={formData.ethnic_group}
                   onChange={(e) => setFormData(prev => ({ ...prev, ethnic_group: e.target.value }))}
+                  placeholder="Type or select ethnic group…"
                   className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                 />
+                <datalist id="ethnic-groups-list">
+                  {ethnicOptions.map((opt) => <option key={opt} value={opt} />)}
+                </datalist>
               </div>
             </div>
           </div>
