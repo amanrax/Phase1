@@ -148,14 +148,15 @@ async def create_supply_request(
     if not body.purpose.strip():
         raise HTTPException(400, "Purpose is required — explain why you need these supplies")
 
-    # Fetch farmer profile
-    farmer = await db.farmers.find_one({"personal_info.email": current_user.get("email")})
-    if not farmer:
-        # Try by user email on the user doc
-        farmer = await db.farmers.find_one({"farmer_email": current_user.get("email")})
+    # Fetch farmer profile — prefer farmer_id (set for all farmer tokens), fallback to email
+    farmer = None
+    if current_user.get("farmer_id"):
+        farmer = await db.farmers.find_one({"farmer_id": current_user["farmer_id"]})
+    if not farmer and current_user.get("email"):
+        farmer = await db.farmers.find_one({"personal_info.email": current_user.get("email")})
     if not farmer:
         await _log(request, "ERROR", "create_request.farmer_not_found",
-                   {"email": current_user.get("email")}, current_user)
+                   {"farmer_id": current_user.get("farmer_id"), "email": current_user.get("email")}, current_user)
         raise HTTPException(404, "Farmer profile not found. Ensure your account is linked to a farmer record.")
 
     pi = farmer.get("personal_info", {})
@@ -170,7 +171,7 @@ async def create_supply_request(
     doc = {
         "request_ref":            ref,
         "farmer_id":              farmer.get("farmer_id", ""),
-        "farmer_email":           current_user.get("email"),
+        "farmer_email":           current_user.get("email") or farmer.get("personal_info", {}).get("email", ""),
         "farmer_name":            farmer_name,
         "farmer_phone":           body.contact_phone or pi.get("phone_primary", ""),
         "farmer_district":        addr.get("district_name", ""),
@@ -193,7 +194,7 @@ async def create_supply_request(
         "status_history": [
             {
                 "status":     "pending",
-                "changed_by": current_user.get("email"),
+                "changed_by": current_user.get("email") or current_user.get("farmer_id", "farmer"),
                 "role":       "FARMER",
                 "note":       "Request submitted",
                 "timestamp":  now.isoformat(),
@@ -231,7 +232,9 @@ async def get_my_supply_requests(
     await _log(request, "INFO", "get_my_requests",
                {"filters": {"status": status, "category": category}}, current_user)
 
-    query: dict = {"farmer_email": current_user.get("email")}
+    # Use farmer_id as the primary ownership key (always present for farmer tokens)
+    farmer_filter: dict = {"farmer_id": current_user["farmer_id"]} if current_user.get("farmer_id") else {"farmer_email": current_user.get("email")}
+    query: dict = dict(farmer_filter)
     if status:
         query["status"] = status.lower()
     if category:
@@ -246,7 +249,7 @@ async def get_my_supply_requests(
 
         # Compute status summary for this farmer
         pipeline = [
-            {"$match": {"farmer_email": current_user.get("email")}},
+            {"$match": farmer_filter},
             {"$group": {"_id": "$status", "count": {"$sum": 1}}}
         ]
         agg = await db.supply_requests.aggregate(pipeline).to_list(length=20)
@@ -275,9 +278,8 @@ async def get_single_supply_request_farmer(
     except Exception:
         raise HTTPException(400, "Invalid request ID format")
 
-    doc = await db.supply_requests.find_one(
-        {"_id": oid, "farmer_email": current_user.get("email")}
-    )
+    ownership = {"farmer_id": current_user["farmer_id"]} if current_user.get("farmer_id") else {"farmer_email": current_user.get("email")}
+    doc = await db.supply_requests.find_one({"_id": oid, **ownership})
     if not doc:
         await _log(request, "WARNING", "get_single_request.not_found", {"request_id": request_id}, current_user)
         raise HTTPException(404, "Supply request not found or does not belong to you")
@@ -303,9 +305,8 @@ async def cancel_supply_request(
     except Exception:
         raise HTTPException(400, "Invalid request ID format")
 
-    doc = await db.supply_requests.find_one(
-        {"_id": oid, "farmer_email": current_user.get("email")}
-    )
+    ownership = {"farmer_id": current_user["farmer_id"]} if current_user.get("farmer_id") else {"farmer_email": current_user.get("email")}
+    doc = await db.supply_requests.find_one({"_id": oid, **ownership})
     if not doc:
         raise HTTPException(404, "Supply request not found or does not belong to you")
 
@@ -318,7 +319,7 @@ async def cancel_supply_request(
     now = datetime.now(timezone.utc)
     history_entry = {
         "status":     "cancelled",
-        "changed_by": current_user.get("email"),
+        "changed_by": current_user.get("email") or current_user.get("farmer_id", "farmer"),
         "role":       "FARMER",
         "note":       body.reason or "Cancelled by farmer",
         "timestamp":  now.isoformat(),
@@ -354,9 +355,8 @@ async def farmer_edit_supply_request(
     except Exception:
         raise HTTPException(400, "Invalid request ID format")
 
-    doc = await db.supply_requests.find_one(
-        {"_id": oid, "farmer_email": current_user.get("email")}
-    )
+    ownership = {"farmer_id": current_user["farmer_id"]} if current_user.get("farmer_id") else {"farmer_email": current_user.get("email")}
+    doc = await db.supply_requests.find_one({"_id": oid, **ownership})
     if not doc:
         raise HTTPException(404, "Supply request not found or does not belong to you")
 

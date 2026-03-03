@@ -1,3 +1,4 @@
+import json
 import time
 import traceback
 import uuid
@@ -18,11 +19,15 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         request_id = str(uuid.uuid4())
         start = time.perf_counter()
 
-        # Try to read request body safely
+        # Read body using .body() which caches in request._body so the route
+        # handler can still read it. Never use request.json() here — it does
+        # not guarantee cache replay through BaseHTTPMiddleware's scope wrapping.
         body_content = {}
         try:
             if request.method in {"POST", "PUT", "PATCH"}:
-                body_content = await request.json()
+                raw = await request.body()   # caches → request._body
+                if raw:
+                    body_content = json.loads(raw)
         except Exception:
             body_content = {}
 
