@@ -1,5 +1,5 @@
 // src/pages/FarmerRegistration/index.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Step1Personal from "./Step1Personal";
 import Step2Address from "./Step2Address";
@@ -32,8 +32,8 @@ export type WizardState = {
   };
   farm?: {
     size_hectares?: string;
-    crops?: string;
-    livestock?: string;
+    crops?: string | string[];
+    livestock?: string | string[];
     has_irrigation?: boolean;
     years_farming?: string;
     household_size?: string;
@@ -48,6 +48,8 @@ const initialState: WizardState = {
   farm: {},
 };
 
+const DRAFT_KEY = "reg_draft";
+
 export default function FarmerRegistrationWizard() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -58,29 +60,51 @@ export default function FarmerRegistrationWizard() {
   const [farmerName, setFarmerName] = useState<string>("");
   void setFarmerName; // Used by Step4 completion (TODO: wire up)
 
+  // Restore draft on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved) as { form: WizardState; step: number; farmerId?: string };
+        setForm(draft.form);
+        setCurrentStep(draft.step);
+        if (draft.farmerId) setNewFarmerId(draft.farmerId);
+      }
+    } catch {
+      // corrupted draft — start fresh
+      localStorage.removeItem(DRAFT_KEY);
+    }
+  }, []);
+
+  /** Save wizard state to localStorage after every step update */
+  const saveDraft = (updatedForm: WizardState, step: number, farmerId?: string | null) => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form: updatedForm, step, farmerId }));
+    } catch { /* QuotaExceededError — ignore */ }
+  };
+
   const update = <K extends keyof WizardState>(
     section: K,
     values: Partial<WizardState[K]>
   ) => {
-    setForm((prev) => ({
-      ...prev,
-      [section]: { ...prev[section], ...values },
-    }));
+    setForm((prev) => {
+      const next: WizardState = { ...prev, [section]: { ...prev[section], ...values } };
+      saveDraft(next, currentStep, newFarmerId);
+      return next;
+    });
   };
 
   // TODO: Re-enable when Step4 submission is wired up
-  // const handleStep4Complete = async (formValues: any) => {
-  //   try {
-  //     const response = await farmerService.create(formValues);
-  //     setNewFarmerId(response.farmer_id);
-  //     setFarmerName(`${formValues.personal_info.first_name} ${formValues.personal_info.last_name}`);
-  //     setCurrentStep(5);
-  //   } catch (err: any) {
-  //     // ...existing error handling...
-  //   }
-  // };
+  // const handleStep4Complete = async (formValues: any) => { ... };
+
+  // Persist draft on step changes (handles setCurrentStep() calls not via update())
+  useEffect(() => {
+    if (currentStep < 7) saveDraft(form, currentStep, newFarmerId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep]);
 
   const handleStep6Complete = () => {
+    localStorage.removeItem(DRAFT_KEY);
     setCurrentStep(7);
   };
 
@@ -153,6 +177,7 @@ export default function FarmerRegistrationWizard() {
             onSubmitEnd={() => setLoading(false)}
             onSuccess={(farmerId) => {
               setNewFarmerId(farmerId);
+              saveDraft(form, 5, farmerId);
               setCurrentStep(5);
             }}
           />
@@ -176,7 +201,7 @@ export default function FarmerRegistrationWizard() {
         )}
 
         {/* Footer Tip */}
-        <div style={{ marginTop: "20px", color: "var(--text-muted-hex)", fontSize: "13px", textAlign: "center" }}>
+        <div className="mt-5 text-center text-xs text-gray-400 dark:text-gray-500">
           💡 Tip: Fields marked with * are required. Use the back button to edit previous steps.
         </div>
 

@@ -4,6 +4,7 @@ import BackButton from "@/components/BackButton";
 import axios from "@/utils/axios";
 import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 
 const COMPONENT = "AdminSupplyRequests";
 
@@ -408,6 +409,12 @@ export default function AdminSupplyRequests() {
 
   const refresh = () => { loadRequests(); loadStats(); };
 
+  // Pull-to-refresh on mobile (P8)
+  const { pulling, pullDistance, threshold } = usePullToRefresh({
+    onRefresh: refresh,
+    disabled: loading,
+  });
+
   // Selection helpers
   const toggleSelect = (id: string) =>
     setSelectedIds(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -500,6 +507,16 @@ export default function AdminSupplyRequests() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Pull-to-refresh indicator */}
+        {pulling && (
+          <div
+            className="flex items-center justify-center gap-2 text-sm font-medium text-green-600 dark:text-green-400 transition-all"
+            style={{ height: `${Math.min(pullDistance, threshold + 20)}px` }}
+          >
+            <div className={`w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full ${pullDistance >= threshold ? "animate-spin" : ""}`} />
+            <span>{pullDistance >= threshold ? "Release to refresh…" : "Pull to refresh…"}</span>
+          </div>
+        )}
         {/* Stats Grid */}
         {statsLoading ? (
           <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
@@ -606,8 +623,26 @@ export default function AdminSupplyRequests() {
 
         {/* Table */}
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 border-t-green-600"></div>
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 animate-pulse">
+                <div className="flex items-center gap-4">
+                  <div className="w-5 h-5 rounded bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="flex gap-3">
+                      <div className="h-3 rounded bg-gray-200 dark:bg-gray-700 w-20" />
+                      <div className="h-3 rounded bg-gray-200 dark:bg-gray-700 w-28" />
+                      <div className="h-3 rounded bg-gray-200 dark:bg-gray-700 w-16" />
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="h-3 rounded bg-gray-100 dark:bg-gray-600 w-32" />
+                      <div className="h-3 rounded bg-gray-100 dark:bg-gray-600 w-20" />
+                    </div>
+                  </div>
+                  <div className="h-6 w-20 rounded-full bg-gray-200 dark:bg-gray-700" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : requests.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-12 text-center">

@@ -5,6 +5,7 @@ import BackButton from "@/components/BackButton";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Farmer {
   _id: string;
@@ -292,6 +293,12 @@ export default function FarmersList() {
   const [filteredFarmers, setFilteredFarmers] = useState<Farmer[]>([]);
   const [loading,         setLoading]         = useState(true);
   const [refreshing,      setRefreshing]      = useState(false);
+
+  // Pull-to-refresh on mobile (P8)
+  const { pulling, pullDistance, threshold } = usePullToRefresh({
+    onRefresh: () => loadFarmers(currentPage, true),
+    disabled: loading || refreshing,
+  });
   const [filter,          setFilter]          = useState<FilterType>("all");
   const [searchBy,        setSearchBy]        = useState<SearchField>("name");
   const [searchValue,     setSearchValue]     = useState("");
@@ -433,6 +440,16 @@ export default function FarmersList() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 pt-4 space-y-4">
+        {/* Pull-to-refresh indicator */}
+        {pulling && (
+          <div
+            className="flex items-center justify-center gap-2 py-2 text-sm font-medium text-green-600 dark:text-green-400 transition-all"
+            style={{ height: `${Math.min(pullDistance, threshold + 20)}px` }}
+          >
+            <div className={`w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full ${pullDistance >= threshold ? "animate-spin" : ""}`} />
+            <span>{pullDistance >= threshold ? "Release to refresh…" : "Pull to refresh…"}</span>
+          </div>
+        )}
         {/* Filter Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
           {(["all", "active", "pending", "inactive"] as FilterType[]).map(f => (

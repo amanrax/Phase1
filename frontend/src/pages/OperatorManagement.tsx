@@ -7,6 +7,7 @@ import { GeoSelectWithOther } from "@/components/GeoSelectWithOther";
 import PhoneInput from "@/components/PhoneInput";
 import { logger } from "@/utils/logger";
 import { useNotification } from "@/contexts/NotificationContext";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 
 interface Operator {
   _id: string;
@@ -256,6 +257,12 @@ export default function OperatorManagement() {
       window.history.replaceState({}, "");
     }
   }, []);
+
+  // Pull-to-refresh on mobile (P8)
+  const { pulling, pullDistance, threshold } = usePullToRefresh({
+    onRefresh: () => loadOperators(currentPage),
+    disabled: loading,
+  });
 
   // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -579,6 +586,16 @@ export default function OperatorManagement() {
 
       {/* ── Content ────────────────────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Pull-to-refresh indicator */}
+        {pulling && (
+          <div
+            className="flex items-center justify-center gap-2 mb-4 text-sm font-medium text-green-600 dark:text-green-400 transition-all"
+            style={{ height: `${Math.min(pullDistance, threshold + 20)}px` }}
+          >
+            <div className={`w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full ${pullDistance >= threshold ? "animate-spin" : ""}`} />
+            <span>{pullDistance >= threshold ? "Release to refresh…" : "Pull to refresh…"}</span>
+          </div>
+        )}
 
         {/* ── Search + Filter Bar ─────────────────────────────────────────────── */}
         <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 flex flex-wrap gap-3 items-end">

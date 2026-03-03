@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -12,29 +12,41 @@ import { useBackButton } from "@/hooks/useBackButton";
 import PermissionRequest from "@/components/PermissionRequest";
 import { updateService } from "@/services/update.service";
 
-// Pages
-import Login from "@/pages/Login";
-import AdminDashboard from "@/pages/AdminDashboard";
-import OperatorDashboard from "@/pages/OperatorDashboard";
-import FarmerRegistration from "@/pages/FarmerRegistration";
-import FarmersList from "@/pages/FarmersList";
-import EditFarmer from "@/pages/EditFarmer";
-import OperatorManagement from "@/pages/OperatorManagement";
-import OperatorDetails from "@/pages/OperatorDetails";
-import OperatorEdit from "@/pages/OperatorEdit";
-import FarmerDashboard from "@/pages/FarmerDashboard";
-import FarmerDetails from "@/pages/FarmerDetails";
-import FarmerIDCard from "@/pages/FarmerIDCard";
-import IDCardViewer from "@/pages/IDCardViewer";
-import DocumentViewer from "@/pages/DocumentViewer";
-import AdminReports from "@/pages/AdminReports";
-import AnalyticsDashboard from "@/pages/AnalyticsDashboard";
-import AdminSettings from "@/pages/AdminSettings";
-import AdminSupplyRequests from "@/pages/AdminSupplyRequests";
-import FarmerSupplyRequests from "@/pages/FarmerSupplyRequests";
-import LogViewer from "@/pages/LogViewer";
-import QRScanner from "@/pages/QRScanner";
-import AdminGeoManagement from "@/pages/AdminGeoManagement";
+// Pages — lazy-loaded for code splitting (P8)
+const Login                = lazy(() => import("@/pages/Login"));
+const AdminDashboard       = lazy(() => import("@/pages/AdminDashboard"));
+const OperatorDashboard    = lazy(() => import("@/pages/OperatorDashboard"));
+const FarmerRegistration   = lazy(() => import("@/pages/FarmerRegistration"));
+const FarmersList          = lazy(() => import("@/pages/FarmersList"));
+const EditFarmer           = lazy(() => import("@/pages/EditFarmer"));
+const OperatorManagement   = lazy(() => import("@/pages/OperatorManagement"));
+const OperatorDetails      = lazy(() => import("@/pages/OperatorDetails"));
+const OperatorEdit         = lazy(() => import("@/pages/OperatorEdit"));
+const FarmerDashboard      = lazy(() => import("@/pages/FarmerDashboard"));
+const FarmerDetails        = lazy(() => import("@/pages/FarmerDetails"));
+const FarmerIDCard         = lazy(() => import("@/pages/FarmerIDCard"));
+const IDCardViewer         = lazy(() => import("@/pages/IDCardViewer"));
+const DocumentViewer       = lazy(() => import("@/pages/DocumentViewer"));
+const AdminReports         = lazy(() => import("@/pages/AdminReports"));
+const AnalyticsDashboard   = lazy(() => import("@/pages/AnalyticsDashboard"));
+const AdminSettings        = lazy(() => import("@/pages/AdminSettings"));
+const AdminSupplyRequests  = lazy(() => import("@/pages/AdminSupplyRequests"));
+const FarmerSupplyRequests = lazy(() => import("@/pages/FarmerSupplyRequests"));
+const LogViewer            = lazy(() => import("@/pages/LogViewer"));
+const QRScanner            = lazy(() => import("@/pages/QRScanner"));
+const AdminGeoManagement   = lazy(() => import("@/pages/AdminGeoManagement"));
+
+/** Full-page spinner shown while a lazy chunk is loading */
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="flex flex-col items-center gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 border-t-green-600" />
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Loading…</p>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const token = useAuthStore((state) => state.token);
@@ -82,6 +94,7 @@ function App() {
       <>
         <SessionTimeout />
         <ToastContainer />
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
@@ -307,6 +320,7 @@ function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </>
     );
   };

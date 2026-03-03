@@ -4,6 +4,7 @@ import BackButton from "@/components/BackButton";
 import axios from "@/utils/axios";
 import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 
 const COMPONENT = "FarmerSupplyRequests";
 
@@ -577,6 +578,12 @@ export default function FarmerSupplyRequests() {
 
   useEffect(() => { loadRequests(); }, []);
 
+  // Pull-to-refresh on mobile (P8)
+  const { pulling, pullDistance, threshold } = usePullToRefresh({
+    onRefresh: () => loadRequests(filter),
+    disabled: loading,
+  });
+
   const handleFilterChange = (f: string) => {
     setFilter(f);
     loadRequests(f);
@@ -640,6 +647,16 @@ export default function FarmerSupplyRequests() {
       </header>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+        {/* Pull-to-refresh indicator */}
+        {pulling && (
+          <div
+            className="flex items-center justify-center gap-2 text-sm font-medium text-green-600 dark:text-green-400 transition-all"
+            style={{ height: `${Math.min(pullDistance, threshold + 20)}px` }}
+          >
+            <div className={`w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full ${pullDistance >= threshold ? "animate-spin" : ""}`} />
+            <span>{pullDistance >= threshold ? "Release to refresh…" : "Pull to refresh…"}</span>
+          </div>
+        )}
         {/* Stats */}
         <div className="grid grid-cols-5 gap-2">
           {statCards.map(c => <StatCard key={c.label} {...c} />)}
@@ -665,9 +682,22 @@ export default function FarmerSupplyRequests() {
 
         {/* Content */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 border-t-green-600"></div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Loading requests...</p>
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 animate-pulse">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <div className="h-3 rounded bg-gray-200 dark:bg-gray-700 w-24" />
+                    <div className="h-6 w-16 rounded-full bg-gray-200 dark:bg-gray-700" />
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="h-3 rounded bg-gray-200 dark:bg-gray-700 w-32" />
+                    <div className="h-3 rounded bg-gray-200 dark:bg-gray-700 w-20" />
+                  </div>
+                  <div className="h-3 rounded bg-gray-100 dark:bg-gray-600 w-40" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : displayed.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-12 text-center">

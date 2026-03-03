@@ -60,10 +60,16 @@ export default function Step4Preview({
       };
 
       if (data.farm?.size_hectares || data.farm?.years_farming) {
+        const cropsRaw = data.farm.crops;
+        const liveRaw  = data.farm.livestock;
         payload.farm_info = {
           farm_size_hectares: parseFloat(data.farm.size_hectares || "1") || 1,
-          crops_grown: data.farm.crops?.split(",").map((c: string) => c.trim()).filter(Boolean) || [],
-          livestock_types: data.farm.livestock?.split(",").map((l: string) => l.trim()).filter(Boolean) || [],
+          crops_grown: Array.isArray(cropsRaw)
+            ? cropsRaw
+            : (typeof cropsRaw === "string" ? cropsRaw.split(",").map((c) => c.trim()).filter(Boolean) : []),
+          livestock_types: Array.isArray(liveRaw)
+            ? liveRaw
+            : (typeof liveRaw === "string" ? liveRaw.split(",").map((l) => l.trim()).filter(Boolean) : []),
           has_irrigation: data.farm.has_irrigation || false,
           years_farming: Math.min(parseInt(data.farm.years_farming || "0") || 0, 100),
         };
@@ -162,8 +168,8 @@ export default function Step4Preview({
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
             <InfoRow label="Farm Size" value={data.farm?.size_hectares ? `${data.farm.size_hectares} hectares` : undefined} />
-            <InfoRow label="Crops" value={data.farm?.crops} />
-            <InfoRow label="Livestock" value={data.farm?.livestock} />
+            <InfoRow label="Crops"     value={Array.isArray(data.farm?.crops) ? data.farm.crops.join(", ") : data.farm?.crops} />
+            <InfoRow label="Livestock" value={Array.isArray(data.farm?.livestock) ? data.farm.livestock.join(", ") : data.farm?.livestock} />
             <InfoRow label="Experience" value={data.farm?.years_farming ? `${data.farm.years_farming} years` : undefined} />
             <InfoRow label="Irrigation" value={data.farm?.has_irrigation ? "Yes" : "No"} />
           </div>
