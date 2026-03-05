@@ -263,9 +263,13 @@ function InlineGeoManager() {
     } finally {
       setLoading(false);
     }
-  }, [geoTab, notify]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [geoTab]); // notify intentionally omitted — not stable across renders
 
-  useEffect(() => { fetchItems(); fetchParents(); }, [fetchItems, fetchParents]);
+  // Fetch items whenever the active tab changes
+  useEffect(() => { fetchItems(); }, [fetchItems]);
+  // Fetch parent lists once on mount for dropdown options
+  useEffect(() => { fetchParents(); }, [fetchParents]);
 
   const openCreate = () => { setEditItem(null); setFormName(""); setFormCode(""); setFormParent(""); setShowForm(true); };
   const openEdit = (item: GeoItem) => {

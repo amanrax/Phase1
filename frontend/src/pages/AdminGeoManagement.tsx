@@ -71,12 +71,11 @@ export default function AdminGeoManagement() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, showError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]); // showError intentionally omitted — not stable across renders
 
-  useEffect(() => {
-    fetchItems();
-    fetchParents();
-  }, [fetchItems, fetchParents]);
+  useEffect(() => { fetchItems(); }, [fetchItems]);
+  useEffect(() => { fetchParents(); }, [fetchParents]);
 
   const openCreate = () => {
     setEditItem(null);
