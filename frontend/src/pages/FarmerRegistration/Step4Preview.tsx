@@ -3,6 +3,7 @@ import { useState } from "react";
 import { farmerService } from "@/services/farmer.service";
 import { logger } from "@/utils/logger";
 import { WizardState } from "."; // Import type
+import { useFeedback } from "@/utils/feedback";
 
 const COMPONENT = "Step4Preview";
 
@@ -22,6 +23,7 @@ export default function Step4Preview({
   onSuccess,
 }: Props) {
   const [error, setError] = useState<string>("");
+  const { triggerVibration, triggerSound } = useFeedback();
 
   const cleanOptionalField = (value: string | undefined): string | undefined => {
     return value && value.trim() ? value.trim() : undefined;
@@ -86,9 +88,13 @@ export default function Step4Preview({
       logger.info(COMPONENT, "submitting payload", { payload });
       const res = await farmerService.create(payload);
       if (res.farmer_id) {
+        triggerVibration("registration_complete");
+        triggerSound("registration_complete");
         onSuccess(res.farmer_id);
       } else {
         setError("Failed to get farmer ID after creation.");
+        triggerVibration("form_error");
+        triggerSound("error");
       }
     } catch (err: any) {
       logger.error(COMPONENT, "registration submit failed", { err, detail: err.response?.data?.detail });
@@ -107,6 +113,8 @@ export default function Step4Preview({
       } else {
         setError(err.message || "Failed to create");
       }
+      triggerVibration("form_error");
+      triggerSound("error");
     } finally {
       onSubmitEnd();
     }

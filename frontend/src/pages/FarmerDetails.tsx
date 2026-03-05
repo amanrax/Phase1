@@ -7,6 +7,7 @@ import { verificationService, type VerificationDocument } from "@/services/verif
 import useAuthStore from "@/store/authStore";
 import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
+import { useFeedback } from "@/utils/feedback";
 
 const COMPONENT = "FarmerDetails";
 
@@ -265,8 +266,11 @@ export default function FarmerDetails() {
   });
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false, title: "", message: "", onConfirm: () => {} });
   const [verificationOpen, setVerificationOpen] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
   const verificationRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const { triggerVibration, triggerSound } = useFeedback();
 
   // Auto-open and scroll to verification panel when arriving from QR scan (P1)
   useEffect(() => {
@@ -363,6 +367,18 @@ export default function FarmerDetails() {
     };
   }, [farmer?.farmer_id, farmer?.identification_documents]);
 
+  // ─── load QR code image on farmer load ────────────────────────────────────────
+  useEffect(() => {
+    if (!farmer) return;
+    const loadQR = async () => {
+      try {
+        const url = await farmerService.getQRCodeBlobUrl(farmer);
+        if (url) setQrCodeUrl(url);
+      } catch { /* QR not yet generated — ok */ }
+    };
+    loadQR();
+  }, [farmer?.farmer_id]);
+
   // ─── photo upload ─────────────────────────────────────────────────────────────
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -439,10 +455,20 @@ export default function FarmerDetails() {
       const response = await farmerService.generateQR(farmerId!);
       logger.info(COMPONENT, "handleGenerateQR success");
       showSuccess(response?.message ?? "QR code generated.", 4000);
+      triggerVibration("qr_success");
+      triggerSound("qr_success");
       await loadFarmerData();
+      // Load QR image for inline display
+      try {
+        const updatedFarmer = await farmerService.getFarmer(farmerId!);
+        const url = await farmerService.getQRCodeBlobUrl(updatedFarmer);
+        if (url) setQrCodeUrl(url);
+      } catch { /* qr display is best-effort */ }
     } catch (err: unknown) {
       const msg = getErrorMessage(err);
       logger.error(COMPONENT, "handleGenerateQR failed", { msg });
+      triggerVibration("form_error");
+      triggerSound("error");
       showError(msg, 5000);
     }
   };
@@ -540,6 +566,22 @@ export default function FarmerDetails() {
   // ─── render ───────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
+      {/* QR Full-Size Modal */}
+      {qrModalOpen && qrCodeUrl && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6"
+          onClick={() => setQrModalOpen(false)}
+          role="dialog"
+          aria-label="QR code full size"
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 flex flex-col items-center gap-4 shadow-2xl max-w-xs w-full">
+            <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">Farmer QR Code</p>
+            <img src={qrCodeUrl} alt="QR Code full size" className="w-64 h-64 rounded-xl border-2 border-amber-400" />
+            <p className="text-xs text-gray-400 dark:text-gray-500 text-center">Tap anywhere to close</p>
+          </div>
+        </div>
+      )}
+
       <ConfirmDialog state={confirm} onCancel={dismissConfirm} />
 
       {/* Header */}
@@ -564,6 +606,15 @@ export default function FarmerDetails() {
             <button onClick={handleGenerateQR} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
               📷 Generate QR
             </button>
+            {qrCodeUrl && (
+              <button
+                onClick={() => setQrCodeUrl(null)}
+                title="Hide QR"
+                className="relative"
+              >
+                <img src={qrCodeUrl} alt="Farmer QR Code" className="w-12 h-12 rounded border-2 border-amber-400 shadow cursor-pointer hover:opacity-80 transition" />
+              </button>
+            )}
             <button onClick={() => navigate(`/farmers/edit/${farmerId}`)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
               ✏️ Edit Farmer
             </button>
@@ -704,6 +755,42 @@ export default function FarmerDetails() {
               </div>
             )}
           </div>
+          {/* QR Code Card */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-amber-500">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">📷 QR Code</h2>
+            {qrCodeUrl ? (
+              <div className="flex flex-col items-center gap-3">
+                <img
+                  src={qrCodeUrl}
+                  alt={`QR code for ${fullName}`}
+                  onClick={() => setQrModalOpen(true)}
+                  title="Click to view full size"
+                  className="w-48 h-48 rounded-xl border-2 border-amber-400 shadow-md cursor-pointer hover:opacity-80 transition active:scale-95"
+                />
+                <p className="text-xs text-gray-400 dark:text-gray-500 text-center">Tap to view full size · Show to farmer or scan to verify</p>
+                <button
+                  onClick={handleGenerateQR}
+                  className="w-full py-2 text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-800/40 text-amber-800 dark:text-amber-300 rounded-lg transition"
+                >
+                  🔄 Regenerate QR
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center">
+                  <span className="text-5xl opacity-40">📷</span>
+                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 text-center">No QR code yet. Generate one to print or share.</p>
+                <button
+                  onClick={handleGenerateQR}
+                  className="w-full py-2.5 text-sm font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition active:scale-95"
+                >
+                  📷 Generate QR Code
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Documents (full-width) */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-indigo-500 sm:col-span-2 lg:col-span-3">
             <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-5">📄 Documents</h2>

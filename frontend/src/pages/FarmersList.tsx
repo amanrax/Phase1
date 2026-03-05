@@ -68,6 +68,7 @@ function getStatusMeta(f: Farmer): StatusMeta {
     submitted:         { label: "⏳ Submitted",    color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400" },
     under_review:      { label: "🔍 Under Review", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400" },
     pending_documents: { label: "📄 Docs Needed",  color: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400" },
+    documents_uploaded: { label: "📋 Docs Pending Review", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" },
     rejected:          { label: "✗ Rejected",      color: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400" },
   };
   return map[s] ?? { label: s, color: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300" };
@@ -364,7 +365,7 @@ export default function FarmersList() {
   useEffect(() => {
     let result = allFarmers;
     if (filter === "active")   result = result.filter(f => f.is_active && ["registered","approved","verified"].includes((f.registration_status||"").toLowerCase()));
-    if (filter === "pending")  result = result.filter(f => ["pending","submitted","under_review","pending_documents"].includes((f.registration_status||"").toLowerCase()));
+    if (filter === "pending")  result = result.filter(f => ["pending","submitted","under_review","pending_documents","documents_uploaded"].includes((f.registration_status||"").toLowerCase()));
     if (filter === "inactive") result = result.filter(f => !f.is_active || f.registration_status?.toLowerCase() === "rejected");
 
     if (provinceFilter !== "all") {
@@ -382,6 +383,14 @@ export default function FarmersList() {
         return false;
       });
     }
+    // Surface farmers needing document review at the top of pending list
+    if (filter === "pending") {
+      result = [...result].sort((a, b) => {
+        const aUploaded = (a.registration_status || "").toLowerCase() === "documents_uploaded" ? 0 : 1;
+        const bUploaded = (b.registration_status || "").toLowerCase() === "documents_uploaded" ? 0 : 1;
+        return aUploaded - bUploaded;
+      });
+    }
     setFilteredFarmers(result);
     logger.info("FarmersList", "Filter applied", { filter, searchBy, searchValue, provinceFilter, districtFilter, resultCount: result.length });
   }, [filter, allFarmers, searchBy, searchValue, provinceFilter, districtFilter]);
@@ -389,7 +398,7 @@ export default function FarmersList() {
   const getCount = (f: FilterType) => {
     if (f === "all")      return allFarmers.length;
     if (f === "active")   return allFarmers.filter(x => x.is_active && ["registered","approved","verified"].includes((x.registration_status||"").toLowerCase())).length;
-    if (f === "pending")  return allFarmers.filter(x => ["pending","submitted","under_review","pending_documents"].includes((x.registration_status||"").toLowerCase())).length;
+    if (f === "pending")  return allFarmers.filter(x => ["pending","submitted","under_review","pending_documents","documents_uploaded"].includes((x.registration_status||"").toLowerCase())).length;
     if (f === "inactive") return allFarmers.filter(x => !x.is_active || x.registration_status?.toLowerCase() === "rejected").length;
     return 0;
   };

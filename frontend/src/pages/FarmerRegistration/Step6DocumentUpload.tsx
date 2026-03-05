@@ -3,6 +3,8 @@ import { useState } from "react";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
+import { checkAndRequestPermission } from "@/utils/permissions";
+import { useFeedback } from "@/utils/feedback";
 
 const COMPONENT = "Step6DocumentUpload";
 
@@ -24,6 +26,7 @@ interface DocumentState {
 
 export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: Step6Props) {
   const { success, error: showError } = useNotification();
+  const { triggerVibration, triggerSound } = useFeedback();
   const [documents, setDocuments] = useState<DocumentState[]>([
     { type: "nrc", label: "NRC (National Registration Card)", file: null, uploaded: false, uploading: false },
     { type: "land_title", label: "Land Title Document", file: null, uploaded: false, uploading: false },
@@ -34,10 +37,17 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
   const uploadedCount = documents.filter((d) => d.uploaded).length;
   const canComplete = uploadedCount > 0;
 
-  const handleFileSelect = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) { showError("File size must be less than 10MB"); return; }
+    // Check storage permission on native (one-time, cached)
+    const perm = await checkAndRequestPermission("storage");
+    if (!perm.granted) {
+      showError("Storage permission is required to upload documents. Please allow it in Settings.");
+      logger.warn(COMPONENT, "storage permission denied", { permanent: perm.permanent });
+      return;
+    }
     const updated = [...documents];
     updated[index] = { ...updated[index], file };
     setDocuments(updated);
@@ -54,6 +64,8 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
       const done = [...documents];
       done[index] = { ...done[index], uploaded: true, uploading: false, file: null };
       setDocuments(done);
+      triggerVibration("doc_approved");
+      triggerSound("notification");
       success(`${doc.label} uploaded successfully!`);
     } catch (err: any) {
       logger.error(COMPONENT, "document upload failed", { err, docType: doc.type });

@@ -1,5 +1,6 @@
 // frontend/src/pages/AdminSettings.tsx - FIXED VERSION
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import BackButton from "@/components/BackButton";
 import axios from "@/utils/axios";
 import useAuthStore from "@/store/authStore";
@@ -29,8 +30,7 @@ interface SystemStats {
   total_operators: number;
   total_farmers: number;
 }
-
-type SettingsTab = "users" | "system" | "security" | "appearance";
+type SettingsTab = "users" | "system" | "data" | "security" | "appearance";
 
 /** ─── Appearance Tab ─────────────────────────────────────────── */
 function AppearanceTab() {
@@ -216,6 +216,7 @@ function AppearanceTab() {
 }
 
 export default function AdminSettings() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SettingsTab>("users");
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
@@ -604,6 +605,7 @@ export default function AdminSettings() {
         {/* Tabs */}
         <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-2 flex gap-2 overflow-x-auto">
           {[
+            { value: "data",       label: "🗺️ Data" },
             { value: "users",      label: "👥 Users" },
             { value: "system",     label: "📊 System" },
             { value: "appearance", label: "🎨 Appearance" },
@@ -889,6 +891,41 @@ export default function AdminSettings() {
                   </h3>
                 </div>
               </div>
+            )}
+
+            {/* Data Management Tab */}
+            {activeTab === "data" && (
+              <div className="space-y-6">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-1">🗺️ Reference Data Management</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">Add, edit, or remove provinces, districts, chiefdoms, and ethnic groups used across the system.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[
+                      { icon: "🗺️", title: "Provinces",    desc: "Manage top-level provinces." },
+                      { icon: "📍", title: "Districts",    desc: "Districts within provinces." },
+                      { icon: "🏘️", title: "Chiefdoms",   desc: "Chiefdoms within districts." },
+                      { icon: "👥", title: "Ethnic Groups", desc: "Ethnic groups reference list." },
+                    ].map(item => (
+                      <div key={item.title} className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
+                        <span className="text-3xl">{item.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm text-gray-800 dark:text-gray-100">{item.title}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => navigate("/admin/geo-management")}
+                    className="mt-5 w-full sm:w-auto px-6 py-3 bg-green-700 hover:bg-green-800 text-white font-bold rounded-xl shadow transition-all active:scale-95"
+                  >
+                    Open Reference Data Manager →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* div>
             )}
 
             {/* Security Tab */}

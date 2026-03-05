@@ -4,6 +4,7 @@ import { ethnicGroupService, type EthnicGroup } from "@/services/ethnicGroup.ser
 import { logger } from "@/utils/logger";
 import PhoneInput from "@/components/PhoneInput";
 import { handleNRCChange, isValidNRC } from "@/utils/nrcFormatter";
+import { useFeedback } from "@/utils/feedback";
 
 const COMPONENT = "Step1Personal";
 
@@ -63,17 +64,25 @@ export default function Step1Personal({ data, onNext, onBack }: Props) {
     }
   };
 
+  const { triggerVibration, triggerSound } = useFeedback();
+
   const handleNext = () => {
     if (!firstName.trim() || !lastName.trim() || !phone.trim()) {
       setErr("First name, last name, and primary phone are required.");
+      triggerVibration("form_error");
+      triggerSound("error");
       return;
     }
     if (!nrc.trim() || !dob.trim() || !gender.trim()) {
       setErr("NRC, Date of Birth, and Gender are required.");
+      triggerVibration("form_error");
+      triggerSound("error");
       return;
     }
     if (!isValidNRC(nrc.trim())) {
       setErr("NRC must be in format: 123456/78/1");
+      triggerVibration("form_error");
+      triggerSound("error");
       return;
     }
     setErr("");

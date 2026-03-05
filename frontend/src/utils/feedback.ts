@@ -1,7 +1,11 @@
 // frontend/src/utils/feedback.ts
 // Sound and vibration feedback utilities for P6 — uses Capacitor Haptics + Web Audio API
 
+import { useState, useEffect, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";
+
+/** Custom DOM event dispatched same-tab when prefs change via saveFeedbackPrefs() */
+const PREFS_CHANGED_EVENT = "cem-feedback-prefs-changed";
 
 // ─── Vibration ───────────────────────────────────────────────────────────────
 
@@ -144,10 +148,20 @@ const SOUND_SEQUENCES: Record<SoundEvent, () => void> = {
  * Play a named sound event via Web Audio API synthesis.
  * No audio files required; silently no-ops if Web Audio is unavailable
  * or soundEnabled is false.
+ * Automatically resumes suspended AudioContext (browser autoplay policy).
  */
 export function playSound(event: SoundEvent, soundEnabled = true): void {
   if (!soundEnabled) return;
   try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    if (ctx.state === "suspended") {
+      // Resume then play once running
+      ctx.resume().then(() => {
+        try { SOUND_SEQUENCES[event]?.(); } catch { /* noop */ }
+      }).catch(() => { /* autoplay blocked */ });
+      return;
+    }
     SOUND_SEQUENCES[event]?.();
   } catch {
     // Web Audio unavailable — swallow silently
@@ -170,22 +184,38 @@ export interface FeedbackPrefs {
  * triggerVibration("qr_success");
  * triggerSound("qr_success");
  */
+/**
+ * useFeedback — reactive hook that responds to pref changes within the same tab
+ * and across tabs (storage events). Callbacks are stable across renders.
+ */
 export function useFeedback(): {
   triggerVibration: (event: VibrationEvent) => void;
   triggerSound: (event: SoundEvent) => void;
   prefs: FeedbackPrefs;
 } {
-  const prefs = loadFeedbackPrefs();
+  const [prefs, setPrefs] = useState<FeedbackPrefs>(loadFeedbackPrefs);
 
-  return {
-    triggerVibration: (event: VibrationEvent) => {
-      vibrate(event, prefs.hapticsEnabled);
-    },
-    triggerSound: (event: SoundEvent) => {
-      playSound(event, prefs.soundEnabled);
-    },
-    prefs,
-  };
+  useEffect(() => {
+    const refresh = () => setPrefs(loadFeedbackPrefs());
+    // Cross-tab updates via Web Storage API
+    window.addEventListener("storage", refresh);
+    // Same-tab updates via custom event dispatched by saveFeedbackPrefs()
+    window.addEventListener(PREFS_CHANGED_EVENT, refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener(PREFS_CHANGED_EVENT, refresh);
+    };
+  }, []);
+
+  const triggerVibration = useCallback((event: VibrationEvent) => {
+    vibrate(event, prefs.hapticsEnabled);
+  }, [prefs.hapticsEnabled]);
+
+  const triggerSound = useCallback((event: SoundEvent) => {
+    playSound(event, prefs.soundEnabled);
+  }, [prefs.soundEnabled]);
+
+  return { triggerVibration, triggerSound, prefs };
 }
 
 // ─── Preference persistence ───────────────────────────────────────────────────
@@ -206,5 +236,7 @@ export function loadFeedbackPrefs(): FeedbackPrefs {
 export function saveFeedbackPrefs(prefs: FeedbackPrefs): void {
   try {
     localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+    // Notify all useFeedback() hooks in the same tab immediately
+    window.dispatchEvent(new CustomEvent(PREFS_CHANGED_EVENT));
   } catch { /* noop */ }
 }

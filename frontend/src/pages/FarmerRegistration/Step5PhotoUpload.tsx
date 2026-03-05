@@ -3,6 +3,7 @@ import { useState } from "react";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
+import { useFeedback } from "@/utils/feedback";
 
 const COMPONENT = "Step5PhotoUpload";
 
@@ -14,6 +15,7 @@ interface Step5Props {
 
 export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Props) {
   const { success, error: showError } = useNotification();
+  const { triggerVibration, triggerSound } = useFeedback();
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -24,10 +26,12 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       showError("Please select an image file (JPG, PNG)");
+      triggerVibration("form_error"); triggerSound("error");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
       showError("File size must be less than 5MB");
+      triggerVibration("form_error"); triggerSound("error");
       return;
     }
     setPhoto(file);
@@ -43,9 +47,11 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
       await farmerService.uploadPhoto(farmerId, photo);
       setUploaded(true);
       success("Photo uploaded successfully!");
+      triggerVibration("doc_approved"); triggerSound("notification");
     } catch (err: any) {
       logger.error(COMPONENT, "photo upload failed", { err });
       showError(err.message || "Failed to upload photo");
+      triggerVibration("form_error"); triggerSound("error");
     } finally {
       setUploading(false);
     }

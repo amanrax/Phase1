@@ -400,6 +400,17 @@ export default function OperatorDashboard() {
                 <StatCard icon="⏳" label="Pending" value={loading ? "—" : stats.pending_farmers} sub="Tap to review" color={stats.pending_farmers > 0 ? "bg-gradient-to-br from-amber-500 to-orange-600" : "bg-gradient-to-br from-gray-400 to-slate-500"} loading={loading} onClick={() => { const el = document.getElementById("pending-section"); if (el) el.scrollIntoView({ behavior: "smooth" }); }} />
                 <StatCard icon="✅" label="Verified" value={loading ? "—" : stats.verified_farmers} sub={`${stats.recent_registrations_30d} this month`} color="bg-gradient-to-br from-blue-500 to-cyan-600" loading={loading} />
                 <StatCard icon="🌾" label="Total Land" value={loading ? "—" : `${stats.total_land_hectares.toFixed(1)}ha`} sub={`Avg: ${stats.avg_land_hectares.toFixed(1)} ha`} color="bg-gradient-to-br from-violet-500 to-purple-600" loading={loading} />
+                {!loading && farmers.filter(f => f.registration_status === "documents_uploaded").length > 0 && (
+                  <StatCard
+                    icon="📋"
+                    label="Docs Review"
+                    value={farmers.filter(f => f.registration_status === "documents_uploaded").length}
+                    sub="Tap to review docs"
+                    color="bg-gradient-to-br from-purple-500 to-pink-600"
+                    loading={loading}
+                    onClick={() => navigate("/farmers?status=documents_uploaded")}
+                  />
+                )}
               </div>
             </div>
 

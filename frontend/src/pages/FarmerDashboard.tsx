@@ -461,6 +461,26 @@ export default function FarmerDashboard() {
             </div>
           )}
 
+          {/* ── Action Banner: prompt to upload docs if not done ─────── */}
+          {!loading && farmerData && (
+            farmerData.registration_status === "registered" ||
+            farmerData.registration_status === "incomplete"
+          ) && (
+            <div className="mx-4 mt-4 rounded-xl border border-amber-400/50 bg-amber-500/20 p-4 flex items-start gap-3">
+              <span className="text-2xl mt-0.5">📄</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-200">Documents Required</p>
+                <p className="text-xs text-amber-300/80 mt-0.5">Your registration is missing documents. Upload your NRC, land title, or other documents to complete verification.</p>
+                <button
+                  onClick={() => navigate(`/farmers/${farmerData.farmer_id}`)}
+                  className="mt-2 px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-white rounded-lg transition active:scale-95"
+                >
+                  Upload Documents →
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* ── Settings Tab ───────────────────────────────────────────── */}
           {activeTab === "settings" && !loading && (
             <div className="mt-5">

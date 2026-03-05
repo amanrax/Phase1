@@ -1,5 +1,7 @@
 // src/pages/FarmerRegistration/Step7Completion.tsx — Step 7: success screen showing new farmer ID and navigation options
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useFeedback } from "@/utils/feedback";
 
 type Props = {
   farmerId: string;
@@ -8,6 +10,14 @@ type Props = {
 
 export default function Step7Completion({ farmerId, farmerName }: Props) {
   const navigate = useNavigate();
+  const { triggerVibration, triggerSound } = useFeedback();
+
+  // Play registration complete feedback once on mount
+  useEffect(() => {
+    triggerVibration("registration_complete");
+    triggerSound("registration_complete");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex flex-col items-center text-center space-y-6 py-8 px-4">

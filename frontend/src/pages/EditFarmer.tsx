@@ -9,6 +9,7 @@ import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
 import Combobox from "@/components/ui/Combobox";
 import axiosClient from "@/utils/axios";
+import { useFeedback } from "@/utils/feedback";
 
 const COMPONENT = "EditFarmer";
 
@@ -64,6 +65,7 @@ export default function EditFarmer() {
   const navigate = useNavigate();
   const { farmerId } = useParams<{ farmerId: string }>();
   const { success: showSuccess, error: showError } = useNotification();
+  const { triggerVibration, triggerSound } = useFeedback();
   
   const [formData, setFormData] = useState<FarmerFormData>({
     first_name: "", last_name: "", phone_primary: "", phone_secondary: "",
@@ -326,11 +328,15 @@ export default function EditFarmer() {
 
       await farmerService.update(farmerId!, payload);
       logger.info(COMPONENT, 'Farmer updated successfully', { farmerId });
+      triggerVibration("registration_complete");
+      triggerSound("registration_complete");
       showSuccess('Farmer updated successfully!', 4000);
       setTimeout(() => navigate(-1), 500);
     } catch (err: unknown) {
       const msg = getErrorMessage(err);
       logger.error(COMPONENT, 'Update failed', { farmerId, error: msg });
+      triggerVibration("form_error");
+      triggerSound("error");
       setError(msg);
       showError(msg, 5000);
     } finally {
