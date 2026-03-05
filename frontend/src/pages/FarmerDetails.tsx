@@ -603,9 +603,6 @@ export default function FarmerDetails() {
             <button onClick={handleDownloadIDCard} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
               ⬇️ Download ID
             </button>
-            <button onClick={handleGenerateQR} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
-              📷 Generate QR
-            </button>
             {qrCodeUrl && (
               <button
                 onClick={() => setQrCodeUrl(null)}

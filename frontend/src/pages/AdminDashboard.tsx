@@ -1,7 +1,6 @@
 // src/pages/AdminDashboard.tsx — Mobile-first modern admin dashboard
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Capacitor } from "@capacitor/core";
 import useAuthStore from "@/store/authStore";
 import { dashboardService } from "@/services/dashboard.service";
 import { operatorService } from "@/services/operator.service";
@@ -337,9 +336,7 @@ export default function AdminDashboard() {
     { icon: "🧑‍💼", label: "Add Operator", bg: "bg-gradient-to-br from-blue-500 to-indigo-600",    onPress: () => { logger.info("AdminDashboard", "QuickAction: Add Operator"); navigate("/operators/manage", { state: { openCreate: true } }); } },
     { icon: "📈", label: "Analytics",    bg: "bg-gradient-to-br from-violet-500 to-purple-600",  onPress: () => { logger.info("AdminDashboard", "QuickAction: Analytics");          navigate("/admin/analytics"); } },
     { icon: "🛒", label: "Supply Req.",  bg: "bg-gradient-to-br from-rose-500 to-pink-600",      onPress: () => { logger.info("AdminDashboard", "QuickAction: Supply Requests");   navigate("/admin/supply-requests"); } },
-    ...(Capacitor.isNativePlatform() ? [
-      { icon: "📷", label: "QR Scan", bg: "bg-gradient-to-br from-amber-500 to-orange-600", onPress: () => { logger.info("AdminDashboard", "QuickAction: QR Scan"); navigate("/qr-scanner"); } },
-    ] : []),
+    { icon: "📷", label: "QR Scan", bg: "bg-gradient-to-br from-amber-500 to-orange-600", onPress: () => { logger.info("AdminDashboard", "QuickAction: QR Scan"); navigate("/qr-scanner"); } },
   ];
 
   const getGreeting = () => {

@@ -1,6 +1,5 @@
 // frontend/src/pages/AdminSettings.tsx - FIXED VERSION
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
 import BackButton from "@/components/BackButton";
 import axios from "@/utils/axios";
 import useAuthStore from "@/store/authStore";
@@ -215,8 +214,308 @@ function AppearanceTab() {
   );
 }
 
+// ─── Inline Geo Data Manager ──────────────────────────────────────────────────
+// Self-contained CRUD for provinces, districts, chiefdoms, ethnic groups
+// embedded directly inside the Settings > Data tab (no page navigation needed)
+
+interface GeoItem { _id: string; name: string; code?: string; province_name?: string; district_name?: string; is_active?: boolean; }
+type GeoTab = "provinces" | "districts" | "chiefdoms" | "ethnic-groups";
+const GEO_TABS: { key: GeoTab; label: string; icon: string }[] = [
+  { key: "provinces",     label: "Provinces",     icon: "🗺️" },
+  { key: "districts",     label: "Districts",     icon: "📍" },
+  { key: "chiefdoms",     label: "Chiefdoms",     icon: "🏘️" },
+  { key: "ethnic-groups", label: "Ethnic Groups", icon: "👥" },
+];
+
+function InlineGeoManager() {
+  const notify = useNotification();
+  const [geoTab, setGeoTab]       = useState<GeoTab>("provinces");
+  const [items, setItems]         = useState<GeoItem[]>([]);
+  const [loading, setLoading]     = useState(false);
+  const [showForm, setShowForm]   = useState(false);
+  const [editItem, setEditItem]   = useState<GeoItem | null>(null);
+  const [formName, setFormName]   = useState("");
+  const [formCode, setFormCode]   = useState("");
+  const [formParent, setFormParent] = useState("");
+  const [saving, setSaving]       = useState(false);
+  const [provinces, setProvinces] = useState<GeoItem[]>([]);
+  const [districts, setDistricts] = useState<GeoItem[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState<GeoItem | null>(null);
+
+  const fetchParents = useCallback(async () => {
+    try {
+      const [p, d] = await Promise.all([
+        axios.get<GeoItem[]>("/admin/geo/provinces"),
+        axios.get<GeoItem[]>("/admin/geo/districts"),
+      ]);
+      setProvinces(p.data);
+      setDistricts(d.data);
+    } catch { /* silent */ }
+  }, []);
+
+  const fetchItems = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await axios.get<GeoItem[]>(`/admin/geo/${geoTab}`);
+      setItems(data);
+    } catch {
+      notify.error("Failed to load data.");
+    } finally {
+      setLoading(false);
+    }
+  }, [geoTab, notify]);
+
+  useEffect(() => { fetchItems(); fetchParents(); }, [fetchItems, fetchParents]);
+
+  const openCreate = () => { setEditItem(null); setFormName(""); setFormCode(""); setFormParent(""); setShowForm(true); };
+  const openEdit = (item: GeoItem) => {
+    setEditItem(item);
+    setFormName(item.name);
+    setFormCode(item.code ?? "");
+    setFormParent(item.province_name ?? item.district_name ?? "");
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!formName.trim()) { notify.error("Name is required."); return; }
+    setSaving(true);
+    try {
+      const body: Record<string, string> = { name: formName.trim() };
+      if (formCode.trim())   body.code = formCode.trim();
+      if (formParent.trim()) {
+        if (geoTab === "districts") body.province_name = formParent.trim();
+        if (geoTab === "chiefdoms") body.district_name = formParent.trim();
+      }
+      if (editItem) {
+        await axios.put(`/admin/geo/${geoTab}/${editItem._id}`, body);
+        notify.success(`${GEO_TABS.find(t => t.key === geoTab)?.label.slice(0, -1)} updated.`);
+      } else {
+        await axios.post(`/admin/geo/${geoTab}`, body);
+        notify.success(`${GEO_TABS.find(t => t.key === geoTab)?.label.slice(0, -1)} created.`);
+      }
+      setShowForm(false);
+      await fetchItems();
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } } };
+      notify.error(e?.response?.data?.detail ?? "Save failed.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (item: GeoItem) => {
+    try {
+      await axios.delete(`/admin/geo/${geoTab}/${item._id}`);
+      notify.success(`"${item.name}" deactivated.`);
+      setConfirmDelete(null);
+      await fetchItems();
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } } };
+      notify.error(e?.response?.data?.detail ?? "Deactivate failed.");
+    }
+  };
+
+  const singularLabel = GEO_TABS.find(t => t.key === geoTab)?.label.replace(/s$/, "") ?? "Entry";
+
+  return (
+    <div className="space-y-4">
+      {/* Confirm Modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-gray-100 dark:border-gray-700">
+            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-1">Deactivate entry?</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+              <strong>"{confirmDelete.name}"</strong> will be marked inactive. Existing farmer records that reference it will not be affected.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => handleDelete(confirmDelete)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition active:scale-95">Deactivate</button>
+              <button onClick={() => setConfirmDelete(null)} className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 transition active:scale-95">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">🗺️ Reference Data Management</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Add, edit, or deactivate reference data used across the system.</p>
+        </div>
+
+        {/* Sub-tabs */}
+        <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60">
+          {GEO_TABS.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => { setGeoTab(tab.key); setShowForm(false); }}
+              className={`flex-shrink-0 px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${
+                geoTab === tab.key
+                  ? "border-green-600 text-green-700 dark:text-green-400 bg-white dark:bg-gray-800"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              }`}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-5">
+          {/* Toolbar */}
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {loading ? "Loading…" : `${items.length} ${GEO_TABS.find(t => t.key === geoTab)?.label}`}
+            </p>
+            <button
+              onClick={openCreate}
+              className="px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-xl shadow transition active:scale-95"
+            >
+              + Add {singularLabel}
+            </button>
+          </div>
+
+          {/* Inline Add/Edit Form */}
+          {showForm && (
+            <div className="mb-5 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
+              <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm">
+                {editItem ? `Edit ${singularLabel}` : `New ${singularLabel}`}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Name *</label>
+                  <input
+                    value={formName}
+                    onChange={e => setFormName(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleSave()}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder={geoTab === "provinces" ? "e.g. Lusaka" : geoTab === "districts" ? "e.g. Kafue" : geoTab === "chiefdoms" ? "e.g. Chieftainess Nkomeshya" : "e.g. Bemba"}
+                    autoFocus
+                  />
+                </div>
+                {geoTab === "provinces" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Code</label>
+                    <input
+                      value={formCode}
+                      onChange={e => setFormCode(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="e.g. LUS"
+                    />
+                  </div>
+                )}
+                {geoTab === "districts" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Province *</label>
+                    <select
+                      value={formParent}
+                      onChange={e => setFormParent(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">— Select Province —</option>
+                      {provinces.map(p => <option key={p._id} value={p.name}>{p.name}</option>)}
+                    </select>
+                  </div>
+                )}
+                {geoTab === "chiefdoms" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">District *</label>
+                    <select
+                      value={formParent}
+                      onChange={e => setFormParent(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">— Select District —</option>
+                      {districts.map(d => <option key={d._id} value={d.name}>{d.name}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60 active:scale-95"
+                >
+                  {saving ? "Saving…" : editItem ? `Update ${singularLabel}` : `Create ${singularLabel}`}
+                </button>
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-semibold rounded-xl transition active:scale-95"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Items table */}
+          {loading ? (
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />)}
+            </div>
+          ) : items.length === 0 ? (
+            <div className="text-center py-12 text-gray-400 dark:text-gray-600">
+              <p className="text-4xl mb-2">{GEO_TABS.find(t => t.key === geoTab)?.icon}</p>
+              <p className="text-sm">No {GEO_TABS.find(t => t.key === geoTab)?.label.toLowerCase()} yet.</p>
+              <button onClick={openCreate} className="mt-3 text-sm font-bold text-green-700 dark:text-green-400">+ Add first {singularLabel.toLowerCase()}</button>
+            </div>
+          ) : (
+            <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-gray-700/50 text-left">
+                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Name</th>
+                    {geoTab === "provinces"  && <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Code</th>}
+                    {geoTab === "districts"  && <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Province</th>}
+                    {geoTab === "chiefdoms"  && <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">District</th>}
+                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Status</th>
+                    <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                  {items.map(item => (
+                    <tr key={item._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                      <td className="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{item.name}</td>
+                      {geoTab === "provinces"  && <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{item.code ?? "—"}</td>}
+                      {geoTab === "districts"  && <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{item.province_name ?? "—"}</td>}
+                      {geoTab === "chiefdoms"  && <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{item.district_name ?? "—"}</td>}
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          item.is_active !== false
+                            ? "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300"
+                            : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                        }`}>
+                          {item.is_active !== false ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={() => openEdit(item)}
+                            className="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/60 font-semibold transition active:scale-95"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete(item)}
+                            disabled={item.is_active === false}
+                            className="px-3 py-1 text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/60 font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                          >
+                            Deactivate
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminSettings() {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SettingsTab>("users");
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
@@ -893,40 +1192,8 @@ export default function AdminSettings() {
               </div>
             )}
 
-            {/* Data Management Tab */}
-            {activeTab === "data" && (
-              <div className="space-y-6">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-1">🗺️ Reference Data Management</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">Add, edit, or remove provinces, districts, chiefdoms, and ethnic groups used across the system.</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {[
-                      { icon: "🗺️", title: "Provinces",    desc: "Manage top-level provinces." },
-                      { icon: "📍", title: "Districts",    desc: "Districts within provinces." },
-                      { icon: "🏘️", title: "Chiefdoms",   desc: "Chiefdoms within districts." },
-                      { icon: "👥", title: "Ethnic Groups", desc: "Ethnic groups reference list." },
-                    ].map(item => (
-                      <div key={item.title} className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
-                        <span className="text-3xl">{item.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-gray-800 dark:text-gray-100">{item.title}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{item.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => navigate("/admin/geo-management")}
-                    className="mt-5 w-full sm:w-auto px-6 py-3 bg-green-700 hover:bg-green-800 text-white font-bold rounded-xl shadow transition-all active:scale-95"
-                  >
-                    Open Reference Data Manager →
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* div>
-            )}
+            {/* Data Management Tab — inline geo management */}
+            {activeTab === "data" && <InlineGeoManager />}
 
             {/* Security Tab */}
             {activeTab === "security" && (

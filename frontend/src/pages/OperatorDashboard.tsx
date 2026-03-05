@@ -1,7 +1,6 @@
 // src/pages/OperatorDashboard.tsx — Mobile-first modern operator dashboard (matches AdminDashboard)
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Capacitor } from "@capacitor/core";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import { operatorService } from "@/services/operator.service";
@@ -113,13 +112,14 @@ function NavItem({ icon, label, active, onClick }: { icon: string; label: string
 }
 
 // ─── Farmer List Item with Review ─────────────────────────────────────────────
-function FarmerItem({ farmer, onClick, onReview }: { farmer: Farmer; onClick: () => void; onReview?: (status: string) => void }) {
+function FarmerItem({ farmer, onClick, showReviewButton }: { farmer: Farmer; onClick: () => void; showReviewButton?: boolean }) {
   const statusColor: Record<string, string> = {
-    verified: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
-    pending:  "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400",
-    registered: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
-    rejected: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
-    inactive: "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400",
+    verified:          "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
+    pending:           "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400",
+    registered:        "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+    documents_uploaded:"bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+    rejected:          "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+    inactive:          "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400",
   };
   const fn = farmer.first_name || farmer.personal_info?.first_name || "Unknown";
   const ln = farmer.last_name || farmer.personal_info?.last_name || "";
@@ -127,6 +127,7 @@ function FarmerItem({ farmer, onClick, onReview }: { farmer: Farmer; onClick: ()
   const phone = farmer.phone_primary || farmer.personal_info?.phone_primary || farmer.primary_phone || farmer.phone || "N/A";
   const status = farmer.is_active !== false ? (farmer.registration_status || "registered") : "inactive";
   const colorClass = statusColor[status.toLowerCase()] || statusColor.registered;
+  const hasDocsToReview = status === "documents_uploaded";
 
   return (
     <div className="flex items-center gap-3 w-full px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700/60 text-left select-none last:border-b-0">
@@ -140,18 +141,17 @@ function FarmerItem({ farmer, onClick, onReview }: { farmer: Farmer; onClick: ()
         </div>
       </button>
       <div className="flex items-center gap-2 flex-shrink-0">
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase whitespace-nowrap ${colorClass}`}>{status}</span>
-        {onReview && (status === "pending" || status === "registered") && (
-          <div className="flex gap-1">
-            <button onClick={() => onReview("verified")} title="Approve"
-              className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center text-green-600 hover:bg-green-200 dark:hover:bg-green-900/60 active:scale-90 transition-all">
-              <span className="text-xs font-bold">✓</span>
-            </button>
-            <button onClick={() => onReview("rejected")} title="Reject"
-              className="w-7 h-7 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-600 hover:bg-red-200 dark:hover:bg-red-900/60 active:scale-90 transition-all">
-              <span className="text-xs font-bold">✕</span>
-            </button>
-          </div>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase whitespace-nowrap ${colorClass}`}>
+          {hasDocsToReview ? "📋 Docs Ready" : status}
+        </span>
+        {showReviewButton && (
+          <button
+            onClick={onClick}
+            title="Review documents before approving"
+            className="px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-bold hover:bg-amber-200 dark:hover:bg-amber-900/60 active:scale-90 transition-all whitespace-nowrap"
+          >
+            Review →
+          </button>
         )}
       </div>
     </div>
@@ -302,18 +302,6 @@ export default function OperatorDashboard() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleReviewFarmer = async (farmerId: string, newStatus: string) => {
-    try {
-      logger.info(COMPONENT, "Reviewing farmer", { farmerId, newStatus });
-      await axios.patch(`/farmers/${farmerId}/review?new_status=${newStatus}`);
-      notify.success(`Farmer ${newStatus === "verified" ? "approved" : "rejected"}`);
-      await loadData(true);
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string } } };
-      notify.error(e?.response?.data?.detail || "Failed to update status");
-    }
-  };
-
   const handleTabChange = (tab: NavTab) => {
     if (tab === "settings") { setShowSettings(true); setActiveTab("settings"); return; }
     setShowSettings(false);
@@ -326,9 +314,7 @@ export default function OperatorDashboard() {
     { icon: "➕", label: "Add Farmer", bg: "bg-gradient-to-br from-emerald-500 to-green-600", onPress: () => navigate("/farmers/create") },
     { icon: "📋", label: "All Farmers", bg: "bg-gradient-to-br from-blue-500 to-indigo-600", onPress: () => navigate("/farmers") },
     { icon: "📈", label: "Analytics", bg: "bg-gradient-to-br from-violet-500 to-purple-600", onPress: () => navigate("/admin/analytics") },
-    ...(Capacitor.isNativePlatform() ? [
-      { icon: "📷", label: "QR Scan", bg: "bg-gradient-to-br from-amber-500 to-orange-600", onPress: () => navigate("/qr-scanner") },
-    ] : []),
+    { icon: "📷", label: "QR Scan", bg: "bg-gradient-to-br from-amber-500 to-orange-600", onPress: () => navigate("/qr-scanner") },
   ];
 
   const getGreeting = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; };
@@ -343,7 +329,9 @@ export default function OperatorDashboard() {
     return fn.toLowerCase().includes(q) || ln.toLowerCase().includes(q) || ph.includes(q) || f.farmer_id.toLowerCase().includes(q);
   });
 
-  const pendingFarmers = farmers.filter(f => f.registration_status === "pending" || f.registration_status === "registered");
+  const pendingFarmers = farmers.filter(f =>
+    ["pending", "registered", "documents_uploaded", "submitted", "under_review"].includes(f.registration_status || "registered")
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -425,10 +413,15 @@ export default function OperatorDashboard() {
             {/* Pending Review */}
             {pendingFarmers.length > 0 && (
               <div className="mt-6" id="pending-section">
-                <SectionHeader title={`Pending Review (${pendingFarmers.length})`} />
+                <SectionHeader title={`Needs Review (${pendingFarmers.length})`} />
+                <div className="mx-4 mb-2">
+                  <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl px-3 py-2">
+                    ℹ️ Tap <strong>Review →</strong> to open the farmer profile and check their documents before updating verification status.
+                  </p>
+                </div>
                 <div className="mx-4 bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-amber-200 dark:border-amber-700/50 shadow-sm">
                   {pendingFarmers.slice(0, 5).map(f => (
-                    <FarmerItem key={f.farmer_id || f._id} farmer={f} onClick={() => navigate(`/farmers/${f.farmer_id}`)} onReview={(s) => handleReviewFarmer(f.farmer_id, s)} />
+                    <FarmerItem key={f.farmer_id || f._id} farmer={f} onClick={() => navigate(`/farmers/${f.farmer_id}`)} showReviewButton />
                   ))}
                   {pendingFarmers.length > 5 && (
                     <button onClick={() => navigate("/farmers?status=pending")} className="w-full py-3 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 active:bg-amber-100 border-t border-amber-200 dark:border-amber-700/50">
@@ -462,7 +455,7 @@ export default function OperatorDashboard() {
               ) : (
                 <div className="mx-4 bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
                   {filteredFarmers.slice(0, 10).map(f => (
-                    <FarmerItem key={f.farmer_id || f._id} farmer={f} onClick={() => navigate(`/farmers/${f.farmer_id}`)} onReview={(s) => handleReviewFarmer(f.farmer_id, s)} />
+                    <FarmerItem key={f.farmer_id || f._id} farmer={f} onClick={() => navigate(`/farmers/${f.farmer_id}`)} />
                   ))}
                   {farmers.length > 10 && (
                     <button onClick={() => navigate("/farmers")} className="w-full py-3 text-xs font-bold text-green-600 dark:text-green-400 bg-gray-50 dark:bg-gray-700/60 active:bg-gray-100 border-t border-gray-100 dark:border-gray-700">
