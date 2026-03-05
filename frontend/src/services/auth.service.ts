@@ -1,6 +1,6 @@
 // Enhanced auth service with better error handling and logging
 import axiosClient from "@/utils/axios";
-import { ensureApiBase, resetProbeCache } from "@/utils/networkProbe";
+import { resetProbeCache } from "@/utils/networkProbe";
 import { getApiBaseUrl } from "@/config/mobile";
 
 export interface LoginResponse {

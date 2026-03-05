@@ -173,6 +173,18 @@ async def update_farmer_verification_status(
 
     await db.farmers.update_one({"farmer_id": farmer_id}, {"$set": update_fields})
 
+    # Append to status_history for audit trail
+    await db.farmers.update_one(
+        {"farmer_id": farmer_id},
+        {"$push": {"status_history": {
+            "status": new_status,
+            "changed_by": reviewer_id,
+            "role": reviewer_role,
+            "notes": notes,
+            "timestamp": datetime.utcnow().isoformat(),
+        }}}
+    )
+
     # On verified: queue Celery ID card regeneration task
     if new_status == "verified":
         try:

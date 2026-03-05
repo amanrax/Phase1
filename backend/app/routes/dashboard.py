@@ -62,7 +62,12 @@ async def get_dashboard_stats(
     rejected_farmers = await db.farmers.count_documents({
         "registration_status": "rejected"
     })
-    
+
+    # Farmers whose documents are uploaded and awaiting operator review
+    docs_pending_review = await db.farmers.count_documents({
+        "registration_status": {"$in": ["documents_uploaded", "under_review"]}
+    })
+
     # Recent farmers (last 5, sorted by creation date)
     recent_farmers_cursor = db.farmers.find({}).sort("created_at", -1).limit(5)
     recent_farmers = await recent_farmers_cursor.to_list(5)
@@ -149,6 +154,7 @@ async def get_dashboard_stats(
     return {
         "farmers": {
             "total": total_farmers,
+            "docs_pending_review": docs_pending_review,
             "active": active_farmers,
             "inactive": total_farmers - active_farmers,
             "verified": verified_farmers,

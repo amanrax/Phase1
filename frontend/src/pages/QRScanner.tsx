@@ -381,6 +381,32 @@ const QRScanner: React.FC = () => {
                 </React.Fragment>
               ))}
             </dl>
+            {/* Share + Scan Again */}
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={async () => {
+                  try {
+                    const { Share } = await import("@capacitor/share");
+                    await Share.share({
+                      title: `Farmer: ${farmerResult.name}`,
+                      text: `CEM Farmer Registration\nName: ${farmerResult.name}\nID: ${farmerResult.farmer_id}\nDistrict: ${farmerResult.district ?? "—"}`,
+                      dialogTitle: "Share Farmer Info",
+                    });
+                  } catch {
+                    /* Share not available on web — silent */ 
+                  }
+                }}
+                className="flex-1 rounded-lg border border-green-600/50 bg-green-800/30 py-2 text-xs font-semibold text-green-300 hover:bg-green-700/40 transition active:scale-95"
+              >
+                ↗ Share
+              </button>
+              <button
+                onClick={reset}
+                className="flex-1 rounded-lg border border-gray-600 bg-gray-800/60 py-2 text-xs font-semibold text-gray-300 hover:bg-gray-700 transition active:scale-95"
+              >
+                📷 Scan Another
+              </button>
+            </div>
           </div>
         )}
 

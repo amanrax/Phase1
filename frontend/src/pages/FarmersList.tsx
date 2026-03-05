@@ -16,9 +16,11 @@ interface Farmer {
   phone_primary?: string;
   first_name?: string;
   last_name?: string;
-  address?: { village?: string; district_name?: string; };
+  address?: { village?: string; district_name?: string; province_name?: string; };
   district?: string;
   district_name?: string;
+  province_name?: string;
+  location?: { district_name?: string; province_name?: string; };
   village?: string;
   nrc?: string;
   national_id?: string;
@@ -43,7 +45,11 @@ function getFarmerPhone(f: Farmer): string {
 }
 
 function getFarmerDistrict(f: Farmer): string {
-  return (f as any).district_name?.trim() || f.district?.trim() || f.address?.district_name?.trim() || "—";
+  return (f as any).district_name?.trim() || f.district?.trim() || f.address?.district_name?.trim() || f.location?.district_name?.trim() || "—";
+}
+
+function getFarmerProvince(f: Farmer): string {
+  return f.province_name?.trim() || (f as any).province?.trim() || f.address?.province_name?.trim() || f.location?.province_name?.trim() || "—";
 }
 
 function formatDate(s?: string): string {
@@ -302,6 +308,8 @@ export default function FarmersList() {
   const [filter,          setFilter]          = useState<FilterType>("all");
   const [searchBy,        setSearchBy]        = useState<SearchField>("name");
   const [searchValue,     setSearchValue]     = useState("");
+  const [provinceFilter,  setProvinceFilter]  = useState<string>("all");
+  const [districtFilter,  setDistrictFilter]  = useState<string>("all");
   const [currentPage,     setCurrentPage]     = useState(0);
   const PAGE_SIZE = 20;
   const [totalCount,      setTotalCount]      = useState(0);
@@ -359,6 +367,12 @@ export default function FarmersList() {
     if (filter === "pending")  result = result.filter(f => ["pending","submitted","under_review","pending_documents"].includes((f.registration_status||"").toLowerCase()));
     if (filter === "inactive") result = result.filter(f => !f.is_active || f.registration_status?.toLowerCase() === "rejected");
 
+    if (provinceFilter !== "all") {
+      result = result.filter(f => getFarmerProvince(f) === provinceFilter);
+    }
+    if (districtFilter !== "all") {
+      result = result.filter(f => getFarmerDistrict(f) === districtFilter);
+    }
     if (searchValue.trim()) {
       const q = searchValue.toLowerCase().trim();
       result = result.filter(f => {
@@ -369,8 +383,8 @@ export default function FarmersList() {
       });
     }
     setFilteredFarmers(result);
-    logger.info("FarmersList", "Filter applied", { filter, searchBy, searchValue, resultCount: result.length });
-  }, [filter, allFarmers, searchBy, searchValue]);
+    logger.info("FarmersList", "Filter applied", { filter, searchBy, searchValue, provinceFilter, districtFilter, resultCount: result.length });
+  }, [filter, allFarmers, searchBy, searchValue, provinceFilter, districtFilter]);
 
   const getCount = (f: FilterType) => {
     if (f === "all")      return allFarmers.length;
@@ -466,6 +480,37 @@ export default function FarmersList() {
             </button>
           ))}
         </div>
+
+        {/* Province + District filters */}
+        {(() => {
+          const provinces = Array.from(new Set(allFarmers.map(getFarmerProvince).filter(p => p !== "—"))).sort();
+          const districts = Array.from(new Set(
+            allFarmers
+              .filter(f => provinceFilter === "all" || getFarmerProvince(f) === provinceFilter)
+              .map(getFarmerDistrict)
+              .filter(d => d !== "—")
+          )).sort();
+          return (
+            <div className="flex gap-2">
+              <select
+                value={provinceFilter}
+                onChange={(e) => { setProvinceFilter(e.target.value); setDistrictFilter("all"); }}
+                className="flex-1 text-xs px-2 py-2 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="all">All Provinces</option>
+                {provinces.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+              <select
+                value={districtFilter}
+                onChange={(e) => setDistrictFilter(e.target.value)}
+                className="flex-1 text-xs px-2 py-2 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="all">All Districts</option>
+                {districts.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+          );
+        })()}
 
         {/* Search */}
         <div className="flex gap-2">

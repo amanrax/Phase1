@@ -53,6 +53,21 @@ function App() {
   const user = useAuthStore((state) => state.user);
   const [showPermissions, setShowPermissions] = useState(false);
 
+  // Offline/online indicator
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  useEffect(() => {
+    const goOnline  = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online",  goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => { window.removeEventListener("online", goOnline); window.removeEventListener("offline", goOffline); };
+  }, []);
+  const OfflineBanner = () => isOnline ? null : (
+    <div className="fixed top-0 inset-x-0 z-[100] bg-red-600 text-white text-center text-xs font-bold py-1.5 px-4 shadow-lg" role="alert">
+      ⚠️ No internet connection — some features may be unavailable
+    </div>
+  );
+
   // ✅ Load user when token is available
   useEffect(() => {
     if (token && !user) {
@@ -95,6 +110,7 @@ function App() {
       <>
         <SessionTimeout />
         <ToastContainer />
+        <OfflineBanner />
         {/* P8 — keyed div restarts page-enter animation on every navigation */}
         <div key={location.pathname} className="page-enter">
         <Suspense fallback={<PageLoader />}>

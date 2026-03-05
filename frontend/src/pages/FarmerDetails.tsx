@@ -95,6 +95,13 @@ interface Farmer {
   created_at?: string;
   updated_at?: string;
   created_by?: string;
+  status_history?: Array<{
+    status: string;
+    changed_by: string;
+    role: string;
+    notes?: string;
+    timestamp: string;
+  }>;
 }
 
 interface ConfirmState {
@@ -150,6 +157,8 @@ interface DocSectionProps {
 
 const DocumentSection = ({ label, docType, docUrl, uploading, onUpload, onDelete }: DocSectionProps) => {
   const isUploading = uploading === docType;
+  const [thumbError, setThumbError] = useState(false);
+  const isPdf = docUrl?.toLowerCase().includes(".pdf") || docUrl?.toLowerCase().includes("application/pdf");
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-gray-50 dark:bg-gray-900/50">
       <div className="flex items-center justify-between mb-3">
@@ -163,6 +172,27 @@ const DocumentSection = ({ label, docType, docUrl, uploading, onUpload, onDelete
           <span className="text-xs text-gray-400 dark:text-gray-600">No file</span>
         )}
       </div>
+      {/* Inline thumbnail preview */}
+      {docUrl && !thumbError && (
+        <div className="mb-3">
+          {isPdf ? (
+            <a href={docUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/40 rounded-lg text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition">
+              <span className="text-lg">📄</span>
+              <span>PDF Document — tap to open</span>
+            </a>
+          ) : (
+            <a href={docUrl} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+              <img
+                src={docUrl}
+                alt={label}
+                onError={() => setThumbError(true)}
+                className="w-full max-h-32 object-cover object-top"
+              />
+            </a>
+          )}
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         {docUrl && (
           <a
@@ -657,8 +687,23 @@ export default function FarmerDetails() {
                 <p className="text-sm text-gray-800 dark:text-gray-100 mt-0.5 whitespace-pre-wrap">{farmer.review_notes}</p>
               </div>
             )}
+            {/* Status history audit trail */}
+            {farmer.status_history && farmer.status_history.length > 0 && (
+              <div className="py-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 block mb-2">Status History</span>
+                <ol className="relative border-l border-gray-200 dark:border-gray-700 ml-2 space-y-3">
+                  {[...farmer.status_history].reverse().map((entry, i) => (
+                    <li key={i} className="ml-4">
+                      <div className="absolute -left-1.5 w-3 h-3 rounded-full border-2 border-white dark:border-gray-800 bg-green-500 dark:bg-green-400" />
+                      <p className="text-xs font-bold text-gray-800 dark:text-gray-100 capitalize">{entry.status.replace(/_/g, " ")}</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400">by {entry.changed_by} ({entry.role}) · {new Date(entry.timestamp).toLocaleString()}</p>
+                      {entry.notes && <p className="text-[10px] text-gray-600 dark:text-gray-300 italic mt-0.5">"{entry.notes}"</p>}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
           </div>
-
           {/* Documents (full-width) */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-indigo-500 sm:col-span-2 lg:col-span-3">
             <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-5">📄 Documents</h2>

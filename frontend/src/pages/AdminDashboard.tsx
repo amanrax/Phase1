@@ -15,6 +15,7 @@ interface Stats {
   totalFarmers: number;
   activeFarmers: number;
   pendingFarmers: number;
+  docsPendingReview: number;
   totalOperators: number;
   activeOperators: number;
   totalUsers: number;
@@ -218,7 +219,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<NavTab>("home");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [stats, setStats] = useState<Stats>({
+  const [stats, setStats] = useState<Stats>({ docsPendingReview: 0,
     totalFarmers: 0, activeFarmers: 0, pendingFarmers: 0,
     totalOperators: 0, activeOperators: 0,
     totalUsers: 0, activeUsers: 0, totalAdmins: 0,
@@ -260,10 +261,11 @@ export default function AdminDashboard() {
       });
 
       setStats({
-        totalFarmers:    statsData?.farmers?.total    ?? 0,
-        activeFarmers:   statsData?.farmers?.active   ?? 0,
-        pendingFarmers:  statsData?.farmers?.pending  ?? 0,
-        totalOperators:  statsData?.operators?.total  ?? 0,
+        totalFarmers:    statsData?.farmers?.total              ?? 0,
+        activeFarmers:   statsData?.farmers?.active              ?? 0,
+        pendingFarmers:  statsData?.farmers?.pending             ?? 0,
+        docsPendingReview: (statsData?.farmers as any)?.docs_pending_review ?? 0,
+        totalOperators:  statsData?.operators?.total             ?? 0,
         activeOperators: statsData?.operators?.active ?? 0,
         totalUsers:      statsData?.users?.total      ?? 0,
         activeUsers:     statsData?.users?.active     ?? 0,
@@ -416,7 +418,7 @@ export default function AdminDashboard() {
         {/* ── Stats Grid ──────────────────────────────────────────────────── */}
         <div className="px-4 mt-5">
           <SectionHeader title="Overview" />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <StatCard
               icon="👥" label="Total Users" value={loading ? "—" : stats.totalUsers}
               sub={`${stats.activeUsers} active · ${stats.totalAdmins} admins`}
@@ -443,6 +445,15 @@ export default function AdminDashboard() {
                 : "bg-gradient-to-br from-gray-400 to-slate-500"}
               loading={loading}
               onClick={() => { logger.info("AdminDashboard", "Stat tapped: Pending"); navigate("/farmers?status=pending"); }}
+            />
+            <StatCard
+              icon="📋" label="Docs Review" value={loading ? "—" : stats.docsPendingReview}
+              sub={stats.docsPendingReview > 0 ? "Awaiting document review" : "All reviewed"}
+              color={stats.docsPendingReview > 0
+                ? "bg-gradient-to-br from-purple-500 to-indigo-600"
+                : "bg-gradient-to-br from-gray-400 to-slate-500"}
+              loading={loading}
+              onClick={() => { logger.info("AdminDashboard", "Stat tapped: DocsReview"); navigate("/farmers?status=documents_uploaded"); }}
             />
           </div>
         </div>
