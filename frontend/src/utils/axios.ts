@@ -36,6 +36,15 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
+    // AbortController cancels produce no response — log at debug level and skip
+    if (
+      error.code === "ERR_CANCELED" ||
+      error.name === "AbortError" ||
+      error.message === "canceled"
+    ) {
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config as AxiosRequestConfig & {
       _retry?: boolean;
     };

@@ -64,9 +64,23 @@ def _ts():
     return datetime.utcnow()
 
 
-def _clean(doc: dict) -> dict:
-    doc["_id"] = str(doc["_id"])
-    return doc
+from bson import ObjectId as _OID
+
+
+import math as _math
+
+
+def _serialize(doc: dict) -> dict:
+    """Recursively convert ObjectId→str and NaN/Inf floats→None for JSON safety."""
+    result = {}
+    for k, v in doc.items():
+        if isinstance(v, _OID):
+            result[k] = str(v)
+        elif isinstance(v, float) and not _math.isfinite(v):
+            result[k] = None  # NaN / Inf from CSV imports
+        else:
+            result[k] = v
+    return result
 
 
 # ── Per-collection normalizers ─────────────────────────────────────────────────
@@ -75,8 +89,8 @@ def _clean(doc: dict) -> dict:
 # We also keep the original field in the doc so public geo.py routes still work.
 
 def _norm_province(doc: dict) -> dict:
-    doc["_id"] = str(doc["_id"])
-    if "name" not in doc:
+    doc = _serialize(doc)
+    if "name" not in doc or not doc["name"]:
         doc["name"] = doc.get("province_name", "")
     if "code" not in doc:
         doc["code"] = doc.get("province_code")
@@ -84,16 +98,22 @@ def _norm_province(doc: dict) -> dict:
 
 
 def _norm_district(doc: dict) -> dict:
-    doc["_id"] = str(doc["_id"])
-    if "name" not in doc:
+    doc = _serialize(doc)
+    if "name" not in doc or not doc["name"]:
         doc["name"] = doc.get("district_name", "")
     return doc
 
 
 def _norm_chiefdom(doc: dict) -> dict:
-    doc["_id"] = str(doc["_id"])
-    if "name" not in doc:
-        doc["name"] = doc.get("chiefdom_name", "")
+    doc = _serialize(doc)
+    if "name" not in doc or not doc["name"]:
+        # DB stores chief_name (e.g. "Chief Banda"); fall back to chiefdom_name
+        doc["name"] = doc.get("chief_name") or doc.get("chiefdom_name", "")
+    return doc
+
+
+def _norm_ethnic(doc: dict) -> dict:
+    doc = _serialize(doc)
     return doc
 
 
@@ -270,7 +290,7 @@ async def list_chiefdoms_admin(
     flt: dict = {} if include_inactive else {"is_active": {"$ne": False}}
     if district_name:
         flt["district_name"] = district_name
-    docs = await db.chiefdoms.find(flt).sort("chiefdom_name", 1).to_list(2000)
+    docs = await db.chiefdoms.find(flt).sort("chief_name", 1).to_list(2000)
     return [_norm_chiefdom(d) for d in docs]
 
 
@@ -348,7 +368,7 @@ async def list_ethnic_groups_admin(
 ):
     flt = {} if include_inactive else {"is_active": {"$ne": False}}
     docs = await db.ethnic_groups.find(flt).sort("name", 1).to_list(500)
-    return [_clean(d) for d in docs]
+    return [_norm_ethnic(d) for d in docs]
 
 
 @router.post("/ethnic-groups", dependencies=_ADMIN_ONLY, status_code=status.HTTP_201_CREATED)
