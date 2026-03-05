@@ -28,6 +28,17 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "ethnic-groups", label: "Ethnic Groups", icon: "👥" },
 ];
 
+function matchesSearch(item: GeoItem, q: string): boolean {
+  if (!q) return true;
+  const lq = q.toLowerCase();
+  return (
+    item.name.toLowerCase().includes(lq) ||
+    (item.code ?? "").toLowerCase().includes(lq) ||
+    (item.province_name ?? "").toLowerCase().includes(lq) ||
+    (item.district_name ?? "").toLowerCase().includes(lq)
+  );
+}
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export default function AdminGeoManagement() {
@@ -49,6 +60,7 @@ export default function AdminGeoManagement() {
   const [provinces, setProvinces]   = useState<GeoItem[]>([]);
   const [districts, setDistricts]   = useState<GeoItem[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Merged fetch: items + parent dropdowns for current tab.
   // AbortController ensures StrictMode double-mount doesn't leave ghost requests.
@@ -156,7 +168,7 @@ export default function AdminGeoManagement() {
         {TABS.map(tab => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => { setActiveTab(tab.key); setSearchQuery(""); }}
             className={`flex-shrink-0 px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${
               activeTab === tab.key
                 ? "border-green-600 text-green-700 dark:text-green-400"
@@ -169,17 +181,38 @@ export default function AdminGeoManagement() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Toolbar */}
-        <div className="flex justify-between items-center mb-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {items.length} {activeTab.replace("-", " ")}
-          </p>
-          <button
-            onClick={openCreate}
-            className="px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-xl shadow transition active:scale-95"
-          >
-            + Add {TABS.find(t => t.key === activeTab)?.label.slice(0, -1)}
-          </button>
+        {/* Toolbar: search + count + add */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">🔍</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder={`Search ${activeTab.replace("-", " ")}…`}
+              className="w-full pl-9 pr-9 py-2 text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs font-bold"
+                aria-label="Clear search"
+              >✕</button>
+            )}
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <p className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+              {searchQuery
+                ? `${items.filter(i => matchesSearch(i, searchQuery)).length} of ${items.length}`
+                : `${items.length} ${activeTab.replace("-", " ")}`}
+            </p>
+            <button
+              onClick={openCreate}
+              className="px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-xl shadow transition active:scale-95"
+            >
+              + Add {TABS.find(t => t.key === activeTab)?.label.slice(0, -1)}
+            </button>
+          </div>
         </div>
 
         {/* Inline Add/Edit Form */}
@@ -266,10 +299,11 @@ export default function AdminGeoManagement() {
               <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
             ))}
           </div>
-        ) : items.length === 0 ? (
+        ) : (() => { const filtered = items.filter(i => matchesSearch(i, searchQuery)); return filtered.length === 0 ? (
           <div className="text-center py-16 text-gray-400 dark:text-gray-600">
             <p className="text-5xl mb-3">🗺️</p>
-            <p className="text-sm">No entries yet. Add one above.</p>
+            <p className="text-sm">{searchQuery ? `No results for "${searchQuery}"` : "No entries yet. Add one above."}</p>
+            {searchQuery && <button onClick={() => setSearchQuery("")} className="mt-3 text-sm font-bold text-green-700 dark:text-green-400">Clear search</button>}
           </div>
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden border border-gray-200 dark:border-gray-700">
@@ -285,7 +319,7 @@ export default function AdminGeoManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {items.map(item => (
+                {filtered.map(item => (
                   <tr key={item._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                     <td className="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{item.name}</td>
                     {activeTab === "provinces"  && <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{item.code ?? "—"}</td>}
@@ -322,7 +356,7 @@ export default function AdminGeoManagement() {
               </tbody>
             </table>
           </div>
-        )}
+        ); })()}
       </div>
     </div>
   );

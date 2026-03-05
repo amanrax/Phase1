@@ -30,7 +30,8 @@ type ScanStatus =
   | "checking_permission"
   | "permission_denied"
   | "permission_permanent"
-  | "camera_open"
+  | "camera_open"        // native Capacitor
+  | "web_camera_open"   // web browser getUserMedia
   | "loading"
   | "result"
   | "error";
@@ -127,6 +128,49 @@ const CameraOverlay: React.FC<CameraOverlayProps> = ({ onCancel }) => (
   </div>
 );
 
+// ─── Web camera overlay (browser getUserMedia — shown in place of native) ────
+
+interface WebCameraOverlayProps {
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+  hasBarcodeDetector: boolean;
+  onCancel: () => void;
+}
+
+const WebCameraOverlay: React.FC<WebCameraOverlayProps> = ({ videoRef, hasBarcodeDetector, onCancel }) => (
+  <div className="fixed inset-0 z-50 bg-black flex flex-col overflow-hidden">
+    {/* Live camera feed */}
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      muted
+      className="absolute inset-0 w-full h-full object-cover"
+    />
+    {/* UI overlay on top of video */}
+    <div className="relative z-10 flex flex-col items-center justify-between h-full py-14 px-6">
+      <div className="w-full flex items-center justify-between">
+        <p className="text-white text-lg font-bold drop-shadow-lg">📷 Scan QR Code</p>
+        <button
+          onClick={onCancel}
+          className="bg-black/60 hover:bg-black/80 text-white rounded-full px-5 py-2 text-sm font-bold transition active:scale-95"
+          aria-label="Cancel scan"
+        >
+          ✕ Cancel
+        </button>
+      </div>
+      <div className="flex flex-col items-center gap-5">
+        <TargetingFrame />
+        <p className="text-white text-sm font-medium text-center drop-shadow-lg px-6">
+          {hasBarcodeDetector
+            ? "Point camera at a farmer QR code"
+            : "Position QR code in frame — tap scan icon to capture"}
+        </p>
+      </div>
+      <p className="text-white/50 text-xs text-center">Tap Cancel to stop scanning</p>
+    </div>
+  </div>
+);
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const QRScanner: React.FC = () => {
@@ -143,6 +187,19 @@ const QRScanner: React.FC = () => {
 
   const bsRef = useRef<BS | null>(null);
 
+  // ── Web camera refs ──────────────────────────────────────────────────────────
+  const videoRef  = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafRef    = useRef<number>(0);
+
+  function stopWebCamera() {
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0; }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+  }
+
   useEffect(() => {
     return () => {
       if (bsRef.current) {
@@ -150,8 +207,13 @@ const QRScanner: React.FC = () => {
         bsRef.current.stopScan?.();
         bsRef.current = null;
       }
+      stopWebCamera();
     };
   }, []);
+
+  // ── Attach stream + start BarcodeDetector loop when web camera opens ─────────
+  // (defined AFTER lookupFarmer so the closure captures it correctly)
+
 
   const cancelScan = useCallback(async () => {
     try {
@@ -161,6 +223,42 @@ const QRScanner: React.FC = () => {
     bsRef.current = null;
     setStatus("idle");
     logger.info(COMPONENT, "scan cancelled");
+  }, []);
+
+  const cancelWebScan = useCallback(() => {
+    stopWebCamera();
+    setStatus("idle");
+    logger.info(COMPONENT, "web camera scan cancelled");
+  }, []);
+
+  const startWebCameraScan = useCallback(async () => {
+    setErrorMessage("");
+    setFarmerResult(null);
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setStatus("error");
+      setErrorMessage("Camera not supported on this browser. Use manual entry below.");
+      return;
+    }
+
+    setStatus("checking_permission");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      });
+      streamRef.current = stream;
+      logger.info(COMPONENT, "web camera stream obtained");
+      setStatus("web_camera_open");
+    } catch (err: unknown) {
+      const e = err as { name?: string };
+      logger.warn(COMPONENT, "getUserMedia failed", { name: e?.name });
+      if (e?.name === "NotAllowedError" || e?.name === "PermissionDeniedError") {
+        setStatus("permission_denied");
+      } else {
+        setStatus("error");
+        setErrorMessage("Could not open camera. Try manual entry below.");
+      }
+    }
   }, []);
 
   const lookupFarmer = useCallback(async (rawValue: string) => {
@@ -221,8 +319,8 @@ const QRScanner: React.FC = () => {
     setFarmerResult(null);
 
     if (!Capacitor.isNativePlatform()) {
-      setStatus("error");
-      setErrorMessage("Camera scanning is only available in the mobile app. Use manual entry below.");
+      // On web/browser (including mobile browser): use getUserMedia
+      startWebCameraScan();
       return;
     }
 
@@ -288,7 +386,51 @@ const QRScanner: React.FC = () => {
       setStatus("error");
       setErrorMessage("Camera error. Use manual entry below.");
     }
-  }, [lookupFarmer]);
+  }, [lookupFarmer, startWebCameraScan]);
+
+  // ── Attach stream + start BarcodeDetector loop when web camera opens ─────────
+  // Placed AFTER lookupFarmer so useEffect closure captures the latest version.
+  useEffect(() => {
+    if (status !== "web_camera_open") return;
+    const video = videoRef.current;
+    if (!video || !streamRef.current) return;
+
+    video.srcObject = streamRef.current;
+    video.play().catch(() => {});
+
+    // @ts-ignore — BarcodeDetector not yet in TypeScript lib
+    if (!("BarcodeDetector" in window)) return; // live auto-decode unavailable; user sees video feed
+
+    // @ts-ignore
+    const detector = new (window as Record<string, unknown>).BarcodeDetector({ formats: ["qr_code"] }) as {
+      detect: (source: HTMLCanvasElement) => Promise<{ rawValue: string }[]>;
+    };
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+
+    let raf: number;
+    const tick = async () => {
+      if (!streamRef.current) return;
+      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0) {
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        try {
+          const codes = await detector.detect(canvas);
+          if (codes.length > 0) {
+            stopWebCamera();
+            lookupFarmer(codes[0].rawValue);
+            return;
+          }
+        } catch { /* frame error — continue */ }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    rafRef.current = raf;
+    return () => { cancelAnimationFrame(raf); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, lookupFarmer]); // status + lookupFarmer are the correct deps here
 
   const handleManualLookup = useCallback(() => {
     if (manualId.trim()) lookupFarmer(manualId.trim());
@@ -296,8 +438,19 @@ const QRScanner: React.FC = () => {
 
   const reset = () => { setStatus("idle"); setFarmerResult(null); setErrorMessage(""); setManualId(""); };
 
-  // ── Render: full-screen camera overlay
+  // ── Render: full-screen native camera overlay
   if (status === "camera_open") return <CameraOverlay onCancel={cancelScan} />;
+
+  // ── Render: web camera overlay  
+  if (status === "web_camera_open") {
+    return (
+      <WebCameraOverlay
+        videoRef={videoRef}
+        hasBarcodeDetector={"BarcodeDetector" in window}
+        onCancel={cancelWebScan}
+      />
+    );
+  }
 
   // ── Render: permanently denied
   if (status === "permission_permanent") {
@@ -432,7 +585,7 @@ const QRScanner: React.FC = () => {
                 onClick={startCameraScan}
                 className="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 active:scale-95 transition"
               >
-                {Capacitor.isNativePlatform() ? "📷 Open Camera Scanner" : "📷 Scan QR Code"}
+                📷 Open Camera Scanner
               </button>
             ) : status !== "permission_denied" ? (
               <button onClick={reset}

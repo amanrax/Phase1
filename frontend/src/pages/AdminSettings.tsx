@@ -227,6 +227,17 @@ const GEO_TABS: { key: GeoTab; label: string; icon: string }[] = [
   { key: "ethnic-groups", label: "Ethnic Groups", icon: "👥" },
 ];
 
+function matchesSearch(item: GeoItem, q: string): boolean {
+  if (!q) return true;
+  const lq = q.toLowerCase();
+  return (
+    item.name.toLowerCase().includes(lq) ||
+    (item.code ?? "").toLowerCase().includes(lq) ||
+    (item.province_name ?? "").toLowerCase().includes(lq) ||
+    (item.district_name ?? "").toLowerCase().includes(lq)
+  );
+}
+
 function InlineGeoManager() {
   const notify = useNotification();
   const [geoTab, setGeoTab]       = useState<GeoTab>("provinces");
@@ -242,6 +253,7 @@ function InlineGeoManager() {
   const [districts, setDistricts] = useState<GeoItem[]>([]);
   const [confirmDelete, setConfirmDelete] = useState<GeoItem | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Merged fetch: loads the active tab's items + any parent lookups needed for dropdowns.
   // Uses AbortController for StrictMode-safe cleanup (prevents in-flight ghost requests).
@@ -360,7 +372,7 @@ function InlineGeoManager() {
           {GEO_TABS.map(tab => (
             <button
               key={tab.key}
-              onClick={() => { setGeoTab(tab.key); setShowForm(false); }}
+              onClick={() => { setGeoTab(tab.key); setShowForm(false); setSearchQuery(""); }}
               className={`flex-shrink-0 px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${
                 geoTab === tab.key
                   ? "border-green-600 text-green-700 dark:text-green-400 bg-white dark:bg-gray-800"
@@ -374,16 +386,39 @@ function InlineGeoManager() {
 
         <div className="p-5">
           {/* Toolbar */}
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {loading ? "Loading…" : `${items.length} ${GEO_TABS.find(t => t.key === geoTab)?.label}`}
-            </p>
-            <button
-              onClick={openCreate}
-              className="px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-xl shadow transition active:scale-95"
-            >
-              + Add {singularLabel}
-            </button>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            {/* Search */}
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">🔍</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder={`Search ${GEO_TABS.find(t => t.key === geoTab)?.label.toLowerCase()}…`}
+                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs font-bold"
+                  aria-label="Clear search"
+                >✕</button>
+              )}
+            </div>
+            {/* Count + Add */}
+            <div className="flex items-center gap-3 shrink-0">
+              <p className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                {loading ? "Loading…" : searchQuery
+                  ? `${items.filter(i => matchesSearch(i, searchQuery)).length} of ${items.length}`
+                  : `${items.length} ${GEO_TABS.find(t => t.key === geoTab)?.label}`}
+              </p>
+              <button
+                onClick={openCreate}
+                className="px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-xl shadow transition active:scale-95"
+              >
+                + Add {singularLabel}
+              </button>
+            </div>
           </div>
 
           {/* Inline Add/Edit Form */}
@@ -461,15 +496,17 @@ function InlineGeoManager() {
           )}
 
           {/* Items table */}
-          {loading ? (
+          {(() => { const filtered = items.filter(i => matchesSearch(i, searchQuery)); return (
+          loading ? (
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />)}
             </div>
-          ) : items.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <div className="text-center py-12 text-gray-400 dark:text-gray-600">
               <p className="text-4xl mb-2">{GEO_TABS.find(t => t.key === geoTab)?.icon}</p>
-              <p className="text-sm">No {GEO_TABS.find(t => t.key === geoTab)?.label.toLowerCase()} yet.</p>
-              <button onClick={openCreate} className="mt-3 text-sm font-bold text-green-700 dark:text-green-400">+ Add first {singularLabel.toLowerCase()}</button>
+              <p className="text-sm">{searchQuery ? `No results for "${searchQuery}"` : `No ${GEO_TABS.find(t => t.key === geoTab)?.label.toLowerCase()} yet.`}</p>
+              {!searchQuery && <button onClick={openCreate} className="mt-3 text-sm font-bold text-green-700 dark:text-green-400">+ Add first {singularLabel.toLowerCase()}</button>}
+              {searchQuery && <button onClick={() => setSearchQuery("")} className="mt-3 text-sm font-bold text-green-700 dark:text-green-400">Clear search</button>}
             </div>
           ) : (
             <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
@@ -485,7 +522,7 @@ function InlineGeoManager() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                  {items.map(item => (
+                  {filtered.map(item => (
                     <tr key={item._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                       <td className="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{item.name}</td>
                       {geoTab === "provinces"  && <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{item.code ?? "—"}</td>}
@@ -522,7 +559,8 @@ function InlineGeoManager() {
                 </tbody>
               </table>
             </div>
-          )}
+          )
+          ); })()}
         </div>
       </div>
     </div>
