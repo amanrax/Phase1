@@ -69,6 +69,34 @@ def _clean(doc: dict) -> dict:
     return doc
 
 
+# ── Per-collection normalizers ─────────────────────────────────────────────────
+# The DB uses province_name/province_code, district_name, chiefdom_name.
+# The admin UI expects a uniform {name, code} shape, so we map here.
+# We also keep the original field in the doc so public geo.py routes still work.
+
+def _norm_province(doc: dict) -> dict:
+    doc["_id"] = str(doc["_id"])
+    if "name" not in doc:
+        doc["name"] = doc.get("province_name", "")
+    if "code" not in doc:
+        doc["code"] = doc.get("province_code")
+    return doc
+
+
+def _norm_district(doc: dict) -> dict:
+    doc["_id"] = str(doc["_id"])
+    if "name" not in doc:
+        doc["name"] = doc.get("district_name", "")
+    return doc
+
+
+def _norm_chiefdom(doc: dict) -> dict:
+    doc["_id"] = str(doc["_id"])
+    if "name" not in doc:
+        doc["name"] = doc.get("chiefdom_name", "")
+    return doc
+
+
 async def _count_farmer_refs(db, field: str, value: str) -> int:
     """Count active farmers that reference an entity by name."""
     return await db.farmers.count_documents({"address." + field: value, "is_active": True})
@@ -82,16 +110,26 @@ async def list_provinces_admin(
     db=Depends(get_db),
 ):
     flt = {} if include_inactive else {"is_active": {"$ne": False}}
-    docs = await db.provinces.find(flt).sort("name", 1).to_list(500)
-    return [_clean(d) for d in docs]
+    # Sort by whichever name field exists in the collection
+    docs = await db.provinces.find(flt).sort("province_name", 1).to_list(500)
+    return [_norm_province(d) for d in docs]
 
 
 @router.post("/provinces", dependencies=_ADMIN_ONLY, status_code=status.HTTP_201_CREATED)
 async def create_province(body: ProvinceCreate, db=Depends(get_db)):
-    existing = await db.provinces.find_one({"name": body.name})
+    existing = await db.provinces.find_one(
+        {"$or": [{"province_name": body.name}, {"name": body.name}]}
+    )
     if existing:
         raise HTTPException(status_code=400, detail="Province already exists")
-    doc = {**body.model_dump(), "is_active": True, "created_at": _ts()}
+    doc = {
+        "name": body.name,
+        "province_name": body.name,   # keeps compatibility with geo.py public routes
+        "code": body.code,
+        "province_code": body.code or "",
+        "is_active": True,
+        "created_at": _ts(),
+    }
     result = await db.provinces.insert_one(doc)
     doc["_id"] = str(result.inserted_id)
     return doc
@@ -104,7 +142,13 @@ async def update_province(province_id: str, body: ProvinceUpdate, db=Depends(get
         oid = ObjectId(province_id)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid province_id")
-    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    updates: dict = {}
+    if body.name is not None:
+        updates["name"] = body.name
+        updates["province_name"] = body.name
+    if body.code is not None:
+        updates["code"] = body.code
+        updates["province_code"] = body.code
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
     updates["updated_at"] = _ts()
@@ -124,7 +168,8 @@ async def soft_delete_province(province_id: str, db=Depends(get_db)):
     doc = await db.provinces.find_one({"_id": oid})
     if not doc:
         raise HTTPException(status_code=404, detail="Province not found")
-    refs = await _count_farmer_refs(db, "province_name", doc.get("name", ""))
+    name = doc.get("province_name") or doc.get("name", "")
+    refs = await _count_farmer_refs(db, "province_name", name)
     if refs > 0:
         raise HTTPException(
             status_code=409,
@@ -145,16 +190,25 @@ async def list_districts_admin(
     flt: dict = {} if include_inactive else {"is_active": {"$ne": False}}
     if province_name:
         flt["province_name"] = province_name
-    docs = await db.districts.find(flt).sort("name", 1).to_list(1000)
-    return [_clean(d) for d in docs]
+    docs = await db.districts.find(flt).sort("district_name", 1).to_list(1000)
+    return [_norm_district(d) for d in docs]
 
 
 @router.post("/districts", dependencies=_ADMIN_ONLY, status_code=status.HTTP_201_CREATED)
 async def create_district(body: DistrictCreate, db=Depends(get_db)):
-    existing = await db.districts.find_one({"name": body.name, "province_name": body.province_name})
+    existing = await db.districts.find_one(
+        {"$or": [{"district_name": body.name}, {"name": body.name}],
+         "province_name": body.province_name}
+    )
     if existing:
         raise HTTPException(status_code=400, detail="District already exists in this province")
-    doc = {**body.model_dump(), "is_active": True, "created_at": _ts()}
+    doc = {
+        "name": body.name,
+        "district_name": body.name,   # keeps compatibility with geo.py public routes
+        "province_name": body.province_name or "",
+        "is_active": True,
+        "created_at": _ts(),
+    }
     result = await db.districts.insert_one(doc)
     doc["_id"] = str(result.inserted_id)
     return doc
@@ -167,7 +221,14 @@ async def update_district(district_id: str, body: DistrictUpdate, db=Depends(get
         oid = ObjectId(district_id)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid district_id")
-    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    updates: dict = {}
+    if body.name is not None:
+        updates["name"] = body.name
+        updates["district_name"] = body.name
+    if body.province_name is not None:
+        updates["province_name"] = body.province_name
+    if body.province_id is not None:
+        updates["province_id"] = body.province_id
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
     updates["updated_at"] = _ts()
@@ -187,7 +248,8 @@ async def soft_delete_district(district_id: str, db=Depends(get_db)):
     doc = await db.districts.find_one({"_id": oid})
     if not doc:
         raise HTTPException(status_code=404, detail="District not found")
-    refs = await _count_farmer_refs(db, "district_name", doc.get("name", ""))
+    name = doc.get("district_name") or doc.get("name", "")
+    refs = await _count_farmer_refs(db, "district_name", name)
     if refs > 0:
         raise HTTPException(
             status_code=409,
@@ -208,16 +270,25 @@ async def list_chiefdoms_admin(
     flt: dict = {} if include_inactive else {"is_active": {"$ne": False}}
     if district_name:
         flt["district_name"] = district_name
-    docs = await db.chiefdoms.find(flt).sort("name", 1).to_list(2000)
-    return [_clean(d) for d in docs]
+    docs = await db.chiefdoms.find(flt).sort("chiefdom_name", 1).to_list(2000)
+    return [_norm_chiefdom(d) for d in docs]
 
 
 @router.post("/chiefdoms", dependencies=_ADMIN_ONLY, status_code=status.HTTP_201_CREATED)
 async def create_chiefdom(body: ChiefdomCreate, db=Depends(get_db)):
-    existing = await db.chiefdoms.find_one({"name": body.name, "district_name": body.district_name})
+    existing = await db.chiefdoms.find_one(
+        {"$or": [{"chiefdom_name": body.name}, {"name": body.name}],
+         "district_name": body.district_name}
+    )
     if existing:
         raise HTTPException(status_code=400, detail="Chiefdom already exists in this district")
-    doc = {**body.model_dump(), "is_active": True, "created_at": _ts()}
+    doc = {
+        "name": body.name,
+        "chiefdom_name": body.name,   # keeps compatibility with geo.py public routes
+        "district_name": body.district_name or "",
+        "is_active": True,
+        "created_at": _ts(),
+    }
     result = await db.chiefdoms.insert_one(doc)
     doc["_id"] = str(result.inserted_id)
     return doc
@@ -230,7 +301,14 @@ async def update_chiefdom(chiefdom_id: str, body: ChiefdomUpdate, db=Depends(get
         oid = ObjectId(chiefdom_id)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid chiefdom_id")
-    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    updates: dict = {}
+    if body.name is not None:
+        updates["name"] = body.name
+        updates["chiefdom_name"] = body.name
+    if body.district_name is not None:
+        updates["district_name"] = body.district_name
+    if body.district_id is not None:
+        updates["district_id"] = body.district_id
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
     updates["updated_at"] = _ts()
@@ -250,7 +328,8 @@ async def soft_delete_chiefdom(chiefdom_id: str, db=Depends(get_db)):
     doc = await db.chiefdoms.find_one({"_id": oid})
     if not doc:
         raise HTTPException(status_code=404, detail="Chiefdom not found")
-    refs = await _count_farmer_refs(db, "chiefdom_name", doc.get("name", ""))
+    name = doc.get("chiefdom_name") or doc.get("name", "")
+    refs = await _count_farmer_refs(db, "chiefdom_name", name)
     if refs > 0:
         raise HTTPException(
             status_code=409,
