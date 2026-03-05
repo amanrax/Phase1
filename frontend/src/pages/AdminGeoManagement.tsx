@@ -1,6 +1,6 @@
 // frontend/src/pages/AdminGeoManagement.tsx
 // Admin-only geo-data management — provinces, districts, chiefdoms, ethnic groups (P4)
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import BackButton from "@/components/BackButton";
 import axiosClient from "@/utils/axios";
 import { useNotification } from "@/contexts/NotificationContext";
@@ -48,34 +48,44 @@ export default function AdminGeoManagement() {
   // parent lists for dropdowns
   const [provinces, setProvinces]   = useState<GeoItem[]>([]);
   const [districts, setDistricts]   = useState<GeoItem[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchParents = useCallback(async () => {
-    try {
-      const [p, d] = await Promise.all([
-        axiosClient.get<GeoItem[]>("/admin/geo/provinces"),
-        axiosClient.get<GeoItem[]>("/admin/geo/districts"),
-      ]);
-      setProvinces(p.data);
-      setDistricts(d.data);
-    } catch { /* silent */ }
-  }, []);
+  // Merged fetch: items + parent dropdowns for current tab.
+  // AbortController ensures StrictMode double-mount doesn't leave ghost requests.
+  useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
 
-  const fetchItems = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data } = await axiosClient.get<GeoItem[]>(`/admin/geo/${activeTab}`);
-      setItems(data);
-      logger.info(COMPONENT, `Loaded ${activeTab}`, { count: data.length });
-    } catch {
-      showError("Failed to load data.");
-    } finally {
-      setLoading(false);
-    }
+    const run = async () => {
+      setLoading(true);
+      try {
+        const { data } = await axiosClient.get<GeoItem[]>(`/admin/geo/${activeTab}`, { signal });
+        if (!signal.aborted) {
+          setItems(data);
+          logger.info(COMPONENT, `Loaded ${activeTab}`, { count: data.length });
+        }
+
+        if (activeTab === "districts" && !signal.aborted) {
+          const { data: p } = await axiosClient.get<GeoItem[]>("/admin/geo/provinces", { signal });
+          if (!signal.aborted) setProvinces(p);
+        } else if (activeTab === "chiefdoms" && !signal.aborted) {
+          const [{ data: p }, { data: d }] = await Promise.all([
+            axiosClient.get<GeoItem[]>("/admin/geo/provinces", { signal }),
+            axiosClient.get<GeoItem[]>("/admin/geo/districts", { signal }),
+          ]);
+          if (!signal.aborted) { setProvinces(p); setDistricts(d); }
+        }
+      } catch (e: unknown) {
+        if (!signal.aborted) showError("Failed to load data.");
+      } finally {
+        if (!signal.aborted) setLoading(false);
+      }
+    };
+
+    run();
+    return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]); // showError intentionally omitted — not stable across renders
-
-  useEffect(() => { fetchItems(); }, [fetchItems]);
-  useEffect(() => { fetchParents(); }, [fetchParents]);
+  }, [activeTab, refreshKey]); // showError intentionally omitted — not stable across renders
 
   const openCreate = () => {
     setEditItem(null);
@@ -112,7 +122,7 @@ export default function AdminGeoManagement() {
         showSuccess("Created successfully.");
       }
       setShowForm(false);
-      await fetchItems();
+      setRefreshKey(k => k + 1);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       showError(e?.response?.data?.detail ?? "Save failed.");
@@ -126,7 +136,7 @@ export default function AdminGeoManagement() {
     try {
       await axiosClient.delete(`/admin/geo/${activeTab}/${item._id}`);
       showSuccess("Deactivated (soft delete).");
-      await fetchItems();
+      setRefreshKey(k => k + 1);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       showError(e?.response?.data?.detail ?? "Delete failed.");

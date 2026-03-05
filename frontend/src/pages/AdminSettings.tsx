@@ -1,5 +1,5 @@
 // frontend/src/pages/AdminSettings.tsx - FIXED VERSION
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import BackButton from "@/components/BackButton";
 import axios from "@/utils/axios";
 import useAuthStore from "@/store/authStore";
@@ -241,35 +241,45 @@ function InlineGeoManager() {
   const [provinces, setProvinces] = useState<GeoItem[]>([]);
   const [districts, setDistricts] = useState<GeoItem[]>([]);
   const [confirmDelete, setConfirmDelete] = useState<GeoItem | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchParents = useCallback(async () => {
-    try {
-      const [p, d] = await Promise.all([
-        axios.get<GeoItem[]>("/admin/geo/provinces"),
-        axios.get<GeoItem[]>("/admin/geo/districts"),
-      ]);
-      setProvinces(p.data);
-      setDistricts(d.data);
-    } catch { /* silent */ }
-  }, []);
+  // Merged fetch: loads the active tab's items + any parent lookups needed for dropdowns.
+  // Uses AbortController for StrictMode-safe cleanup (prevents in-flight ghost requests).
+  useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
 
-  const fetchItems = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data } = await axios.get<GeoItem[]>(`/admin/geo/${geoTab}`);
-      setItems(data);
-    } catch {
-      notify.error("Failed to load data.");
-    } finally {
-      setLoading(false);
-    }
+    const run = async () => {
+      setLoading(true);
+      try {
+        const { data } = await axios.get<GeoItem[]>(`/admin/geo/${geoTab}`, { signal });
+        if (!signal.aborted) setItems(data);
+
+        // Load parent dropdowns only when needed
+        if (geoTab === "districts" && !signal.aborted) {
+          const { data: p } = await axios.get<GeoItem[]>("/admin/geo/provinces", { signal });
+          if (!signal.aborted) setProvinces(p);
+        } else if (geoTab === "chiefdoms" && !signal.aborted) {
+          const [{ data: p }, { data: d }] = await Promise.all([
+            axios.get<GeoItem[]>("/admin/geo/provinces", { signal }),
+            axios.get<GeoItem[]>("/admin/geo/districts", { signal }),
+          ]);
+          if (!signal.aborted) { setProvinces(p); setDistricts(d); }
+        }
+      } catch (e: unknown) {
+        if (!signal.aborted) {
+          // Only show error for the primary items fetch, not parent lookups
+          notify.error("Failed to load data.");
+        }
+      } finally {
+        if (!signal.aborted) setLoading(false);
+      }
+    };
+
+    run();
+    return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geoTab]); // notify intentionally omitted — not stable across renders
-
-  // Fetch items whenever the active tab changes
-  useEffect(() => { fetchItems(); }, [fetchItems]);
-  // Fetch parent lists once on mount for dropdown options
-  useEffect(() => { fetchParents(); }, [fetchParents]);
+  }, [geoTab, refreshKey]); // notify intentionally omitted — not stable across renders
 
   const openCreate = () => { setEditItem(null); setFormName(""); setFormCode(""); setFormParent(""); setShowForm(true); };
   const openEdit = (item: GeoItem) => {
@@ -298,7 +308,7 @@ function InlineGeoManager() {
         notify.success(`${GEO_TABS.find(t => t.key === geoTab)?.label.slice(0, -1)} created.`);
       }
       setShowForm(false);
-      await fetchItems();
+      setRefreshKey(k => k + 1);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       notify.error(e?.response?.data?.detail ?? "Save failed.");
@@ -312,7 +322,7 @@ function InlineGeoManager() {
       await axios.delete(`/admin/geo/${geoTab}/${item._id}`);
       notify.success(`"${item.name}" deactivated.`);
       setConfirmDelete(null);
-      await fetchItems();
+      setRefreshKey(k => k + 1);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       notify.error(e?.response?.data?.detail ?? "Deactivate failed.");
