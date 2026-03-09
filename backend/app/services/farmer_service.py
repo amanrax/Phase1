@@ -137,6 +137,15 @@ class FarmerService:
         if not farmer:
             return None
         
+        # Populate operator_id from operators collection using reviewed_by email
+        if not farmer.get("operator_id") and farmer.get("reviewed_by"):
+            operator = await self.db.operators.find_one(
+                {"email": farmer["reviewed_by"]},
+                {"operator_id": 1}
+            )
+            if operator:
+                farmer["operator_id"] = operator.get("operator_id")
+        
         return FarmerOut.from_mongo(farmer)
     
     async def get_farmer_by_object_id(self, object_id: str) -> Optional[FarmerOut]:
@@ -241,12 +250,14 @@ class FarmerService:
         elif nrc:
             query["nrc_hash"] = hmac_hash(nrc, salt="nrc")
         elif search and "$or" not in query:
+            # Escape regex special chars to prevent NoSQL regex injection
+            safe_search = re.escape(search)
             # Text search across multiple fields (only if $or not already in query)
             query["$or"] = [
-                {"farmer_id": {"$regex": search, "$options": "i"}},
-                {"personal_info.first_name": {"$regex": search, "$options": "i"}},
-                {"personal_info.last_name": {"$regex": search, "$options": "i"}},
-                {"personal_info.phone_primary": {"$regex": search, "$options": "i"}},
+                {"farmer_id": {"$regex": safe_search, "$options": "i"}},
+                {"personal_info.first_name": {"$regex": safe_search, "$options": "i"}},
+                {"personal_info.last_name": {"$regex": safe_search, "$options": "i"}},
+                {"personal_info.phone_primary": {"$regex": safe_search, "$options": "i"}},
             ]
         
         # Execute query with pagination

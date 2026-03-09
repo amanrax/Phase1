@@ -16,6 +16,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field, ConfigDict
 from functools import lru_cache
 import logging
+import re
 
 from app.database import get_db
 
@@ -393,7 +394,7 @@ async def list_chiefdoms(
         if district_code:
             # Case-insensitive match
             query["district_id"] = {
-                "$regex": f"^{district_code}$",
+                "$regex": f"^{re.escape(district_code)}$",
                 "$options": "i"
             }
         

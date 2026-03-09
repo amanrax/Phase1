@@ -7,6 +7,7 @@ from typing import Optional, List
 from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 import logging
+import re
 
 router = APIRouter(prefix="/supplies", tags=["Supply Requests"])
 _log = logging.getLogger("supplies")
@@ -385,6 +386,37 @@ async def farmer_edit_supply_request(
 
 # ─── ADMIN Endpoints ──────────────────────────────────────────────────────────
 
+@router.get("/categories", summary="List valid supply categories (public)")
+async def list_supply_categories():
+    """Return the list of valid supply request categories."""
+    categories = sorted(["Seeds", "Fertilizers", "Pesticides", "Tools", "Equipment",
+                         "Storage", "Transport", "Irrigation", "Other"])
+    return [{"name": c, "label": c} for c in categories]
+
+
+@router.get("/all-requests", summary="Get all supply requests — alias for /all (Admin)")
+async def get_all_supply_requests_alias(
+    request: Request,
+    status: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    farmer_id: Optional[str] = Query(None),
+    limit: int = Query(200, ge=1, le=1000),
+    skip: int = Query(0, ge=0),
+    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR"])),
+    db=Depends(get_db),
+):
+    query: dict = {}
+    if status:
+        query["status"] = status.lower()
+    if category:
+        query["category"] = category
+    if farmer_id:
+        query["farmer_id"] = farmer_id
+    total = await db.supply_requests.count_documents(query)
+    docs = await db.supply_requests.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(length=limit)
+    return {"requests": [_format_request(d) for d in docs], "total": total}
+
+
 @router.get("/all", summary="Get all supply requests (Admin)")
 async def get_all_supply_requests(
     request: Request,
@@ -412,12 +444,13 @@ async def get_all_supply_requests(
     if farmer_id:
         query["farmer_id"] = farmer_id
     if province:
-        query["farmer_province"] = {"$regex": province, "$options": "i"}
+        query["farmer_province"] = {"$regex": re.escape(province), "$options": "i"}
     if search:
+        safe_search = re.escape(search)
         query["$or"] = [
-            {"farmer_name":  {"$regex": search, "$options": "i"}},
-            {"request_ref":  {"$regex": search, "$options": "i"}},
-            {"farmer_id":    {"$regex": search, "$options": "i"}},
+            {"farmer_name":  {"$regex": safe_search, "$options": "i"}},
+            {"request_ref":  {"$regex": safe_search, "$options": "i"}},
+            {"farmer_id":    {"$regex": safe_search, "$options": "i"}},
         ]
 
     try:

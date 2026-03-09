@@ -319,12 +319,14 @@ export default function FarmerDetails() {
       logger.info(COMPONENT, "loadPhoto", { farmer_id: farmer.farmer_id });
       try {
         setPhotoError(false);
+        const start = performance.now();
         const url = await farmerService.getPhotoUrl(farmer);
+        const elapsed = Math.round(performance.now() - start);
         if (url) {
           setPhotoUrl(url);
-          logger.info(COMPONENT, "loadPhoto success");
+          logger.info(COMPONENT, `loadPhoto success (${elapsed}ms)`);
         } else {
-          logger.info(COMPONENT, "loadPhoto - no photo available");
+          logger.info(COMPONENT, `loadPhoto - no photo available (${elapsed}ms)`);
           setPhotoError(true);
         }
       } catch (err: unknown) {
@@ -336,13 +338,14 @@ export default function FarmerDetails() {
     return () => {
       // blob URL is owned by blobCache in farmer.service.ts — do not revoke here
     };
-  }, [farmer?.farmer_id]);
+  }, [farmer?.farmer_id, farmer?.photo_file_id, farmer?.documents?.photo]);
 
   // ─── load documents ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!farmer) return;
     const blobUrls: string[] = [];
     const loadDocuments = async () => {
+      const docStart = performance.now();
       logger.info(COMPONENT, "loadDocuments", { farmer_id: farmer.farmer_id });
       const docTypes: Array<"nrc" | "land_title" | "license" | "certificate"> = ["nrc", "land_title", "license", "certificate"];
       const urls: Record<string, string | null> = {};
@@ -360,6 +363,8 @@ export default function FarmerDetails() {
         }
       }
       setDocumentUrls(urls);
+      const loaded = Object.values(urls).filter(Boolean).length;
+      logger.info(COMPONENT, `loadDocuments done (${Math.round(performance.now() - docStart)}ms) — ${loaded}/4 loaded`);
     };
     loadDocuments();
     return () => {
@@ -388,12 +393,16 @@ export default function FarmerDetails() {
       setUploading("photo");
       await farmerService.uploadPhoto(farmerId!, file);
       logger.info(COMPONENT, "handlePhotoUpload success");
+      triggerVibration("doc_approved");
+      triggerSound("upload_success");
       showSuccess("Photo uploaded successfully!", 4000);
       e.target.value = "";
       await loadFarmerData();
     } catch (err: unknown) {
       const msg = getErrorMessage(err);
       logger.error(COMPONENT, "handlePhotoUpload failed", { msg });
+      triggerVibration("form_error");
+      triggerSound("error");
       showError(msg, 5000);
     } finally {
       setUploading(null);
@@ -420,12 +429,16 @@ export default function FarmerDetails() {
       setUploading(docType);
       await farmerService.uploadDocument(farmerId!, docType, file);
       logger.info(COMPONENT, "handleDocumentUpload success", { docType });
+      triggerVibration("doc_approved");
+      triggerSound("upload_success");
       showSuccess(`${docType.replace("_", " ")} uploaded successfully!`, 4000);
       e.target.value = "";
       await loadFarmerData();
     } catch (err: unknown) {
       const msg = getErrorMessage(err);
       logger.error(COMPONENT, "handleDocumentUpload failed", { docType, msg });
+      triggerVibration("form_error");
+      triggerSound("error");
       showError(msg, 5000);
       e.target.value = "";
     } finally {
@@ -499,6 +512,8 @@ export default function FarmerDetails() {
         try {
           await farmerService.deletePhoto(farmerId!);
           logger.info(COMPONENT, "handleDeletePhoto success");
+          triggerVibration("destructive_confirm");
+          triggerSound("delete_success");
           showSuccess("Photo deleted.", 4000);
           setPhotoUrl(null);
           setPhotoError(true);
@@ -506,6 +521,8 @@ export default function FarmerDetails() {
         } catch (err: unknown) {
           const msg = getErrorMessage(err);
           logger.error(COMPONENT, "handleDeletePhoto failed", { msg });
+          triggerVibration("form_error");
+          triggerSound("error");
           showError(msg, 5000);
         }
       },
@@ -523,12 +540,16 @@ export default function FarmerDetails() {
         try {
           await farmerService.deleteDocument(farmerId!, docType);
           logger.info(COMPONENT, "handleDeleteDocument success", { docType });
+          triggerVibration("destructive_confirm");
+          triggerSound("delete_success");
           showSuccess("Document deleted.", 4000);
           setDocumentUrls((prev) => ({ ...prev, [docType]: null }));
           await loadFarmerData();
         } catch (err: unknown) {
           const msg = getErrorMessage(err);
           logger.error(COMPONENT, "handleDeleteDocument failed", { docType, msg });
+          triggerVibration("form_error");
+          triggerSound("error");
           showError(msg, 5000);
         }
       },
@@ -765,12 +786,14 @@ export default function FarmerDetails() {
                   className="w-48 h-48 rounded-xl border-2 border-amber-400 shadow-md cursor-pointer hover:opacity-80 transition active:scale-95"
                 />
                 <p className="text-xs text-gray-400 dark:text-gray-500 text-center">Tap to view full size · Show to farmer or scan to verify</p>
+                {canReview && (
                 <button
                   onClick={handleGenerateQR}
                   className="w-full py-2 text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-800/40 text-amber-800 dark:text-amber-300 rounded-lg transition"
                 >
                   🔄 Regenerate QR
                 </button>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
@@ -778,12 +801,14 @@ export default function FarmerDetails() {
                   <span className="text-5xl opacity-40">📷</span>
                 </div>
                 <p className="text-xs text-gray-400 dark:text-gray-500 text-center">No QR code yet. Generate one to print or share.</p>
+                {canReview && (
                 <button
                   onClick={handleGenerateQR}
                   className="w-full py-2.5 text-sm font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition active:scale-95"
                 >
                   📷 Generate QR Code
                 </button>
+                )}
               </div>
             )}
           </div>

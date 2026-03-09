@@ -1,15 +1,37 @@
 import api from "@/utils/axios";
 import { logger } from "@/utils/logger";
 
+export interface OperatorRecord {
+  _id: string;
+  operator_id: string;
+  email: string;
+  full_name: string;
+  phone?: string;
+  assigned_district?: string;
+  assigned_districts?: string[];
+  assigned_regions?: string[];
+  is_active?: boolean;
+  farmer_count?: number;
+  role?: string;
+}
+
+export interface OperatorListResponse {
+  results?: OperatorRecord[];
+  operators?: OperatorRecord[];
+  count?: number;
+  total?: number;
+}
+
 export const operatorService = {
-  async getOperators(limit = 50, offset = 0): Promise<any> {
+  async getOperators(limit = 50, offset = 0): Promise<OperatorListResponse> {
     try {
       const cacheBuster = `t=${Date.now()}`;
       const response = await api.get(`/operators/?limit=${limit}&skip=${offset}&${cacheBuster}`);
       logger.info("operatorService", `Loaded ${response.data?.count ?? response.data?.results?.length ?? 0} operators`);
       return response.data;
-    } catch (err: any) {
-      logger.error("operatorService", "Failed to load operators", { error: err?.message, status: err?.response?.status });
+    } catch (err: unknown) {
+      const e = err as { message?: string; response?: { status?: number } };
+      logger.error("operatorService", "Failed to load operators", { error: e?.message, status: e?.response?.status });
       throw err;
     }
   },

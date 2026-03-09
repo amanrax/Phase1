@@ -35,6 +35,9 @@ const FarmerSupplyRequests = lazy(() => import("@/pages/FarmerSupplyRequests"));
 const LogViewer            = lazy(() => import("@/pages/LogViewer"));
 const QRScanner            = lazy(() => import("@/pages/QRScanner"));
 const AdminGeoManagement   = lazy(() => import("@/pages/AdminGeoManagement"));
+const NotificationCentre   = lazy(() => import("@/pages/NotificationCentre"));
+const ChangeRequests       = lazy(() => import("@/pages/ChangeRequests"));
+const FarmerDocumentWallet = lazy(() => import("@/pages/FarmerDocumentWallet"));
 
 /** Full-page spinner shown while a lazy chunk is loading */
 function PageLoader() {
@@ -258,7 +261,7 @@ function App() {
             path="/farmers/edit/:farmerId"
             element={
               <ProtectedRoute>
-                <RoleRoute requiredRole={["admin", "operator", "farmer"]}>
+                <RoleRoute requiredRole={["admin", "operator"]}>
                   <EditFarmer />
                 </RoleRoute>
               </ProtectedRoute>
@@ -321,6 +324,34 @@ function App() {
               <ProtectedRoute>
                 <RoleRoute requiredRole="farmer">
                   <FarmerSupplyRequests />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationCentre />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/farmer/change-requests"
+            element={
+              <ProtectedRoute>
+                <RoleRoute requiredRole="farmer">
+                  <ChangeRequests />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/farmer/documents"
+            element={
+              <ProtectedRoute>
+                <RoleRoute requiredRole="farmer">
+                  <FarmerDocumentWallet />
                 </RoleRoute>
               </ProtectedRoute>
             }

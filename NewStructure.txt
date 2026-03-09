@@ -1,0 +1,651 @@
+.
+├── CONFIGURATION_SUMMARY.txt
+├── DEPLOYMENT_GUIDE.txt
+├── Importantcommandsandlinks.txt
+├── MOBILE_CONNECTION_FIX.txt
+├── NewStructure.txt
+├── SEEDED_CREDENTIALS.txt
+├── artifacts
+├── aws-deployment
+│   ├── []?') || true
+│   ├── cloudfront-distribution.yml
+│   ├── ecs-task-definition.json
+│   ├── elbv2 describe-rules --listener-arn  --output json
+│   ├── sts get-caller-identity --output json
+│   └── task-def-4gb.json
+├── backend
+│   ├── Dockerfile
+│   ├── FARMER_LOGIN_CREDENTIALS.txt
+│   ├── app
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   ├── dependencies
+│   │   │   └── roles.py
+│   │   ├── main.py
+│   │   ├── main.py.backup2
+│   │   ├── main.py.backup_cors
+│   │   ├── middleware
+│   │   │   └── logging_middleware.py
+│   │   ├── models
+│   │   │   ├── ethnic_group.py
+│   │   │   ├── farmer.py
+│   │   │   └── user.py
+│   │   ├── routes
+│   │   │   ├── app_version.py
+│   │   │   ├── auth.py
+│   │   │   ├── change_requests.py
+│   │   │   ├── dashboard.py
+│   │   │   ├── ethnic_groups.py
+│   │   │   ├── farmer_idcards.py
+│   │   │   ├── farmer_photos.py
+│   │   │   ├── farmer_reports.py 
+│   │   │   ├── farmers.py
+│   │   │   ├── farmers_qr.py
+│   │   │   ├── files.py
+│   │   │   ├── geo.py
+│   │   │   ├── geo_admin.py
+│   │   │   ├── geo_custom.py
+│   │   │   ├── health.py
+│   │   │   ├── logs.py
+│   │   │   ├── notifications.py
+│   │   │   ├── operators.py
+│   │   │   ├── reference_data.py
+│   │   │   ├── reports.py
+│   │   │   ├── supplies.py
+│   │   │   ├── sync.py
+│   │   │   ├── uploads.py
+│   │   │   ├── users.py
+│   │   │   └── verification.py
+│   │   ├── services
+│   │   │   ├── analytics_service.py
+│   │   │   ├── ethnic_group_service.py
+│   │   │   ├── farmer_service.py
+│   │   │   ├── gridfs_service.py
+│   │   │   ├── idcard_service.py
+│   │   │   ├── logging_service.py
+│   │   │   ├── photo_service.py
+│   │   │   ├── report_service.py
+│   │   │   └── verification_service.py
+│   │   ├── tasks
+│   │   │   ├── celery_app.py
+│   │   │   ├── id_card_task.py
+│   │   │   ├── log_cleanup_task.py
+│   │   │   ├── report_tasks.py
+│   │   │   └── sync_tasks.py
+│   │   └── utils
+│   │       ├── crypto_utils.py
+│   │       └── security.py
+│   ├── data
+│   │   ├── chiefdoms.csv
+│   │   ├── districts.csv
+│   │   └── provinces.csv
+│   ├── requirements-test.txt
+│   ├── requirements.txt
+│   ├── scripts
+│   │   ├── add_admin.py
+│   │   ├── backup_database.py
+│   │   ├── check_admin.py
+│   │   ├── check_database_state.py
+│   │   ├── check_farmer_data.py
+│   │   ├── clean_and_seed_all.py
+│   │   ├── clean_and_seed_complete.py
+│   │   ├── clean_database.py
+│   │   ├── create_test_users.py
+│   │   ├── fix_admin_password_field.py
+│   │   ├── fix_mongo_roles.py
+│   │   ├── fix_null_documents.py
+│   │   ├── fix_operator_districts.py
+│   │   ├── fix_roles_uppercase.py
+│   │   ├── quick_seed.py
+│   │   ├── seed_admin.py
+│   │   ├── seed_geo_from_csv.py
+│   │   ├── test_auth.py
+│   │   ├── test_login.py
+│   │   └── update_admin_direct.py
+│   ├── test_password.py
+│   ├── tests
+│   │   ├── __init__.py
+│   │   ├── conftest.py
+│   │   ├── test_admin_operations.py
+│   │   ├── test_auth.py
+│   │   ├── test_geo_data.py
+│   │   └── test_logging.py
+│   └── uploads
+├── cem-deployment-key.pem
+├── cem_structure.txt
+├── cropdetials.html
+├── docker-compose.prod.yml
+├── docker-compose.yml
+├── ecs-deploy-policy.json
+├── ecs-task-definition.json
+├── fly.toml
+├── frontend
+│   ├── BUILD_GUIDE.md
+│   ├── Dockerfile
+│   ├── MOBILE_README.md
+│   ├── SIGNING_CONFIG.md
+│   ├── android
+│   │   ├── app
+│   │   │   ├── build.gradle
+│   │   │   ├── capacitor.build.gradle
+│   │   │   ├── proguard-rules.pro
+│   │   │   └── src
+│   │   │       ├── androidTest
+│   │   │       │   └── java
+│   │   │       │       └── com
+│   │   │       │           └── getcapacitor
+│   │   │       │               └── myapp
+│   │   │       │                   └── ExampleInstrumentedTest.java
+│   │   │       ├── main
+│   │   │       │   ├── AndroidManifest.xml
+│   │   │       │   ├── assets
+│   │   │       │   │   ├── capacitor.config.json
+│   │   │       │   │   ├── capacitor.plugins.json
+│   │   │       │   │   └── public
+│   │   │       │   │       ├── assets
+│   │   │       │   │       │   ├── cem-logo-C3mMrius.png
+│   │   │       │   │       │   ├── html2canvas.esm-DXEQVQnt.js
+│   │   │       │   │       │   ├── index-DdH7NUAg.js
+│   │   │       │   │       │   ├── index.es-GXI9xbeH.js
+│   │   │       │   │       │   ├── main-4Tts-pU-.js
+│   │   │       │   │       │   ├── main-DRyzXAsa.css
+│   │   │       │   │       │   ├── purify.es-Bzr520pe.js
+│   │   │       │   │       │   ├── web-CdH7kpnY.js
+│   │   │       │   │       │   ├── web-ChFp0Zlh.js
+│   │   │       │   │       │   ├── web-CrWwSYHv.js
+│   │   │       │   │       │   └── web-l6rbyk83.js
+│   │   │       │   │       ├── cem-logo.svg
+│   │   │       │   │       ├── cordova.js
+│   │   │       │   │       ├── cordova_plugins.js
+│   │   │       │   │       ├── icons
+│   │   │       │   │       │   ├── icon-128x128.png
+│   │   │       │   │       │   ├── icon-128x128.png.svg
+│   │   │       │   │       │   ├── icon-144x144.png
+│   │   │       │   │       │   ├── icon-144x144.png.svg
+│   │   │       │   │       │   ├── icon-152x152.png
+│   │   │       │   │       │   ├── icon-152x152.png.svg
+│   │   │       │   │       │   ├── icon-192x192.png
+│   │   │       │   │       │   ├── icon-192x192.png.svg
+│   │   │       │   │       │   ├── icon-384x384.png
+│   │   │       │   │       │   ├── icon-384x384.png.svg
+│   │   │       │   │       │   ├── icon-512x512.png
+│   │   │       │   │       │   ├── icon-512x512.png.svg
+│   │   │       │   │       │   ├── icon-72x72.png
+│   │   │       │   │       │   ├── icon-72x72.png.svg
+│   │   │       │   │       │   ├── icon-96x96.png
+│   │   │       │   │       │   └── icon-96x96.png.svg
+│   │   │       │   │       ├── index.html
+│   │   │       │   │       ├── manifest.json
+│   │   │       │   │       ├── service-worker.js
+│   │   │       │   │       └── vite.svg
+│   │   │       │   ├── java
+│   │   │       │   │   └── com
+│   │   │       │   │       └── cem
+│   │   │       │   │           └── farmerapp
+│   │   │       │   │               └── MainActivity.java
+│   │   │       │   └── res
+│   │   │       │       ├── drawable
+│   │   │       │       │   ├── ic_launcher_background.xml
+│   │   │       │       │   └── splash.png
+│   │   │       │       ├── drawable-land-hdpi
+│   │   │       │       │   └── splash.png
+│   │   │       │       ├── drawable-land-mdpi
+│   │   │       │       │   └── splash.png
+│   │   │       │       ├── drawable-land-xhdpi
+│   │   │       │       │   └── splash.png
+│   │   │       │       ├── drawable-land-xxhdpi
+│   │   │       │       │   └── splash.png
+│   │   │       │       ├── drawable-land-xxxhdpi
+│   │   │       │       │   └── splash.png
+│   │   │       │       ├── drawable-port-hdpi
+│   │   │       │       │   └── splash.png
+│   │   │       │       ├── drawable-port-mdpi
+│   │   │       │       │   └── splash.png
+│   │   │       │       ├── drawable-port-xhdpi
+│   │   │       │       │   └── splash.png
+│   │   │       │       ├── drawable-port-xxhdpi
+│   │   │       │       │   └── splash.png
+│   │   │       │       ├── drawable-port-xxxhdpi
+│   │   │       │       │   └── splash.png
+│   │   │       │       ├── drawable-v24
+│   │   │       │       │   └── ic_launcher_foreground.xml
+│   │   │       │       ├── layout
+│   │   │       │       │   └── activity_main.xml
+│   │   │       │       ├── mipmap-anydpi-v26
+│   │   │       │       │   └── ic_launcher.xml
+│   │   │       │       ├── mipmap-hdpi
+│   │   │       │       │   ├── ic_launcher.png
+│   │   │       │       │   ├── ic_launcher_background.png
+│   │   │       │       │   ├── ic_launcher_foreground.png
+│   │   │       │       │   └── ic_launcher_monochrome.png
+│   │   │       │       ├── mipmap-mdpi
+│   │   │       │       │   ├── ic_launcher.png
+│   │   │       │       │   ├── ic_launcher_background.png
+│   │   │       │       │   ├── ic_launcher_foreground.png
+│   │   │       │       │   └── ic_launcher_monochrome.png
+│   │   │       │       ├── mipmap-xhdpi
+│   │   │       │       │   ├── ic_launcher.png
+│   │   │       │       │   ├── ic_launcher_background.png
+│   │   │       │       │   ├── ic_launcher_foreground.png
+│   │   │       │       │   └── ic_launcher_monochrome.png
+│   │   │       │       ├── mipmap-xxhdpi
+│   │   │       │       │   ├── ic_launcher.png
+│   │   │       │       │   ├── ic_launcher_background.png
+│   │   │       │       │   ├── ic_launcher_foreground.png
+│   │   │       │       │   └── ic_launcher_monochrome.png
+│   │   │       │       ├── mipmap-xxxhdpi
+│   │   │       │       │   ├── ic_launcher.png
+│   │   │       │       │   ├── ic_launcher_background.png
+│   │   │       │       │   ├── ic_launcher_foreground.png
+│   │   │       │       │   └── ic_launcher_monochrome.png
+│   │   │       │       ├── values
+│   │   │       │       │   ├── colors.xml
+│   │   │       │       │   ├── strings.xml
+│   │   │       │       │   └── styles.xml
+│   │   │       │       └── xml
+│   │   │       │           ├── config.xml
+│   │   │       │           ├── file_paths.xml
+│   │   │       │           └── network_security_config.xml
+│   │   │       └── test
+│   │   │           └── java
+│   │   │               └── com
+│   │   │                   └── getcapacitor
+│   │   │                       └── myapp
+│   │   │                           └── ExampleUnitTest.java
+│   │   ├── build.gradle
+│   │   ├── capacitor-cordova-android-plugins
+│   │   │   ├── build.gradle
+│   │   │   ├── cordova.variables.gradle
+│   │   │   └── src
+│   │   │       └── main
+│   │   │           ├── AndroidManifest.xml
+│   │   │           ├── java
+│   │   │           └── res
+│   │   ├── capacitor.settings.gradle
+│   │   ├── gradle
+│   │   │   └── wrapper
+│   │   │       ├── gradle-wrapper.jar
+│   │   │       └── gradle-wrapper.properties
+│   │   ├── gradle.properties
+│   │   ├── gradlew
+│   │   ├── gradlew.bat
+│   │   ├── settings.gradle
+│   │   └── variables.gradle
+│   ├── capacitor.config.ts
+│   ├── design-system-reference.html
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── ios
+│   │   └── App
+│   │       ├── App
+│   │       │   ├── AppDelegate.swift
+│   │       │   ├── Assets.xcassets
+│   │       │   │   ├── AppIcon.appiconset
+│   │       │   │   │   ├── AppIcon-512@2x.png
+│   │       │   │   │   └── Contents.json
+│   │       │   │   ├── Contents.json
+│   │       │   │   └── Splash.imageset
+│   │       │   │       ├── Contents.json
+│   │       │   │       ├── splash-2732x2732-1.png
+│   │       │   │       ├── splash-2732x2732-2.png
+│   │       │   │       └── splash-2732x2732.png
+│   │       │   ├── Base.lproj
+│   │       │   │   ├── LaunchScreen.storyboard
+│   │       │   │   └── Main.storyboard
+│   │       │   └── Info.plist
+│   │       ├── App.xcodeproj
+│   │       │   └── project.pbxproj
+│   │       ├── App.xcworkspace
+│   │       │   └── xcshareddata
+│   │       │       └── IDEWorkspaceChecks.plist
+│   │       └── Podfile
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.cjs
+│   ├── public
+│   │   ├── cem-logo.svg
+│   │   ├── icons
+│   │   │   ├── icon-128x128.png
+│   │   │   ├── icon-128x128.png.svg
+│   │   │   ├── icon-144x144.png
+│   │   │   ├── icon-144x144.png.svg
+│   │   │   ├── icon-152x152.png
+│   │   │   ├── icon-152x152.png.svg
+│   │   │   ├── icon-192x192.png
+│   │   │   ├── icon-192x192.png.svg
+│   │   │   ├── icon-384x384.png
+│   │   │   ├── icon-384x384.png.svg
+│   │   │   ├── icon-512x512.png
+│   │   │   ├── icon-512x512.png.svg
+│   │   │   ├── icon-72x72.png
+│   │   │   ├── icon-72x72.png.svg
+│   │   │   ├── icon-96x96.png
+│   │   │   └── icon-96x96.png.svg
+│   │   ├── manifest.json
+│   │   ├── service-worker.js
+│   │   ├── test-connection.html
+│   │   └── vite.svg
+│   ├── scripts
+│   │   ├── build-android.sh
+│   │   ├── build-ios.sh
+│   │   ├── bump-version.js
+│   │   ├── create-keystore.sh
+│   │   └── quick-build.sh
+│   ├── src
+│   │   ├── App.css
+│   │   ├── App.tsx
+│   │   ├── assets
+│   │   │   ├── cem-logo.png
+│   │   │   ├── react.svg
+│   │   │   └── rocket-animation.json
+│   │   ├── components
+│   │   │   ├── BackButton.tsx
+│   │   │   ├── Button.tsx
+│   │   │   ├── ErrorBoundary.tsx
+│   │   │   ├── FarmerBottomNav.tsx
+│   │   │   ├── FarmerIDCardPreview.tsx
+│   │   │   ├── FormInput.tsx
+│   │   │   ├── GeoSelectWithOther.tsx
+│   │   │   ├── Header.tsx
+│   │   │   ├── Notification.tsx
+│   │   │   ├── PageHeader.tsx
+│   │   │   ├── PermissionRequest.tsx
+│   │   │   ├── PhoneInput.tsx
+│   │   │   ├── ProtectedRoute.tsx
+│   │   │   ├── RoleRoute.tsx
+│   │   │   ├── SessionTimeout.tsx
+│   │   │   ├── SessionTimeoutModal.tsx
+│   │   │   ├── ToastContainer.tsx
+│   │   │   └── ui
+│   │   │       ├── Badge.tsx
+│   │   │       ├── Button.tsx
+│   │   │       ├── Card.tsx
+│   │   │       ├── Combobox.tsx
+│   │   │       ├── DashboardLayout.tsx
+│   │   │       ├── FormInput.tsx
+│   │   │       ├── FormSelect.tsx
+│   │   │       ├── Sidebar.tsx
+│   │   │       ├── StatCard.tsx
+│   │   │       ├── Table.tsx
+│   │   │       ├── TopBar.tsx
+│   │   │       ├── WizardSteps.tsx
+│   │   │       └── index.ts
+│   │   ├── config
+│   │   │   ├── mobile.ts
+│   │   │   └── navigation.ts
+│   │   ├── contexts
+│   │   │   ├── NotificationContext.tsx
+│   │   │   └── ThemeContext.tsx
+│   │   ├── hooks
+│   │   │   ├── useBackButton.ts
+│   │   │   └── usePullToRefresh.ts
+│   │   ├── index.css
+│   │   ├── main.tsx
+│   │   ├── pages
+│   │   │   ├── AdminDashboard.tsx
+│   │   │   ├── AdminGeoManagement.tsx
+│   │   │   ├── AdminReports.tsx
+│   │   │   ├── AdminSettings.tsx
+│   │   │   ├── AdminSupplyRequests.tsx
+│   │   │   ├── AnalyticsDashboard.tsx
+│   │   │   ├── ChangeRequests.tsx
+│   │   │   ├── CreateOperator.tsx
+│   │   │   ├── DocumentViewer.tsx
+│   │   │   ├── EditFarmer.tsx
+│   │   │   ├── FarmerDashboard.tsx
+│   │   │   ├── FarmerDetails.tsx
+│   │   │   ├── FarmerDocumentWallet.tsx
+│   │   │   ├── FarmerIDCard.tsx
+│   │   │   ├── FarmerRegistration
+│   │   │   │   ├── Step1Personal.tsx
+│   │   │   │   ├── Step2Address.tsx
+│   │   │   │   ├── Step3Farm.tsx
+│   │   │   │   ├── Step4Preview.tsx
+│   │   │   │   ├── Step5PhotoUpload.tsx
+│   │   │   │   ├── Step6DocumentUpload.tsx
+│   │   │   │   ├── Step7Completion.tsx
+│   │   │   │   └── index.tsx
+│   │   │   ├── FarmerSupplyRequests.tsx
+│   │   │   ├── FarmersList.tsx
+│   │   │   ├── IDCardViewer.tsx
+│   │   │   ├── LogViewer.tsx
+│   │   │   ├── Login.tsx
+│   │   │   ├── NotificationCentre.tsx
+│   │   │   ├── OperatorDashboard.tsx
+│   │   │   ├── OperatorDetails.tsx
+│   │   │   ├── OperatorEdit.tsx
+│   │   │   ├── OperatorManagement.tsx
+│   │   │   └── QRScanner.tsx
+│   │   ├── registerSW.ts
+│   │   ├── services
+│   │   │   ├── analytics.service.ts
+│   │   │   ├── auth.service.ts
+│   │   │   ├── changeRequests.service.ts
+│   │   │   ├── dashboard.service.ts
+│   │   │   ├── ethnicGroup.service.ts
+│   │   │   ├── farmer.service.ts
+│   │   │   ├── geo.service.ts
+│   │   │   ├── logs.service.ts
+│   │   │   ├── notifications.service.ts
+│   │   │   ├── operator.service.ts
+│   │   │   ├── reports.service.ts
+│   │   │   ├── update.service.ts
+│   │   │   ├── user.service.ts
+│   │   │   └── verification.service.ts
+│   │   ├── store
+│   │   │   └── authStore.ts
+│   │   ├── styles
+│   │   │   └── shared.css
+│   │   ├── types
+│   │   │   └── types.ts
+│   │   ├── utils
+│   │   │   ├── axios.ts
+│   │   │   ├── debug.ts
+│   │   │   ├── feedback.ts
+│   │   │   ├── globalToast.ts
+│   │   │   ├── logger.ts
+│   │   │   ├── networkProbe.ts
+│   │   │   ├── nrcFormatter.ts
+│   │   │   ├── permissions.ts
+│   │   │   └── version.ts
+│   │   └── vite-env.d.ts
+│   ├── tailwind.config.js
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   ├── tsconfig.tsbuildinfo
+│   ├── vite.config.d.ts
+│   ├── vite.config.js
+│   └── vite.config.ts
+├── infra
+│   └── terraform
+│       ├── main.tf
+│       ├── outputs.tf
+│       └── variables.tf
+├── login.json
+├── mongo_backup_prod
+│   ├── prelude.json
+│   └── zambian_farmer_db
+│       ├── cem_files.chunks.bson
+│       ├── cem_files.chunks.metadata.json
+│       ├── cem_files.files.bson
+│       ├── cem_files.files.metadata.json
+│       ├── chiefdoms.bson
+│       ├── chiefdoms.metadata.json
+│       ├── districts.bson
+│       ├── districts.metadata.json
+│       ├── ethnic_groups.bson
+│       ├── ethnic_groups.metadata.json
+│       ├── farmers.bson
+│       ├── farmers.metadata.json
+│       ├── operators.bson
+│       ├── operators.metadata.json
+│       ├── provinces.bson
+│       ├── provinces.metadata.json
+│       ├── supply_requests.bson
+│       ├── supply_requests.metadata.json
+│       ├── system_logs.bson
+│       ├── system_logs.metadata.json
+│       ├── users.bson
+│       └── users.metadata.json
+├── mongo_clean.json
+├── mongo_output.json
+├── mongo_output.log
+├── package-lock.json
+├── package.json
+├── project_structure.txt
+├── project_structure_dirs_only.txt
+├── project_structure_full_paths.txt
+├── project_structure_with_sizes.txt
+├── qr_check.json
+├── qr_test.json
+├── qr_verify.json
+├── scripts
+│   ├── AWS_PROFILE=default [aws_cleanup.sh](htt
+│   └── run_crud_test.py
+├── session-manager-plugin.deb
+├── sync_payload.json
+├── test_farmer.json
+├── test_uploads
+│   └── photo.jpg
+└── uploads
+    ├── ZM11674FFE
+    │   └── photos
+    │       └── photo.jpg
+    ├── ZM2EC5197E
+    │   └── photos
+    │       └── photo.jpg
+    ├── ZM2F48ABB4
+    │   └── photos
+    │       └── photo.jpg
+    ├── ZM38228A63
+    │   └── photos
+    │       └── photo.jpg
+    ├── ZM499C54E2
+    │   └── photos
+    │       └── photo.jpg
+    ├── ZM49AB9C7D
+    │   └── photos
+    │       └── photo.jpg
+    ├── ZM4F35996B
+    │   └── photos
+    │       └── photo.jpg
+    ├── ZM5E5BEB24
+    │   └── photos
+    │       ├── ZM5E5BEB24_photo.JPG
+    │       └── ZM5E5BEB24_photo.png
+    ├── ZM669E6ED7
+    │   └── photos
+    │       └── photo.jpg
+    ├── ZM70C67477
+    │   └── photos
+    │       └── photo.png
+    ├── ZM7EC0E8BC
+    │   └── photos
+    │       └── photo.jpg
+    ├── ZM9D6E4DA2
+    │   └── photos
+    │       └── photo.jpg
+    ├── ZMB740531F
+    │   ├── idcards
+    │   │   └── ZMB740531F_card.pdf
+    │   ├── photos
+    │   │   └── photo.jpg
+    │   └── qr
+    │       └── ZMB740531F_qr.png
+    ├── ZMBA8334DF
+    │   └── photos
+    │       └── photo.jpg
+    ├── ZMBE4AB8BE
+    │   └── qr
+    │       └── ZMBE4AB8BE_qr.png
+    ├── ZME5F36B64
+    │   └── photos
+    │       └── photo.png
+    ├── ZMEF98E1CC
+    │   └── qr
+    │       └── ZMEF98E1CC_qr.png
+    ├── ZMF0A6216E
+    │   ├── idcards
+    │   │   └── ZMF0A6216E_card.pdf
+    │   └── qr
+    │       └── ZMF0A6216E_qr.png
+    ├── ZMF274261F
+    │   └── photos
+    │       └── photo.jpg
+    ├── documents
+    │   └── ZM8AC3063F
+    │       ├── ZM8AC3063F_land_title.pdf
+    │       ├── ZM8AC3063F_license.pdf
+    │       └── ZM8AC3063F_nrc.pdf
+    ├── farmers
+    │   └── documents
+    │       ├── ZM11674FFE_nrc_1763714739.jpg
+    │       ├── ZM2EC5197E_nrc_1763540293.pdf
+    │       ├── ZM2F48ABB4_land_title_1763536788.jpg
+    │       ├── ZM2F48ABB4_nrc_1763536772.jpg
+    │       ├── ZM2F48ABB4_nrc_1763536898.jpg
+    │       ├── ZM38228A63_land_title_1763973635.jpg
+    │       ├── ZM38228A63_land_title_1763982476.pdf
+    │       ├── ZM38228A63_nrc_1763973627.jpg
+    │       ├── ZM38228A63_nrc_1763981943.jpg
+    │       ├── ZM38228A63_nrc_1763982189.pdf
+    │       ├── ZM38228A63_nrc_1763982378.pdf
+    │       ├── ZM38228A63_nrc_1763982465.pdf
+    │       ├── ZM38228A63_nrc_1763983262.pdf
+    │       ├── ZM49AB9C7D_land_title_1764158998.pdf
+    │       ├── ZM49AB9C7D_nrc_1764158987.pdf
+    │       ├── ZM4F35996B_certificate_1763535754.png
+    │       ├── ZM4F35996B_land_title_1763535680.pdf
+    │       ├── ZM4F35996B_license_1763535715.jpg
+    │       ├── ZM4F35996B_nrc_1763535670.pdf
+    │       ├── ZM4F35996B_nrc_1763535683.pdf
+    │       ├── ZM669E6ED7_nrc_1763537065.pdf
+    │       ├── ZM7CDA7186_nrc_1766725652.pdf
+    │       ├── ZM7EC0E8BC_land_title_1764154829.pdf
+    │       ├── ZM7EC0E8BC_nrc_1764154816.pdf
+    │       ├── ZM9D6E4DA2_land_title_1763536426.jpg
+    │       ├── ZM9D6E4DA2_license_1763536437.pdf
+    │       ├── ZM9D6E4DA2_nrc_1763536396.pdf
+    │       ├── ZMB740531F_nrc_1764154930.pdf
+    │       ├── ZMBA8334DF_land_title_1764154510.pdf
+    │       ├── ZMBA8334DF_nrc_1764154492.pdf
+    │       ├── ZMBA8334DF_nrc_1764154501.pdf
+    │       ├── ZMDDECBC28_nrc_1766726425.pdf
+    │       ├── ZME5F36B64_nrc_1765003017.png
+    │       ├── ZMF0A6216E_nrc_1764155767.pdf
+    │       ├── ZMF274261F_nrc_1763728398.jpg
+    │       └── ZMFAC6E98B_nrc_1766725245.pdf
+    ├── idcards
+    │   ├── ZM1BFFA0F9_card.pdf
+    │   ├── ZM5CC08BB8_card.pdf
+    │   ├── ZM6AAC0450_card.pdf
+    │   ├── ZM880CB4DC_card.pdf
+    │   ├── ZM8AC3063F_card.pdf
+    │   ├── ZMB740531F_card.pdf
+    │   ├── ZME5F36B64_card.pdf
+    │   ├── ZMF0A6216E_card.pdf
+    │   └── ZMFA1E5ECF_card.pdf
+    ├── photos
+    │   ├── ZM1BFFA0F9
+    │   │   └── ZM1BFFA0F9_photo.jpg
+    │   ├── ZM3880A741
+    │   │   └── ZM3880A741_photo.jpg
+    │   ├── ZM5CA6FCB0
+    │   │   └── ZM5CA6FCB0_photo.jpg
+    │   ├── ZM5CC08BB8
+    │   │   └── ZM5CC08BB8_photo.jpg
+    │   └── ZM6AAC0450
+    │       └── ZM6AAC0450_photo.jpg
+    └── qr
+        ├── ZM1BFFA0F9_qr.png
+        ├── ZM5CC08BB8_qr.png
+        ├── ZM6AAC0450_qr.png
+        ├── ZM880CB4DC_qr.png
+        ├── ZM8AC3063F_qr.png
+        ├── ZMB740531F_qr.png
+        ├── ZME5F36B64_qr.png
+        ├── ZMF0A6216E_qr.png
+        └── ZMFA1E5ECF_qr.png
+
+154 directories, 494 files

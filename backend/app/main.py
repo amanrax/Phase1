@@ -42,6 +42,8 @@ from app.routes import (
     verification,
     geo_admin,
     reference_data,
+    change_requests,
+    notifications,
 )
 
 
@@ -327,7 +329,9 @@ app.include_router(verification.router, prefix="/api", tags=["Verification"])
 app.include_router(geo_admin.router, prefix="/api", tags=["Geo Admin"])
 app.include_router(reference_data.router, prefix="/api", tags=["Reference Data"])
 app.include_router(health.router, prefix="/api/health", tags=["Health"])
-app.include_router(logs.router, prefix="/api", tags=["Logs"])
+app.include_router(logs.router, prefix="/api/admin/logs", tags=["Logs"])
+app.include_router(change_requests.router, prefix="/api", tags=["Change Requests"])
+app.include_router(notifications.router, prefix="/api", tags=["Notifications"])
 app.include_router(app_version.router, tags=["App Version"])
 
 logger.info("✅ All API routers registered")

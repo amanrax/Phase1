@@ -4,10 +4,9 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import useAuthStore from "@/store/authStore";
 import { logger } from "@/utils/logger";
 import { globalToast } from "@/utils/globalToast";
+import { getApiBaseUrl } from "@/config/mobile";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev";
+const API_BASE_URL = getApiBaseUrl();
 
 const axiosInstance = axios.create({
   baseURL: `${API_BASE_URL}/api`,

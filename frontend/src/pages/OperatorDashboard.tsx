@@ -1,6 +1,7 @@
 // src/pages/OperatorDashboard.tsx — Mobile-first modern operator dashboard (matches AdminDashboard)
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import { operatorService } from "@/services/operator.service";
@@ -9,6 +10,7 @@ import { useNotification } from "@/contexts/NotificationContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { logger } from "@/utils/logger";
 import { loadFeedbackPrefs, saveFeedbackPrefs } from "@/utils/feedback";
+import { APP_VERSION, PHASE } from "@/utils/version";
 
 const COMPONENT = "OperatorDashboard";
 
@@ -214,7 +216,7 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm mb-4">
         <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">👤 Account</h3>
         <div className="space-y-2 text-sm">
-          {[{ k: "Email", v: user?.email || "—" }, { k: "Role", v: "Operator" }, { k: "Version", v: "v2.0.0" }].map(({ k, v }) => (
+          {[{ k: "Email", v: user?.email || "—" }, { k: "Role", v: "Operator" }, { k: "Version", v: `v${APP_VERSION} (${PHASE})` }].map(({ k, v }) => (
             <div key={k} className="flex justify-between"><span className="text-gray-500 dark:text-gray-400">{k}</span><span className="font-semibold text-gray-800 dark:text-gray-100 truncate ml-2">{v}</span></div>
           ))}
         </div>
@@ -314,7 +316,7 @@ export default function OperatorDashboard() {
     { icon: "➕", label: "Add Farmer", bg: "bg-gradient-to-br from-emerald-500 to-green-600", onPress: () => navigate("/farmers/create") },
     { icon: "📋", label: "All Farmers", bg: "bg-gradient-to-br from-blue-500 to-indigo-600", onPress: () => navigate("/farmers") },
     { icon: "📈", label: "Analytics", bg: "bg-gradient-to-br from-violet-500 to-purple-600", onPress: () => navigate("/admin/analytics") },
-    { icon: "📷", label: "QR Scan", bg: "bg-gradient-to-br from-amber-500 to-orange-600", onPress: () => navigate("/qr-scanner") },
+    ...(Capacitor.isNativePlatform() ? [{ icon: "📷", label: "QR Scan", bg: "bg-gradient-to-br from-amber-500 to-orange-600", onPress: () => navigate("/qr-scanner") }] : []),
   ];
 
   const getGreeting = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; };
@@ -364,7 +366,7 @@ export default function OperatorDashboard() {
           </div>
           <div className="relative mt-4 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-300 animate-pulse" />
-            <span className="text-white/90 text-[11px] font-semibold">v2.0.0 · Operator</span>
+            <span className="text-white/90 text-[11px] font-semibold">v{APP_VERSION} · Operator</span>
           </div>
         </div>
 
@@ -470,7 +472,7 @@ export default function OperatorDashboard() {
             <div className="mx-4 mt-6 bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700">
               <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">System</p>
               <div className="flex flex-wrap gap-x-6 gap-y-1.5">
-                {[{ k: "Version", v: "2.0.0" }, { k: "Role", v: "Operator" }, { k: "District", v: profile?.assigned_district || "—" }, { k: "Logged in as", v: user?.email ?? "—" }].map(({ k, v }) => (
+                {[{ k: "Version", v: `v${APP_VERSION} (${PHASE})` }, { k: "Role", v: "Operator" }, { k: "District", v: profile?.assigned_district || "—" }, { k: "Logged in as", v: user?.email ?? "—" }].map(({ k, v }) => (
                   <div key={k}><span className="text-[10px] text-gray-400 dark:text-gray-500">{k}: </span><span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{v}</span></div>
                 ))}
               </div>

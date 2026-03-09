@@ -33,45 +33,45 @@ async function fetchGridFSFile(fileIdOrPath: string, forceMime?: string): Promis
     
     logger.info('GridFS', 'Fetching file', { key: fileIdOrPath });
     
-    const baseURL = import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev";
-    
-    // If it's a file ID (MongoDB ObjectId format)
+    // Build a path relative to the axios baseURL (/api)
     let url: string;
     if (fileIdOrPath.match(/^[a-f0-9]{24}$/i)) {
-      url = `${baseURL}/api/files/${fileIdOrPath}`;
+      url = `/files/${fileIdOrPath}`;
     } else if (fileIdOrPath.startsWith('http')) {
+      // Extract the path portion from an absolute URL
+      try {
+        const parsed = new URL(fileIdOrPath);
+        url = parsed.pathname.replace(/^\/api/, '');
+      } catch {
+        url = fileIdOrPath;
+      }
+    } else if (fileIdOrPath.startsWith('/api/')) {
+      url = fileIdOrPath.replace(/^\/api/, '');
+    } else if (fileIdOrPath.startsWith('/')) {
       url = fileIdOrPath;
     } else {
-      url = fileIdOrPath.startsWith('/') ? `${baseURL}${fileIdOrPath}` : `${baseURL}/${fileIdOrPath}`;
+      url = `/${fileIdOrPath}`;
     }
     
     logger.info('GridFS', 'Fetching from', { url });
     
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-      },
-    });
-
-    if (!response.ok) {
-      logger.warn("GridFS", `Fetch failed: ${response.status} for ${fileIdOrPath}`);
-      return null;
-    }
+    const start = performance.now();
+    const response = await api.get(url, { responseType: 'arraybuffer' });
+    const elapsed = Math.round(performance.now() - start);
 
     // Use forceMime if server returns generic binary type (GridFS metadata gap)
-    const serverType = response.headers.get('Content-Type') || '';
+    const serverType = response.headers['content-type'] || '';
     const mimeType = (forceMime && (!serverType || serverType === 'application/octet-stream'))
       ? forceMime
       : serverType || 'application/octet-stream';
 
-    const arrayBuffer = await response.arrayBuffer();
-    const blob = new Blob([arrayBuffer], { type: mimeType });
+    const blob = new Blob([response.data], { type: mimeType });
     const blobUrl = URL.createObjectURL(blob);
     
     // Store in cache
     blobCache.set(fileIdOrPath, { blobUrl, timestamp: Date.now() });
     
-    logger.info('GridFS', 'File loaded and cached', { mimeType });
+    logger.info('GridFS', `File loaded and cached (${elapsed}ms)`, { mimeType });
     return blobUrl;
   } catch (error) {
     logger.error("GridFS", "Error fetching file", { path: fileIdOrPath, error: (error as any)?.message });
@@ -104,8 +104,10 @@ export const farmerService = {
    */
   async getFarmers(limit = 10, skip = 0, filters?: Record<string, any>) {
     try {
+      const start = performance.now();
       const { data } = await api.get("/farmers/", { params: { limit, skip, ...filters } });
-      logger.info("farmerService", `Loaded ${Array.isArray(data) ? data.length : "?"} farmers`);
+      const elapsed = Math.round(performance.now() - start);
+      logger.info("farmerService", `Loaded ${Array.isArray(data) ? data.length : "?"} farmers (${elapsed}ms)`);
       return data;
     } catch (err: any) {
       logger.error("farmerService", "Failed to load farmers", { error: err?.message, status: err?.response?.status });
@@ -138,8 +140,10 @@ export const farmerService = {
   async getFarmer(farmerId: string) {
     if (!farmerId) throw new Error("Missing farmerId");
     try {
+      const start = performance.now();
       const { data } = await api.get(`/farmers/${farmerId}`);
-      logger.info("farmerService", `Loaded farmer ${farmerId}`);
+      const elapsed = Math.round(performance.now() - start);
+      logger.info("farmerService", `Loaded farmer ${farmerId} (${elapsed}ms)`);
       return data;
     } catch (err: any) {
       logger.error("farmerService", `Failed to load farmer ${farmerId}`, { error: err?.message, status: err?.response?.status });
@@ -486,8 +490,7 @@ export const farmerService = {
     // Fallback: try direct API endpoint
     if (farmer.farmer_id) {
       logger.info('farmerService', '[QR] Using API endpoint for:', farmer.farmer_id);
-      const baseURL = import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev";
-      return await fetchGridFSFile(`${baseURL}/api/farmers/${farmer.farmer_id}/qr`);
+      return await fetchGridFSFile(`/farmers/${farmer.farmer_id}/qr`);
     }
 
     logger.info('farmerService', '[QR] No QR code available');
@@ -561,43 +564,6 @@ export const farmerService = {
     }
     const { data } = await api.post("/farmers/verify-qr", payload);
     return data;
-  },
-
-  /**
-   * Get a farmer's QR code URL.
-   * Backend: GET /api/farmers/{farmer_id}/qr
-   */
-  getQRCode(farmerId: string): string {
-    const baseURL = api.defaults.baseURL || import.meta.env.VITE_API_BASE_URL || "https://automatic-doodle-wqp6gjqwxvqhggvw-8000.app.github.dev";
-    return `${baseURL}/farmers/${farmerId}/qr`;
-  },
-
-  /**
-   * Get a QR image URL for a farmer. If the QR is stored in GridFS (file id),
-   * fetch it via authenticated API and return an object URL suitable for
-   * assigning to an <img> src. Caller is responsible for revoking the URL.
-   */
-  async getQRCodeUrl(farmer: any): Promise<string | null> {
-    if (!farmer) return null;
-
-    // If backend stored a public path, use it
-    if (farmer.qr_code_path) return farmer.qr_code_path;
-
-    // If GridFS file id is present, fetch the file with auth and return object URL
-    const fileId = farmer.qr_code_file_id;
-    if (fileId) {
-      try {
-        const resp = await api.get(`/files/${fileId}`, { responseType: 'blob' });
-        const blob = new Blob([resp.data], { type: resp.headers['content-type'] || 'image/png' });
-        const url = window.URL.createObjectURL(blob);
-        return url;
-      } catch (e) {
-        logger.warn('farmerService', 'Failed to fetch QR from GridFS', e);
-        return null;
-      }
-    }
-
-    return null;
   },
 
   /**

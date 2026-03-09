@@ -142,6 +142,8 @@ class IdentificationDocument(BaseModel):
     doc_type: str = Field(..., description="Document type: nrc, land_title, license, certificate")
     file_path: str = Field(..., description="Path to the document file")
     uploaded_at: str = Field(..., description="ISO timestamp of upload")
+    status: Optional[str] = Field("pending", description="Document verification status: pending, verified, rejected")
+    file_id: Optional[str] = Field(None, description="GridFS file ID")
 
 
 # ============================================
@@ -244,12 +246,18 @@ class FarmerOut(BaseModel):
     documents: Optional[Documents] = None
     identification_documents: Optional[List[IdentificationDocument]] = Field(default_factory=list, description="Array of uploaded identification documents")
     is_active: bool = Field(default=True)
+    operator_id: Optional[str] = Field(None, description="ID of the operator who registered this farmer")
+    verification_status: Optional[str] = Field(None, description="Alias for registration_status for UI compatibility")
     review_notes: Optional[str] = None
     reviewed_by: Optional[str] = None
     reviewed_at: Optional[datetime] = None
+    # Photo / GridFS file IDs
+    photo_file_id: Optional[str] = Field(None, description="GridFS file ID of the farmer photo")
     # ID Card fields
     id_card_path: Optional[str] = Field(None, description="Path to generated ID card PDF")
+    id_card_file_id: Optional[str] = Field(None, description="GridFS file ID of the generated ID card PDF")
     qr_code_path: Optional[str] = Field(None, description="Path to generated QR code image")
+    qr_code_file_id: Optional[str] = Field(None, description="GridFS file ID of the generated QR code")
     id_card_generated_at: Optional[datetime] = Field(None, description="Timestamp when ID card was generated")
     
     model_config = ConfigDict(
@@ -267,6 +275,20 @@ class FarmerOut(BaseModel):
             # Convert ObjectId to string
             if "_id" in data:
                 data["_id"] = str(data["_id"])
+            # Stringify any ObjectId fields that may have been stored as BSON ObjectId
+            for field in ("photo_file_id", "id_card_file_id", "qr_code_file_id"):
+                if field in data and data[field] is not None:
+                    data[field] = str(data[field])
+            
+            # Populate verification_status as alias for registration_status
+            if "verification_status" not in data or data["verification_status"] is None:
+                data["verification_status"] = data.get("registration_status")
+            
+            # Ensure documents have status field
+            id_docs = data.get("identification_documents") or []
+            for doc in id_docs:
+                if "status" not in doc or doc["status"] is None:
+                    doc["status"] = "pending"
             
             # Normalize personal_info (handle legacy format)
             if "personal_info" in data:

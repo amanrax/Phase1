@@ -6,7 +6,9 @@ import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
 import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
+import FarmerBottomNav from '@/components/FarmerBottomNav';
 import { logger } from "@/utils/logger";
+import { useFeedback } from "@/utils/feedback";
 
 const COMPONENT = "FarmerIDCard";
 
@@ -79,6 +81,7 @@ const FarmerIDCard: React.FC = () => {
   const [photoError, setPhotoError] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const { success: showSuccess, error: showError, info: showInfo, dismiss } = useNotification();
+  const { triggerSound, triggerVibration } = useFeedback();
 
   useEffect(() => {
     loadFarmerData();
@@ -99,9 +102,10 @@ const FarmerIDCard: React.FC = () => {
       }
 
       logger.info(COMPONENT, 'Loading farmer data for:', farmerId);
+      const start = performance.now();
       const data = await farmerService.getFarmer(farmerId);
       setFarmer(data);
-      logger.info(COMPONENT, 'Farmer data loaded:', data);
+      logger.info(COMPONENT, `Farmer data loaded (${Math.round(performance.now() - start)}ms)`);
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Failed to load farmer data";
       logger.error(COMPONENT, 'Load error:', msg);
@@ -120,12 +124,14 @@ const FarmerIDCard: React.FC = () => {
       try {
         logger.info(COMPONENT, 'Loading photo for:', farmer.farmer_id);
         setPhotoError(false);
+        const start = performance.now();
         const url = await farmerService.getPhotoUrl(farmer);
+        const elapsed = Math.round(performance.now() - start);
         if (url) {
           setPhotoUrl(url);
-          logger.info(COMPONENT, '✅ Photo loaded');
+          logger.info(COMPONENT, `Photo loaded (${elapsed}ms)`);
         } else {
-          logger.info(COMPONENT, 'No photo available');
+          logger.warn(COMPONENT, `Photo not available (${elapsed}ms)`);
           setPhotoError(true);
         }
       } catch (error) {
@@ -148,12 +154,14 @@ const FarmerIDCard: React.FC = () => {
       try {
         logger.info(COMPONENT, 'Loading QR code for:', farmer.farmer_id);
         setQrError(false);
+        const start = performance.now();
         const url = await farmerService.getQRCodeBlobUrl(farmer);
+        const elapsed = Math.round(performance.now() - start);
         if (url) {
           setQrUrl(url);
-          logger.info(COMPONENT, '✅ QR code loaded');
+          logger.info(COMPONENT, `QR code loaded (${elapsed}ms)`);
         } else {
-          logger.info(COMPONENT, 'No QR code available');
+          logger.warn(COMPONENT, `QR code not available (${elapsed}ms)`);
           setQrError(true);
         }
       } catch (error) {
@@ -211,6 +219,8 @@ const FarmerIDCard: React.FC = () => {
             
             logger.info(COMPONENT, '✅ Generation complete!');
             if (notifId) dismiss(notifId);
+            triggerVibration("registration_complete");
+            triggerSound("registration_complete");
             showSuccess('✅ ID card generated successfully!', 5000);
             setGenerating(false);
           } else if (attempts >= maxAttempts) {
@@ -238,6 +248,8 @@ const FarmerIDCard: React.FC = () => {
       const msg = err.response?.data?.detail || err.message || "Failed to generate ID card";
       if (notifId) dismiss(notifId);
       logger.error(COMPONENT, 'Generation error:', msg);
+      triggerVibration("form_error");
+      triggerSound("error");
       setError(msg);
       showError(msg, 5000);
       setGenerating(false);
@@ -258,14 +270,20 @@ const FarmerIDCard: React.FC = () => {
       if (downloadNotifId) dismiss(downloadNotifId);
       
       if (result?.savedPath) {
+        triggerVibration("doc_approved");
+        triggerSound("upload_success");
         showSuccess(`Saved to Downloads folder:\n${result.savedPath.split('/').pop()}`, 5000);
       } else {
+        triggerVibration("doc_approved");
+        triggerSound("upload_success");
         showSuccess("Downloaded to your Downloads folder", 4000);
       }
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Download failed. Generate ID first.";
       logger.error(COMPONENT, 'Download error:', msg);
       if (downloadNotifId) dismiss(downloadNotifId);
+      triggerVibration("form_error");
+      triggerSound("error");
       showError(msg, 5000);
       setError(msg);
     }
@@ -372,7 +390,7 @@ const FarmerIDCard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900 pb-20">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -651,6 +669,7 @@ const FarmerIDCard: React.FC = () => {
           onClose={() => setShowPreview(false)} 
         />
       )}
+      <FarmerBottomNav />
     </div>
   );
 };

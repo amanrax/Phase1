@@ -284,9 +284,10 @@ export default function OperatorManagement() {
       setOperators(list);
       setTotalOperators(total);
       setCurrentPage(page);
-    } catch (err: any) {
-      const code   = err?.response?.status;
-      const detail = err?.response?.data?.detail || err?.message;
+    } catch (err: unknown) {
+      const e = err as { message?: string; response?: { status?: number; data?: { detail?: string } } };
+      const code   = e?.response?.status;
+      const detail = e?.response?.data?.detail || e?.message;
       logger.error("OperatorManagement", "Failed to load operators", { code, detail });
       if (code === 401) notify.error("Session expired. Please log in again.");
       else if (code === 403) notify.error("Access denied — admin rights required.");

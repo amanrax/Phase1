@@ -73,7 +73,10 @@ export type SoundEvent =
   | "qr_success"
   | "registration_complete"
   | "error"
-  | "notification";
+  | "notification"
+  | "upload_success"
+  | "delete_success"
+  | "save_success";
 
 let audioCtx: AudioContext | null = null;
 
@@ -141,6 +144,26 @@ const SOUND_SEQUENCES: Record<SoundEvent, () => void> = {
     if (!ctx) return;
     playTone(ctx, 700, 0.1, "sine", 0.2, 0);
     playTone(ctx, 900, 0.12, "sine", 0.15, 0.12);
+  },
+  upload_success: () => {
+    // Soft two-tone ascending — file uploaded
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    playTone(ctx, 660, 0.1, "sine", 0.18, 0);
+    playTone(ctx, 880, 0.15, "sine", 0.18, 0.12);
+  },
+  delete_success: () => {
+    // Short descending triangle — item removed
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    playTone(ctx, 440, 0.08, "triangle", 0.18, 0);
+    playTone(ctx, 330, 0.12, "triangle", 0.12, 0.1);
+  },
+  save_success: () => {
+    // Single clean chime — data saved
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    playTone(ctx, 784, 0.18, "sine", 0.2, 0);
   },
 };
 

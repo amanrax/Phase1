@@ -76,11 +76,11 @@ async def verify_farmer_by_id(farmer_id: str, db=Depends(get_db)):
         "verified": True,
         "farmer_id": farmer_id,
         "name": f"{personal.get('first_name', '')} {personal.get('last_name', '')}".strip(),
-        "nrc": personal.get("nrc_number"),
+        "nrc": personal.get("nrc") or farmer.get("nrc_number"),
         "province": address.get("province_name"),
         "district": address.get("district_name"),
         "photo_url": photo_url,
-        "registered_date": farmer.get("created_at"),
+        "registered_date": farmer["created_at"].isoformat() if hasattr(farmer.get("created_at"), "isoformat") else str(farmer.get("created_at", "")),
         "operator_name": operator_name,
     }
 
@@ -203,8 +203,8 @@ async def get_qr_code(farmer_id: str, db=Depends(get_db)):
                 media_type="image/png",
                 headers={"Content-Disposition": f"inline; filename={farmer_id}_qr.png"}
             )
-        except Exception as e:
-            print(f"GridFS QR lookup failed for {farmer_id}: {e}")
+        except Exception:
+            pass  # GridFS QR lookup failed — fall through to filesystem path
     
     # Fallback to filesystem path (legacy method)
     qr_path = farmer.get("qr_code_path")

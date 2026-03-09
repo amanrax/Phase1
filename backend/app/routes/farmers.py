@@ -205,12 +205,12 @@ async def list_farmers(
     farmer_id_exact: Optional[str] = Query(None, description="Exact farmer_id match (overrides search)"),
     nrc: Optional[str] = Query(None, description="Exact NRC number match (overrides search)"),
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))
+    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR"]))
 ):
     """
     List all farmers with pagination and filtering.
     
-    **Permissions:** ADMIN, OPERATOR, or FARMER
+    **Permissions:** ADMIN, OPERATOR only (FARMER role is blocked — use own profile endpoint)
     
     **Query Parameters:**
     - `skip`: Pagination offset (default: 0)
@@ -1024,6 +1024,18 @@ async def upload_farmer_document(
             status_code=400, 
             detail=f"Invalid doc_type. Must be one of: {', '.join(valid_doc_types)}"
         )
+
+    # Validate file MIME type — only allow images and PDFs
+    allowed_mime_types = {
+        "image/jpeg", "image/jpg", "image/png", "image/gif",
+        "image/webp", "application/pdf"
+    }
+    content_type = (file.content_type or "").lower()
+    if content_type not in allowed_mime_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type '{content_type}'. Only images (JPEG, PNG, GIF, WebP) and PDFs are allowed."
+        )
     
     # Check if farmer exists and authorize
     farmer_check = await db.farmers.find_one({"farmer_id": farmer_id})
@@ -1055,7 +1067,8 @@ async def upload_farmer_document(
             "doc_type": doc_type,
             "file_path": f"/api/files/{file_id}",
             "file_id": file_id,
-            "uploaded_at": datetime.utcnow().isoformat()
+            "uploaded_at": datetime.utcnow().isoformat(),
+            "status": "pending"
         }
         
         # Check if document of this type already exists

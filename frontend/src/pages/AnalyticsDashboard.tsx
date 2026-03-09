@@ -8,6 +8,7 @@ import BackButton from "@/components/BackButton";
 
 const roleBackPath = (role?: string) => role === "operator" ? "/operator-dashboard" : "/admin-dashboard";
 import { logger } from "@/utils/logger";
+import { APP_VERSION } from "@/utils/version";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, AreaChart, Area
@@ -427,7 +428,7 @@ export default function AnalyticsDashboard() {
         </div>
 
         <p className="text-center text-xs text-gray-400 dark:text-gray-500 pb-4">
-          CEM Farmer System v2.0.0 - Analytics ({analytics?.generated_at ? new Date(analytics.generated_at).toLocaleString() : "—"})
+          CEM Farmer System v{APP_VERSION} - Analytics ({analytics?.generated_at ? new Date(analytics.generated_at).toLocaleString() : "—"})
         </p>
       </div>
     </div>

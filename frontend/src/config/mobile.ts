@@ -53,7 +53,8 @@ export const getApiBaseUrl = (): string => {
 
   if (isCodespaces) {
     const currentHost = window.location.hostname;
-    const backendHost = currentHost.replace('-5173.', '-8000.');
+    // Replace any port suffix (e.g. -5173, -5174, -3000) with -8000
+    const backendHost = currentHost.replace(/-\d+\.app\.github\.dev$/, '-8000.app.github.dev');
     const codespaceUrl = `https://${backendHost}`;
     console.log('[Mobile] ✅ Detected GitHub Codespaces:', codespaceUrl);
     return codespaceUrl;

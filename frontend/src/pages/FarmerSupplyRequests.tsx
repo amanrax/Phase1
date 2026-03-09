@@ -5,6 +5,8 @@ import axios from "@/utils/axios";
 import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import FarmerBottomNav from "@/components/FarmerBottomNav";
+import { useFeedback } from "@/utils/feedback";
 
 const COMPONENT = "FarmerSupplyRequests";
 
@@ -98,6 +100,7 @@ function StatusTimeline({ history }: { history: StatusHistoryEntry[] }) {
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 function DetailModal({ req, onClose, onCancelled }: { req: SupplyRequest; onClose: () => void; onCancelled: () => void }) {
   const { success: ok, error: err } = useNotification();
+  const { triggerSound, triggerVibration } = useFeedback();
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [showCancelForm, setShowCancelForm] = useState(false);
@@ -108,11 +111,15 @@ function DetailModal({ req, onClose, onCancelled }: { req: SupplyRequest; onClos
     try {
       await axios.patch(`/supplies/cancel/${req.id}`, { reason: cancelReason || undefined });
       logger.info(COMPONENT, "cancelRequest.success", { id: req.id });
+      triggerVibration("destructive_confirm");
+      triggerSound("delete_success");
       ok("Request cancelled successfully");
       onCancelled();
     } catch (e: any) {
       const msg = e.response?.data?.detail || "Failed to cancel request";
       logger.error(COMPONENT, "cancelRequest.error", { id: req.id, msg, e });
+      triggerVibration("form_error");
+      triggerSound("error");
       err(msg);
     } finally {
       setCancelling(false);
@@ -244,6 +251,7 @@ function RequestFormModal({
   onSaved: () => void;
 }) {
   const { success: ok, error: err } = useNotification();
+  const { triggerSound, triggerVibration } = useFeedback();
   const isEdit = !!editTarget;
 
   const [form, setForm]   = useState(blankForm());
@@ -320,16 +328,22 @@ function RequestFormModal({
       if (isEdit && editTarget) {
         await axios.patch(`/supplies/farmer-edit/${editTarget.id}`, payload);
         logger.info(COMPONENT, `${action}.success`, { id: editTarget.id });
+        triggerVibration("doc_approved");
+        triggerSound("save_success");
         ok("Request updated successfully");
       } else {
         const res = await axios.post("/supplies/request", payload);
         logger.info(COMPONENT, `${action}.success`, { ref: res.data.request_ref });
+        triggerVibration("registration_complete");
+        triggerSound("upload_success");
         ok(`Request submitted — Ref: ${res.data.request_ref}`);
       }
       onSaved();
     } catch (e: any) {
       const msg = e.response?.data?.detail || `Failed to ${isEdit ? "update" : "create"} request`;
       logger.error(COMPONENT, `${action}.error`, { msg, e });
+      triggerVibration("form_error");
+      triggerSound("error");
       if (Array.isArray(msg)) {
         err(msg.map((x: any) => x.msg || JSON.stringify(x)).join("; "));
       } else {
@@ -574,6 +588,7 @@ export default function FarmerSupplyRequests() {
     abortRef.current?.abort();
     abortRef.current = new AbortController();
     setLoading(true);
+    const start = performance.now();
     logger.info(COMPONENT, "loadRequests.start", { filter: statusFilter });
     try {
       const params: any = { limit: 200, skip: 0 };
@@ -583,7 +598,7 @@ export default function FarmerSupplyRequests() {
       setRequests(data.requests || []);
       setTotal(data.total ?? 0);
       setSummary(data.summary || {});
-      logger.info(COMPONENT, "loadRequests.success", { count: data.total });
+      logger.info(COMPONENT, `loadRequests.success (${Math.round(performance.now() - start)}ms)`, { count: data.total });
     } catch (e: any) {
       if (e.code === "ERR_CANCELED") return;
       const msg = e.response?.data?.detail || "Failed to load supply requests";
@@ -628,7 +643,7 @@ export default function FarmerSupplyRequests() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900 pb-20">
       {/* Modals */}
       {detailReq && (
         <DetailModal
@@ -786,6 +801,7 @@ export default function FarmerSupplyRequests() {
           </>
         )}
       </div>
+      <FarmerBottomNav />
     </div>
   );
 }

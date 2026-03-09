@@ -141,8 +141,11 @@ export default function EditFarmer() {
 
   const fetchFarmer = async () => {
     try {
+      const start = performance.now();
+      logger.info(COMPONENT, 'fetchFarmer start', { farmerId });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const farmer: any = await farmerService.getFarmer(farmerId!);
+      logger.info(COMPONENT, `fetchFarmer success (${Math.round(performance.now() - start)}ms)`, { farmerId });
       
       if (farmer.address?.province_code) {
         await loadDistricts(farmer.address.province_code);

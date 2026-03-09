@@ -17,7 +17,6 @@ interface PublicFarmerSummary {
   verified: boolean;
   farmer_id: string;
   name: string;
-  nrc: string | null;
   province: string | null;
   district: string | null;
   photo_url: string | null;

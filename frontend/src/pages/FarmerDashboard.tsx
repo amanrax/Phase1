@@ -1,6 +1,6 @@
 // src/pages/FarmerDashboard.tsx — Mobile-first modern farmer dashboard (matches AdminDashboard)
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { safeNavigate } from "@/config/navigation";
 import useAuthStore from "@/store/authStore";
 import { farmerService } from "@/services/farmer.service";
@@ -8,13 +8,16 @@ import { useNotification } from "@/contexts/NotificationContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import type { Theme } from "@/contexts/ThemeContext";
 import FarmerIDCardPreview from "@/components/FarmerIDCardPreview";
+import FarmerBottomNav from "@/components/FarmerBottomNav";
 import { logger } from "@/utils/logger";
 import { loadFeedbackPrefs, saveFeedbackPrefs } from "@/utils/feedback";
+import { APP_VERSION, PHASE } from "@/utils/version";
+import { notificationsService } from "@/services/notifications.service";
 
 const COMPONENT = "FarmerDashboard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type NavTab = "home" | "idcard" | "supplies" | "settings";
+type NavTab = "home" | "idcard" | "supplies" | "notifications" | "settings";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 function Skeleton({ className = "" }: { className?: string }) {
@@ -54,17 +57,6 @@ function QuickAction({ icon, label, bg, onPress }: { icon: string; label: string
     <button onClick={onPress} className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl ${bg} text-white shadow-md active:scale-95 transition-transform duration-150 select-none`}>
       <span className="text-2xl leading-none">{icon}</span>
       <span className="text-[11px] font-semibold text-center leading-tight">{label}</span>
-    </button>
-  );
-}
-
-// ─── Bottom Nav Item ──────────────────────────────────────────────────────────
-function NavItem({ icon, label, active, onClick }: { icon: string; label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className={`flex flex-col items-center justify-center flex-1 py-2 gap-0.5 transition-colors duration-150 ${active ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"}`}>
-      <span className={`text-xl leading-none ${active ? "scale-110" : "scale-100"} transition-transform duration-150`}>{icon}</span>
-      <span className={`text-[10px] font-semibold ${active ? "opacity-100" : "opacity-70"}`}>{label}</span>
-      {active && <span className="w-1 h-1 rounded-full bg-green-500 dark:bg-green-400 mt-0.5" />}
     </button>
   );
 }
@@ -190,7 +182,7 @@ function SettingsPanel() {
         <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">ℹ️ About</h3>
         <div className="space-y-1">
           {[
-            { k: "Version", v: "2.0.0" },
+            { k: "Version", v: `v${APP_VERSION} (${PHASE})` },
             { k: "Role", v: "Farmer" },
             { k: "Environment", v: "Development" },
           ].map(({ k, v }) => (
@@ -213,7 +205,11 @@ export default function FarmerDashboard() {
   const navigate = useNavigate();
   const notify = useNotification();
 
-  const [activeTab, setActiveTab] = useState<NavTab>("home");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<NavTab>(() => {
+    const tab = searchParams.get("tab") as NavTab | null;
+    return tab === "settings" || tab === "idcard" || tab === "supplies" ? tab : "home";
+  });
   const [farmerData, setFarmerData] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -222,6 +218,7 @@ export default function FarmerDashboard() {
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [photoError, setPhotoError] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
   const hasLoadedRef = useRef(false);
   const loadingRef = useRef(false);
@@ -241,9 +238,11 @@ export default function FarmerDashboard() {
         return;
       }
 
+      const start = performance.now();
       logger.info(COMPONENT, "loadFarmerData start", { farmer_id: user.farmer_id });
       const fullData = await farmerService.getFarmer(user.farmer_id);
-      logger.info(COMPONENT, "loadFarmerData success");
+      const elapsed = Math.round(performance.now() - start);
+      logger.info(COMPONENT, `loadFarmerData success (${elapsed}ms)`);
       setFarmerData(fullData);
       hasLoadedRef.current = true;
       if (isRefresh) notify.success("Profile refreshed.");
@@ -267,58 +266,77 @@ export default function FarmerDashboard() {
     if (!hasLoadedRef.current) loadFarmerData();
   }, [loadFarmerData]);
 
+  // ─── Load Notification Count ──────────────────────────────────────────
+  useEffect(() => {
+    const start = performance.now();
+    notificationsService.getUnreadCount()
+      .then((count) => {
+        setUnreadNotifCount(count);
+        logger.info(COMPONENT, `Notification count loaded: ${count} (${Math.round(performance.now() - start)}ms)`);
+      })
+      .catch((err) => {
+        logger.warn(COMPONENT, "Notification count failed", { error: (err as Error)?.message });
+      });
+  }, []);
+
   // ─── Load Photo ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!farmerData) return;
-    const photoPath = farmerData?.documents?.photo || farmerData?.photo_path;
-    if (!photoPath) { setPhotoError(true); return; }
-
-    let blobUrl: string | null = null;
+    let cancelled = false;
     const loadPhoto = async () => {
       try {
         setPhotoError(false);
-        const baseURL = import.meta.env.VITE_API_BASE_URL || "";
-        const fullUrl = photoPath.startsWith("http") ? photoPath : `${baseURL}${photoPath}`;
-        const response = await fetch(fullUrl, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
-        });
-        if (!response.ok) throw new Error(`Photo fetch ${response.status}`);
-        const blob = await response.blob();
-        blobUrl = URL.createObjectURL(blob);
-        setPhotoUrl(blobUrl);
-        logger.info(COMPONENT, "Photo loaded");
+        const start = performance.now();
+        logger.info(COMPONENT, "Photo loading start");
+        const url = await farmerService.getPhotoUrl(farmerData);
+        const elapsed = Math.round(performance.now() - start);
+        if (cancelled) return;
+        if (url) {
+          setPhotoUrl(url);
+          logger.info(COMPONENT, `Photo loaded in ${elapsed}ms`);
+        } else {
+          logger.warn(COMPONENT, `Photo not available (${elapsed}ms)`);
+          setPhotoError(true);
+        }
       } catch (err) {
-        logger.error(COMPONENT, "Photo load failed", { error: err });
-        setPhotoError(true);
+        if (!cancelled) {
+          logger.error(COMPONENT, "Photo load failed", { error: (err as Error)?.message });
+          setPhotoError(true);
+        }
       }
     };
     loadPhoto();
-    return () => { if (blobUrl) URL.revokeObjectURL(blobUrl); };
+    return () => { cancelled = true; };
   }, [farmerData]);
 
   // ─── Load QR Code ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!farmerData) return;
-    let blobUrl: string | null = null;
+    let cancelled = false;
     const loadQR = async () => {
       try {
         setQrError(false);
-        const baseURL = import.meta.env.VITE_API_BASE_URL || "";
-        const response = await fetch(`${baseURL}/api/farmers/${farmerData.farmer_id}/qr`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
-        });
-        if (!response.ok) throw new Error(`QR fetch ${response.status}`);
-        const blob = await response.blob();
-        blobUrl = URL.createObjectURL(blob);
-        setQrCodeUrl(blobUrl);
-        logger.info(COMPONENT, "QR loaded");
+        const start = performance.now();
+        logger.info(COMPONENT, "QR loading start");
+        const url = await farmerService.getQRCodeBlobUrl(farmerData);
+        const elapsed = Math.round(performance.now() - start);
+        if (cancelled) return;
+        if (url) {
+          setQrCodeUrl(url);
+          logger.info(COMPONENT, `QR loaded in ${elapsed}ms`);
+        } else {
+          logger.warn(COMPONENT, "QR not available");
+          setQrError(true);
+        }
       } catch (err) {
-        logger.error(COMPONENT, "QR load failed", { error: err });
-        setQrError(true);
+        if (!cancelled) {
+          logger.error(COMPONENT, "QR load failed", { error: (err as Error)?.message });
+          setQrError(true);
+        }
       }
     };
     loadQR();
-    return () => { if (blobUrl) URL.revokeObjectURL(blobUrl); };
+    return () => { cancelled = true; };
   }, [farmerData]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
@@ -343,10 +361,11 @@ export default function FarmerDashboard() {
 
   const handleTabChange = (tab: NavTab) => {
     logger.info(COMPONENT, "Tab navigation", { tab });
-    if (tab === "home") { setActiveTab("home"); return; }
+    if (tab === "home") { setActiveTab("home"); setSearchParams({}); return; }
     if (tab === "idcard") { safeNavigate(navigate, "/farmer-idcard"); return; }
     if (tab === "supplies") { safeNavigate(navigate, "/farmer/supply-requests"); return; }
-    if (tab === "settings") { setActiveTab("settings"); return; }
+    if (tab === "notifications") { safeNavigate(navigate, "/notifications"); return; }
+    if (tab === "settings") { setActiveTab("settings"); setSearchParams({ tab: "settings" }); return; }
   };
 
   const getGreeting = () => {
@@ -363,9 +382,11 @@ export default function FarmerDashboard() {
     { icon: "📄", label: "Full Profile", bg: "bg-gradient-to-br from-blue-500 to-indigo-600", onPress: () => safeNavigate(navigate, `/farmers/${farmerData?.farmer_id}`) },
     { icon: "✏️", label: "Edit Details", bg: "bg-gradient-to-br from-amber-500 to-orange-600", onPress: () => safeNavigate(navigate, `/farmers/edit/${farmerData?.farmer_id}`) },
     { icon: "🆔", label: "ID Card", bg: "bg-gradient-to-br from-emerald-500 to-green-600", onPress: () => safeNavigate(navigate, "/farmer-idcard") },
-    { icon: "👁️", label: "Preview ID", bg: "bg-gradient-to-br from-purple-500 to-violet-600", onPress: () => setShowPreview(true) },
+    { icon: "�", label: "Documents", bg: "bg-gradient-to-br from-teal-500 to-cyan-600", onPress: () => safeNavigate(navigate, "/farmer/documents") },
+    { icon: "📝", label: "Change Request", bg: "bg-gradient-to-br from-purple-500 to-violet-600", onPress: () => safeNavigate(navigate, "/farmer/change-requests") },
+    { icon: "🔔", label: "Notifications", bg: "bg-gradient-to-br from-rose-500 to-pink-600", onPress: () => safeNavigate(navigate, "/notifications") },
     { icon: "📥", label: "Download ID", bg: "bg-gradient-to-br from-cyan-500 to-teal-600", onPress: handleDownloadIDCard },
-    { icon: "🛒", label: "Supplies", bg: "bg-gradient-to-br from-rose-500 to-pink-600", onPress: () => safeNavigate(navigate, "/farmer/supply-requests") },
+    { icon: "🛒", label: "Supplies", bg: "bg-gradient-to-br from-orange-500 to-red-600", onPress: () => safeNavigate(navigate, "/farmer/supply-requests") },
   ];
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -390,6 +411,18 @@ export default function FarmerDashboard() {
                 <span className="text-white/80 text-xs font-semibold tracking-widest uppercase">CEM Farmer</span>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => safeNavigate(navigate, "/notifications")}
+                  aria-label="Notifications"
+                  className="relative w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:scale-90 transition-transform"
+                >
+                  <span className="text-sm">🔔</span>
+                  {unreadNotifCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                      {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
+                    </span>
+                  )}
+                </button>
                 <button
                   onClick={() => loadFarmerData(true)}
                   disabled={refreshing}
@@ -429,9 +462,15 @@ export default function FarmerDashboard() {
 
             {/* Status pill */}
             <div className="relative mt-4 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
-              <span className={`w-1.5 h-1.5 rounded-full ${farmerData?.registration_status === "verified" ? "bg-green-300 animate-pulse" : "bg-yellow-300 animate-pulse"}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${
+                farmerData?.registration_status === "verified" ? "bg-green-300 animate-pulse" :
+                farmerData?.registration_status === "rejected" ? "bg-red-300 animate-pulse" :
+                "bg-yellow-300 animate-pulse"
+              }`} />
               <span className="text-white/90 text-[11px] font-semibold">
-                {farmerData?.registration_status === "verified" ? "✅ Verified" : "⏳ Pending Verification"}
+                {farmerData?.registration_status === "verified" ? "✅ Verified" :
+                 farmerData?.registration_status === "rejected" ? "❌ Rejected" :
+                 "⏳ Pending Verification"}
               </span>
             </div>
           </div>
@@ -481,6 +520,33 @@ export default function FarmerDashboard() {
             </div>
           )}
 
+          {/* ── Rejection Banner ────────────────────────────────────────── */}
+          {!loading && farmerData && farmerData.registration_status === "rejected" && (
+            <div className="mx-4 mt-4 rounded-xl border border-red-400/50 bg-red-500/20 p-4 flex items-start gap-3">
+              <span className="text-2xl mt-0.5">❌</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-red-200">Verification Rejected</p>
+                <p className="text-xs text-red-300/80 mt-0.5">
+                  {farmerData.rejection_reason || farmerData.status_history?.find((h: Record<string, string>) => h.status === "rejected")?.note || "Your profile or documents were rejected. Check your Document Wallet for details."}
+                </p>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => navigate("/farmer/documents")}
+                    className="px-3 py-1.5 text-xs font-bold bg-red-500 hover:bg-red-400 text-white rounded-lg transition active:scale-95"
+                  >
+                    View Documents →
+                  </button>
+                  <button
+                    onClick={() => navigate("/farmer/change-requests")}
+                    className="px-3 py-1.5 text-xs font-bold bg-white/20 hover:bg-white/30 text-white rounded-lg transition active:scale-95"
+                  >
+                    Request Change
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ── Settings Tab ───────────────────────────────────────────── */}
           {activeTab === "settings" && !loading && (
             <div className="mt-5">
@@ -502,9 +568,14 @@ export default function FarmerDashboard() {
                 <SectionHeader title="My Farm Overview" />
                 <div className="grid grid-cols-2 gap-3">
                   <StatCard
-                    icon="📋" label="Status" value={farmerData?.registration_status === "verified" ? "Verified" : "Pending"}
+                    icon="📋" label="Status" value={
+                      farmerData?.registration_status === "verified" ? "Verified" :
+                      farmerData?.registration_status === "rejected" ? "Rejected" : "Pending"
+                    }
                     color={farmerData?.registration_status === "verified"
                       ? "bg-gradient-to-br from-green-500 to-emerald-600"
+                      : farmerData?.registration_status === "rejected"
+                      ? "bg-gradient-to-br from-red-500 to-rose-600"
                       : "bg-gradient-to-br from-amber-500 to-orange-600"}
                     loading={false}
                   />
@@ -529,7 +600,7 @@ export default function FarmerDashboard() {
               {/* Quick Actions */}
               <div className="px-4 mt-6">
                 <SectionHeader title="Quick Actions" />
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-4 gap-3">
                   {quickActions.map((a) => (
                     <QuickAction key={a.label} {...a} />
                   ))}
@@ -590,7 +661,7 @@ export default function FarmerDashboard() {
                 <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">System</p>
                 <div className="flex flex-wrap gap-x-6 gap-y-1.5">
                   {[
-                    { k: "Version", v: "2.0.0" },
+                    { k: "Version", v: `v${APP_VERSION} (${PHASE})` },
                     { k: "Role", v: "Farmer" },
                     { k: "Farmer ID", v: farmerData?.farmer_id ?? "—" },
                   ].map(({ k, v }) => (
@@ -607,14 +678,7 @@ export default function FarmerDashboard() {
         </div>{/* end scrollable */}
 
         {/* ── Bottom Navigation Bar ─────────────────────────────────────── */}
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
-          <div className="flex max-w-lg mx-auto">
-            <NavItem icon="🏠" label="Home" active={activeTab === "home"} onClick={() => handleTabChange("home")} />
-            <NavItem icon="🆔" label="ID Card" active={activeTab === "idcard"} onClick={() => handleTabChange("idcard")} />
-            <NavItem icon="🛒" label="Supplies" active={activeTab === "supplies"} onClick={() => handleTabChange("supplies")} />
-            <NavItem icon="⚙️" label="Settings" active={activeTab === "settings"} onClick={() => handleTabChange("settings")} />
-          </div>
-        </nav>
+        <FarmerBottomNav activeTabOverride={activeTab} onTabChange={handleTabChange} />
       </div>
 
       {/* ID Card Preview Modal */}

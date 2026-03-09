@@ -1,12 +1,14 @@
 // src/pages/AdminDashboard.tsx — Mobile-first modern admin dashboard
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import useAuthStore from "@/store/authStore";
-import { dashboardService } from "@/services/dashboard.service";
-import { operatorService } from "@/services/operator.service";
+import { DashboardStats, dashboardService } from "@/services/dashboard.service";
+import { operatorService, type OperatorListResponse, type OperatorRecord } from "@/services/operator.service";
 import { useNotification } from "@/contexts/NotificationContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { logger } from "@/utils/logger";
+import { APP_VERSION, PHASE } from "@/utils/version";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -243,13 +245,15 @@ export default function AdminDashboard() {
 
     try {
       const [statsData, operatorsData] = await Promise.all([
-        dashboardService.getStats().catch((err: any) => {
-          logger.error("AdminDashboard", "Stats fetch failed", { error: err?.message, status: err?.response?.status });
+        dashboardService.getStats().catch((err: unknown) => {
+          const e = err as { message?: string; response?: { status?: number } };
+          logger.error("AdminDashboard", "Stats fetch failed", { error: e?.message, status: e?.response?.status });
           throw err;
         }),
-        operatorService.getOperators(20, 0).catch((err: any) => {
-          logger.error("AdminDashboard", "Operators fetch failed", { error: err?.message });
-          return { results: [], count: 0 };
+        operatorService.getOperators(20, 0).catch((err: unknown) => {
+          const e = err as { message?: string };
+          logger.error("AdminDashboard", "Operators fetch failed", { error: e?.message });
+          return { results: [] as OperatorRecord[], count: 0 } as OperatorListResponse;
         }),
       ]);
 
@@ -263,7 +267,7 @@ export default function AdminDashboard() {
         totalFarmers:    statsData?.farmers?.total              ?? 0,
         activeFarmers:   statsData?.farmers?.active              ?? 0,
         pendingFarmers:  statsData?.farmers?.pending             ?? 0,
-        docsPendingReview: (statsData?.farmers as any)?.docs_pending_review ?? 0,
+        docsPendingReview: statsData?.farmers?.docs_pending_review ?? 0,
         totalOperators:  statsData?.operators?.total             ?? 0,
         activeOperators: statsData?.operators?.active ?? 0,
         totalUsers:      statsData?.users?.total      ?? 0,
@@ -271,7 +275,7 @@ export default function AdminDashboard() {
         totalAdmins:     statsData?.users?.by_role?.admin ?? 0,
       });
 
-      const recentList: RecentFarmer[] = (statsData?.farmers?.recent || []).map((f: any) => ({
+      const recentList: RecentFarmer[] = (statsData?.farmers?.recent ?? ([] as DashboardStats["farmers"]["recent"])).map((f) => ({
         farmer_id: f.farmer_id,
         name: f.name
           || `${f.personal_info?.first_name ?? ""} ${f.personal_info?.last_name ?? ""}`.trim()
@@ -292,9 +296,10 @@ export default function AdminDashboard() {
       });
 
       if (isRefresh) notify.success("Dashboard refreshed successfully.");
-    } catch (err: any) {
-      const status = err?.response?.status;
-      const msg = err?.response?.data?.detail || err?.message || "Failed to load dashboard data";
+    } catch (err: unknown) {
+      const e = err as { message?: string; response?: { status?: number; data?: { detail?: string } } };
+      const status = e?.response?.status;
+      const msg = e?.response?.data?.detail || e?.message || "Failed to load dashboard data";
       logger.error("AdminDashboard", "Dashboard load error", { error: msg, status });
 
       if (status === 401) {
@@ -336,7 +341,7 @@ export default function AdminDashboard() {
     { icon: "🧑‍💼", label: "Add Operator", bg: "bg-gradient-to-br from-blue-500 to-indigo-600",    onPress: () => { logger.info("AdminDashboard", "QuickAction: Add Operator"); navigate("/operators/manage", { state: { openCreate: true } }); } },
     { icon: "📈", label: "Analytics",    bg: "bg-gradient-to-br from-violet-500 to-purple-600",  onPress: () => { logger.info("AdminDashboard", "QuickAction: Analytics");          navigate("/admin/analytics"); } },
     { icon: "🛒", label: "Supply Req.",  bg: "bg-gradient-to-br from-rose-500 to-pink-600",      onPress: () => { logger.info("AdminDashboard", "QuickAction: Supply Requests");   navigate("/admin/supply-requests"); } },
-    { icon: "📷", label: "QR Scan", bg: "bg-gradient-to-br from-amber-500 to-orange-600", onPress: () => { logger.info("AdminDashboard", "QuickAction: QR Scan"); navigate("/qr-scanner"); } },
+    ...(Capacitor.isNativePlatform() ? [{ icon: "📷", label: "QR Scan", bg: "bg-gradient-to-br from-amber-500 to-orange-600", onPress: () => { logger.info("AdminDashboard", "QuickAction: QR Scan"); navigate("/qr-scanner"); } }] : []),
   ];
 
   const getGreeting = () => {
@@ -394,7 +399,7 @@ export default function AdminDashboard() {
           {/* Version pill */}
           <div className="relative mt-4 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse" />
-            <span className="text-white/90 text-[11px] font-semibold">v2.0.0 · Live</span>
+            <span className="text-white/90 text-[11px] font-semibold">v{APP_VERSION} · Live</span>
           </div>
         </div>
 
@@ -559,7 +564,7 @@ export default function AdminDashboard() {
           <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">System</p>
           <div className="flex flex-wrap gap-x-6 gap-y-1.5">
             {[
-              { k: "Version", v: "2.0.0" },
+              { k: "Version", v: `v${APP_VERSION} (${PHASE})` },
               { k: "Environment", v: "Development" },
               { k: "Role", v: user?.role || "Admin" },
               { k: "Logged in as", v: user?.email ?? "—" },

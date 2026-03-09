@@ -1,4 +1,5 @@
 # backend/app/services/ethnic_group_service.py
+import re
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 from datetime import datetime
 from bson import ObjectId
@@ -42,7 +43,7 @@ class EthnicGroupService:
     async def get_by_name(self, name: str) -> Optional[dict]:
         """Get ethnic group by name (case-insensitive)"""
         return await self.collection.find_one(
-            {"name": {"$regex": f"^{name}$", "$options": "i"}}
+            {"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}}
         )
     
     async def create(self, ethnic_group_data: EthnicGroupCreate) -> dict:

@@ -3,6 +3,7 @@
 Custom geographic data endpoints for adding user-defined locations (Others option).
 """
 
+import re
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -53,7 +54,7 @@ async def create_custom_province(
     )
     
     # Check if already exists
-    existing = await db.provinces.find_one({"province_name": {"$regex": f"^{payload.province_name}$", "$options": "i"}})
+    existing = await db.provinces.find_one({"province_name": {"$regex": f"^{re.escape(payload.province_name)}$", "$options": "i"}})
     if existing:
         return {
             "message": "Province already exists",
@@ -114,7 +115,7 @@ async def create_custom_district(
     
     # Check if already exists
     existing = await db.districts.find_one({
-        "district_name": {"$regex": f"^{payload.district_name}$", "$options": "i"},
+        "district_name": {"$regex": f"^{re.escape(payload.district_name)}$", "$options": "i"},
         "province_code": payload.province_code
     })
     if existing:
@@ -178,7 +179,7 @@ async def create_custom_chiefdom(
     
     # Check if already exists
     existing = await db.chiefdoms.find_one({
-        "chiefdom_name": {"$regex": f"^{payload.chiefdom_name}$", "$options": "i"},
+        "chiefdom_name": {"$regex": f"^{re.escape(payload.chiefdom_name)}$", "$options": "i"},
         "district_code": payload.district_code
     })
     if existing:

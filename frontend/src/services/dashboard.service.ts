@@ -11,6 +11,7 @@ export interface DashboardStats {
     pending: number;
     rejected: number;
     needs_attention: number;
+    docs_pending_review?: number;
     recent: Array<{
       farmer_id: string;
       name: string;
@@ -18,6 +19,11 @@ export interface DashboardStats {
       created_at: string;
       registration_status: string;
       is_active: boolean;
+      personal_info?: {
+        first_name?: string;
+        last_name?: string;
+        district?: string;
+      };
     }>;
   };
   users: {

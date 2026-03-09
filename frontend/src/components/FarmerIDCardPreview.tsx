@@ -65,10 +65,7 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
 
     return () => {
       mounted = false;
-      // Cleanup blob URL
-      if (qrCodeUrl && qrCodeUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(qrCodeUrl);
-      }
+      // Blob URL lifetime is managed by blobCache in farmer.service.ts — do not revoke here
     };
   }, [farmer?.farmer_id]);
 
@@ -95,10 +92,7 @@ export default function FarmerIDCardPreview({ farmer, onClose }: FarmerIDCardPre
 
     return () => {
       mounted = false;
-      // Cleanup blob URL
-      if (photoUrl && photoUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(photoUrl);
-      }
+      // Blob URL lifetime is managed by blobCache in farmer.service.ts — do not revoke here
     };
   }, [farmer?.farmer_id]);
 
