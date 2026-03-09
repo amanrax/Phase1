@@ -64,7 +64,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         </TopBar>
 
         {/* Page Content - Properly padded and scrollable */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           <div className="p-4 sm:p-6 fade-in">
             {children}
           </div>

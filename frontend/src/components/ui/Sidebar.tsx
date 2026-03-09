@@ -64,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ navGroups, onClose }) => {
           {filteredGroups.map((group, groupIndex) => (
             <div key={groupIndex}>
               {group.title && (
-                <div className="px-4 mt-6 mb-2 text-xs font-bold text-gray-500 dark:text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                <div className="px-4 mt-6 mb-2 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   {group.title}
                 </div>
               )}
