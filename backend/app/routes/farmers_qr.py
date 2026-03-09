@@ -120,11 +120,11 @@ async def generate_idcard(
     description="Generates (or re-generates) the QR code PNG for a farmer. Auth required.",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=dict,
-    dependencies=[Depends(require_role(["ADMIN", "OPERATOR", "FARMER"]))]
 )
 async def generate_qr_code_endpoint(
     farmer_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR", "FARMER"])),
 ):
     """
     Generate a QR code image for the farmer and persist it to GridFS.
@@ -133,6 +133,18 @@ async def generate_qr_code_endpoint(
     farmer = await db.farmers.find_one({"farmer_id": farmer_id})
     if not farmer:
         raise HTTPException(status_code=404, detail="Farmer not found")
+
+    # Operators can only generate QR for their own assigned farmers
+    roles = current_user.get("roles", [])
+    if "OPERATOR" in roles and "ADMIN" not in roles:
+        user_email = current_user.get("email")
+        op_doc = await db.operators.find_one({"email": user_email})
+        operator_id = op_doc.get("operator_id") if op_doc else None
+        if operator_id and farmer.get("created_by") != operator_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: this farmer is not assigned to you"
+            )
 
     # Run synchronous QR generation in a thread pool so we don't block the event loop
     loop = asyncio.get_event_loop()

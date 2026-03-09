@@ -439,6 +439,20 @@ async def get_farmer(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only view your own farmer profile"
             )
+
+    # Access control: OPERATOR can only view farmers assigned to them
+    if (current_user.get("roles") and
+            "OPERATOR" in current_user.get("roles", []) and
+            "ADMIN" not in current_user.get("roles", [])):
+        user_email = current_user.get("email")
+        op_doc = await db.operators.find_one({"email": user_email})
+        operator_id = op_doc.get("operator_id") if op_doc else None
+        raw = await db.farmers.find_one({"farmer_id": farmer_id}, {"created_by": 1})
+        if operator_id and (not raw or raw.get("created_by") != operator_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: this farmer is not assigned to you"
+            )
     
     await log_event(
         level="INFO",
@@ -496,6 +510,19 @@ async def update_farmer(
         user_id=current_user.get("email"),
         role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
     )
+
+    # Authorization: Operators can only update farmers assigned to them
+    if ("OPERATOR" in current_user.get("roles", []) and
+            "ADMIN" not in current_user.get("roles", [])):
+        user_email = current_user.get("email")
+        op_doc = await db.operators.find_one({"email": user_email})
+        operator_id = op_doc.get("operator_id") if op_doc else None
+        existing = await db.farmers.find_one({"farmer_id": farmer_id}, {"created_by": 1})
+        if existing and operator_id and existing.get("created_by") != operator_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: this farmer is not assigned to you"
+            )
     farmer_service = FarmerService(db)
 
     # Authorization: Farmers can only update their own profile
@@ -783,6 +810,22 @@ async def upload_farmer_photo(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"File too large. Max size: {settings.MAX_UPLOAD_SIZE_MB}MB"
+        )
+
+    # Validate actual file content via magic bytes (prevent MIME spoofing)
+    MAGIC_BYTES = {
+        b'\xff\xd8\xff': "jpeg",
+        b'\x89PNG\r\n\x1a\n': "png",
+    }
+    content_type = None
+    for magic, ctype in MAGIC_BYTES.items():
+        if file_content[:len(magic)] == magic:
+            content_type = ctype
+            break
+    if content_type is None:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="File content does not match an allowed image type (JPEG or PNG)"
         )
     
     # Verify farmer exists

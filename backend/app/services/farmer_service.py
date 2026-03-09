@@ -377,6 +377,21 @@ class FarmerService:
         
         if not update_dict:
             return FarmerOut.from_mongo(existing)
+
+        # If NRC is being updated, check it's not already used by another farmer
+        new_nrc = update_dict.get("personal_info", {}).get("nrc")
+        if new_nrc:
+            nrc_hash = hmac_hash(new_nrc, salt="nrc")
+            conflict = await self.collection.find_one(
+                {"nrc_hash": nrc_hash, "farmer_id": {"$ne": farmer_id}}
+            )
+            if conflict:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="NRC already registered to another farmer"
+                )
+            # Update the hash too
+            update_dict["nrc_hash"] = nrc_hash
         
         # Merge nested updates with existing data to preserve fields not being updated
         for nested_key in ['personal_info', 'address', 'farm_info', 'household_info']:

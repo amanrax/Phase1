@@ -26,7 +26,7 @@ async def get_farmer_documents(farmer_id: str, db: AsyncIOMotorDatabase) -> dict
         return None  # type: ignore[return-value]
 
     # Normalise: build a list of known doc slots from the documents dict
-    docs_dict = farmer.get("documents", {})
+    docs_dict = farmer.get("documents") or {}
     id_docs = farmer.get("identification_documents") or []
 
     doc_statuses = farmer.get("document_statuses", {})
