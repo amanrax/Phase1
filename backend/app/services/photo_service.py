@@ -33,6 +33,15 @@ class PhotoService:
         upload_folder = Path(settings.UPLOAD_DIR) / "photos" / farmer_id
         upload_folder.mkdir(parents=True, exist_ok=True)
 
+        # TC-201: Delete any existing photos for this farmer before saving new one
+        # (handles extension changes, e.g. old .jpg replaced by .png)
+        for existing in upload_folder.iterdir():
+            if existing.is_file() and existing.stem == farmer_id:
+                try:
+                    existing.unlink()
+                except OSError:
+                    pass  # Best-effort deletion — proceed regardless
+
         # Save file with standard naming
         file_extension = file.filename.split(".")[-1].lower()
         if file_extension not in settings.ALLOWED_IMAGE_EXTENSIONS:

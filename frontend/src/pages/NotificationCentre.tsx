@@ -7,6 +7,7 @@ import { logger } from "@/utils/logger";
 import FarmerBottomNav from "@/components/FarmerBottomNav";
 
 const COMPONENT = "NotificationCentre";
+const PAGE_SIZE = 30;
 
 type FilterTab = "all" | "unread";
 
@@ -14,19 +15,32 @@ const NotificationCentre = () => {
   const toast = useNotification();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false); // TC-107: load-more state
+  const [hasMore, setHasMore] = useState(false);         // TC-107: more pages available
+  const [skip, setSkip] = useState(0);                   // TC-107: current offset
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (reset = true) => {
+    const offset = reset ? 0 : skip;
     try {
-      setLoading(true);
+      if (reset) setLoading(true);
+      else setLoadingMore(true);
       const start = performance.now();
-      logger.info(COMPONENT, "Fetching notifications", { tab: activeTab });
-      const res = await notificationsService.list(activeTab === "unread");
-      setNotifications(res.notifications);
+      logger.info(COMPONENT, "Fetching notifications", { tab: activeTab, offset });
+      const res = await notificationsService.list(activeTab === "unread", offset, PAGE_SIZE);
+      const newItems = res.notifications;
+      if (reset) {
+        setNotifications(newItems);
+        setSkip(newItems.length);
+      } else {
+        setNotifications(prev => [...prev, ...newItems]);
+        setSkip(prev => prev + newItems.length);
+      }
+      setHasMore(newItems.length === PAGE_SIZE); // TC-107: more pages if full page returned
       setUnreadCount(res.unread_count);
       logger.info(COMPONENT, `Notifications loaded (${Math.round(performance.now() - start)}ms)`, {
-        count: res.notifications.length,
+        count: newItems.length,
         unread: res.unread_count,
       });
     } catch (err) {
@@ -34,12 +48,17 @@ const NotificationCentre = () => {
       toast.error("Failed to load notifications");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [activeTab, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, skip, toast]);
 
   useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+    setSkip(0);
+    setHasMore(false);
+    fetchNotifications(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   const handleMarkRead = async (id: string) => {
     try {
@@ -227,6 +246,18 @@ const NotificationCentre = () => {
               </button>
             </div>
           ))
+        )}
+        {/* TC-107: Load more / infinite scroll button */}
+        {!loading && hasMore && (
+          <div className="pt-2 pb-4 flex justify-center">
+            <button
+              onClick={() => fetchNotifications(false)}
+              disabled={loadingMore}
+              className="px-6 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold disabled:opacity-50 transition"
+            >
+              {loadingMore ? "Loading…" : "Load More"}
+            </button>
+          </div>
         )}
       </div>
       <FarmerBottomNav />

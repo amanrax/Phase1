@@ -10,6 +10,7 @@ const COMPONENT = "Step4Preview";
 type Props = {
   data: WizardState;
   onBack: () => void;
+  onJumpToStep: (step: number) => void; // TC-031: jump to specific step
   onSubmitStart: () => void;
   onSubmitEnd: () => void;
   onSuccess: (farmerId: string) => void;
@@ -18,6 +19,7 @@ type Props = {
 export default function Step4Preview({
   data,
   onBack,
+  onJumpToStep,
   onSubmitStart,
   onSubmitEnd,
   onSuccess,
@@ -138,9 +140,13 @@ export default function Step4Preview({
         <p className="text-green-100 text-sm mt-1">Please review all information before submitting.</p>
       </div>
 
-      {/* Personal Information */}
-      <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-2xl p-5 space-y-3">
-        <h3 className="text-sm font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide flex items-center gap-2">
+      {/*div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide flex items-center gap-2">
+            <span>&#x1F464;</span> Personal Information
+          </h3>
+          {/* TC-031: jump to step 1 */}
+          <button onClick={() => onJumpToStep(1)} className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline" aria-label="Edit personal information">✏️ Edit</button>
+        </divclassName="text-sm font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide flex items-center gap-2">
           <span>&#x1F464;</span> Personal Information
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
@@ -151,9 +157,13 @@ export default function Step4Preview({
           <InfoRow label="NRC" value={data.personal.nrc} />
           <InfoRow label="Date of Birth" value={data.personal.date_of_birth} />
           <InfoRow label="Gender" value={data.personal.gender} />
-          <InfoRow label="Ethnic Group" value={data.personal.ethnic_group} />
-        </div>
-      </div>
+         div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide flex items-center gap-2">
+            <span>&#x1F4CD;</span> Address
+          </h3>
+          {/* TC-031: jump to step 2 */}
+          <button onClick={() => onJumpToStep(2)} className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline" aria-label="Edit address">✏️ Edit</button>
+        </div
 
       {/* Address */}
       <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-2xl p-5 space-y-3">
@@ -161,9 +171,13 @@ export default function Step4Preview({
           <span>&#x1F4CD;</span> Address
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-          <InfoRow label="Province" value={data.address.province_name} />
-          <InfoRow label="District" value={data.address.district_name} />
-          <InfoRow label="Chiefdom" value={data.address.chiefdom_name} />
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wide flex items-center gap-2">
+              <span>&#x1F33E;</span> Farm Information
+            </h3>
+            {/* TC-031: jump to step 3 */}
+            <button onClick={() => onJumpToStep(3)} className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline" aria-label="Edit farm information">✏️ Edit</button>
+          </divoRow label="Chiefdom" value={data.address.chiefdom_name} />
           <InfoRow label="Village" value={data.address.village} />
         </div>
       </div>
@@ -187,9 +201,13 @@ export default function Step4Preview({
       {/* Household Information */}
       {(data.farm?.household_size || data.farm?.dependents || data.farm?.primary_income) && (
         <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-2xl p-5 space-y-3">
-          <h3 className="text-sm font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide flex items-center gap-2">
-            <span>&#x1F3E0;</span> Household Information
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide flex items-center gap-2">
+              <span>&#x1F3E0;</span> Household Information
+            </h3>
+            {/* TC-031: jump to step 3 (household is also in step 3) */}
+            <button onClick={() => onJumpToStep(3)} className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline" aria-label="Edit household information">✏️ Edit</button>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
             <InfoRow label="Household Size" value={data.farm?.household_size ? `${data.farm.household_size} people` : undefined} />
             <InfoRow label="Dependents" value={data.farm?.dependents} />

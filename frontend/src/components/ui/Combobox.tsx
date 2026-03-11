@@ -1,6 +1,7 @@
 // frontend/src/components/ui/Combobox.tsx
 // Smart multi-select combobox with type-to-filter and custom entry support (P5)
-import { useEffect, useRef, useState, KeyboardEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 
 export interface ComboboxProps {
   /** Label shown above the control */
@@ -36,6 +37,7 @@ export default function Combobox({
 }: ComboboxProps) {
   const [query, setQuery]     = useState("");
   const [open, setOpen]       = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1); // TC-012: keyboard nav
   const containerRef          = useRef<HTMLDivElement>(null);
   const inputRef              = useRef<HTMLInputElement>(null);
 
@@ -66,6 +68,7 @@ export default function Combobox({
       onChange([...value, cleaned]);
     }
     setQuery("");
+    setActiveIndex(-1);
     inputRef.current?.focus();
   };
 
@@ -73,14 +76,33 @@ export default function Combobox({
     onChange(value.filter(v => v !== val));
   };
 
+  // TC-012: keyboard navigation with ArrowUp/Down
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && query.trim()) {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
-      if (filtered.length > 0) {
-        addValue(filtered[0]);
-      } else if (allowCustom) {
-        addValue(query.trim());
+      setOpen(true);
+      setActiveIndex(i => Math.min(i + 1, menuItems.length - 1));
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex(i => Math.max(i - 1, 0));
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (activeIndex >= 0 && activeIndex < menuItems.length) {
+        addValue(menuItems[activeIndex]);
+        return;
       }
+      if (query.trim()) {
+        if (filtered.length > 0) {
+          addValue(filtered[0]);
+        } else if (allowCustom) {
+          addValue(query.trim());
+        }
+      }
+      return;
     }
     if (e.key === "Backspace" && !query && value.length > 0) {
       removeValue(value[value.length - 1]);
@@ -88,6 +110,7 @@ export default function Combobox({
     if (e.key === "Escape") {
       setOpen(false);
       setQuery("");
+      setActiveIndex(-1);
     }
   };
 
@@ -133,10 +156,11 @@ export default function Combobox({
             ref={inputRef}
             type="text"
             value={query}
-            onChange={e => { setQuery(e.target.value); setOpen(true); }}
+            onChange={e => { setQuery(e.target.value); setOpen(true); setActiveIndex(-1); }}
             onFocus={() => setOpen(true)}
             onKeyDown={handleKeyDown}
             placeholder={value.length === 0 ? placeholder : ""}
+            aria-activedescendant={activeIndex >= 0 ? `combo-item-${activeIndex}` : undefined}
             className="flex-1 min-w-[120px] outline-none text-sm text-gray-800 dark:text-gray-100 bg-transparent placeholder-gray-400 dark:placeholder-gray-500 py-0.5"
           />
         )}
@@ -158,6 +182,7 @@ export default function Combobox({
           {menuItems.map((opt, i) => (
             <li
               key={i}
+              id={`combo-item-${i}`}
               role="option"
               aria-selected={value.includes(opt)}
               onClick={() => addValue(opt)}
@@ -165,7 +190,9 @@ export default function Combobox({
                 ${opt.startsWith('Add "')
                   ? "text-green-700 dark:text-green-400 font-semibold"
                   : "text-gray-800 dark:text-gray-100"}
-                hover:bg-green-50 dark:hover:bg-green-900/30
+                ${i === activeIndex
+                  ? "bg-green-100 dark:bg-green-900/50"
+                  : "hover:bg-green-50 dark:hover:bg-green-900/30"}
               `}
             >
               {opt.startsWith('Add "') ? <span>＋ {opt}</span> : opt}

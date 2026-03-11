@@ -29,6 +29,8 @@ export type WizardState = {
     chiefdom_code?: string;
     chiefdom_name?: string;
     village?: string;
+    latitude?: number;
+    longitude?: number;
   };
   farm?: {
     size_hectares?: string;
@@ -173,6 +175,7 @@ export default function FarmerRegistrationWizard() {
           <Step4Preview
             data={form}
             onBack={() => setCurrentStep(3)}
+            onJumpToStep={(step) => setCurrentStep(step)}
             onSubmitStart={() => setLoading(true)}
             onSubmitEnd={() => setLoading(false)}
             onSuccess={(farmerId) => {
