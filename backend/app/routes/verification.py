@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import Optional
+from datetime import datetime, timezone
 from app.database import get_db
 from app.dependencies.roles import require_role
 from app.services.verification_service import (
@@ -91,6 +92,19 @@ async def approve_document(
     )
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
+
+    # TC-157 — notify farmer that a document was approved
+    await db.notifications.insert_one({
+        "user_id": farmer_id,
+        "user_type": "farmer",
+        "type": "document_approved",
+        "title": "Document approved",
+        "body": f"Your {doc_type.replace('_', ' ')} document has been approved.",
+        "read": False,
+        "created_at": datetime.now(timezone.utc),
+        "expires_at": None,
+    })
+
     return result
 
 
@@ -119,6 +133,19 @@ async def reject_document_endpoint(
     )
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
+
+    # TC-157 — notify farmer that a document was rejected
+    await db.notifications.insert_one({
+        "user_id": farmer_id,
+        "user_type": "farmer",
+        "type": "document_rejected",
+        "title": "Document rejected",
+        "body": f"Your {doc_type.replace('_', ' ')} document was rejected. Reason: {body.reason}",
+        "read": False,
+        "created_at": datetime.now(timezone.utc),
+        "expires_at": None,
+    })
+
     return result
 
 

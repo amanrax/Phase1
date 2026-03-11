@@ -46,7 +46,7 @@ from app.utils.security import verify_qr_signature, generate_qr_data
 from app.config import settings
 from pathlib import Path
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import UploadFile, File, HTTPException, Depends
 from app.services.logging_service import log_event, sanitize_body
 from app.services.gridfs_service import gridfs_service
@@ -177,6 +177,36 @@ async def create_farmer(
         user_id=current_user.get("email"),
         role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
     )
+
+    # TC-109 — notify farmer that registration was received
+    _now = datetime.now(timezone.utc)
+    await db.notifications.insert_one({
+        "user_id": farmer.farmer_id,
+        "user_type": "farmer",
+        "type": "registration_received",
+        "title": "Registration submitted",
+        "body": "Your registration has been received and is under review.",
+        "read": False,
+        "created_at": _now,
+        "expires_at": None,
+    })
+
+    # TC-114 — notify the operator who registered the farmer
+    if created_by and created_by != current_user.get("email"):
+        # created_by is an operator_id; find the operator's user record
+        _op = await db.operators.find_one({"operator_id": created_by}, {"email": 1})
+        if _op and _op.get("email"):
+            await db.notifications.insert_one({
+                "user_id": _op["email"],
+                "user_type": "operator",
+                "type": "new_farmer_registered",
+                "title": "New farmer registered",
+                "body": f"Farmer {farmer.farmer_id} has been successfully registered under your account.",
+                "read": False,
+                "created_at": _now,
+                "expires_at": None,
+            })
+
     return farmer
 
 
@@ -419,7 +449,15 @@ async def get_farmer(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Farmer {farmer_id} not found"
         )
-    
+
+    # Soft-deleted farmers are only visible to ADMIN (for audit trail)
+    is_admin = "ADMIN" in current_user.get("roles", [])
+    if not farmer.is_active and not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Farmer {farmer_id} not found"
+        )
+
     # Access control: FARMER role can only view their own data
     if current_user.get("roles") and "FARMER" in current_user.get("roles", []):
         # A farmer can only view their own profile.
@@ -550,10 +588,16 @@ async def update_farmer(
 
         assigned_districts = op_doc.get("assigned_districts", []) if op_doc else []
         farmer_district = farmer_to_update.address.district_name if farmer_to_update.address else None
+        operator_id = (op_doc or {}).get("operator_id")
 
-        # Deny if farmer's district is not in operator's list of assigned districts
-        if not (farmer_district and farmer_district in assigned_districts):
-             raise HTTPException(status_code=403, detail="Access denied: this farmer is not in your assigned districts.")
+        # Allow if farmer's district is in operator's assigned districts
+        is_authorized = bool(farmer_district and assigned_districts and farmer_district in assigned_districts)
+        # Also allow if operator created this farmer (created_by == operator_id)
+        if not is_authorized and operator_id and getattr(farmer_to_update, 'created_by', None) == operator_id:
+            is_authorized = True
+
+        if not is_authorized:
+            raise HTTPException(status_code=403, detail="Access denied: this farmer is not in your assigned districts.")
 
     # Authorization: Farmers can only update their own profile
     if "FARMER" in current_user.get("roles", []):
@@ -562,6 +606,12 @@ async def update_farmer(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to update this farmer profile."
+            )
+        # Farmers cannot change their own NRC (identity-protecting field)
+        if update_data.personal_info and update_data.personal_info.nrc:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Farmers cannot change their NRC. Submit a change request instead."
             )
 
     updated_farmer = await farmer_service.update_farmer(farmer_id, update_data)

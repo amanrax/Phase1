@@ -216,7 +216,7 @@ class FarmerService:
             List[FarmerListItem]: List of farmer summaries
         """
         # Build query filter
-        query = {}
+        query = {"is_active": True}  # Only return active (non-deleted) farmers
         
         if status:
             query["registration_status"] = status
@@ -504,16 +504,19 @@ class FarmerService:
     # =======================================================
     async def delete_farmer(self, farmer_id: str) -> bool:
         """
-        Delete a farmer record (soft delete recommended in production).
+        Soft-delete a farmer record (sets is_active=False, preserves data for audit).
         
         Args:
             farmer_id: Farmer ID to delete
         
         Returns:
-            bool: True if deleted, False if not found
+            bool: True if found and soft-deleted, False if not found
         """
-        result = await self.collection.delete_one({"farmer_id": farmer_id})
-        return result.deleted_count > 0
+        result = await self.collection.update_one(
+            {"farmer_id": farmer_id},
+            {"$set": {"is_active": False, "deleted_at": datetime.utcnow()}}
+        )
+        return result.matched_count > 0
     
     # =======================================================
     # 5️⃣ Validation Helpers

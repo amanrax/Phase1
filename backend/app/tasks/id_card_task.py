@@ -348,6 +348,18 @@ def generate_id_card(farmer_id: str):
         )
         print(f"✅ Database updated: matched={result.matched_count}, modified={result.modified_count}")
 
+        # TC-110/TC-113 — notify farmer that their ID card is ready
+        db.notifications.insert_one({
+            "user_id": farmer_id,
+            "user_type": "farmer",
+            "type": "id_card_ready",
+            "title": "ID card ready",
+            "body": "Your digital ID card has been generated and is ready to download.",
+            "read": False,
+            "created_at": datetime.utcnow(),
+            "expires_at": None,
+        })
+
         client.close()
         return {
             "message": "ID card generated",

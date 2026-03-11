@@ -604,6 +604,22 @@ async def update_supply_request(
 
     await _log(request, "INFO", "admin_update.success",
                {"request_id": request_id, "new_status": body.status}, current_user)
+
+    # TC-115/TC-139 — notify farmer of supply request status change
+    farmer_id = doc.get("farmer_id")
+    if farmer_id:
+        await db.notifications.insert_one({
+            "user_id": farmer_id,
+            "user_type": "farmer",
+            "type": "supply_status_update",
+            "title": "Supply request updated",
+            "body": f"Your supply request status has been updated to '{body.status}'."
+                    + (f" Note: {body.admin_notes}" if body.admin_notes else ""),
+            "read": False,
+            "created_at": datetime.now(timezone.utc),
+            "expires_at": None,
+        })
+
     return {"message": f"Request updated to '{body.status}'", "request_id": request_id}
 
 
