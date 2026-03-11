@@ -243,6 +243,21 @@ async def decide_change_request(
     if cr["status"] != "pending":
         raise HTTPException(status_code=400, detail=f"Request already {cr['status']}")
 
+    # Authorization: operators can only decide on requests from their assigned farmers
+    if "OPERATOR" in current_user.get("roles", []) and "ADMIN" not in current_user.get("roles", []):
+        farmer_id = cr["farmer_id"]
+        farmer = await db.farmers.find_one({"farmer_id": farmer_id})
+        if not farmer:
+            raise HTTPException(status_code=404, detail="Farmer not found")
+        operator = await db.operators.find_one({"email": current_user.get("email")})
+        assigned_districts = operator.get("assigned_districts", []) if operator else []
+        farmer_district = (farmer.get("address") or {}).get("district_name")
+        if not farmer_district or farmer_district not in assigned_districts:
+            raise HTTPException(
+                status_code=403,
+                detail="You can only decide on requests from farmers in your assigned districts",
+            )
+
     decided_by = current_user.get("email") or current_user.get("farmer_id") or "unknown"
     now = datetime.now(timezone.utc)
 

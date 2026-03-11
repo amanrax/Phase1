@@ -45,6 +45,29 @@ async def list_farmer_documents(
     return result
 
 
+async def _check_operator_farmer_access(farmer_id: str, current_user: dict, db) -> None:
+    """Raise 403 if an OPERATOR is trying to act on a farmer not in their assigned districts."""
+    roles = current_user.get("roles", [])
+    if "ADMIN" in roles:
+        return  # Admins can access any farmer
+    if "OPERATOR" not in roles:
+        raise HTTPException(status_code=403, detail="Access denied.")
+    user_email = current_user.get("email")
+    op_doc = await db.operators.find_one({"email": user_email})
+    assigned_districts = (op_doc or {}).get("assigned_districts", [])
+    farmer = await db.farmers.find_one({"farmer_id": farmer_id}, {"address.district_name": 1, "created_by": 1})
+    if not farmer:
+        raise HTTPException(status_code=404, detail="Farmer not found")
+    farmer_district = (farmer.get("address") or {}).get("district_name")
+    operator_id = (op_doc or {}).get("operator_id")
+    created_by = farmer.get("created_by")
+    if farmer_district and assigned_districts and farmer_district in assigned_districts:
+        return
+    if operator_id and created_by and created_by == operator_id:
+        return
+    raise HTTPException(status_code=403, detail="Access denied: this farmer is not in your assigned districts.")
+
+
 @router.post(
     "/{farmer_id}/documents/{doc_type}/verify",
     summary="Approve a document",
@@ -58,6 +81,7 @@ async def approve_document(
     current_user: dict = Depends(require_role(["ADMIN", "OPERATOR"])),
 ):
     """Mark a specific document as approved."""
+    await _check_operator_farmer_access(farmer_id, current_user, db)
     result = await verify_document(
         farmer_id=farmer_id,
         doc_type=doc_type,
@@ -84,6 +108,7 @@ async def reject_document_endpoint(
     current_user: dict = Depends(require_role(["ADMIN", "OPERATOR"])),
 ):
     """Mark a specific document as rejected with a reason."""
+    await _check_operator_farmer_access(farmer_id, current_user, db)
     result = await reject_document(
         farmer_id=farmer_id,
         doc_type=doc_type,

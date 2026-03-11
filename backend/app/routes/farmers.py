@@ -442,16 +442,28 @@ async def get_farmer(
 
     # Access control: OPERATOR can only view farmers assigned to them
     if (current_user.get("roles") and
-            "OPERATOR" in current_user.get("roles", []) and
-            "ADMIN" not in current_user.get("roles", [])):
+        "OPERATOR" in current_user.get("roles", []) and
+        "ADMIN" not in current_user.get("roles", [])):
         user_email = current_user.get("email")
         op_doc = await db.operators.find_one({"email": user_email})
-        operator_id = op_doc.get("operator_id") if op_doc else None
-        raw = await db.farmers.find_one({"farmer_id": farmer_id}, {"created_by": 1})
-        if operator_id and (not raw or raw.get("created_by") != operator_id):
+        
+        is_authorized = False
+        if op_doc:
+            # Check 1: Is the farmer in one of the operator's assigned districts?
+            assigned_districts = op_doc.get("assigned_districts", [])
+            farmer_district = farmer.address.district_name if farmer.address else None
+            if farmer_district and assigned_districts and farmer_district in assigned_districts:
+                is_authorized = True
+            
+            # Check 2 (fallback): Was the farmer created by this operator?
+            operator_id = op_doc.get("operator_id")
+            if not is_authorized and operator_id and hasattr(farmer, 'created_by') and farmer.created_by == operator_id:
+                is_authorized = True
+
+        if not is_authorized:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied: this farmer is not assigned to you"
+                detail="Access denied: this farmer is not in your assigned districts."
             )
     
     await log_event(
@@ -511,19 +523,37 @@ async def update_farmer(
         role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
     )
 
+    farmer_service = FarmerService(db)
+    
+    # If NRC is being updated, check for duplicates before proceeding
+    if update_data.personal_info and update_data.personal_info.nrc:
+        new_nrc = update_data.personal_info.nrc
+        existing_farmer_with_nrc = await db.farmers.find_one(
+            {"personal_info.nrc": new_nrc, "farmer_id": {"$ne": farmer_id}}
+        )
+        if existing_farmer_with_nrc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Another farmer with NRC {new_nrc} already exists."
+            )
+
     # Authorization: Operators can only update farmers assigned to them
     if ("OPERATOR" in current_user.get("roles", []) and
             "ADMIN" not in current_user.get("roles", [])):
         user_email = current_user.get("email")
         op_doc = await db.operators.find_one({"email": user_email})
-        operator_id = op_doc.get("operator_id") if op_doc else None
-        existing = await db.farmers.find_one({"farmer_id": farmer_id}, {"created_by": 1})
-        if existing and operator_id and existing.get("created_by") != operator_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied: this farmer is not assigned to you"
-            )
-    farmer_service = FarmerService(db)
+        
+        # We need the farmer's district to check against operator's assigned districts
+        farmer_to_update = await farmer_service.get_farmer_by_id(farmer_id)
+        if not farmer_to_update:
+            raise HTTPException(status_code=404, detail=f"Farmer {farmer_id} not found")
+
+        assigned_districts = op_doc.get("assigned_districts", []) if op_doc else []
+        farmer_district = farmer_to_update.address.district_name if farmer_to_update.address else None
+
+        # Deny if farmer's district is not in operator's list of assigned districts
+        if not (farmer_district and farmer_district in assigned_districts):
+             raise HTTPException(status_code=403, detail="Access denied: this farmer is not in your assigned districts.")
 
     # Authorization: Farmers can only update their own profile
     if "FARMER" in current_user.get("roles", []):

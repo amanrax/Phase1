@@ -247,6 +247,7 @@ class FarmerOut(BaseModel):
     identification_documents: Optional[List[IdentificationDocument]] = Field(default_factory=list, description="Array of uploaded identification documents")
     is_active: bool = Field(default=True)
     operator_id: Optional[str] = Field(None, description="ID of the operator who registered this farmer")
+    created_by: Optional[str] = Field(None, description="operator_id or email of user who created this farmer")
     verification_status: Optional[str] = Field(None, description="Alias for registration_status for UI compatibility")
     review_notes: Optional[str] = None
     reviewed_by: Optional[str] = None
