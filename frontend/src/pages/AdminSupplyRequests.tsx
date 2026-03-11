@@ -350,6 +350,7 @@ export default function AdminSupplyRequests() {
   const [filterStatus,   setFilterStatus]   = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterUrgency,  setFilterUrgency]  = useState("all");
+  const [filterProvince, setFilterProvince] = useState("all");
 
   const [detailReq,      setDetailReq]      = useState<SupplyRequest | null>(null);
   const [selectedIds,    setSelectedIds]    = useState<Set<string>>(new Set());
@@ -382,6 +383,7 @@ export default function AdminSupplyRequests() {
       ...(filterStatus   !== "all" ? { status: filterStatus }     : {}),
       ...(filterCategory !== "all" ? { category: filterCategory } : {}),
       ...(filterUrgency  !== "all" ? { urgency: filterUrgency }   : {}),
+      ...(filterProvince !== "all" ? { province: filterProvince } : {}),
       ...(search.trim()            ? { search: search.trim() }    : {}),
       ...params,
     };
@@ -398,14 +400,14 @@ export default function AdminSupplyRequests() {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, filterCategory, filterUrgency, search, err]);
+  }, [filterStatus, filterCategory, filterUrgency, filterProvince, search, err]);
 
   useEffect(() => { loadStats(); }, [loadStats]);
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => loadRequests(), 350);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [loadRequests, filterStatus, filterCategory, filterUrgency, search]);
+  }, [loadRequests, filterStatus, filterCategory, filterUrgency, filterProvince, search]);
 
   const refresh = () => { loadRequests(); loadStats(); };
 
@@ -502,7 +504,30 @@ export default function AdminSupplyRequests() {
               <p className="text-xs text-gray-500 dark:text-gray-400">{total} total · {stats?.by_status["pending"] || 0} pending</p>
             </div>
           </div>
-          <button onClick={refresh} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400 transition text-lg" title="Refresh">↻</button>
+          <div className="flex items-center gap-2">
+            {/* TC-140: CSV export */}
+            <button
+              onClick={() => {
+                if (!requests.length) return;
+                const headers = ["ID","Farmer","Category","Item","Qty","Urgency","Status","Province","District","Date"];
+                const rows = requests.map(r => [
+                  r._id, r.farmer_name || "", r.category || "", r.item_name || "",
+                  r.quantity ?? "", r.urgency || "", r.status || "",
+                  r.province || "", r.district || "", r.created_at ? new Date(r.created_at).toLocaleDateString() : ""
+                ]);
+                const csv = [headers, ...rows].map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = `supply_requests_${new Date().toISOString().slice(0,10)}.csv`;
+                a.click(); URL.revokeObjectURL(url);
+              }}
+              className="p-2 rounded-lg bg-green-100 dark:bg-green-800 hover:bg-green-200 dark:hover:bg-green-700 text-green-700 dark:text-green-300 transition text-sm font-semibold"
+              title="Export CSV">
+              📥 CSV
+            </button>
+            <button onClick={refresh} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400 transition text-lg" title="Refresh">↻</button>
+          </div>
         </div>
       </header>
 
@@ -595,6 +620,13 @@ export default function AdminSupplyRequests() {
               value={filterUrgency} onChange={e => setFilterUrgency(e.target.value)}>
               <option value="all">All Urgency</option>
               {["low","medium","high","critical"].map(u => <option key={u} value={u}>{cap(u)}</option>)}
+            </select>
+            {/* TC-134: Province filter */}
+            <select
+              className="px-3 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 outline-none"
+              value={filterProvince} onChange={e => setFilterProvince(e.target.value)}>
+              <option value="all">All Provinces</option>
+              {stats && Object.keys(stats.by_province || {}).sort().map(p => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
         </div>

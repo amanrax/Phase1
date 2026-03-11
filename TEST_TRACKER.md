@@ -35,7 +35,7 @@
 | **Grand Total** | **172** | **0** | **13** | **82** | **16** | **25** | **308** |
 
 **Pass Rate (API-testable TCs):** 172 / 172 = **100%**  
-**Code Audit Coverage:** 98 / 136 previously-skipped TCs now classified (82 CODE OK + 16 PARTIAL + 25 MISSING — audit complete 2026-03-11)
+**Code Audit Coverage:** 98 / 136 previously-skipped TCs now classified (87 CODE OK + 13 PARTIAL + 23 MISSING — updated 2026-03-12)
 
 ---
 
@@ -127,8 +127,8 @@
 | TC-068 | Farmer A cannot view farmer B profile → 403 | ✅ PASS | |
 | TC-069 | Operator 1 cannot view Operator 2 farmer → 403 | ✅ PASS | |
 | TC-070 | Document download works from wallet (frontend) | 🔒 CODE OK | `FarmerDocumentWallet.tsx` L324: `<a href={doc.file_path} target="_blank">View Document</a>` |
-| TC-071 | PDF docs show PDF icon (frontend) | ⚠️ PARTIAL | Generic document SVG used for all doc types — no PDF-specific icon |
-| TC-072 | Image docs show thumbnail (frontend) | ⚠️ PARTIAL | Generic icon only — no image thumbnail preview for ID documents |
+| TC-071 | PDF docs show PDF icon (frontend) | 🔒 CODE OK | `getDocIcon()` returns red PDF icon for `.pdf` files in `FarmerDocumentWallet.tsx` |
+| TC-072 | Image docs show thumbnail (frontend) | 🔒 CODE OK | `getDocIcon()` returns `<img>` thumbnail for image files in `FarmerDocumentWallet.tsx` |
 | TC-073 | Wallet empty state shown (frontend) | 🔒 CODE OK | Empty state added to `FarmerDocumentWallet.tsx` |
 | TC-074 | Skeleton loaders on wallet open (frontend) | 🔒 CODE OK | `FarmerDocumentWallet.tsx` L178-186: `Skeleton` component with `animate-pulse` |
 | TC-075 | Notification after re-upload (async/Celery) | ⚠️ PARTIAL | No Celery task; notifications created synchronously in route handlers only |
@@ -211,13 +211,13 @@
 | TC-131 | GET /supplies/my-requests — only own requests | ✅ PASS | |
 | TC-132 | GET /supplies/all — admin sees all (200) | ✅ PASS | |
 | TC-133 | GET /supplies/all?status=pending filter works | ✅ PASS | |
-| TC-134 | Admin filters by province | ⚠️ PARTIAL | `AdminSupplyRequests.tsx` has status/category/urgency filters but no province filter dropdown; province shown in card display only |
+| TC-134 | Admin filters by province | 🔒 CODE OK | Province filter `<select>` added to `AdminSupplyRequests.tsx` with `filterProvince` state + query param |
 | TC-135 | PATCH /supplies/{id} admin approves → approved | ✅ PASS | |
 | TC-136 | PATCH /supplies/{id} admin rejects with reason | ✅ PASS | |
 | TC-137 | PATCH /supplies/{id} admin marks fulfilled | ✅ PASS | |
 | TC-138 | GET /supplies/all — operator responds (200/403) | ✅ PASS | |
 | TC-139 | Notification on supply status change | ❌ MISSING | No `db.notifications.insert_one()` in `supplies.py` PATCH handler |
-| TC-140 | Supply request CSV export | ❌ MISSING | No CSV/export button in `AdminSupplyRequests.tsx` |
+| TC-140 | Supply request CSV export | 🔒 CODE OK | CSV export button added to `AdminSupplyRequests.tsx` header — builds CSV from requests array + triggers download |
 
 ---
 
@@ -366,7 +366,7 @@
 | TC-244 | Nav tabs navigate (mobile UI) | 🔒 CODE OK | NavItem renders `<Link>` for each tab |
 | TC-245 | Unread badge shown (mobile UI) | 🔒 CODE OK | `FarmerBottomNav.tsx` L28-30: badge rendered when `badge > 0` |
 | TC-246 | Active tab highlighted (mobile UI) | 🔒 CODE OK | Active tab uses distinct styling via `useMatch` / `isActive` |
-| TC-247 | Nav hidden on web | ❌ MISSING | No `Capacitor.isNative` / platform check — nav renders on web too |
+| TC-247 | Nav hidden on web | 🔒 CODE OK | `Capacitor.isNativePlatform()` check in `FarmerBottomNav.tsx` — returns null on web |
 | TC-248 | BackButton on detail pages (mobile) | 🔒 CODE OK | `useBackButton.ts` hook + `CapacitorApp.addListener('backButton')` in `main.tsx` |
 | TC-249 | BackButton uses history (mobile) | 🔒 CODE OK | `navigate(-1)` used in back button handlers |
 | TC-250 | Hardware back (mobile) | 🔒 CODE OK | `main.tsx` L31-45: `CapacitorApp.addListener('backButton')` with `navigate(-1)` |
@@ -493,7 +493,5 @@ The following ❌ MISSING items were identified during code audit (2026-03-11) a
 | TC-114 | Notification to operator when they get a new farmer | `backend/app/routes/farmers.py` |
 | TC-115 | Notification on supply status change | `backend/app/routes/supplies.py` |
 | TC-139 | Notification on supply status change (duplicate) | `backend/app/routes/supplies.py` |
-| TC-140 | Supply CSV export | `frontend/src/pages/AdminSupplyRequests.tsx` |
 | TC-157 | Notification on document approval/rejection | `backend/app/routes/verification.py` |
 | TC-201 | Delete old photo from GridFS on re-upload | `backend/app/services/photo_service.py` |
-| TC-247 | Hide `FarmerBottomNav` on web (non-native) | `frontend/src/components/FarmerBottomNav.tsx` |

@@ -1,6 +1,7 @@
 // Reusable bottom navigation bar for all farmer-facing pages
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import { safeNavigate } from "@/config/navigation";
 import { notificationsService } from "@/services/notifications.service";
 import useAuthStore from "@/store/authStore";
@@ -69,6 +70,9 @@ export default function FarmerBottomNav({ activeTabOverride, onTabChange }: Farm
   const location = useLocation();
   const token = useAuthStore((s) => s.token);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // TC-247: Hide bottom nav on web — only show on native mobile
+  if (!Capacitor.isNativePlatform()) return null;
 
   // Poll unread notification count every 60 seconds (TC-104/105)
   useEffect(() => {
