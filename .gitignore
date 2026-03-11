@@ -14,3 +14,9 @@ frontend/android/*.keystore
 frontend/android/*.keystore.base64
 backend/scripts/backups/*.json
 mongo_backup_prod/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
