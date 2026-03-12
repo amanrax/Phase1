@@ -372,9 +372,26 @@ class FarmerService:
                 detail=f"Farmer {farmer_id} not found"
             )
         
+        # TC-060: optimistic locking — reject if the record was modified by
+        # someone else since the client last loaded it.
+        client_version = update_data.client_version
+        if client_version is not None:
+            db_updated_at = existing.get("updated_at")
+            if db_updated_at is not None:
+                # Normalise to UTC-naive for comparison regardless of tz info
+                cv = client_version.replace(tzinfo=None) if client_version.tzinfo else client_version
+                dv = db_updated_at.replace(tzinfo=None) if hasattr(db_updated_at, 'tzinfo') and db_updated_at.tzinfo else db_updated_at
+                if cv != dv:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="This record was modified by another user. Please reload the page to get the latest data."
+                    )
+
         # Build update document (only include non-None fields)
         update_dict = update_data.model_dump(exclude_none=True)
-        
+        # Never persist the client_version sentinel into the DB
+        update_dict.pop("client_version", None)
+
         if not update_dict:
             return FarmerOut.from_mongo(existing)
 

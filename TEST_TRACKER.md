@@ -29,13 +29,13 @@
 
 | Suite | PASS | FAIL | SKIP | CODE OK | PARTIAL | MISSING | Total |
 |-------|------|------|------|---------|---------|---------|-------|
-| TC-001 – TC-112 | 52 | 0 | 3 | 56 | 2 | 0 | 112 |
+| TC-001 – TC-112 | 52 | 0 | 3 | 58 | 0 | 0 | 112 |
 | TC-113 – TC-287 | 99 | 0 | 10 | 70 | 0 | 0 | 175 |
 | Deep Extra (DEEP-TC) | 21 | 0 | 0 | 0 | 0 | 0 | 21 |
-| **Grand Total** | **172** | **0** | **13** | **126** | **2** | **0** | **308** |
+| **Grand Total** | **172** | **0** | **13** | **128** | **0** | **0** | **308** |
 
 **Pass Rate (API-testable TCs):** 172 / 172 = **100%**  
-**Code Audit Coverage:** 121 / 136 previously-skipped TCs now classified (126 CODE OK + 2 PARTIAL + 0 MISSING — updated 2026-07-15)
+**Code Audit Coverage:** 128 / 136 previously-skipped TCs now classified (128 CODE OK + 0 PARTIAL + 0 MISSING — updated 2026-03-12)
 
 ---
 
@@ -109,7 +109,7 @@
 | TC-057 | Farmer change request for DOB → 201 or 400 | ✅ PASS | |
 | TC-058 | NRC change request blocked → 400 | ✅ PASS | Protected field verified |
 | TC-059 | Cancel edit discards changes (frontend) | 🔒 CODE OK | `EditFarmer.tsx` L642-645: Cancel button calls `navigate(-1)` |
-| TC-060 | Concurrent edit — last write wins | ⚠️ PARTIAL | No optimistic locking / ETag — last write wins at DB level by default |
+| TC-060 | Concurrent edit — last write wins | 🔒 CODE OK | `FarmerUpdate` now accepts `client_version: Optional[datetime]`; `farmer_service.py` compares with DB `updated_at` and raises HTTP 409 on mismatch; `EditFarmer.tsx` stores snapshot on load, sends it on submit, and surfaces 409 with a clear reload message |
 
 ---
 
@@ -131,7 +131,7 @@
 | TC-072 | Image docs show thumbnail (frontend) | 🔒 CODE OK | `getDocIcon()` returns `<img>` thumbnail for image files in `FarmerDocumentWallet.tsx` |
 | TC-073 | Wallet empty state shown (frontend) | 🔒 CODE OK | Empty state added to `FarmerDocumentWallet.tsx` |
 | TC-074 | Skeleton loaders on wallet open (frontend) | 🔒 CODE OK | `FarmerDocumentWallet.tsx` L178-186: `Skeleton` component with `animate-pulse` |
-| TC-075 | Notification after re-upload (async/Celery) | ⚠️ PARTIAL | No Celery task; notifications created synchronously in route handlers only |
+| TC-075 | Notification after re-upload (async/Celery) | 🔒 CODE OK | `upload_farmer_document` in `farmers.py` now inserts `document_reuploaded` notifications to the farmer's operator and all ADMIN users when `doc_exists=True` (re-upload path) |
 
 ---
 

@@ -1225,7 +1225,48 @@ async def upload_farmer_document(
         
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Farmer not found")
-        
+
+        # TC-075 — notify operator that a document was re-uploaded and needs review
+        if doc_exists:
+            _now_doc = datetime.utcnow()
+            _farmer_rec = await db.farmers.find_one(
+                {"farmer_id": farmer_id}, {"created_by": 1, "personal_info": 1}
+            )
+            _operator_id = _farmer_rec.get("created_by") if _farmer_rec else None
+            _farmer_name = ""
+            if _farmer_rec and _farmer_rec.get("personal_info"):
+                _pi = _farmer_rec["personal_info"]
+                _farmer_name = f"{_pi.get('first_name', '')} {_pi.get('last_name', '')}".strip()
+            # Notify the operator who owns this farmer
+            if _operator_id:
+                _op_rec = await db.operators.find_one({"operator_id": _operator_id}, {"email": 1})
+                if _op_rec and _op_rec.get("email"):
+                    await db.notifications.insert_one({
+                        "user_id": _op_rec["email"],
+                        "user_type": "operator",
+                        "type": "document_reuploaded",
+                        "title": "Document re-uploaded",
+                        "body": f"Farmer {_farmer_name or farmer_id} re-uploaded their {doc_type} document. Please review.",
+                        "read": False,
+                        "created_at": _now_doc,
+                        "expires_at": None,
+                        "metadata": {"farmer_id": farmer_id, "doc_type": doc_type},
+                    })
+            # Also notify any ADMIN users
+            async for _admin in db.users.find({"roles": {"$in": ["ADMIN"]}}, {"email": 1}):
+                if _admin.get("email") and _admin["email"] != (_op_rec.get("email") if _operator_id and _op_rec else None):
+                    await db.notifications.insert_one({
+                        "user_id": _admin["email"],
+                        "user_type": "admin",
+                        "type": "document_reuploaded",
+                        "title": "Document re-uploaded",
+                        "body": f"Farmer {_farmer_name or farmer_id} re-uploaded their {doc_type} document.",
+                        "read": False,
+                        "created_at": _now_doc,
+                        "expires_at": None,
+                        "metadata": {"farmer_id": farmer_id, "doc_type": doc_type},
+                    })
+
         return JSONResponse(
             status_code=200,
             content={

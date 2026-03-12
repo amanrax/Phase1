@@ -91,6 +91,8 @@ export default function EditFarmer() {
   const [showCustomChiefdom, setShowCustomChiefdom] = useState(false);
   const [customChiefdom, setCustomChiefdom] = useState("");
   const [ethnicOptions, setEthnicOptions] = useState<string[]>([]);
+  // TC-060: optimistic locking — store the updated_at the client last saw
+  const [clientVersion, setClientVersion] = useState<string | null>(null);
 
   useEffect(() => {
     logger.info(COMPONENT, 'Component mounted', { farmerId });
@@ -170,6 +172,9 @@ export default function EditFarmer() {
         setShowCustomChiefdom(true);
         setCustomChiefdom(farmer.address?.chiefdom_name || "");
       }
+
+      // TC-060: snapshot the version for optimistic locking
+      setClientVersion(farmer.updated_at ?? null);
 
       setFormData({
         first_name: farmer.personal_info?.first_name || "",
@@ -329,6 +334,9 @@ export default function EditFarmer() {
         };
       }
 
+      // TC-060: attach the version the client loaded so the server can detect conflicts
+      if (clientVersion) payload.client_version = clientVersion;
+
       await farmerService.update(farmerId!, payload);
       logger.info(COMPONENT, 'Farmer updated successfully', { farmerId });
       triggerVibration("registration_complete");
@@ -336,6 +344,17 @@ export default function EditFarmer() {
       showSuccess('Farmer updated successfully!', 4000);
       setTimeout(() => navigate(-1), 500);
     } catch (err: unknown) {
+      // TC-060: surface concurrent-edit 409 conflict with a clear message
+      const axiosErr = err as { response?: { status?: number } };
+      if (axiosErr?.response?.status === 409) {
+        const conflictMsg = 'This record was modified by another user. Please reload the page to get the latest data.';
+        logger.warn(COMPONENT, 'Optimistic lock conflict', { farmerId });
+        triggerVibration("form_error");
+        triggerSound("error");
+        setError(conflictMsg);
+        showError(conflictMsg, 7000);
+        return;
+      }
       const msg = getErrorMessage(err);
       logger.error(COMPONENT, 'Update failed', { farmerId, error: msg });
       triggerVibration("form_error");

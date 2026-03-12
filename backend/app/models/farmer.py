@@ -205,7 +205,10 @@ class FarmerUpdate(BaseModel):
     )
     is_active: Optional[bool] = None  # <-- Added for activate/deactivate support
     review_notes: Optional[str] = None  # Admin/operator notes during review
-    
+    # TC-060: optimistic locking — client sends the updated_at it loaded; server
+    # rejects with 409 if the record changed since then.
+    client_version: Optional[datetime] = None
+
     model_config = ConfigDict(extra="ignore")
 
 
