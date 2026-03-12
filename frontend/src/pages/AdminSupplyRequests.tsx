@@ -511,9 +511,9 @@ export default function AdminSupplyRequests() {
                 if (!requests.length) return;
                 const headers = ["ID","Farmer","Category","Item","Qty","Urgency","Status","Province","District","Date"];
                 const rows = requests.map(r => [
-                  r._id, r.farmer_name || "", r.category || "", r.item_name || "",
-                  r.quantity ?? "", r.urgency || "", r.status || "",
-                  r.province || "", r.district || "", r.created_at ? new Date(r.created_at).toLocaleDateString() : ""
+                  r.id, r.farmer_name || "", r.category || "", r.items?.[0]?.name || "",
+                  r.items?.[0]?.quantity_value ?? "", r.urgency || "", r.status || "",
+                  r.farmer_province || "", r.farmer_district || "", r.created_at ? new Date(r.created_at).toLocaleDateString() : ""
                 ]);
                 const csv = [headers, ...rows].map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
                 const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
