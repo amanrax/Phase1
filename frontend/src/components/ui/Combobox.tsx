@@ -177,7 +177,7 @@ export default function Combobox({
         <ul
           role="listbox"
           className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl
-            max-h-52 overflow-y-auto py-1"
+            max-h-52 overflow-y-auto overscroll-contain touch-pan-y py-1"
         >
           {menuItems.map((opt, i) => (
             <li
@@ -204,7 +204,7 @@ export default function Combobox({
       {/* No results message */}
       {open && !disabled && menuItems.length === 0 && query.trim() && !allowCustom && (
         <div className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
-          No matches found.
+          No results found.
         </div>
       )}
     </div>

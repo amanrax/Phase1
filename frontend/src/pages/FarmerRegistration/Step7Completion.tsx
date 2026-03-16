@@ -6,9 +6,10 @@ import { useFeedback } from "@/utils/feedback";
 type Props = {
   farmerId: string;
   farmerName: string;
+  queued?: boolean;
 };
 
-export default function Step7Completion({ farmerId, farmerName }: Props) {
+export default function Step7Completion({ farmerId, farmerName, queued = false }: Props) {
   const navigate = useNavigate();
   const { triggerVibration, triggerSound } = useFeedback();
 
@@ -26,25 +27,37 @@ export default function Step7Completion({ farmerId, farmerName }: Props) {
 
       {/* Title */}
       <div>
-        <h2 className="text-3xl font-bold text-green-600 dark:text-green-400">Registration Complete!</h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">{farmerName} has been successfully registered.</p>
+        <h2 className="text-3xl font-bold text-green-600 dark:text-green-400">
+          {queued ? "Registration Queued" : "Registration Complete!"}
+        </h2>
+        <p className="text-gray-500 dark:text-gray-400 mt-2">
+          {queued
+            ? "No internet connection detected. This registration will auto-submit when connectivity returns."
+            : `${farmerName} has been successfully registered.`}
+        </p>
       </div>
 
       {/* Farmer ID Card */}
       <div className="w-full max-w-sm bg-white dark:bg-gray-800 border-2 border-indigo-300 dark:border-indigo-600 rounded-2xl p-6 shadow-md">
-        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Farmer ID</p>
+        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+          {queued ? "Queue Reference" : "Farmer ID"}
+        </p>
         <p className="text-3xl font-bold font-mono tracking-widest text-gray-900 dark:text-white">{farmerId}</p>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Save this ID for future reference</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+          {queued ? "Keep this reference in case you need support." : "Save this ID for future reference"}
+        </p>
       </div>
 
       {/* Actions */}
       <div className="w-full max-w-sm space-y-3">
-        <button
-          onClick={() => navigate(`/farmers/${farmerId}`)}
-          className="w-full py-3 px-6 rounded-xl font-semibold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all"
-        >
-          View Farmer Details
-        </button>
+        {!queued && (
+          <button
+            onClick={() => navigate(`/farmers/${farmerId}`)}
+            className="w-full py-3 px-6 rounded-xl font-semibold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all"
+          >
+            View Farmer Details
+          </button>
+        )}
         <button
           onClick={() => window.location.reload()}
           className="w-full py-3 px-6 rounded-xl font-semibold text-sm bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all"

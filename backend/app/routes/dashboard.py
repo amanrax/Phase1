@@ -194,7 +194,7 @@ async def get_dashboard_stats(
 async def get_analytics(
     request: Request,
     db=Depends(get_db),
-    current_user=Depends(require_role(["ADMIN", "OPERATOR"]))
+    current_user=Depends(require_role(["ADMIN"]))
 ):
     """Returns chart-ready analytics — delegates to analytics_service with Redis caching."""
     return await analytics_service.get_full_analytics(db)

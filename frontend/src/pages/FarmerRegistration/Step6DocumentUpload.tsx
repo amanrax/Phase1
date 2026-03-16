@@ -56,6 +56,12 @@ export default function Step6DocumentUpload({ farmerId, onComplete, onBack }: St
   const handleUpload = async (index: number) => {
     const doc = documents[index];
     if (!doc.file) return;
+    if (!navigator.onLine) {
+      showError("You must be online to upload files.");
+      triggerVibration("form_error");
+      triggerSound("error");
+      return;
+    }
     const updated = [...documents];
     updated[index] = { ...updated[index], uploading: true };
     setDocuments(updated);

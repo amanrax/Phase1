@@ -219,6 +219,17 @@ async def create_supply_request(
     }
 
 
+@router.post("", summary="Create supply request (Farmer) — alias")
+async def create_supply_request_alias(
+    request: Request,
+    body: SupplyRequestCreate,
+    current_user: dict = Depends(require_role(["FARMER"])),
+    db=Depends(get_db),
+):
+    """Alias for clients using POST /api/supplies instead of /api/supplies/request."""
+    return await create_supply_request(request, body, current_user, db)
+
+
 @router.get("/my-requests", summary="Get farmer's own supply requests")
 async def get_my_supply_requests(
     request: Request,
@@ -402,7 +413,7 @@ async def get_all_supply_requests_alias(
     farmer_id: Optional[str] = Query(None),
     limit: int = Query(200, ge=1, le=1000),
     skip: int = Query(0, ge=0),
-    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR"])),
+    current_user: dict = Depends(require_role(["ADMIN"])),  # Admin only — operators should not see all supply requests
     db=Depends(get_db),
 ):
     query: dict = {}
@@ -428,7 +439,7 @@ async def get_all_supply_requests(
     search: Optional[str] = Query(None, description="Search by farmer name or ref"),
     limit: int = Query(200, ge=1, le=1000),
     skip: int = Query(0, ge=0),
-    current_user: dict = Depends(require_role(["ADMIN", "OPERATOR"])),
+    current_user: dict = Depends(require_role(["ADMIN"])),  # Admin only — operators must not access all supply requests
     db=Depends(get_db),
 ):
     await _log(request, "INFO", "admin_get_all",
@@ -559,7 +570,12 @@ async def update_supply_request(
 ):
     from bson import ObjectId
     await _log(request, "INFO", "admin_update.attempt",
-               {"request_id": request_id, "new_status": body.status}, current_user)
+               {
+                   "request_id": request_id,
+                   "new_status": body.status,
+                   "changed_by": current_user.get("email"),
+                   "timestamp": datetime.now(timezone.utc).isoformat(),
+               }, current_user)
 
     valid_statuses = {"pending", "approved", "processing", "dispatched", "fulfilled", "rejected", "cancelled"}
     if body.status not in valid_statuses:
@@ -573,6 +589,8 @@ async def update_supply_request(
     doc = await db.supply_requests.find_one({"_id": oid})
     if not doc:
         raise HTTPException(404, "Supply request not found")
+
+    old_status = doc.get("status")
 
     now = datetime.now(timezone.utc)
     history_entry = {
@@ -603,7 +621,13 @@ async def update_supply_request(
         raise HTTPException(400, "No changes applied — request may already be in this state")
 
     await _log(request, "INFO", "admin_update.success",
-               {"request_id": request_id, "new_status": body.status}, current_user)
+               {
+                   "request_id": request_id,
+                   "old_status": old_status,
+                   "new_status": body.status,
+                   "changed_by": current_user.get("email"),
+                   "timestamp": now.isoformat(),
+               }, current_user)
 
     # TC-115/TC-139 — notify farmer of supply request status change
     farmer_id = doc.get("farmer_id")

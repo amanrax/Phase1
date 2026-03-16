@@ -40,6 +40,8 @@ from app.models.farmer import (
     FarmerUpdate,
     FarmerOut,
     FarmerListItem,
+    FarmerReassignmentRequest,
+    FarmerReassignmentResponse,
 )
 from app.services.farmer_service import FarmerService
 from app.utils.security import verify_qr_signature, generate_qr_data
@@ -229,7 +231,7 @@ async def create_farmer(
 async def list_farmers(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(20, ge=1, le=100, description="Maximum records to return"),
-    status: Optional[str] = Query(None, regex="^(registered|under_review|verified|rejected|pending_documents)$", description="Filter by registration status"),
+    status: Optional[str] = Query(None, regex="^(registered|under_review|verified|rejected|pending_documents|pending|documents_uploaded|incomplete)$", description="Filter by registration status"),
     district: Optional[str] = Query(None, description="Filter by district name"),
     search: Optional[str] = Query(None, description="Search in name, phone, farmer_id"),
     farmer_id_exact: Optional[str] = Query(None, description="Exact farmer_id match (overrides search)"),
@@ -291,7 +293,7 @@ async def list_farmers(
         operator_doc = await db.operators.find_one({"email": user_email})
         if operator_doc:
             allowed_districts = operator_doc.get("assigned_districts", [])
-            created_by_filter = user_email  # Also show farmers created by this operator
+            created_by_filter = operator_doc.get("operator_id")  # Also show farmers created by this operator
             # If no districts assigned, still show farmers they created (fallback)
     # Admin sees all farmers (both None)
     
@@ -325,7 +327,7 @@ async def list_farmers(
     description="Get total count of farmers with optional filters"
 )
 async def count_farmers(
-    status: Optional[str] = Query(None, regex="^(registered|under_review|verified|rejected|pending_documents)$"),
+    status: Optional[str] = Query(None, regex="^(registered|under_review|verified|rejected|pending_documents|pending|documents_uploaded|incomplete)$"),
     district: Optional[str] = Query(None),
     farmer_id_exact: Optional[str] = Query(None, description="Exact farmer_id match"),
     nrc: Optional[str] = Query(None, description="Exact NRC match"),
@@ -356,6 +358,7 @@ async def count_farmers(
         operator_doc = await db.operators.find_one({"email": user_email})
         if operator_doc:
             allowed_districts = operator_doc.get("assigned_districts", [])
+            created_by_filter = operator_doc.get("operator_id")
             # If no districts assigned, operator sees nothing (secure default)
     # Admin sees all farmers (both None)
     
@@ -487,21 +490,22 @@ async def get_farmer(
         
         is_authorized = False
         if op_doc:
-            # Check 1: Is the farmer in one of the operator's assigned districts?
-            assigned_districts = op_doc.get("assigned_districts", [])
-            farmer_district = farmer.address.district_name if farmer.address else None
-            if farmer_district and assigned_districts and farmer_district in assigned_districts:
-                is_authorized = True
-            
-            # Check 2 (fallback): Was the farmer created by this operator?
             operator_id = op_doc.get("operator_id")
-            if not is_authorized and operator_id and hasattr(farmer, 'created_by') and farmer.created_by == operator_id:
-                is_authorized = True
+            farmer_owner_operator_id = getattr(farmer, "operator_id", None) or getattr(farmer, "created_by", None)
+
+            # If a farmer is explicitly assigned to an operator, enforce owner-only access.
+            if farmer_owner_operator_id:
+                is_authorized = bool(operator_id and farmer_owner_operator_id == operator_id)
+            else:
+                # Legacy fallback for unassigned records: district-scoped access.
+                assigned_districts = op_doc.get("assigned_districts", [])
+                farmer_district = farmer.address.district_name if farmer.address else None
+                is_authorized = bool(farmer_district and assigned_districts and farmer_district in assigned_districts)
 
         if not is_authorized:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied: this farmer is not in your assigned districts."
+                detail="Access denied: this farmer is assigned to another operator."
             )
     
     await log_event(
@@ -590,14 +594,15 @@ async def update_farmer(
         farmer_district = farmer_to_update.address.district_name if farmer_to_update.address else None
         operator_id = (op_doc or {}).get("operator_id")
 
-        # Allow if farmer's district is in operator's assigned districts
-        is_authorized = bool(farmer_district and assigned_districts and farmer_district in assigned_districts)
-        # Also allow if operator created this farmer (created_by == operator_id)
-        if not is_authorized and operator_id and getattr(farmer_to_update, 'created_by', None) == operator_id:
-            is_authorized = True
+        farmer_owner_operator_id = getattr(farmer_to_update, "operator_id", None) or getattr(farmer_to_update, "created_by", None)
+        if farmer_owner_operator_id:
+            is_authorized = bool(operator_id and farmer_owner_operator_id == operator_id)
+        else:
+            # Legacy fallback for unassigned records: district-scoped access.
+            is_authorized = bool(farmer_district and assigned_districts and farmer_district in assigned_districts)
 
         if not is_authorized:
-            raise HTTPException(status_code=403, detail="Access denied: this farmer is not in your assigned districts.")
+            raise HTTPException(status_code=403, detail="Access denied: this farmer is assigned to another operator.")
 
     # Authorization: Farmers can only update their own profile
     if "FARMER" in current_user.get("roles", []):
@@ -643,6 +648,107 @@ async def update_farmer(
     return updated_farmer
 
 
+@router.post(
+    "/{farmer_id}/reassign-operator",
+    response_model=FarmerReassignmentResponse,
+    summary="Reassign farmer to operator",
+    description="ADMIN only. Move a farmer to a different operator and notify the new assignee."
+)
+async def reassign_farmer_operator(
+    farmer_id: str,
+    payload: FarmerReassignmentRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin),
+):
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="reassign_attempt",
+        details={"farmer_id": farmer_id, "target_operator_id": payload.operator_id},
+        endpoint=f"/api/farmers/{farmer_id}/reassign-operator",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
+
+    farmer = await db.farmers.find_one(
+        {"farmer_id": farmer_id},
+        {"farmer_id": 1, "created_by": 1, "personal_info": 1, "operator_id": 1},
+    )
+    if not farmer:
+        raise HTTPException(status_code=404, detail="Farmer not found")
+
+    operator = await db.operators.find_one(
+        {"operator_id": payload.operator_id},
+        {"operator_id": 1, "email": 1, "full_name": 1},
+    )
+    if not operator:
+        raise HTTPException(status_code=404, detail="Target operator not found")
+
+    previous_operator_id = farmer.get("created_by") or farmer.get("operator_id")
+    if previous_operator_id == payload.operator_id:
+        return FarmerReassignmentResponse(
+            message="Farmer is already assigned to this operator",
+            farmer_id=farmer_id,
+            previous_operator_id=previous_operator_id,
+            operator_id=payload.operator_id,
+        )
+
+    update_fields = {
+        "created_by": payload.operator_id,
+        "operator_id": payload.operator_id,
+        "updated_at": datetime.utcnow(),
+    }
+    if payload.note:
+        update_fields["review_notes"] = payload.note
+
+    result = await db.farmers.update_one(
+        {"farmer_id": farmer_id},
+        {"$set": update_fields},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Farmer not found")
+
+    if operator.get("email"):
+        personal_info = farmer.get("personal_info") or {}
+        farmer_name = f"{personal_info.get('first_name', '')} {personal_info.get('last_name', '')}".strip() or farmer_id
+        await db.notifications.insert_one({
+            "user_id": operator["email"],
+            "user_type": "operator",
+            "type": "farmer_assigned",
+            "title": "Farmer assigned to you",
+            "body": f"Farmer {farmer_name} ({farmer_id}) has been assigned to your account.",
+            "read": False,
+            "created_at": datetime.now(timezone.utc),
+            "expires_at": None,
+            "metadata": {
+                "farmer_id": farmer_id,
+                "operator_id": payload.operator_id,
+                "previous_operator_id": previous_operator_id,
+            },
+        })
+
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="reassign_success",
+        details={
+            "farmer_id": farmer_id,
+            "previous_operator_id": previous_operator_id,
+            "operator_id": payload.operator_id,
+        },
+        endpoint=f"/api/farmers/{farmer_id}/reassign-operator",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
+
+    return FarmerReassignmentResponse(
+        message="Farmer reassigned successfully",
+        farmer_id=farmer_id,
+        previous_operator_id=previous_operator_id,
+        operator_id=payload.operator_id,
+    )
+
+
 # =======================================================
 # REVIEW Farmer (Update Registration Status)
 # =======================================================
@@ -657,7 +763,7 @@ async def review_farmer(
     new_status: str = Query(..., regex="^(registered|under_review|verified|rejected|pending_documents)$"),
     review_notes: Optional[str] = Query(None, description="Optional review notes"),
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: dict = Depends(require_operator)
+    current_user: dict = Depends(require_admin)
 ):
     """
     Review and update farmer registration status.
@@ -688,6 +794,8 @@ async def review_farmer(
             detail=f"Farmer {farmer_id} not found"
         )
     
+    old_status = farmer.registration_status
+
     # Update farmer with new status and review info
     now = datetime.now(timezone.utc)
     update_data = FarmerUpdate(
@@ -705,8 +813,35 @@ async def review_farmer(
                 "reviewed_by": current_user.get("email"),
                 "reviewed_at": now,
                 "updated_at": now
-            }
+            },
+            "$push": {
+                "status_history": {
+                    "status": new_status,
+                    "old_status": old_status,
+                    "new_status": new_status,
+                    "changed_by": current_user.get("email"),
+                    "role": "ADMIN",
+                    "timestamp": now.isoformat(),
+                    "notes": review_notes,
+                }
+            },
         }
+    )
+
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="review_status_changed",
+        details={
+            "farmer_id": farmer_id,
+            "old_status": old_status,
+            "new_status": new_status,
+            "changed_by": current_user.get("email"),
+            "timestamp": now.isoformat(),
+        },
+        endpoint=f"/api/farmers/{farmer_id}/review",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
     )
     
     # Fetch and return updated farmer
@@ -748,7 +883,23 @@ async def update_farmer_status(
     
     updated_farmer = await farmer_service.update_registration_status(
         farmer_id, 
-        new_status
+        new_status,
+        changed_by=current_user.get("email"),
+        changed_role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
+    )
+
+    await log_event(
+        level="INFO",
+        module="farmers",
+        action="legacy_status_changed",
+        details={
+            "farmer_id": farmer_id,
+            "new_status": new_status,
+            "changed_by": current_user.get("email"),
+        },
+        endpoint=f"/api/farmers/{farmer_id}/status",
+        user_id=current_user.get("email"),
+        role=",".join(current_user.get("roles", [])) if current_user.get("roles") else None,
     )
     
     return updated_farmer
@@ -1128,7 +1279,8 @@ async def upload_farmer_document(
     """Upload an identification document for a farmer. ADMIN/OPERATOR can upload for any farmer, FARMER can upload their own."""
     from pathlib import Path
     from datetime import datetime
-    import time
+
+    uploaded_file_id: str | None = None
     
     # Validate file size (max 20MB)
     MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
@@ -1184,6 +1336,7 @@ async def upload_farmer_document(
             file_type="document",
             metadata={"doc_type": doc_type}
         )
+        uploaded_file_id = file_id
         
         # Update farmer record
         doc_data = {
@@ -1202,12 +1355,20 @@ async def upload_farmer_document(
         
         existing_docs = existing_farmer.get("identification_documents", []) if existing_farmer else []
         doc_exists = any(doc.get("doc_type") == doc_type for doc in existing_docs)
+        replaced_doc = next((doc for doc in existing_docs if doc.get("doc_type") == doc_type), None)
+        old_file_id = replaced_doc.get("file_id") if replaced_doc else None
         
         if doc_exists:
             # Replace existing document of this type
             result = await db.farmers.update_one(
                 {"farmer_id": farmer_id, "identification_documents.doc_type": doc_type},
-                {"$set": {"identification_documents.$": doc_data}}
+                {
+                    "$set": {
+                        "identification_documents.$": doc_data,
+                        "registration_status": "documents_uploaded",
+                        "updated_at": datetime.utcnow(),
+                    }
+                }
             )
         else:
             # Add new document
@@ -1220,11 +1381,25 @@ async def upload_farmer_document(
             
             result = await db.farmers.update_one(
                 {"farmer_id": farmer_id},
-                {"$push": {"identification_documents": doc_data}}
+                {
+                    "$push": {"identification_documents": doc_data},
+                    "$set": {
+                        "registration_status": "documents_uploaded",
+                        "updated_at": datetime.utcnow(),
+                    },
+                }
             )
         
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Farmer not found")
+
+        if doc_exists and old_file_id and old_file_id != file_id:
+            deleted = await gridfs_service.delete_file(old_file_id)
+            if not deleted:
+                logger.warning(
+                    "Failed to delete superseded GridFS document",
+                    extra={"farmer_id": farmer_id, "doc_type": doc_type, "old_file_id": old_file_id},
+                )
 
         # TC-075 — notify operator that a document was re-uploaded and needs review
         if doc_exists:
@@ -1281,7 +1456,11 @@ async def upload_farmer_document(
             }
         )
     except HTTPException:
+        if uploaded_file_id:
+            await gridfs_service.delete_file(uploaded_file_id)
         raise
     except Exception as e:
+        if uploaded_file_id:
+            await gridfs_service.delete_file(uploaded_file_id)
         logger.error(f"Document upload failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))

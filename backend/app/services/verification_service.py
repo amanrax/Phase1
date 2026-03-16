@@ -5,7 +5,7 @@ from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 
-VALID_DOC_STATUSES = {"pending", "approved", "rejected"}
+VALID_DOC_STATUSES = {"pending", "approved", "verified", "rejected"}
 VALID_FARMER_STATUSES = {
     "registered", "documents_uploaded", "under_review",
     "verified", "rejected", "incomplete",
@@ -67,17 +67,19 @@ async def verify_document(
     reviewer_role: str,
     db: AsyncIOMotorDatabase,
 ) -> dict:
-    """Mark a single document as approved."""
+    """Mark a single document as verified."""
     farmer = await db.farmers.find_one({"farmer_id": farmer_id})
     if not farmer:
         return {"error": "Farmer not found"}
+
+    old_status = farmer.get("verification_status") or farmer.get("registration_status")
 
     update_key = f"document_statuses.{doc_type}"
     await db.farmers.update_one(
         {"farmer_id": farmer_id},
         {
             "$set": {
-                update_key: "approved",
+                update_key: "verified",
                 f"document_statuses.{doc_type}_reviewed_by": reviewer_id,
                 f"document_statuses.{doc_type}_reviewed_at": datetime.utcnow().isoformat(),
                 "updated_at": datetime.utcnow(),
@@ -96,7 +98,7 @@ async def verify_document(
         "details": {"farmer_id": farmer_id, "doc_type": doc_type},
     })
 
-    return {"farmer_id": farmer_id, "doc_type": doc_type, "status": "approved"}
+    return {"farmer_id": farmer_id, "doc_type": doc_type, "status": "verified"}
 
 
 async def reject_document(
@@ -178,6 +180,8 @@ async def update_farmer_verification_status(
         {"farmer_id": farmer_id},
         {"$push": {"status_history": {
             "status": new_status,
+            "old_status": old_status,
+            "new_status": new_status,
             "changed_by": reviewer_id,
             "role": reviewer_role,
             "notes": notes,
@@ -189,9 +193,41 @@ async def update_farmer_verification_status(
     if new_status == "verified":
         try:
             from app.tasks.id_card_task import generate_id_card
-            generate_id_card.delay(farmer_id)
+            task_result = generate_id_card.delay(farmer_id)
+            await db.farmers.update_one(
+                {"farmer_id": farmer_id},
+                {
+                    "$set": {
+                        "id_card_generation_queued_at": datetime.utcnow(),
+                        "id_card_generation_task_id": getattr(task_result, "id", None),
+                    }
+                },
+            )
         except Exception:
             pass  # Non-blocking: ID card regeneration is best-effort
+
+    # Notify farmer about verification status transitions used by mobile/web notification center.
+    notification_type_map = {
+        "verified": "verification_approved",
+        "rejected": "verification_rejected",
+        "under_review": "verification_under_review",
+    }
+    if new_status in notification_type_map:
+        status_text_map = {
+            "verified": "approved",
+            "rejected": "rejected",
+            "under_review": "moved under review",
+        }
+        await db.notifications.insert_one({
+            "user_id": farmer_id,
+            "user_type": "farmer",
+            "type": notification_type_map[new_status],
+            "title": "Verification status updated",
+            "body": f"Your verification status has been {status_text_map[new_status]}." + (f" Note: {notes}" if notes else ""),
+            "read": False,
+            "created_at": datetime.utcnow(),
+            "expires_at": None,
+        })
 
     await db.system_logs.insert_one({
         "timestamp": datetime.utcnow(),
@@ -202,6 +238,7 @@ async def update_farmer_verification_status(
         "role": reviewer_role,
         "details": {
             "farmer_id": farmer_id,
+            "old_status": old_status,
             "new_status": new_status,
             "notes": notes,
         },

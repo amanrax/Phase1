@@ -100,6 +100,8 @@ export default function AnalyticsDashboard() {
   const [filterMonths, setFilterMonths] = useState<number>(0); // 0 = all time
   const [filterProvince, setFilterProvince] = useState<string>("");
   const [filterOperator, setFilterOperator] = useState<string>("");
+  const [dateFrom, setDateFrom] = useState<string>("");  // OP-015: custom date range
+  const [dateTo, setDateTo] = useState<string>("");      // OP-015: custom date range
 
   const provinceOptions = useMemo<string[]>(
     () => (analytics?.farmers_by_province ?? []).map((p: any) => p.province as string),
@@ -112,8 +114,20 @@ export default function AnalyticsDashboard() {
 
   const filteredMonthly = useMemo(() => {
     const data: any[] = analytics?.monthly_registrations ?? [];
+    // OP-015: custom date range takes precedence over preset month buttons
+    if (dateFrom || dateTo) {
+      return data.filter((entry: any) => {
+        const m = entry.month as string; // e.g. "2025-01" or "Jan 2025"
+        if (!m) return true;
+        // Normalise to comparable string (YYYY-MM)
+        const iso = m.length === 7 ? m : new Date(m + " 1").toISOString().slice(0, 7);
+        if (dateFrom && iso < dateFrom.slice(0, 7)) return false;
+        if (dateTo && iso > dateTo.slice(0, 7)) return false;
+        return true;
+      });
+    }
     return filterMonths === 0 ? data : data.slice(-filterMonths);
-  }, [analytics, filterMonths]);
+  }, [analytics, filterMonths, dateFrom, dateTo]);
 
   const filteredByProvince = useMemo(() => {
     const data: any[] = analytics?.farmers_by_province ?? [];
@@ -193,6 +207,24 @@ export default function AnalyticsDashboard() {
                 </button>
               ))}
             </div>
+            {/* OP-015: Custom date range picker */}
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={e => { setDateFrom(e.target.value); if (e.target.value) setFilterMonths(0); }}
+                className="text-xs px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                aria-label="From date"
+              />
+              <span className="text-xs text-gray-400">—</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={e => { setDateTo(e.target.value); if (e.target.value) setFilterMonths(0); }}
+                className="text-xs px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                aria-label="To date"
+              />
+            </div>
             {/* Province selector */}
             <select
               value={filterProvince}
@@ -216,9 +248,9 @@ export default function AnalyticsDashboard() {
               ))}
             </select>
             {/* Reset */}
-            {(filterMonths !== 0 || filterProvince || filterOperator) && (
+            {(filterMonths !== 0 || filterProvince || filterOperator || dateFrom || dateTo) && (
               <button
-                onClick={() => { setFilterMonths(0); setFilterProvince(""); setFilterOperator(""); }}
+                onClick={() => { setFilterMonths(0); setFilterProvince(""); setFilterOperator(""); setDateFrom(""); setDateTo(""); }}
                 className="text-xs px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 font-medium transition-colors"
               >
                 ✕ Reset

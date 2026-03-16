@@ -354,6 +354,21 @@ class FarmerListItem(BaseModel):
     district_name: str
     is_active: bool
     review_notes: Optional[str] = None
+    photo_file_id: Optional[str] = None
     
     model_config = ConfigDict(populate_by_name=True)
+
+
+class FarmerReassignmentRequest(BaseModel):
+    """Request model for reassigning a farmer to a different operator."""
+    operator_id: str = Field(..., min_length=3, max_length=32, description="Target operator ID")
+    note: Optional[str] = Field(None, max_length=500, description="Optional reassignment reason")
+
+
+class FarmerReassignmentResponse(BaseModel):
+    """Response model returned after farmer reassignment."""
+    message: str
+    farmer_id: str
+    previous_operator_id: Optional[str] = None
+    operator_id: str
 

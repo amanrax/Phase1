@@ -1,6 +1,7 @@
 // src/pages/FarmerRegistration/Step4Preview.tsx — Step 4 of registration wizard: preview all entered data and submit to API
 import { useState } from "react";
 import { farmerService } from "@/services/farmer.service";
+import { offlineRegistrationQueueService } from "@/services/offlineRegistrationQueue.service";
 import { logger } from "@/utils/logger";
 import { WizardState } from "."; // Import type
 import { useFeedback } from "@/utils/feedback";
@@ -14,6 +15,7 @@ type Props = {
   onSubmitStart: () => void;
   onSubmitEnd: () => void;
   onSuccess: (farmerId: string) => void;
+  onQueued: (queueId: string) => void;
 };
 
 export default function Step4Preview({
@@ -23,8 +25,10 @@ export default function Step4Preview({
   onSubmitStart,
   onSubmitEnd,
   onSuccess,
+  onQueued,
 }: Props) {
   const [error, setError] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
   const { triggerVibration, triggerSound } = useFeedback();
 
   const cleanOptionalField = (value: string | undefined): string | undefined => {
@@ -37,10 +41,12 @@ export default function Step4Preview({
   };
 
   const handleSubmit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
     onSubmitStart();
     setError("");
-    try {
-      const payload: any = {
+
+    const payload: any = {
         personal_info: {
           first_name: data.personal.first_name || "",
           last_name: data.personal.last_name || "",
@@ -63,29 +69,41 @@ export default function Step4Preview({
         },
       };
 
-      if (data.farm?.size_hectares || data.farm?.years_farming) {
-        const cropsRaw = data.farm.crops;
-        const liveRaw  = data.farm.livestock;
-        payload.farm_info = {
-          farm_size_hectares: parseFloat(data.farm.size_hectares || "1") || 1,
-          crops_grown: Array.isArray(cropsRaw)
-            ? cropsRaw
-            : (typeof cropsRaw === "string" ? cropsRaw.split(",").map((c) => c.trim()).filter(Boolean) : []),
-          livestock_types: Array.isArray(liveRaw)
-            ? liveRaw
-            : (typeof liveRaw === "string" ? liveRaw.split(",").map((l) => l.trim()).filter(Boolean) : []),
-          has_irrigation: data.farm.has_irrigation || false,
-          years_farming: Math.min(parseInt(data.farm.years_farming || "0") || 0, 100),
-        };
-      }
+    if (data.farm?.size_hectares || data.farm?.years_farming) {
+      const cropsRaw = data.farm.crops;
+      const liveRaw  = data.farm.livestock;
+      payload.farm_info = {
+        farm_size_hectares: parseFloat(data.farm.size_hectares || "1") || 1,
+        crops_grown: Array.isArray(cropsRaw)
+          ? cropsRaw
+          : (typeof cropsRaw === "string" ? cropsRaw.split(",").map((c) => c.trim()).filter(Boolean) : []),
+        livestock_types: Array.isArray(liveRaw)
+          ? liveRaw
+          : (typeof liveRaw === "string" ? liveRaw.split(",").map((l) => l.trim()).filter(Boolean) : []),
+        has_irrigation: data.farm.has_irrigation || false,
+        years_farming: Math.min(parseInt(data.farm.years_farming || "0") || 0, 100),
+      };
+    }
 
-      if (data.farm?.household_size || data.farm?.primary_income) {
-        payload.household_info = {
-          household_size: parseInt(data.farm.household_size || "1") || 1,
-          number_of_dependents: parseInt(data.farm.dependents || "0") || 0,
-          primary_income_source: data.farm.primary_income || "Farming",
-        };
-      }
+    if (data.farm?.household_size || data.farm?.primary_income) {
+      payload.household_info = {
+        household_size: parseInt(data.farm.household_size || "1") || 1,
+        number_of_dependents: parseInt(data.farm.dependents || "0") || 0,
+        primary_income_source: data.farm.primary_income || "Farming",
+      };
+    }
+
+    if (!navigator.onLine) {
+      const queueId = offlineRegistrationQueueService.enqueue(payload);
+      triggerVibration("registration_complete");
+      triggerSound("notification");
+      onQueued(queueId);
+      onSubmitEnd();
+      setSubmitting(false);
+      return;
+    }
+
+    try {
 
       logger.info(COMPONENT, "submitting payload", { payload });
       const res = await farmerService.create(payload);
@@ -119,6 +137,7 @@ export default function Step4Preview({
       triggerSound("error");
     } finally {
       onSubmitEnd();
+      setSubmitting(false);
     }
   };
 
@@ -233,10 +252,16 @@ export default function Step4Preview({
         </button>
         <button
           onClick={handleSubmit}
+          disabled={submitting}
           aria-label="Submit registration"
-          className="flex-1 py-3 px-6 rounded-xl font-semibold text-sm bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all"
+          className="flex-1 py-3 px-6 rounded-xl font-semibold text-sm bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white shadow-md hover:shadow-lg transition-all"
         >
-          &#x1F4BE; Create Farmer &amp; Continue
+          {submitting ? (
+            <span className="inline-flex items-center justify-center gap-2">
+              <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+              Creating Farmer...
+            </span>
+          ) : "💾 Create Farmer & Continue"}
         </button>
       </div>
     </div>

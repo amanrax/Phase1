@@ -1,5 +1,6 @@
 // Intelligent network probe with exponential backoff and better error handling
 import { getApiBaseUrl } from "@/config/mobile";
+import { logger } from "@/utils/logger";
 
 let cachedBase: string | null = null;
 let probeAttempts = 0;
@@ -11,7 +12,7 @@ const timeoutFetch = async (url: string, ms = 5000): Promise<Response> => {
   const timeoutId = setTimeout(() => controller.abort(), ms);
   
   try {
-    console.log(`[networkProbe] Attempting: ${url}`);
+    logger.info("networkProbe", "Attempting probe", { url });
     const res = await fetch(url, { 
       method: "HEAD", // Use HEAD instead of GET for faster probes
       signal: controller.signal,
@@ -20,10 +21,10 @@ const timeoutFetch = async (url: string, ms = 5000): Promise<Response> => {
         'Accept': 'application/json',
       }
     });
-    console.log(`[networkProbe] ✅ Response ${res.status} from ${url}`);
+    logger.info("networkProbe", "Probe response", { url, status: res.status });
     return res;
   } catch (err) {
-    console.warn(`[networkProbe] ❌ Failed: ${url}`, err instanceof Error ? err.message : err);
+    logger.warn("networkProbe", "Probe failed", { url, error: err instanceof Error ? err.message : String(err) });
     throw err;
   } finally {
     clearTimeout(timeoutId);
@@ -35,20 +36,20 @@ const normalize = (url: string) => url.replace(/\/+$/, "");
 export const ensureApiBase = async (): Promise<string> => {
   // Return cached if available
   if (cachedBase) {
-    console.log(`[networkProbe] Using cached base: ${cachedBase}`);
+    logger.info("networkProbe", "Using cached base", { base: cachedBase });
     return cachedBase;
   }
 
   // Prevent infinite retry loops
   if (probeAttempts >= MAX_PROBE_ATTEMPTS) {
-    console.error(`[networkProbe] Max probe attempts (${MAX_PROBE_ATTEMPTS}) reached. Using fallback.`);
+    logger.error("networkProbe", "Max probe attempts reached; using fallback", { maxAttempts: MAX_PROBE_ATTEMPTS });
     const fallback = normalize(getApiBaseUrl());
     cachedBase = fallback;
     return fallback;
   }
 
   probeAttempts++;
-  console.log(`[networkProbe] Probe attempt ${probeAttempts}/${MAX_PROBE_ATTEMPTS}`);
+  logger.info("networkProbe", "Probe attempt", { attempt: probeAttempts, maxAttempts: MAX_PROBE_ATTEMPTS });
 
   const candidate = normalize(getApiBaseUrl());
   
@@ -62,17 +63,17 @@ export const ensureApiBase = async (): Promise<string> => {
     
     if (response.ok || response.status === 200) {
       cachedBase = candidate;
-      console.log(`[networkProbe] ✅ Backend reachable at: ${cachedBase}`);
+      logger.info("networkProbe", "Backend reachable", { base: cachedBase });
       probeAttempts = 0; // Reset on success
       return cachedBase;
     }
   } catch (err) {
-    console.warn(`[networkProbe] Primary probe failed:`, err instanceof Error ? err.message : err);
+    logger.warn("networkProbe", "Primary probe failed", { error: err instanceof Error ? err.message : String(err) });
   }
 
   // If HTTP failed and we were using HTTP, don't try HTTPS
   // Mobile apps should stick to HTTP for the configured backend
-  console.warn(`[networkProbe] ⚠️ Backend not reachable. Using configured URL anyway: ${candidate}`);
+  logger.warn("networkProbe", "Backend not reachable; using configured URL anyway", { base: candidate });
   cachedBase = candidate;
   probeAttempts = 0;
   return cachedBase;
@@ -81,7 +82,7 @@ export const ensureApiBase = async (): Promise<string> => {
 export const getCachedApiBase = () => cachedBase;
 
 export const resetProbeCache = () => {
-  console.log('[networkProbe] Cache reset');
+  logger.info("networkProbe", "Probe cache reset");
   cachedBase = null;
   probeAttempts = 0;
 };

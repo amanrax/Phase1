@@ -1,5 +1,6 @@
 // src/components/ErrorBoundary.tsx
 import { Component, ErrorInfo, ReactNode } from "react";
+import { logger } from "@/utils/logger";
 
 interface Props {
   children: ReactNode;
@@ -23,7 +24,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("[ErrorBoundary] Caught error:", error, errorInfo);
+    logger.error("ErrorBoundary", "Caught render error", {
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+    });
     this.setState({ errorInfo });
   }
 
@@ -40,9 +45,9 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-lg w-full text-center">
             <div className="text-6xl mb-4">⚠️</div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Something went wrong</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Something went wrong. Please try again.</h1>
             <p className="text-gray-500 dark:text-gray-500 dark:text-gray-500 text-sm mb-6">
-              An unexpected error occurred. Please try again or contact support if the issue persists.
+              A rendering error occurred in this section. You can return home and continue using the app.
             </p>
             {import.meta.env.DEV && this.state.error && (
               <details className="mb-6 text-left bg-gray-50 dark:bg-gray-800 rounded-lg p-4">

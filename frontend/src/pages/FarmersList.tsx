@@ -5,7 +5,9 @@ import BackButton from "@/components/BackButton";
 import { farmerService } from "@/services/farmer.service";
 import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
+import useAuthStore from "@/store/authStore";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { useScrollRestore } from "@/hooks/useScrollRestore";
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Farmer {
   _id: string;
@@ -27,6 +29,7 @@ interface Farmer {
   registration_status?: string;
   created_at?: string;
   is_active: boolean;
+  photo_file_id?: string;
 }
 
 type FilterType = "all" | "active" | "pending" | "inactive";
@@ -233,12 +236,13 @@ function ReviewModal({ farmer, onClose, onSaved }: ReviewModalProps) {
 interface FarmerCardProps {
   farmer: Farmer;
   actioningId: string | null;
+  offlineReadOnly: boolean;
   onView: () => void;
   onEdit: () => void;
   onReview: () => void;
   onToggleActive: () => void;
 }
-function FarmerCard({ farmer, actioningId, onView, onEdit, onReview, onToggleActive }: FarmerCardProps) {
+function FarmerCard({ farmer, actioningId, offlineReadOnly, onView, onEdit, onReview, onToggleActive }: FarmerCardProps) {
   const meta    = getStatusMeta(farmer);
   const busy    = actioningId === farmer.farmer_id;
 
@@ -246,12 +250,20 @@ function FarmerCard({ farmer, actioningId, onView, onEdit, onReview, onToggleAct
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
       {/* Top row */}
       <div className="flex items-start gap-3 p-4">
-        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold text-base flex-shrink-0">
+        {farmer.photo_file_id ? (
+          <img
+            src={`/api/files/${farmer.photo_file_id}`}
+            alt={getFarmerName(farmer)}
+            className="w-11 h-11 rounded-full object-cover flex-shrink-0 bg-gray-200 dark:bg-gray-700"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden"); }}
+          />
+        ) : null}
+        <div className={`w-11 h-11 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold text-base flex-shrink-0 ${farmer.photo_file_id ? "hidden" : ""}`}>
           {getFarmerName(farmer)[0]?.toUpperCase() ?? "F"}
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-sm text-gray-800 dark:text-gray-100 truncate">{getFarmerName(farmer)}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">{farmer.farmer_id}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5 break-all">{farmer.farmer_id}</p>
         </div>
         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${meta.color}`}>
           {meta.label}
@@ -273,11 +285,19 @@ function FarmerCard({ farmer, actioningId, onView, onEdit, onReview, onToggleAct
       {/* Action buttons */}
       <div className="flex border-t border-gray-100 dark:border-gray-700">
         <button onClick={onView}   className="flex-1 py-2.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition active:scale-95">👁 View</button>
-        <button onClick={onEdit}   className="flex-1 py-2.5 text-[11px] font-bold text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition border-x border-gray-100 dark:border-gray-700 active:scale-95">✏️ Edit</button>
-        <button onClick={onReview} className="flex-1 py-2.5 text-[11px] font-bold text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition border-r border-gray-100 dark:border-gray-700 active:scale-95">📋 Review</button>
+        <button
+          onClick={onEdit}
+          disabled={offlineReadOnly}
+          className="flex-1 py-2.5 text-[11px] font-bold text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition border-x border-gray-100 dark:border-gray-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+        >✏️ Edit</button>
+        <button
+          onClick={onReview}
+          disabled={offlineReadOnly}
+          className="flex-1 py-2.5 text-[11px] font-bold text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition border-r border-gray-100 dark:border-gray-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+        >📋 Review</button>
         <button
           onClick={onToggleActive}
-          disabled={busy}
+          disabled={busy || offlineReadOnly}
           className={`flex-1 py-2.5 text-[11px] font-bold transition active:scale-95 disabled:opacity-50 ${
             farmer.is_active
               ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -295,6 +315,9 @@ function FarmerCard({ farmer, actioningId, onView, onEdit, onReview, onToggleAct
 export default function FarmersList() {
   const navigate = useNavigate();
   const notify   = useNotification();
+  const { user } = useAuthStore();
+  useScrollRestore("farmers-list");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const [allFarmers,      setAllFarmers]      = useState<Farmer[]>([]);
   const [filteredFarmers, setFilteredFarmers] = useState<Farmer[]>([]);
@@ -314,6 +337,7 @@ export default function FarmersList() {
   const [currentPage,     setCurrentPage]     = useState(0);
   const PAGE_SIZE = 20;
   const [totalCount,      setTotalCount]      = useState(0);
+  const FARMERS_CACHE_KEY = "farmers_list_cache_v1";
 
   // Modals / actions
   const [reviewFarmer,    setReviewFarmer]    = useState<Farmer | null>(null);
@@ -321,6 +345,17 @@ export default function FarmersList() {
   const [actioningId,     setActioningId]     = useState<string | null>(null);
 
   const loadingRef = useRef(false);
+
+  useEffect(() => {
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
 
   // ── Load page of farmers ────────────────────────────────────────────────
   const loadFarmers = useCallback(async (page = 0, isRefresh = false) => {
@@ -342,12 +377,36 @@ export default function FarmersList() {
       setAllFarmers(list);
       setTotalCount(data?.total ?? data?.count ?? list.length);
       setCurrentPage(page);
+      try {
+        localStorage.setItem(
+          FARMERS_CACHE_KEY,
+          JSON.stringify({ list, total: data?.total ?? data?.count ?? list.length, cachedAt: Date.now() })
+        );
+      } catch {
+        // Ignore storage quota failures; live data remains usable.
+      }
       logger.info("FarmersList", "Farmers loaded", { count: list.length, page });
       if (isRefresh) notify.success("List refreshed.");
     } catch (err: any) {
       const code = err?.response?.status;
       const msg  = err?.response?.data?.detail || err?.message || "Failed to load farmers";
       logger.error("FarmersList", "Load failed", { error: msg, code, page });
+      if (!navigator.onLine) {
+        try {
+          const cachedRaw = localStorage.getItem(FARMERS_CACHE_KEY);
+          if (cachedRaw) {
+            const cached = JSON.parse(cachedRaw) as { list?: Farmer[]; total?: number };
+            const cachedList = Array.isArray(cached.list) ? cached.list : [];
+            setAllFarmers(cachedList);
+            setTotalCount(cached.total ?? cachedList.length);
+            setCurrentPage(0);
+            notify.warning("Offline mode: showing cached farmer list (read-only).");
+            return;
+          }
+        } catch {
+          // Ignore cache parse failures and fall through to standard error handling.
+        }
+      }
       if      (code === 401) { notify.error("Session expired. Please log in again."); }
       else if (code === 403) { notify.error("Access denied."); }
       else if (code === 500) { notify.error("Server error — please try again."); }
@@ -447,8 +506,9 @@ export default function FarmersList() {
             <button
               onClick={() => { logger.info("FarmersList", "Refresh triggered"); loadFarmers(currentPage, true); }}
               disabled={refreshing || loading}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition active:scale-90 disabled:opacity-40"
-              aria-label="Refresh"
+              onClick={() => { logger.info("FarmersList", "Navigate: Add Farmer"); navigate("/farmers/create"); }}
+              disabled={!isOnline}
+              className="text-xs font-bold px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition active:scale-95 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span className={refreshing ? "animate-spin block" : "block"}>🔄</span>
             </button>
@@ -456,6 +516,14 @@ export default function FarmersList() {
               onClick={() => { logger.info("FarmersList", "Navigate: Add Farmer"); navigate("/farmers/create"); }}
               className="text-xs font-bold px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition active:scale-95 shadow-sm"
             >
+
+      {!isOnline && (
+        <div className="mx-auto max-w-4xl mt-3 px-4">
+          <div className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 text-xs font-medium text-amber-800 dark:text-amber-300">
+            Offline mode: cached data only. Edit/review/activate actions are disabled until reconnect.
+          </div>
+        </div>
+      )}
               + Add
             </button>
           </div>
@@ -557,9 +625,13 @@ export default function FarmersList() {
         ) : filteredFarmers.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-12 text-center">
             <p className="text-3xl mb-2">🌾</p>
-            <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">No farmers found</p>
+            <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
+              {!searchValue && filter === "all" && user?.role === "OPERATOR"
+                ? "No farmers assigned to you yet"
+                : "No farmers found"}
+            </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              {searchValue ? "Try a different search term" : "Change the filter or register a new farmer"}
+              {searchValue ? "No results found." : "Change the filter or register a new farmer"}
             </p>
             {filter !== "all" && (
               <button
@@ -577,6 +649,7 @@ export default function FarmersList() {
                   key={f._id}
                   farmer={f}
                   actioningId={actioningId}
+                  offlineReadOnly={!isOnline}
                   onView={() => { logger.info("FarmersList", "View farmer", { id: f.farmer_id }); navigate(`/farmers/${f.farmer_id}`); }}
                   onEdit={() => { logger.info("FarmersList", "Edit farmer", { id: f.farmer_id }); navigate(`/farmers/edit/${f.farmer_id}`); }}
                   onReview={() => { logger.info("FarmersList", "Open review modal", { id: f.farmer_id }); setReviewFarmer(f); }}
@@ -605,21 +678,29 @@ export default function FarmersList() {
                           <p className="font-bold text-gray-800 dark:text-gray-100 text-sm">{getFarmerName(f)}</p>
                           <p className="text-[10px] font-mono text-gray-400 dark:text-gray-500">{f.farmer_id}</p>
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">{getFarmerPhone(f)}</td>
-                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">{getFarmerDistrict(f)}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 max-w-[160px] truncate">{getFarmerPhone(f)}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 max-w-[180px] truncate">{getFarmerDistrict(f)}</td>
                         <td className="px-4 py-3">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.color}`}>{meta.label}</span>
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">{formatDate(f.created_at)}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1.5 flex-wrap">
-                            <button onClick={() => navigate(`/farmers/${f.farmer_id}`)} className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-bold rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition active:scale-95">👁 View</button>
-                            <button onClick={() => navigate(`/farmers/edit/${f.farmer_id}`)} className="px-2.5 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition active:scale-95">✏️ Edit</button>
-                            <button onClick={() => setReviewFarmer(f)} className="px-2.5 py-1 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-[10px] font-bold rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/50 transition active:scale-95">📋 Review</button>
+                            <button onClick={() => navigate(`/farmers/${f.farmer_id}`)} className="px-4 py-2 min-h-11 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition active:scale-95">👁 View</button>
+                            <button
+                              onClick={() => navigate(`/farmers/edit/${f.farmer_id}`)}
+                              disabled={!isOnline}
+                              className="px-4 py-2 min-h-11 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >✏️ Edit</button>
+                            <button
+                              onClick={() => setReviewFarmer(f)}
+                              disabled={!isOnline}
+                              className="px-4 py-2 min-h-11 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs font-bold rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/50 transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >📋 Review</button>
                             <button
                               onClick={() => setConfirmAction({ farmer: f, action: f.is_active ? "deactivate" : "activate" })}
-                              disabled={busy}
-                              className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition active:scale-95 disabled:opacity-50 ${
+                              disabled={busy || !isOnline}
+                              className={`px-4 py-2 min-h-11 text-xs font-bold rounded-lg transition active:scale-95 disabled:opacity-50 ${
                                 f.is_active
                                   ? "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50"
                                   : "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50"

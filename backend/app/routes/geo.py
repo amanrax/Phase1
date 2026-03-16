@@ -19,6 +19,7 @@ import logging
 import re
 
 from app.database import get_db
+from app.dependencies.roles import require_role
 
 
 logger = logging.getLogger(__name__)
@@ -62,9 +63,9 @@ class District(BaseModel):
 
 class Chiefdom(BaseModel):
     """Chiefdom/Traditional Authority model"""
-    chiefdom_code: str = Field(..., description="Chiefdom code (e.g., LP05-002)")
+    chiefdom_code: Optional[str] = Field(None, description="Chiefdom code (e.g., LP05-002)")
     chiefdom_name: str = Field(..., description="Chiefdom/Chief name")
-    district_code: str = Field(..., description="Parent district code")
+    district_code: Optional[str] = Field(None, description="Parent district code")
     
     model_config = ConfigDict(
         json_schema_extra={
@@ -590,3 +591,86 @@ async def get_geo_hierarchy(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to build hierarchy: {str(e)}"
         )
+
+
+# =======================================================
+# TC-269: Delete endpoints with active-farmer protection
+# =======================================================
+@router.delete(
+    "/chiefdoms/{chiefdom_code}",
+    summary="Delete a chiefdom (admin only)",
+    description="Delete blocked when chiefdom has active farmers"
+)
+async def delete_chiefdom(
+    chiefdom_code: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_role(["ADMIN"])),
+):
+    """Admin deletes a chiefdom. Blocked if active farmers exist in this chiefdom."""
+    chiefdom = await db.chiefdoms.find_one({
+        "$or": [
+            {"chiefdom_id": chiefdom_code},
+            {"chiefdom_code": chiefdom_code},
+        ]
+    })
+    if not chiefdom:
+        raise HTTPException(status_code=404, detail="Chiefdom not found")
+
+    chiefdom_name = chiefdom.get("chief_name", chiefdom.get("chiefdom_name", ""))
+    active_count = await db.farmers.count_documents({
+        "$or": [
+            {"address.chiefdom_name": {"$regex": f"^{re.escape(chiefdom_name)}$", "$options": "i"}},
+            {"address.chiefdom_code": chiefdom_code},
+            {"address.chiefdom_id": chiefdom_code},
+        ],
+        "is_active": True,
+    })
+    if active_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot delete chiefdom: {active_count} active farmer(s) are registered in this chiefdom"
+        )
+
+    await db.chiefdoms.delete_one({"_id": chiefdom["_id"]})
+    logger.info(f"Chiefdom {chiefdom_code} ({chiefdom_name}) deleted by {current_user.get('email')}")
+    return {"message": f"Chiefdom '{chiefdom_name}' deleted successfully"}
+
+
+@router.delete(
+    "/districts/{district_code}",
+    summary="Delete a district (admin only)",
+    description="Delete blocked when district has active farmers"
+)
+async def delete_district(
+    district_code: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_role(["ADMIN"])),
+):
+    """Admin deletes a district. Blocked if active farmers exist in this district."""
+    district = await db.districts.find_one({
+        "$or": [
+            {"district_id": district_code},
+            {"district_code": district_code},
+        ]
+    })
+    if not district:
+        raise HTTPException(status_code=404, detail="District not found")
+
+    district_name = district.get("district_name", "")
+    active_count = await db.farmers.count_documents({
+        "$or": [
+            {"address.district_name": {"$regex": f"^{re.escape(district_name)}$", "$options": "i"}},
+            {"address.district_code": district_code},
+            {"address.district_id": district_code},
+        ],
+        "is_active": True,
+    })
+    if active_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot delete district: {active_count} active farmer(s) are registered in this district"
+        )
+
+    await db.districts.delete_one({"_id": district["_id"]})
+    logger.info(f"District {district_code} ({district_name}) deleted by {current_user.get('email')}")
+    return {"message": f"District '{district_name}' deleted successfully"}

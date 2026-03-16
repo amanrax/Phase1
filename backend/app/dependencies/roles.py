@@ -27,7 +27,7 @@ from app.models.user import UserInDB, UserRole
 security = HTTPBearer(
     scheme_name="JWT Bearer Token",
     description="Enter your JWT token (from /api/auth/login)",
-    auto_error=True
+    auto_error=False
 )
 
 
@@ -35,7 +35,7 @@ security = HTTPBearer(
 # Current User Extraction
 # ============================================
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ) -> dict:
     """
@@ -53,6 +53,13 @@ async def get_current_user(
     Raises:
         HTTPException: 401 if token invalid, 404 if user not found
     """
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",

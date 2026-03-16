@@ -9,8 +9,11 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import ToastContainer from "@/components/ToastContainer";
 import SessionTimeout from "@/components/SessionTimeout";
 import { useBackButton } from "@/hooks/useBackButton";
+import { useKeyboardAvoidance } from "@/hooks/useKeyboardAvoidance";
+import { useOrientationClass } from "@/hooks/useOrientationClass";
 import PermissionRequest from "@/components/PermissionRequest";
-import { updateService } from "@/services/update.service";
+import { updateService, type UpdatePrompt } from "@/services/update.service";
+import { offlineRegistrationQueueService } from "@/services/offlineRegistrationQueue.service";
 
 // Pages — lazy-loaded for code splitting (P8)
 const Login                = lazy(() => import("@/pages/Login"));
@@ -37,6 +40,7 @@ const QRScanner            = lazy(() => import("@/pages/QRScanner"));
 const AdminGeoManagement   = lazy(() => import("@/pages/AdminGeoManagement"));
 const NotificationCentre   = lazy(() => import("@/pages/NotificationCentre"));
 const ChangeRequests       = lazy(() => import("@/pages/ChangeRequests"));
+const AdminChangeRequests  = lazy(() => import("@/pages/AdminChangeRequests"));
 const FarmerDocumentWallet = lazy(() => import("@/pages/FarmerDocumentWallet"));
 
 /** Full-page spinner shown while a lazy chunk is loading */
@@ -51,10 +55,16 @@ function PageLoader() {
   );
 }
 
+function RouteBoundary({ children }: { children: React.ReactNode }) {
+  return <ErrorBoundary>{children}</ErrorBoundary>;
+}
+
 function App() {
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const [showPermissions, setShowPermissions] = useState(false);
+  const [updatePrompt, setUpdatePrompt] = useState<UpdatePrompt | null>(null);
+  const [dismissedOptionalVersion, setDismissedOptionalVersion] = useState<string | null>(null);
 
   // Offline/online indicator
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -67,7 +77,7 @@ function App() {
   }, []);
   const OfflineBanner = () => isOnline ? null : (
     <div className="fixed top-0 inset-x-0 z-[100] bg-red-600 text-white text-center text-xs font-bold py-1.5 px-4 shadow-lg" role="alert">
-      ⚠️ No internet connection — some features may be unavailable
+      ⚠️ No internet connection — offline mode active. Queued changes will sync on reconnect.
     </div>
   );
 
@@ -88,11 +98,33 @@ function App() {
 
   // Check for app updates on startup
   useEffect(() => {
-    if (token) {
-      // Start periodic update checks when user is logged in
-      updateService.startPeriodicChecks();
-    }
-  }, [token]);
+    // Start periodic update checks on app launch.
+    updateService.startPeriodicChecks((prompt) => {
+      if (prompt.mandatory) {
+        setUpdatePrompt(prompt);
+        return;
+      }
+      if (dismissedOptionalVersion !== prompt.versionName) {
+        setUpdatePrompt(prompt);
+      }
+    });
+  }, [dismissedOptionalVersion]);
+
+  // Start offline registration queue sync worker
+  useEffect(() => {
+    offlineRegistrationQueueService.startSync();
+  }, []);
+
+  const handleUpdateNow = async () => {
+    if (!updatePrompt?.downloadUrl) return;
+    await updateService.openDownloadUrl(updatePrompt.downloadUrl);
+  };
+
+  const dismissOptionalUpdate = () => {
+    if (!updatePrompt || updatePrompt.mandatory) return;
+    setDismissedOptionalVersion(updatePrompt.versionName);
+    setUpdatePrompt(null);
+  };
 
   // Determine dashboard route based on user role
   const getDashboardRoute = () => {
@@ -107,20 +139,45 @@ function App() {
   const AppContent = () => {
     // ✅ Handle Android back button
     useBackButton();
+    useKeyboardAvoidance();
+    useOrientationClass();
     const location = useLocation();
 
     return (
       <>
         <SessionTimeout />
         <ToastContainer />
+        {updatePrompt && !updatePrompt.mandatory && (
+          <div className="fixed top-0 inset-x-0 z-[110] bg-amber-100 dark:bg-amber-900/30 border-b border-amber-300 dark:border-amber-700 px-3 py-2 sm:px-4">
+            <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+              <p className="text-xs sm:text-sm font-medium text-amber-900 dark:text-amber-200">
+                Update available: v{updatePrompt.versionName}. Install now for the latest fixes and improvements.
+              </p>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={dismissOptionalUpdate}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white/70 dark:bg-gray-800/60 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 transition"
+                >
+                  Later
+                </button>
+                <button
+                  onClick={handleUpdateNow}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition"
+                >
+                  Update
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <OfflineBanner />
         {/* P8 — keyed div restarts page-enter animation on every navigation */}
         <div key={location.pathname} className="page-enter">
         <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/qr-scanner" element={<QRScanner />} />
+          <Route path="/login" element={<RouteBoundary><Login /></RouteBoundary>} />
+          <Route path="/qr-scanner" element={<RouteBoundary><QRScanner /></RouteBoundary>} />
 
           {/* Admin Routes */}
           <Route
@@ -347,6 +404,16 @@ function App() {
             }
           />
           <Route
+            path="/change-requests/pending"
+            element={
+              <ProtectedRoute>
+                <RoleRoute requiredRole={["admin", "operator"]}>
+                  <AdminChangeRequests />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/farmer/documents"
             element={
               <ProtectedRoute>
@@ -381,10 +448,32 @@ function App() {
     <ThemeProvider>
       <NotificationProvider>
         <HashRouter>
+          {updatePrompt?.mandatory && (
+            <div className="fixed inset-0 z-[130] bg-gray-950/95 backdrop-blur-sm flex items-center justify-center p-6">
+              <div className="w-full max-w-lg rounded-2xl border border-red-400/30 bg-white dark:bg-gray-900 shadow-2xl p-6 sm:p-8">
+                <p className="text-xs font-bold tracking-wide uppercase text-red-600 dark:text-red-400">Update Required</p>
+                <h1 className="mt-2 text-2xl font-extrabold text-gray-900 dark:text-white">Please update to continue</h1>
+                <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                  This app version is no longer supported. Install v{updatePrompt.versionName} to keep using CEM.
+                </p>
+                {updatePrompt.releaseNotes && (
+                  <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                    {updatePrompt.releaseNotes}
+                  </p>
+                )}
+                <button
+                  onClick={handleUpdateNow}
+                  className="mt-6 w-full min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold transition"
+                >
+                  Update Now
+                </button>
+              </div>
+            </div>
+          )}
           {showPermissions && (
             <PermissionRequest onComplete={() => setShowPermissions(false)} />
           )}
-          <AppContent />
+          {!updatePrompt?.mandatory && <AppContent />}
         </HashRouter>
       </NotificationProvider>
     </ThemeProvider>

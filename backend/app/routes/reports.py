@@ -190,9 +190,9 @@ async def farmers_details_report(db=Depends(get_db)):
     # Format the data for better readability
     formatted_farmers = []
     for farmer in farmers:
-        personal_info = farmer.get("personal_info", {})
-        address = farmer.get("address", {})
-        farm_info = farmer.get("farm_info", {})
+        personal_info = farmer.get("personal_info") or {}
+        address = farmer.get("address") or {}
+        farm_info = farmer.get("farm_info") or {}
         
         # Get crops list
         crops_list = farm_info.get("crops_grown", [])
@@ -309,6 +309,12 @@ async def poll_report_task(task_id: str):
     elif result.state == "FAILURE":
         return {"task_id": task_id, "status": "failed", "error": str(result.result)}
     return {"task_id": task_id, "status": result.state.lower()}
+
+
+@router.get("/task/{task_id}/status", dependencies=[Depends(require_role(["ADMIN", "OPERATOR"]))])
+async def poll_report_task_status(task_id: str):
+    """Alias: poll Celery task status at /task/{task_id}/status path."""
+    return await poll_report_task(task_id)
 
 
 @router.get("/download/{file_id}", dependencies=[Depends(require_role(["ADMIN", "OPERATOR"]))])

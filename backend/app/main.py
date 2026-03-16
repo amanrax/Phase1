@@ -16,7 +16,7 @@ import uuid
 
 # Import configuration and database
 from app.config import settings
-from app.database import connect_to_database, close_database_connection
+from app.database import connect_to_database, close_database_connection, ensure_required_indexes
 from app.middleware.logging_middleware import LoggingMiddleware
 
 
@@ -79,6 +79,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Database connection failed: {e}")
         raise
+
+    # Ensure required farmers/operators indexes are present on startup.
+    try:
+        await ensure_required_indexes()
+        logger.info("✅ Required farmers/operators indexes ensured")
+    except Exception as _idx_err:
+        logger.warning(f"⚠️  Required index creation skipped: {_idx_err}")
 
     # P7 — ensure TTL index on system_logs (7-day retention = 604800 s)
     try:
@@ -330,6 +337,7 @@ app.include_router(geo_admin.router, prefix="/api", tags=["Geo Admin"])
 app.include_router(reference_data.router, prefix="/api", tags=["Reference Data"])
 app.include_router(health.router, prefix="/api/health", tags=["Health"])
 app.include_router(logs.router, prefix="/api/admin/logs", tags=["Logs"])
+app.include_router(logs.router, prefix="/api/logs", tags=["Logs"])
 app.include_router(change_requests.router, prefix="/api", tags=["Change Requests"])
 app.include_router(notifications.router, prefix="/api", tags=["Notifications"])
 app.include_router(app_version.router, tags=["App Version"])

@@ -1,5 +1,6 @@
 // src/utils/navigation.ts
 import { NavigateFunction } from 'react-router-dom';
+import { logger } from '@/utils/logger';
 
 let isNavigating = false;
 let navigationTimeout: NodeJS.Timeout | null = null;
@@ -14,13 +15,13 @@ export const safeNavigate = (
 ) => {
   // If already navigating, ignore
   if (isNavigating) {
-    console.warn('[SafeNavigate] Blocked - already navigating');
+    logger.warn('safeNavigate', 'Blocked duplicate navigation');
     return;
   }
 
   // Set flag
   isNavigating = true;
-  console.log('[SafeNavigate] Navigating to:', path);
+  logger.info('safeNavigate', 'Navigating', { path });
 
   // Clear any existing timeout
   if (navigationTimeout) {
@@ -45,7 +46,7 @@ export const safeNavigate = (
  * Safe back navigation
  */
 export const safeGoBack = (navigate: NavigateFunction) => {
-  console.log('[SafeGoBack] Going back');
+  logger.info('safeNavigate', 'Going back');
   safeNavigate(navigate, -1);
 };
 

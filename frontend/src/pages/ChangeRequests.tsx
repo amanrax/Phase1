@@ -6,6 +6,7 @@ import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
 import FarmerBottomNav from "@/components/FarmerBottomNav";
 import { useFeedback } from "@/utils/feedback";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 
 const COMPONENT = "ChangeRequests";
 
@@ -45,6 +46,7 @@ const ChangeRequests = () => {
   const [newValue, setNewValue] = useState("");
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchRequests = useCallback(async () => {
     try {
@@ -69,6 +71,16 @@ const ChangeRequests = () => {
   useEffect(() => {
     fetchRequests();
   }, [fetchRequests]);
+
+  const { pulling, pullDistance, threshold } = usePullToRefresh({
+    onRefresh: async () => {
+      setRefreshing(true);
+      await fetchRequests();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setRefreshing(false);
+    },
+    disabled: loading || submitting || refreshing || showForm,
+  });
 
   const handleSubmit = async () => {
     if (!fieldName || !newValue.trim()) {
@@ -161,6 +173,17 @@ const ChangeRequests = () => {
       </div>
 
       <div className="p-4 max-w-2xl mx-auto space-y-4">
+        {/* Pull-to-refresh indicator (mobile) */}
+        {pulling && (
+          <div
+            className="flex items-center justify-center gap-2 text-xs text-emerald-700 dark:text-emerald-300 transition-all"
+            style={{ height: `${Math.min(pullDistance, threshold + 20)}px` }}
+          >
+            <div className={`w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full ${pullDistance >= threshold ? "animate-spin" : ""}`} />
+            <span>{pullDistance >= threshold ? "Release to refresh..." : "Pull to refresh..."}</span>
+          </div>
+        )}
+
         {/* New Request Form */}
         {showForm && (
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 space-y-4">
@@ -239,9 +262,8 @@ const ChangeRequests = () => {
         ) : requests.length === 0 ? (
           <div className="text-center py-16">
             <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-            <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">No change requests</p>
-            <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-              {filter !== "all" ? `No ${filter} requests found.` : "Tap '+ New Request' to request a profile update."}
+            <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
+              {filter !== "all" ? `No ${filter} requests found.` : "No pending change requests at this time"}
             </p>
           </div>
         ) : (

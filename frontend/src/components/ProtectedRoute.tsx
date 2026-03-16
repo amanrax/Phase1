@@ -1,6 +1,7 @@
 // src/components/ProtectedRoute.tsx
 import { Navigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 type ProtectedRouteProps = {
   children: React.ReactNode;
@@ -21,6 +22,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/login" replace />;
   }
 
-  // If authenticated, show children (protected page)
-  return <>{children}</>;
+  // Route-scoped boundary prevents one crashing protected page
+  // from collapsing the whole app shell.
+  return <ErrorBoundary>{children}</ErrorBoundary>;
 };

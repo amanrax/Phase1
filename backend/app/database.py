@@ -3,6 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from app.config import settings
 from typing import Optional
 import logging
+from pymongo import ASCENDING, DESCENDING
 
 
 logger = logging.getLogger(__name__)
@@ -165,3 +166,69 @@ async def seed_initial_data() -> None:
         
     except Exception as e:
         logger.error(f"❌ Error seeding initial data: {e}")
+
+
+async def ensure_required_indexes() -> None:
+    """
+    Ensure required indexes for core collections exist.
+    This is safe to run on every startup because create_index is idempotent.
+    """
+    db = get_database()
+
+    # farmers indexes
+    await db["farmers"].create_index(
+        [("farmer_id", ASCENDING)],
+        unique=True,
+        name="farmers_farmer_id_unique",
+        background=True,
+    )
+    await db["farmers"].create_index(
+        [("nrc_number", ASCENDING)],
+        unique=True,
+        sparse=True,
+        name="farmers_nrc_number_unique_sparse",
+        background=True,
+    )
+    await db["farmers"].create_index(
+        [("phone_number", ASCENDING)],
+        name="farmers_phone_number_idx",
+        background=True,
+    )
+    await db["farmers"].create_index(
+        [("created_at", DESCENDING)],
+        name="farmers_created_at_desc_idx",
+        background=True,
+    )
+    await db["farmers"].create_index(
+        [("operator_id", ASCENDING)],
+        name="farmers_operator_id_idx",
+        background=True,
+    )
+    await db["farmers"].create_index(
+        [("district", ASCENDING)],
+        name="farmers_district_idx",
+        background=True,
+    )
+    await db["farmers"].create_index(
+        [("province", ASCENDING)],
+        name="farmers_province_idx",
+        background=True,
+    )
+
+    # operators indexes
+    await db["operators"].create_index(
+        [("operator_id", ASCENDING)],
+        unique=True,
+        name="operators_operator_id_unique",
+        background=True,
+    )
+    await db["operators"].create_index(
+        [("district", ASCENDING)],
+        name="operators_district_idx",
+        background=True,
+    )
+    await db["operators"].create_index(
+        [("province", ASCENDING)],
+        name="operators_province_idx",
+        background=True,
+    )

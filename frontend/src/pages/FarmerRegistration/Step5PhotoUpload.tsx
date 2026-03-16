@@ -87,6 +87,12 @@ export default function Step5PhotoUpload({ farmerId, onNext, onBack }: Step5Prop
 
   const handleUpload = async () => {
     if (!photo) { showError("Please select a photo first"); return; }
+    if (!navigator.onLine) {
+      showError("You must be online to upload files.");
+      triggerVibration("form_error");
+      triggerSound("error");
+      return;
+    }
     setUploading(true);
     try {
       await farmerService.uploadPhoto(farmerId, photo);

@@ -41,7 +41,8 @@ def cleanup_logs():
         "endpoint": None,
         "user_id": None,
         "role": "system",
-        "action": "cleanup",
+        "action": "log_cleanup_complete",
+        "deleted_count": result.deleted_count,
         "details": {
             "deleted_count": result.deleted_count,
             "cutoff_date": cutoff.isoformat(),

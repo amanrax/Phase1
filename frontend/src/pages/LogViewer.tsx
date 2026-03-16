@@ -7,6 +7,7 @@ const HTTP_METHODS = ['GET','POST','PUT','PATCH','DELETE'] as const;
 
 export const LogViewer: React.FC = () => {
   const [items, setItems] = useState<LogItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -21,21 +22,26 @@ export const LogViewer: React.FC = () => {
   const [stats, setStats] = useState<Array<{ _id: { level: string; module: string }; count: number }>>([]);
 
   const load = async () => {
-    const data = await fetchLogs({
-      level: level || undefined,
-      module: module || undefined,
-      user_id: userId || undefined,
-      role: role || undefined,
-      http_method: httpMethod || undefined,
-      date_from: dateFrom || undefined,
-      date_to: dateTo || undefined,
-      page,
-      page_size: pageSize,
-    });
-    setItems(data.items);
-    setTotal(data.total);
-    const s = await fetchLogStats();
-    setStats(s.stats);
+    try {
+      setLoading(true);
+      const data = await fetchLogs({
+        level: level || undefined,
+        module: module || undefined,
+        user_id: userId || undefined,
+        role: role || undefined,
+        http_method: httpMethod || undefined,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
+        page,
+        page_size: pageSize,
+      });
+      setItems(data.items);
+      setTotal(data.total);
+      const s = await fetchLogStats();
+      setStats(s.stats);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -151,6 +157,17 @@ export const LogViewer: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {loading && (
+                <>
+                  {Array.from({ length: 6 }).map((_, idx) => (
+                    <tr key={`sk-${idx}`} className="animate-pulse">
+                      <td className="px-3 sm:px-6 py-2 sm:py-4" colSpan={8}>
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                      </td>
+                    </tr>
+                  ))}
+                </>
+              )}
               {items.map((i, idx) => (
                 <tr key={idx} className="hover:bg-green-50 transition">
                   <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs">{new Date(i.timestamp).toLocaleString()}</td>
@@ -163,8 +180,8 @@ export const LogViewer: React.FC = () => {
                   <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs">{i.request_id ?? ''}</td>
                 </tr>
               ))}
-              {items.length===0 && (
-                <tr><td className="px-3 sm:px-6 py-2 sm:py-4" colSpan={8}>No logs found.</td></tr>
+              {!loading && items.length===0 && (
+                <tr><td className="px-3 sm:px-6 py-2 sm:py-4" colSpan={8}>No logs found for selected filters.</td></tr>
               )}
             </tbody>
           </table>

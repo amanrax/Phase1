@@ -5,6 +5,7 @@ import { notificationsService, Notification as AppNotification } from "@/service
 import { useNotification } from "@/contexts/NotificationContext";
 import { logger } from "@/utils/logger";
 import FarmerBottomNav from "@/components/FarmerBottomNav";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 
 const COMPONENT = "NotificationCentre";
 const PAGE_SIZE = 30;
@@ -20,6 +21,7 @@ const NotificationCentre = () => {
   const [skip, setSkip] = useState(0);                   // TC-107: current offset
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchNotifications = useCallback(async (reset = true) => {
     const offset = reset ? 0 : skip;
@@ -59,6 +61,16 @@ const NotificationCentre = () => {
     fetchNotifications(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
+
+  const { pulling, pullDistance, threshold } = usePullToRefresh({
+    onRefresh: async () => {
+      setRefreshing(true);
+      await fetchNotifications(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setRefreshing(false);
+    },
+    disabled: loading || loadingMore || refreshing,
+  });
 
   const handleMarkRead = async (id: string) => {
     try {
@@ -197,12 +209,23 @@ const NotificationCentre = () => {
 
       {/* Content */}
       <div className="p-4 space-y-2 max-w-2xl mx-auto">
+        {/* Pull-to-refresh indicator (mobile) */}
+        {pulling && (
+          <div
+            className="flex items-center justify-center gap-2 text-xs text-emerald-700 dark:text-emerald-300 transition-all"
+            style={{ height: `${Math.min(pullDistance, threshold + 20)}px` }}
+          >
+            <div className={`w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full ${pullDistance >= threshold ? "animate-spin" : ""}`} />
+            <span>{pullDistance >= threshold ? "Release to refresh..." : "Pull to refresh..."}</span>
+          </div>
+        )}
+
         {loading ? (
           <Skeleton />
         ) : notifications.length === 0 ? (
           <div className="text-center py-16">
             <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
-            <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">No notifications</p>
+            <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">No notifications yet</p>
             <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
               {activeTab === "unread" ? "All caught up!" : "You'll see updates here"}
             </p>
@@ -221,7 +244,7 @@ const NotificationCentre = () => {
               {getTypeIcon(n.type)}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                  <p className={`text-sm font-medium ${n.read ? "text-gray-700 dark:text-gray-300" : "text-gray-900 dark:text-white"}`}>
+                  <p className={`text-sm font-medium break-words pr-2 ${n.read ? "text-gray-700 dark:text-gray-300" : "text-gray-900 dark:text-white"}`}>
                     {n.title}
                   </p>
                   <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap flex-shrink-0">
@@ -229,7 +252,7 @@ const NotificationCentre = () => {
                   </span>
                 </div>
                 {n.body && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2 break-words">
                     {n.body}
                   </p>
                 )}

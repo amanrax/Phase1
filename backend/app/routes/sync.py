@@ -1,5 +1,5 @@
 # backend/app/routes/sync.py
-from fastapi import APIRouter, Depends, HTTPException, Header, Query
+from fastapi import APIRouter, Depends, HTTPException, Header, Query, status
 from pydantic import BaseModel
 from typing import List, Optional
 from app.utils.security import decode_token
@@ -14,6 +14,9 @@ class SyncRecord(BaseModel):
     nrc_number: Optional[str] = None
     personal_info: dict
     address: dict
+    farm_info: Optional[dict] = None
+    household_info: Optional[dict] = None
+    client_updated_at: Optional[str] = None
 
 
 class SyncRequest(BaseModel):
@@ -32,7 +35,19 @@ async def get_current_user(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-@router.post("/batch")
+def _enqueue_sync(user_email: str, payload: SyncRequest):
+    farmers_payload = [f.dict() for f in payload.farmers]
+    task = process_sync_batch.apply_async(args=[user_email, farmers_payload])
+    return {"job_id": task.id, "status": "queued"}
+
+
+@router.post("", status_code=status.HTTP_202_ACCEPTED)
+async def sync_root(payload: SyncRequest, current_user=Depends(get_current_user)):
+    """Alias endpoint for mobile sync: POST /api/sync."""
+    return _enqueue_sync(current_user, payload)
+
+
+@router.post("/batch", status_code=status.HTTP_202_ACCEPTED)
 async def sync_batch(payload: SyncRequest, current_user=Depends(get_current_user)):
     farmers_payload = [f.dict() for f in payload.farmers]
     task = process_sync_batch.apply_async(args=[current_user, farmers_payload])

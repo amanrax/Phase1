@@ -212,8 +212,8 @@ class TokenData(BaseModel):
 
 class LoginRequest(BaseModel):
     """Login request model"""
-    email: str = Field(..., description="User email or NRC number")
-    password: str = Field(..., description="User password")
+    email: str = Field(..., min_length=1, description="User email or NRC number")
+    password: str = Field(..., min_length=1, description="User password")
     role: Optional[str] = Field(None, description="Expected role: admin, operator, or farmer")
     
     model_config = ConfigDict(

@@ -2,13 +2,46 @@ import json
 import time
 import traceback
 import uuid
-from typing import Callable
+from typing import Callable, Optional, Tuple
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 from app.services.logging_service import log_event, sanitize_body
+from app.utils.security import decode_token
+
+
+def _extract_identity_from_token(request: Request) -> Tuple[Optional[str], Optional[str]]:
+    """Best-effort extraction of requester identity/role from bearer token."""
+    auth = request.headers.get("Authorization") or request.headers.get("authorization")
+    if not auth:
+        return None, None
+
+    parts = auth.strip().split(" ", 1)
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        return None, None
+
+    try:
+        payload = decode_token(parts[1]) or {}
+    except Exception:
+        return None, None
+
+    user_id = (
+        payload.get("user_id")
+        or payload.get("sub")
+        or payload.get("email")
+        or payload.get("farmer_id")
+        or payload.get("operator_id")
+    )
+    role = None
+    roles = payload.get("roles")
+    if isinstance(roles, list) and roles:
+        role = str(roles[0])
+    elif isinstance(payload.get("role"), str):
+        role = payload.get("role")
+
+    return (str(user_id) if user_id else None), role
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
@@ -35,6 +68,10 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         user = getattr(request.state, "user", None)
         user_id = getattr(user, "id", None) if user else None
         role = getattr(user, "role", None) if user else None
+        if not user_id:
+            token_user_id, token_role = _extract_identity_from_token(request)
+            user_id = token_user_id
+            role = role or token_role
         client_ip = request.client.host if request.client else None
 
         # Pre-request log (DEBUG)

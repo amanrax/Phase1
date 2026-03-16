@@ -10,6 +10,7 @@ import { logger } from "@/utils/logger";
 import Combobox from "@/components/ui/Combobox";
 import axiosClient from "@/utils/axios";
 import { useFeedback } from "@/utils/feedback";
+import useAuthStore from "@/store/authStore";
 
 const COMPONENT = "EditFarmer";
 
@@ -66,6 +67,7 @@ export default function EditFarmer() {
   const { farmerId } = useParams<{ farmerId: string }>();
   const { success: showSuccess, error: showError } = useNotification();
   const { triggerVibration, triggerSound } = useFeedback();
+  const { role } = useAuthStore();
   
   const [formData, setFormData] = useState<FarmerFormData>({
     first_name: "", last_name: "", phone_primary: "", phone_secondary: "",
@@ -93,6 +95,7 @@ export default function EditFarmer() {
   const [ethnicOptions, setEthnicOptions] = useState<string[]>([]);
   // TC-060: optimistic locking — store the updated_at the client last saw
   const [clientVersion, setClientVersion] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
     logger.info(COMPONENT, 'Component mounted', { farmerId });
@@ -148,6 +151,23 @@ export default function EditFarmer() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const farmer: any = await farmerService.getFarmer(farmerId!);
       logger.info(COMPONENT, `fetchFarmer success (${Math.round(performance.now() - start)}ms)`, { farmerId });
+
+      // OP-039: Frontend guard for unassigned operators
+      if ((role || "").toUpperCase() === "OPERATOR") {
+        try {
+          const opResp = await axiosClient.get('/api/operators/me');
+          const assignedDistricts = opResp.data?.assigned_districts || [];
+          const farmerDistrict = (farmer.address?.district_name || "").trim();
+          const isAssigned = assignedDistricts.some((d: string) => d?.trim().toLowerCase() === farmerDistrict.toLowerCase());
+          if (!isAssigned) {
+            setAccessDenied(true);
+            setError("Access denied: this farmer is not in your assigned district.");
+            return;
+          }
+        } catch (_err) {
+          // If operator profile cannot be loaded, rely on backend authorization
+        }
+      }
       
       if (farmer.address?.province_code) {
         await loadDistricts(farmer.address.province_code);
@@ -368,10 +388,49 @@ export default function EditFarmer() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 dark:border-gray-600 border-t-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading farmer data...</p>
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
+        {/* Skeleton header */}
+        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            <div className="h-6 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          </div>
+        </header>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+          {/* Skeleton form sections */}
+          {[1, 2, 3].map((section) => (
+            <div key={section} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 sm:p-6 border border-gray-100 dark:border-gray-700">
+              <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-5" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[1, 2, 3, 4].map((field) => (
+                  <div key={field}>
+                    <div className="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
+                    <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center shadow-sm">
+          <h2 className="text-lg font-bold text-red-700 dark:text-red-300 mb-2">Access denied</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
+            You are not assigned to this farmer&apos;s district, so this record cannot be edited.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/farmers')}
+            className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition"
+          >
+            Back to Farmers
+          </button>
         </div>
       </div>
     );
@@ -666,7 +725,12 @@ export default function EditFarmer() {
             <button type="submit" disabled={saving}
               className="flex-1 sm:flex-none px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold rounded-lg text-sm transition active:scale-95"
             >
-              {saving ? "Saving..." : "💾 Save Changes"}
+              {saving ? (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                  Saving...
+                </span>
+              ) : "💾 Save Changes"}
             </button>
           </div>
         </form>

@@ -141,7 +141,7 @@ const InfoRow = ({ label, value }: { label: string; value?: string | number | bo
   return (
     <div className="py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
       <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 block">{label}</span>
-      <span className="text-sm font-medium text-gray-800 dark:text-gray-100 mt-0.5 block">{display}</span>
+      <span className="text-sm font-medium text-gray-800 dark:text-gray-100 mt-0.5 block break-words">{display}</span>
     </div>
   );
 };
@@ -163,7 +163,7 @@ const DocumentSection = ({ label, docType, docUrl, uploading, onUpload, onDelete
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-gray-50 dark:bg-gray-900/50">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{label}</span>
+        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 break-words pr-2">{label}</span>
         {docUrl ? (
           <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
@@ -268,6 +268,7 @@ export default function FarmerDetails() {
   const [verificationOpen, setVerificationOpen] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [generatingQR, setGeneratingQR] = useState(false);
   const verificationRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const { triggerVibration, triggerSound } = useFeedback();
@@ -388,6 +389,13 @@ export default function FarmerDetails() {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!navigator.onLine) {
+      showError("You must be online to upload files.", 5000);
+      e.target.value = "";
+      return;
+    }
+    // TC-205: Block concurrent uploads to prevent cross-linking
+    if (uploading) { showError("Another upload is in progress. Please wait."); return; }
     logger.info(COMPONENT, "handlePhotoUpload", { name: file.name, size: file.size });
     try {
       setUploading("photo");
@@ -416,6 +424,11 @@ export default function FarmerDetails() {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!navigator.onLine) {
+      showError("You must be online to upload files.", 5000);
+      e.target.value = "";
+      return;
+    }
     const MAX_SIZE = 10 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
       const sizeStr = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
@@ -424,6 +437,8 @@ export default function FarmerDetails() {
       e.target.value = "";
       return;
     }
+    // TC-205: Block concurrent uploads to prevent cross-linking
+    if (uploading) { showError("Another upload is in progress. Please wait."); return; }
     logger.info(COMPONENT, "handleDocumentUpload", { docType, name: file.name, size: file.size });
     try {
       setUploading(docType);
@@ -463,8 +478,10 @@ export default function FarmerDetails() {
 
   // ─── generate QR code ─────────────────────────────────────────────────────────
   const handleGenerateQR = async () => {
+    if (generatingQR) return;
     logger.info(COMPONENT, "handleGenerateQR", { farmerId });
     try {
+      setGeneratingQR(true);
       const response = await farmerService.generateQR(farmerId!);
       logger.info(COMPONENT, "handleGenerateQR success");
       showSuccess(response?.message ?? "QR code generated.", 4000);
@@ -483,6 +500,8 @@ export default function FarmerDetails() {
       triggerVibration("form_error");
       triggerSound("error");
       showError(msg, 5000);
+    } finally {
+      setGeneratingQR(false);
     }
   };
 
@@ -561,10 +580,43 @@ export default function FarmerDetails() {
   // ─── loading / not-found states ───────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-gray-300 dark:border-gray-600 border-t-green-600 rounded-full animate-spin mx-auto mb-5" />
-          <p className="text-lg font-medium text-gray-700 dark:text-gray-300">Loading farmer details...</p>
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 px-4 py-6 animate-pulse">
+        <div className="max-w-6xl mx-auto space-y-5">
+          <div className="h-10 w-52 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-sky-500 space-y-3">
+              <div className="w-28 h-28 mx-auto rounded-full bg-gray-200 dark:bg-gray-700" />
+              <div className="h-4 w-2/3 mx-auto rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="h-3 w-1/2 mx-auto rounded bg-gray-200 dark:bg-gray-700" />
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-green-500 space-y-3 sm:col-span-1 lg:col-span-2">
+              <div className="h-5 w-44 rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="h-3 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="h-3 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="h-3 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="h-3 rounded bg-gray-200 dark:bg-gray-700" />
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-indigo-500 sm:col-span-2 lg:col-span-3 space-y-3">
+              <div className="h-5 w-40 rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="h-20 rounded-xl bg-gray-200 dark:bg-gray-700" />
+                <div className="h-20 rounded-xl bg-gray-200 dark:bg-gray-700" />
+                <div className="h-20 rounded-xl bg-gray-200 dark:bg-gray-700" />
+                <div className="h-20 rounded-xl bg-gray-200 dark:bg-gray-700" />
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-amber-500 space-y-3">
+              <div className="h-5 w-32 rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="h-24 rounded-xl bg-gray-200 dark:bg-gray-700" />
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-purple-500 space-y-3 sm:col-span-1 lg:col-span-2">
+              <div className="h-5 w-48 rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="h-3 w-full rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="h-3 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -586,7 +638,7 @@ export default function FarmerDetails() {
 
   // ─── render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900 page-slide-in">
       {/* QR Full-Size Modal */}
       {qrModalOpen && qrCodeUrl && (
         <div
@@ -789,9 +841,15 @@ export default function FarmerDetails() {
                 {canReview && (
                 <button
                   onClick={handleGenerateQR}
-                  className="w-full py-2 text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-800/40 text-amber-800 dark:text-amber-300 rounded-lg transition"
+                  disabled={generatingQR}
+                  className="w-full py-2 text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-800/40 text-amber-800 dark:text-amber-300 rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  🔄 Regenerate QR
+                  {generatingQR ? (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                      Regenerating…
+                    </span>
+                  ) : "🔄 Regenerate QR"}
                 </button>
                 )}
               </div>
@@ -804,9 +862,15 @@ export default function FarmerDetails() {
                 {canReview && (
                 <button
                   onClick={handleGenerateQR}
-                  className="w-full py-2.5 text-sm font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition active:scale-95"
+                  disabled={generatingQR}
+                  className="w-full py-2.5 text-sm font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  📷 Generate QR Code
+                  {generatingQR ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                      Generating…
+                    </span>
+                  ) : "📷 Generate QR Code"}
                 </button>
                 )}
               </div>
@@ -941,33 +1005,38 @@ export default function FarmerDetails() {
                               <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 capitalize">{doc.doc_type.replace(/_/g," ")}</p>
                               {doc.uploaded_at && <p className="text-xs text-gray-400">{new Date(doc.uploaded_at).toLocaleDateString()}</p>}
                               <span className={`inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full ${
-                                doc.status === "approved" ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300" :
+                                (doc.status === "approved" || doc.status === "verified") ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300" :
                                 doc.status === "rejected" ? "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300" :
                                 "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300"
                               }`}>{doc.status}</span>
                               {doc.rejection_reason && <p className="text-xs text-red-500 mt-1">Reason: {doc.rejection_reason}</p>}
                             </div>
-                            <div className="flex gap-2 flex-shrink-0">
+                            <div className="flex gap-3 flex-shrink-0">
                               <button
-                                disabled={docActing[doc.doc_type] || doc.status === "approved"}
+                                disabled={docActing[doc.doc_type] || doc.status === "approved" || doc.status === "verified"}
                                 onClick={async () => {
                                   if (!farmer) return;
                                   setDocActing(a => ({ ...a, [doc.doc_type]: true }));
                                   try {
                                     await verificationService.approveDocument(farmer.farmer_id, doc.doc_type);
-                                    setReviewDocs(d => d.map(x => x.doc_type === doc.doc_type ? { ...x, status: "approved" } : x));
-                                    showSuccess(`"${doc.doc_type}" approved`);
+                                    setReviewDocs(d => d.map(x => x.doc_type === doc.doc_type ? { ...x, status: "verified" } : x));
+                                    showSuccess(`"${doc.doc_type}" verified`);
                                   } catch (err) { showError(getErrorMessage(err)); }
                                   finally { setDocActing(a => ({ ...a, [doc.doc_type]: false })); }
                                 }}
-                                className="px-3 py-1.5 text-xs font-bold bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-40 transition"
+                                className="px-4 py-2 min-h-11 text-xs font-bold bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-40 transition"
                               >
-                                ✓ Approve
+                                {docActing[doc.doc_type] ? (
+                                  <span className="inline-flex items-center gap-1.5">
+                                    <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                                    Approving...
+                                  </span>
+                                ) : "✓ Approve"}
                               </button>
                               <button
                                 disabled={docActing[doc.doc_type]}
                                 onClick={() => setRejectOpen(r => ({ ...r, [doc.doc_type]: !r[doc.doc_type] }))}
-                                className="px-3 py-1.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-40 transition"
+                                className="px-4 py-2 min-h-11 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-40 transition"
                               >
                                 ✗ Reject
                               </button>
@@ -998,7 +1067,7 @@ export default function FarmerDetails() {
                                   } catch (err) { showError(getErrorMessage(err)); }
                                   finally { setDocActing(a => ({ ...a, [doc.doc_type]: false })); }
                                 }}
-                                className="px-3 py-1.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-40 transition"
+                                className="px-4 py-2 min-h-11 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-40 transition"
                               >
                                 Confirm Reject
                               </button>

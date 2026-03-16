@@ -46,6 +46,8 @@ class ChangeRequestResponse(BaseModel):
     reason: str
     status: str
     decided_by: Optional[str] = None
+    approved_by: Optional[str] = None
+    rejected_by: Optional[str] = None
     decision_note: Optional[str] = None
     created_at: str
     decided_at: Optional[str] = None
@@ -68,12 +70,23 @@ async def create_change_request(
     if not farmer_id:
         raise HTTPException(status_code=403, detail="Only farmers can submit change requests")
 
+    # Normalize aliases so request/approval paths use one canonical field key.
+    field_aliases = {
+        "phone": "phone_primary",
+        "phone_number": "phone_primary",
+        "primary_phone": "phone_primary",
+        "phonePrimary": "phone_primary",
+        "secondary_phone": "phone_secondary",
+        "phoneSecondary": "phone_secondary",
+    }
+    normalized_field_name = field_aliases.get(payload.field_name, payload.field_name)
+
     # Disallow changes to protected fields (TC-080: NRC requires admin action)
     protected_fields = {"farmer_id", "nrc_number", "first_name", "last_name"}
-    if payload.field_name in protected_fields:
+    if normalized_field_name in protected_fields:
         raise HTTPException(
             status_code=400,
-            detail=f"Field '{payload.field_name}' cannot be changed via self-service. Contact your operator.",
+            detail=f"Field '{normalized_field_name}' cannot be changed via self-service. Contact your operator.",
         )
 
     farmer = await db.farmers.find_one({"farmer_id": farmer_id})
@@ -83,13 +96,13 @@ async def create_change_request(
     # TC-081: Block duplicate pending requests for the same field
     existing_pending = await db.change_requests.find_one({
         "farmer_id": farmer_id,
-        "field_name": payload.field_name,
+        "field_name": normalized_field_name,
         "status": "pending",
     })
     if existing_pending:
         raise HTTPException(
             status_code=409,
-            detail=f"You already have a pending request for '{payload.field_name}'. Wait for it to be reviewed before submitting another.",
+            detail=f"You already have a pending request for '{normalized_field_name}'. Wait for it to be reviewed before submitting another.",
         )
 
     farmer_name = f"{farmer.get('personal_info', {}).get('first_name', '')} {farmer.get('personal_info', {}).get('last_name', '')}".strip()
@@ -97,12 +110,14 @@ async def create_change_request(
     doc = {
         "farmer_id": farmer_id,
         "farmer_name": farmer_name,
-        "field_name": payload.field_name,
+        "field_name": normalized_field_name,
         "old_value": payload.old_value,
         "new_value": payload.new_value,
         "reason": payload.reason,
         "status": "pending",
         "decided_by": None,
+        "approved_by": None,
+        "rejected_by": None,
         "decision_note": None,
         "created_at": datetime.now(timezone.utc),
         "decided_at": None,
@@ -110,9 +125,40 @@ async def create_change_request(
 
     result = await db.change_requests.insert_one(doc)
 
+    # Notify responsible operator(s) that a new request needs review.
+    notification_recipients: set[str] = set()
+    owner_operator_id = farmer.get("operator_id") or farmer.get("created_by")
+    if owner_operator_id:
+        owner_operator = await db.operators.find_one({"operator_id": owner_operator_id}, {"email": 1})
+        if owner_operator and owner_operator.get("email"):
+            notification_recipients.add(owner_operator["email"])
+    if not notification_recipients:
+        farmer_district = (farmer.get("address") or {}).get("district_name")
+        if farmer_district:
+            async for operator in db.operators.find(
+                {"assigned_districts": farmer_district},
+                {"email": 1},
+            ):
+                if operator.get("email"):
+                    notification_recipients.add(operator["email"])
+
+    now = datetime.now(timezone.utc)
+    for operator_email in notification_recipients:
+        await db.notifications.insert_one({
+            "user_id": operator_email,
+            "user_type": "operator",
+            "type": "change_request_submitted",
+            "title": "New change request submitted",
+            "body": f"Farmer {farmer_name or farmer_id} requested a change to '{normalized_field_name}'.",
+            "read": False,
+            "created_at": now,
+            "expires_at": None,
+            "metadata": {"request_id": str(result.inserted_id), "farmer_id": farmer_id},
+        })
+
     await log_event(
         level="INFO", module="change_requests", action="create",
-        details={"farmer_id": farmer_id, "field": payload.field_name},
+        details={"farmer_id": farmer_id, "field": normalized_field_name, "operator_notifications": len(notification_recipients)},
         endpoint="/api/change-requests",
         user_id=farmer_id, role="FARMER",
     )
@@ -259,13 +305,26 @@ async def decide_change_request(
             )
 
     decided_by = current_user.get("email") or current_user.get("farmer_id") or "unknown"
+    approver_identity = current_user.get("user_id")
+    if not approver_identity:
+        lookup_email = current_user.get("email")
+        if lookup_email:
+            user_doc = await db.users.find_one({"email": lookup_email}, {"user_id": 1, "_id": 1})
+            if user_doc:
+                approver_identity = user_doc.get("user_id") or str(user_doc.get("_id"))
+    approver_identity = approver_identity or current_user.get("sub") or current_user.get("email") or "unknown"
     now = datetime.now(timezone.utc)
+
+    approved_by = approver_identity if payload.decision == "approved" else None
+    rejected_by = approver_identity if payload.decision == "rejected" else None
 
     await db.change_requests.update_one(
         {"_id": obj_id},
         {"$set": {
             "status": payload.decision,
             "decided_by": decided_by,
+            "approved_by": approved_by,
+            "rejected_by": rejected_by,
             "decision_note": payload.note,
             "decided_at": now,
         }},
@@ -281,6 +340,9 @@ async def decide_change_request(
         field_map = {
             "phone_primary": "personal_info.phone_primary",
             "phone_secondary": "personal_info.phone_secondary",
+            "phone_number": "personal_info.phone_primary",
+            "phone": "personal_info.phone_primary",
+            "primary_phone": "personal_info.phone_primary",
             "email": "personal_info.email",
             "date_of_birth": "personal_info.date_of_birth",
             "village": "address.village",
@@ -326,7 +388,7 @@ async def decide_change_request(
         level="INFO", module="change_requests", action=f"decide.{payload.decision}",
         details={"request_id": request_id, "farmer_id": cr["farmer_id"], "field": cr["field_name"]},
         endpoint=f"/api/change-requests/{request_id}/decide",
-        user_id=decided_by, role=",".join(current_user.get("roles", [])),
+        user_id=approver_identity, role=",".join(current_user.get("roles", [])),
     )
 
     return {

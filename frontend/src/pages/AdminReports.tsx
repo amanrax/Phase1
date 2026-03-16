@@ -183,7 +183,9 @@ export default function AdminReports() {
         } else if (status === "failed") {
           clearInterval(pollingRef.current!);
           setServerPolling(false);
-          setError(`Report generation failed: ${taskErr ?? "unknown error"}`);
+          const failMsg = `Report generation failed: ${taskErr ?? "unknown error"}`;
+          setError(failMsg);
+          import("@/utils/globalToast").then(({ globalToast }) => globalToast.error(failMsg));
           setServerTaskId(null); setServerTaskStatus("");
         }
       } catch {
@@ -191,7 +193,7 @@ export default function AdminReports() {
         setServerPolling(false);
         setError("Lost connection while polling for report status.");
       }
-    }, 2000);
+    }, 3000);
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverTaskId, serverPolling]);

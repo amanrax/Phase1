@@ -1,4 +1,6 @@
 // Register Service Worker for PWA functionality
+import { logger } from '@/utils/logger';
+
 export function registerServiceWorker() {
   // Only register in production
   if (import.meta.env.MODE === 'production' && 'serviceWorker' in navigator) {
@@ -6,7 +8,7 @@ export function registerServiceWorker() {
       navigator.serviceWorker
         .register('/service-worker.js')
         .then((registration) => {
-          console.log('[PWA] Service Worker registered:', registration);
+          logger.info('registerSW', 'Service Worker registered', { registration });
 
           // Check for updates every hour
           setInterval(() => {
@@ -23,7 +25,7 @@ export function registerServiceWorker() {
                   navigator.serviceWorker.controller
                 ) {
                   // New update available
-                  console.log('[PWA] New version available');
+                  logger.info('registerSW', 'New service worker version available');
                   if (confirm('New version available! Reload to update?')) {
                     newWorker.postMessage({ type: 'SKIP_WAITING' });
                     window.location.reload();
@@ -34,7 +36,7 @@ export function registerServiceWorker() {
           });
         })
         .catch((error) => {
-          console.error('[PWA] Service Worker registration failed:', error);
+          logger.error('registerSW', 'Service Worker registration failed', { error: String(error) });
         });
 
       // Handle controller change (new SW activated)

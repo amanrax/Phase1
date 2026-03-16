@@ -58,6 +58,7 @@ export default function FarmerRegistrationWizard() {
   const [form, setForm] = useState<WizardState>(initialState);
   const [loading, setLoading] = useState(false);
   const [newFarmerId, setNewFarmerId] = useState<string | null>(null);
+  const [queuedOffline, setQueuedOffline] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [farmerName, setFarmerName] = useState<string>("");
   void setFarmerName; // Used by Step4 completion (TODO: wire up)
@@ -179,9 +180,16 @@ export default function FarmerRegistrationWizard() {
             onSubmitStart={() => setLoading(true)}
             onSubmitEnd={() => setLoading(false)}
             onSuccess={(farmerId) => {
+              setQueuedOffline(false);
               setNewFarmerId(farmerId);
               saveDraft(form, 5, farmerId);
               setCurrentStep(5);
+            }}
+            onQueued={(queueId) => {
+              setQueuedOffline(true);
+              setNewFarmerId(queueId);
+              localStorage.removeItem(DRAFT_KEY);
+              setCurrentStep(7);
             }}
           />
         )}
@@ -200,7 +208,7 @@ export default function FarmerRegistrationWizard() {
           />
         )}
         {currentStep === 7 && newFarmerId && (
-          <Step7Completion farmerId={newFarmerId} farmerName={farmerName} />
+          <Step7Completion farmerId={newFarmerId} farmerName={farmerName} queued={queuedOffline} />
         )}
 
         {/* Footer Tip */}

@@ -183,6 +183,7 @@ const QRScanner: React.FC = () => {
   const [farmerResult, setFarmerResult] = useState<PublicFarmerSummary | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [manualId, setManualId] = useState<string>("");
+  const [lastLookupValue, setLastLookupValue] = useState<string>("");
 
   const bsRef = useRef<BS | null>(null);
 
@@ -199,8 +200,29 @@ const QRScanner: React.FC = () => {
     }
   }
 
+  // TC-169: Pause/resume scan when app goes to background (e.g. incoming call)
   useEffect(() => {
+    let appListener: { remove: () => void } | null = null;
+
+    if (Capacitor.isNativePlatform()) {
+      import("@capacitor/app").then(({ App }) => {
+        App.addListener("appStateChange", ({ isActive }) => {
+          if (!isActive) {
+            // App backgrounded — pause scanning
+            logger.info(COMPONENT, "App backgrounded — pausing scan");
+            if (bsRef.current) { bsRef.current.stopScan?.(); bsRef.current.showBackground?.(); }
+            stopWebCamera();
+          } else if (status === "camera_open" || status === "web_camera_open") {
+            // App resumed — user will need to re-tap "Start Scan"
+            logger.info(COMPONENT, "App resumed — scan paused, user must restart");
+            setStatus("idle");
+          }
+        }).then((l) => { appListener = l; });
+      }).catch(() => { /* @capacitor/app not available */ });
+    }
+
     return () => {
+      appListener?.remove();
       if (bsRef.current) {
         bsRef.current.showBackground?.();
         bsRef.current.stopScan?.();
@@ -208,7 +230,8 @@ const QRScanner: React.FC = () => {
       }
       stopWebCamera();
     };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   // ── Attach stream + start BarcodeDetector loop when web camera opens ─────────
   // (defined AFTER lookupFarmer so the closure captures it correctly)
@@ -263,6 +286,7 @@ const QRScanner: React.FC = () => {
   const lookupFarmer = useCallback(async (rawValue: string) => {
     setStatus("loading");
     setErrorMessage("");
+    setLastLookupValue(rawValue);
 
     let farmerId = rawValue.trim();
     try {
@@ -303,9 +327,12 @@ const QRScanner: React.FC = () => {
       triggerSound("qr_success");
     } catch (err: unknown) {
       const e = err as { response?: { status?: number } };
+      const isOffline = !navigator.onLine || !e?.response;
       const msg = e?.response?.status === 404
         ? "Farmer not registered in this system."
-        : "Could not load farmer details. Check your connection.";
+        : isOffline
+          ? "No connection. Retry when you are back online."
+          : "Could not load farmer details. Check your connection.";
       setErrorMessage(msg);
       showError(msg);
       triggerVibration("form_error");
@@ -567,6 +594,14 @@ const QRScanner: React.FC = () => {
           <div className="rounded-xl border border-red-500/40 bg-red-900/20 p-4 text-center space-y-3">
             <p className="text-2xl">⚠️</p>
             <p className="text-sm text-red-300">{errorMessage}</p>
+            {errorMessage.includes("No connection") && lastLookupValue && (
+              <button
+                onClick={() => lookupFarmer(lastLookupValue)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition active:scale-95"
+              >
+                Retry Lookup
+              </button>
+            )}
             {errorMessage.includes("not registered") && (
               <button onClick={() => navigate(-1)}
                 className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm font-semibold rounded-xl transition">

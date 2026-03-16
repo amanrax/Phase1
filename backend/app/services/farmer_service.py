@@ -16,6 +16,7 @@ from typing import Optional, List, Dict, Any
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException, status
+from pymongo.errors import DuplicateKeyError
 
 from app.models.farmer import (
     FarmerCreate,
@@ -111,8 +112,39 @@ class FarmerService:
                 salt="nrc"
             )
         
-        # Insert into database
-        result = await self.collection.insert_one(farmer_doc)
+        # Insert into database with collision-safe retry for concurrent farmer_id generation.
+        max_insert_retries = 5
+        result = None
+        for attempt in range(max_insert_retries):
+            try:
+                result = await self.collection.insert_one(farmer_doc)
+                break
+            except DuplicateKeyError as exc:
+                details = getattr(exc, "details", {}) or {}
+                key_pattern = details.get("keyPattern", {}) if isinstance(details, dict) else {}
+                err_text = str(exc)
+
+                is_farmer_id_collision = "farmer_id" in key_pattern or "farmer_id" in err_text
+                if is_farmer_id_collision and attempt < max_insert_retries - 1:
+                    farmer_doc["farmer_id"] = await self._generate_unique_farmer_id()
+                    continue
+
+                if "nrc_number" in key_pattern or "nrc_number" in err_text:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="Another farmer with this NRC already exists.",
+                    )
+
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Duplicate farmer record detected.",
+                )
+
+        if result is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create farmer due to repeated ID collisions.",
+            )
         
         # Fetch and return the created farmer
         created_farmer = await self.collection.find_one({"_id": result.inserted_id})
@@ -297,6 +329,7 @@ class FarmerService:
                 district_name=district_name,
                 is_active=farmer.get("is_active", True),
                 review_notes=farmer.get("review_notes"),
+                photo_file_id=farmer.get("photo_file_id") or (farmer.get("documents") or {}).get("photo_file_id"),
             ))
         
         return result
@@ -446,7 +479,9 @@ class FarmerService:
     async def update_registration_status(
         self,
         farmer_id: str,
-        new_status: str
+        new_status: str,
+        changed_by: Optional[str] = None,
+        changed_role: Optional[str] = None,
     ) -> Optional[FarmerOut]:
         """
         Update farmer registration status.
@@ -468,22 +503,34 @@ class FarmerService:
             )
         
         now = datetime.now(datetime.timezone.utc) if hasattr(datetime, 'timezone') else datetime.utcnow()
-        
+
+        existing_farmer = await self.collection.find_one({"farmer_id": farmer_id}, {"registration_status": 1})
+        if not existing_farmer:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Farmer {farmer_id} not found"
+            )
+
+        old_status = existing_farmer.get("registration_status")
+        history_entry = {
+            "status": new_status,
+            "old_status": old_status,
+            "new_status": new_status,
+            "changed_by": changed_by,
+            "role": changed_role,
+            "timestamp": now.isoformat() if hasattr(now, "isoformat") else str(now),
+        }
+
         result = await self.collection.update_one(
             {"farmer_id": farmer_id},
             {
                 "$set": {
                     "registration_status": new_status,
                     "updated_at": now
-                }
+                },
+                "$push": {"status_history": history_entry}
             }
         )
-        
-        if result.matched_count == 0:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Farmer {farmer_id} not found"
-            )
         
         updated = await self.collection.find_one({"farmer_id": farmer_id})
         return FarmerOut.from_mongo(updated)

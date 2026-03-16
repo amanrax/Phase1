@@ -1,6 +1,7 @@
 // src/hooks/useBackButton.ts
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { logger } from '@/utils/logger';
 
 export const useBackButton = () => {
   const location = useLocation();
@@ -18,14 +19,17 @@ export const useBackButton = () => {
           // Debounce - prevent rapid double-taps
           const now = Date.now();
           if (now - lastBackPress < 400) {
-            console.log('[BackButton] Debounced');
+            logger.info('useBackButton', 'Back press debounced');
             return;
           }
           lastBackPress = now;
 
           const currentPath = location.pathname;
-          console.log('[BackButton] Pressed at:', currentPath);
-          console.log('[BackButton] Can go back:', canGoBack, 'History length:', window.history.length);
+          logger.info('useBackButton', 'Back button pressed', {
+            currentPath,
+            canGoBack,
+            historyLength: window.history.length,
+          });
 
           // Dashboard paths - show exit confirmation
           const dashboardPaths = [
@@ -38,14 +42,14 @@ export const useBackButton = () => {
           const rootPaths = ['/', '/login', ''];
 
           if (rootPaths.includes(currentPath)) {
-            console.log('[BackButton] At root - exiting app');
+            logger.info('useBackButton', 'At root, exiting app');
             App.exitApp();
             return;
           }
 
           // At dashboard - show exit confirmation
           if (dashboardPaths.includes(currentPath)) {
-            console.log('[BackButton] At dashboard - confirm exit');
+            logger.info('useBackButton', 'At dashboard, requesting exit confirmation');
             
             const shouldExit = window.confirm('Exit the app?');
             if (shouldExit) {
@@ -56,11 +60,11 @@ export const useBackButton = () => {
 
           // For all other pages - just go back in history
           if (canGoBack && window.history.length > 1) {
-            console.log('[BackButton] Going back in history');
+            logger.info('useBackButton', 'Going back in history');
             window.history.back();
           } else {
             // No history - navigate to appropriate dashboard based on current path
-            console.log('[BackButton] No history - going to dashboard');
+            logger.info('useBackButton', 'No history, navigating to dashboard');
             
             if (currentPath.startsWith('/admin')) {
               navigate('/admin-dashboard', { replace: true });
@@ -75,10 +79,10 @@ export const useBackButton = () => {
         });
 
         removeListener = () => listener.remove();
-        console.log('[BackButton] ✅ Listener registered');
+        logger.info('useBackButton', 'Back button listener registered');
 
       } catch (error) {
-        console.log('[BackButton] Not on Capacitor platform');
+        logger.info('useBackButton', 'Not running on Capacitor platform');
       }
     };
 
@@ -86,7 +90,7 @@ export const useBackButton = () => {
 
     return () => {
       if (removeListener) {
-        console.log('[BackButton] Cleaning up listener');
+        logger.info('useBackButton', 'Cleaning up back button listener');
         removeListener();
       }
     };

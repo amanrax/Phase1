@@ -331,6 +331,11 @@ async def get_operator(operator_id: str, db=Depends(get_db), current_user: dict 
         user_id=current_user.get("email"),
         role=",".join(current_user.get("roles", [])),
     )
+    # Operators can only view their own profile
+    if UserRole.OPERATOR.value in current_user.get("roles", []) and UserRole.ADMIN.value not in current_user.get("roles", []):
+        own_op = await db.operators.find_one({"email": current_user.get("email")})
+        if not own_op or own_op.get("operator_id") != operator_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: you can only view your own operator profile")
     op = await db.operators.find_one({"operator_id": operator_id})
     if not op:
         await log_event(
