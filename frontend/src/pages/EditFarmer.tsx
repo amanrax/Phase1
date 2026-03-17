@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import BackButton from "@/components/BackButton";
 import { farmerService } from "@/services/farmer.service";
 import geoService from "@/services/geo.service";
@@ -62,27 +62,60 @@ interface Province { code: string; name: string }
 interface District { code: string; name: string }
 interface Chiefdom { code: string; name: string }
 
+const emptyFormData = (): FarmerFormData => ({
+  first_name: "", last_name: "", phone_primary: "", phone_secondary: "",
+  email: "", nrc: "", date_of_birth: "", gender: "", ethnic_group: "",
+  province_code: "", province_name: "", district_code: "", district_name: "",
+  chiefdom_code: "", chiefdom_name: "", village: "",
+  farm_size_hectares: "", crops_grown: [], livestock_types: [],
+  has_irrigation: false, years_farming: "",
+  household_size: "", number_of_dependents: "", primary_income_source: "",
+});
+
+const mapFarmerToFormData = (farmer: any): FarmerFormData => ({
+  first_name: farmer.personal_info?.first_name || "",
+  last_name: farmer.personal_info?.last_name || "",
+  phone_primary: farmer.personal_info?.phone_primary || "",
+  phone_secondary: farmer.personal_info?.phone_secondary || "",
+  email: farmer.personal_info?.email || "",
+  nrc: farmer.personal_info?.nrc || "",
+  date_of_birth: farmer.personal_info?.date_of_birth || "",
+  gender: farmer.personal_info?.gender || "",
+  ethnic_group: farmer.personal_info?.ethnic_group || "",
+  province_code: farmer.address?.province_code || "",
+  province_name: farmer.address?.province_name || "",
+  district_code: farmer.address?.district_code || "",
+  district_name: farmer.address?.district_name || "",
+  chiefdom_code: farmer.address?.chiefdom_code || "",
+  chiefdom_name: farmer.address?.chiefdom_name || "",
+  village: farmer.address?.village || "",
+  farm_size_hectares: farmer.farm_info?.farm_size_hectares?.toString() || "",
+  crops_grown: farmer.farm_info?.crops_grown ?? farmer.farm_info?.crop_types ?? farmer.farm_info?.crops ?? [],
+  livestock_types: farmer.farm_info?.livestock_types?.length
+    ? farmer.farm_info.livestock_types
+    : (farmer.farm_info?.livestock ?? []),
+  has_irrigation: farmer.farm_info?.has_irrigation || false,
+  years_farming: farmer.farm_info?.years_farming?.toString() || "",
+  household_size: farmer.household_info?.household_size?.toString() || "",
+  number_of_dependents: farmer.household_info?.number_of_dependents?.toString() || "",
+  primary_income_source: farmer.household_info?.primary_income_source || "",
+});
+
 export default function EditFarmer() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { farmerId } = useParams<{ farmerId: string }>();
   const { success: showSuccess, error: showError } = useNotification();
   const { triggerVibration, triggerSound } = useFeedback();
   const { role } = useAuthStore();
+  const initialFarmerData = (location.state as { farmerData?: any } | null)?.farmerData;
   
-  const [formData, setFormData] = useState<FarmerFormData>({
-    first_name: "", last_name: "", phone_primary: "", phone_secondary: "",
-    email: "", nrc: "", date_of_birth: "", gender: "", ethnic_group: "",
-    province_code: "", province_name: "", district_code: "", district_name: "",
-    chiefdom_code: "", chiefdom_name: "", village: "",
-    farm_size_hectares: "", crops_grown: [], livestock_types: [],
-    has_irrigation: false, years_farming: "",
-    household_size: "", number_of_dependents: "", primary_income_source: "",
-  });
+  const [formData, setFormData] = useState<FarmerFormData>(() => initialFarmerData ? mapFarmerToFormData(initialFarmerData) : emptyFormData());
 
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [chiefdoms, setChiefdoms] = useState<Chiefdom[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialFarmerData);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -101,6 +134,10 @@ export default function EditFarmer() {
     logger.info(COMPONENT, 'Component mounted', { farmerId });
     loadProvinces();
     loadEthnicGroups();
+    if (initialFarmerData) {
+      setFormData(mapFarmerToFormData(initialFarmerData));
+      setClientVersion(initialFarmerData.updated_at ?? null);
+    }
     if (farmerId) {
       fetchFarmer();
     }

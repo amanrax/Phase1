@@ -17,7 +17,9 @@ interface FarmerDocument {
   file_id: string;
   uploaded_at: string;
   status?: string;
+  verification_status?: string;
   rejection_reason?: string;
+  mime_type?: string;
 }
 
 interface PhotoInfo {
@@ -56,7 +58,10 @@ const FarmerDocumentWallet = () => {
       logger.info(COMPONENT, "Fetching farmer documents", { farmerId });
       const { data } = await api.get(`/farmers/${farmerId}`);
       const farmer = data.farmer || data;
-      setDocuments(farmer.identification_documents || []);
+      setDocuments((farmer.identification_documents || []).map((doc: FarmerDocument) => ({
+        ...doc,
+        status: doc.verification_status || doc.status,
+      })));
       setVerificationStatus(farmer.registration_status || farmer.status || "registered");
       logger.info(COMPONENT, `Documents loaded (${Math.round(performance.now() - start)}ms)`, {
         docCount: (farmer.identification_documents || []).length,
@@ -187,13 +192,45 @@ const FarmerDocumentWallet = () => {
   const pdfIcon = (
     <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
   );
+  const imageIcon = (
+    <svg className="w-5 h-5 text-sky-600 dark:text-sky-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l2.409 2.409a2.25 2.25 0 003.182 0l2.409-2.409a2.25 2.25 0 013.182 0L21.75 15.75m-1.5-10.5h-16.5A1.5 1.5 0 002.25 6.75v10.5a1.5 1.5 0 001.5 1.5h16.5a1.5 1.5 0 001.5-1.5V6.75a1.5 1.5 0 00-1.5-1.5zm-12 3.75h.008v.008H8.25V9z" /></svg>
+  );
   const getDocIcon = (doc?: FarmerDocument) => {
+    const mimeType = (doc?.mime_type || "").toLowerCase();
     const name = (doc?.file_path || "").toLowerCase();
-    if (name.endsWith(".pdf")) return pdfIcon;
-    if (/\.(jpe?g|png|gif|webp|bmp)$/i.test(name)) {
-      return <img src={doc?.file_path} alt="" className="w-5 h-5 object-cover rounded" />;
-    }
+    if (mimeType === "application/pdf" || name.endsWith(".pdf")) return pdfIcon;
+    if (mimeType.startsWith("image/") || /\.(jpe?g|png|gif|webp|bmp)$/i.test(name)) return imageIcon;
     return defaultDocSvg;
+  };
+
+  const handleDownloadDocument = async (doc: FarmerDocument) => {
+    try {
+      let requestPath = doc.file_path;
+      if (requestPath.startsWith("http")) {
+        requestPath = new URL(requestPath).pathname;
+      }
+      if (requestPath.startsWith("/api/")) {
+        requestPath = requestPath.replace(/^\/api/, "");
+      }
+
+      const response = await api.get(requestPath, { responseType: "blob" });
+      const blobUrl = URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      const extension = doc.mime_type === "application/pdf"
+        ? "pdf"
+        : doc.mime_type?.startsWith("image/")
+          ? (doc.mime_type.split("/")[1] || "jpg")
+          : "bin";
+      link.download = `${doc.doc_type}.${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      logger.error(COMPONENT, "Authenticated document download failed", { err, fileId: doc.file_id });
+      toast.error("Failed to download document");
+    }
   };
 
   // Group documents by type
@@ -343,14 +380,13 @@ const FarmerDocumentWallet = () => {
                   {/* Actions */}
                   <div className="flex gap-2 mt-3">
                     {isUploaded && doc?.file_path && (
-                      <a
-                        href={doc.file_path}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadDocument(doc)}
                         className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
                       >
-                        View Document
-                      </a>
+                        Download Document
+                      </button>
                     )}
                     {/* Show Upload/Re-upload only on missing or rejected docs (TC-064/067) */}
                     {(!isUploaded || doc?.status === "rejected") && (

@@ -94,6 +94,24 @@ export default function OperatorEdit() {
         assigned_district: district,
         is_active: op.is_active ?? true,
       });
+
+      if (district) {
+        const allProvinces = await geoService.provinces();
+        setProvinces(allProvinces);
+        let matchedProvinceCode = "";
+        for (const province of allProvinces) {
+          const provinceDistricts = await geoService.districts(province.code);
+          const matched = provinceDistricts.find((d) => d.name.toLowerCase() === district.toLowerCase());
+          if (matched) {
+            matchedProvinceCode = province.code;
+            setDistricts(provinceDistricts);
+            break;
+          }
+        }
+        if (matchedProvinceCode) {
+          setSelectedProvince(matchedProvinceCode);
+        }
+      }
     } catch (err: unknown) {
       setError(getErrorMessage(err));
     } finally {
@@ -165,7 +183,7 @@ export default function OperatorEdit() {
           selectedProvince,
           customDistrict.trim()
         );
-        formData.assigned_district = newDistrict.name;
+        setFormData(prev => ({ ...prev, assigned_district: newDistrict.name }));
         showSuccess(`Custom district "${newDistrict.name}" created successfully!`);
         
         // Reload districts

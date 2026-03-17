@@ -15,6 +15,25 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/change-requests", tags=["Change Requests"])
 
 
+ALLOWED_CHANGE_FIELDS = {
+    "phone_primary",
+    "phone_secondary",
+    "email",
+    "date_of_birth",
+    "village",
+    "ward",
+    "camp",
+    "chiefdom",
+    "district",
+    "province",
+    "farm_size",
+    "irrigation_access",
+    "crops",
+    "livestock",
+    "land_size",
+}
+
+
 # ── Pydantic Models ───────────────────────────────────────────────────────────
 
 class ChangeRequestCreate(BaseModel):
@@ -81,9 +100,7 @@ async def create_change_request(
     }
     normalized_field_name = field_aliases.get(payload.field_name, payload.field_name)
 
-    # Disallow changes to protected fields (TC-080: NRC requires admin action)
-    protected_fields = {"farmer_id", "nrc_number", "first_name", "last_name"}
-    if normalized_field_name in protected_fields:
+    if normalized_field_name not in ALLOWED_CHANGE_FIELDS:
         raise HTTPException(
             status_code=400,
             detail=f"Field '{normalized_field_name}' cannot be changed via self-service. Contact your operator.",
@@ -227,18 +244,19 @@ async def list_pending_requests(
     """Operator/admin views pending change requests for their farmers."""
     query: dict = {"status": "pending"}
 
-    # Operators only see requests from farmers in their assigned districts
+    # Operators only see requests for farmers assigned to them.
     if "OPERATOR" in current_user.get("roles", []) and "ADMIN" not in current_user.get("roles", []):
         operator = await db.operators.find_one({"email": current_user.get("email")})
         if operator:
-            districts = operator.get("assigned_districts", [])
-            if districts:
+            operator_id = operator.get("operator_id")
+            farmer_ids = []
+            if operator_id:
                 farmer_ids_cursor = db.farmers.find(
-                    {"address.district_name": {"$in": districts}},
-                    {"farmer_id": 1}
+                    {"$or": [{"operator_id": operator_id}, {"created_by": operator_id}]},
+                    {"farmer_id": 1},
                 )
                 farmer_ids = [f["farmer_id"] async for f in farmer_ids_cursor]
-                query["farmer_id"] = {"$in": farmer_ids}
+            query["farmer_id"] = {"$in": farmer_ids}
 
     total = await db.change_requests.count_documents(query)
     cursor = db.change_requests.find(query).sort("created_at", -1).skip(skip).limit(limit)
@@ -335,6 +353,9 @@ async def decide_change_request(
         field = cr["field_name"]
         new_val = cr["new_value"]
         farmer_id = cr["farmer_id"]
+
+        if field not in ALLOWED_CHANGE_FIELDS:
+            raise HTTPException(status_code=400, detail=f"Field '{field}' is not allowed for change request approval")
 
         # Map field names to their MongoDB paths
         field_map = {

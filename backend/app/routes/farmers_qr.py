@@ -1,14 +1,17 @@
 # backend/app/routes/farmers_qr.py
 # QR code generation, retrieval, and verification endpoints for farmers
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from app.utils.security import verify_qr_signature
 from app.database import get_db, AsyncIOMotorDatabase
 from app.dependencies.roles import require_role
 from app.services.idcard_service import IDCardService
+from app.services.gridfs_service import gridfs_service
 from typing import Dict
 import asyncio
+import io
 import os
+from pathlib import Path
 
 router = APIRouter(prefix="/farmers", tags=["Farmers QR & ID"])
 
@@ -63,14 +66,11 @@ async def verify_farmer_by_id(farmer_id: str, db=Depends(get_db)):
         if op:
             operator_name = op.get("full_name")
 
-    # Build a photo URL from whichever storage location is available
     photo_url: str | None = None
     photo_file_id = farmer.get("photo_file_id") or (farmer.get("documents") or {}).get("photo_file_id")
     photo_path = farmer.get("photo_path") or (farmer.get("documents") or {}).get("photo")
-    if photo_file_id:
-        photo_url = f"/api/files/{photo_file_id}"
-    elif photo_path:
-        photo_url = photo_path if photo_path.startswith("/api/") else f"/api/files/{photo_path}"
+    if photo_file_id or photo_path:
+        photo_url = f"/api/farmers/verify-qr/{farmer_id}/photo"
 
     return {
         "verified": True,
@@ -83,6 +83,45 @@ async def verify_farmer_by_id(farmer_id: str, db=Depends(get_db)):
         "registered_date": farmer["created_at"].isoformat() if hasattr(farmer.get("created_at"), "isoformat") else str(farmer.get("created_at", "")),
         "operator_name": operator_name,
     }
+
+
+@router.get("/verify-qr/{farmer_id}/photo", summary="Public farmer QR photo")
+async def get_public_qr_photo(farmer_id: str, db=Depends(get_db)):
+    """Serve a farmer photo for the public QR verification view without exposing other files."""
+    farmer = await db.farmers.find_one({"farmer_id": farmer_id})
+    if not farmer:
+        raise HTTPException(status_code=404, detail="Farmer not found")
+
+    photo_file_id = farmer.get("photo_file_id") or (farmer.get("documents") or {}).get("photo_file_id")
+    photo_path = farmer.get("photo_path") or (farmer.get("documents") or {}).get("photo")
+
+    if photo_file_id:
+        try:
+            file_data, metadata = await gridfs_service.download_file(str(photo_file_id))
+            return StreamingResponse(
+                io.BytesIO(file_data),
+                media_type=metadata.get("content_type", "image/jpeg"),
+                headers={"Cache-Control": "max-age=3600"},
+            )
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    if photo_path:
+        clean_path = photo_path.replace("/api/files/legacy/", "").lstrip("/")
+        full_path = Path("/app") / clean_path
+        resolved = full_path.resolve()
+        if not str(resolved).startswith("/app") or not resolved.exists():
+            raise HTTPException(status_code=404, detail="Photo not found")
+
+        media_type = {
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".png": "image/png",
+            ".webp": "image/webp",
+        }.get(resolved.suffix.lower(), "image/jpeg")
+        return FileResponse(path=str(resolved), media_type=media_type, filename=resolved.name)
+
+    raise HTTPException(status_code=404, detail="Photo not found")
 
 
 @router.post(

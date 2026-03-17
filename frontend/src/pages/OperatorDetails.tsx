@@ -21,6 +21,19 @@ interface OperatorData {
   created_at?: string;
 }
 
+interface AssignedFarmer {
+  farmer_id?: string;
+  personal_info?: {
+    first_name?: string;
+    last_name?: string;
+  };
+  address?: {
+    district_name?: string;
+  };
+  created_at?: string;
+  registration_status?: string;
+}
+
 export default function OperatorDetails() {
   const { operatorId } = useParams<{ operatorId: string }>();
   const navigate = useNavigate();
@@ -29,6 +42,7 @@ export default function OperatorDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [assignedFarmers, setAssignedFarmers] = useState<AssignedFarmer[]>([]);
 
   useEffect(() => {
     if (operatorId) loadOperatorData();
@@ -40,6 +54,12 @@ export default function OperatorDetails() {
       setError(null);
       const data = await operatorService.getOperator(operatorId!);
       setOperator(data);
+      try {
+        const farmersRes = await operatorService.getOperatorFarmers(operatorId!, 100, 0);
+        setAssignedFarmers(farmersRes.results || []);
+      } catch (farmersErr: unknown) {
+        logger.error(COMPONENT, "Failed to load assigned farmers", { operatorId, error: farmersErr });
+      }
       logger.info(COMPONENT, 'Operator data loaded', { operatorId });
     } catch (err: any) {
       const msg = err.response?.data?.detail || "Failed to load operator details";
@@ -200,6 +220,39 @@ export default function OperatorDetails() {
               <p className="text-xs opacity-90 mt-1">hectares</p>
             </div>
           </div>
+        </div>
+
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">👨‍🌾 Assigned Farmers</h3>
+          {assignedFarmers.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">No assigned farmers found.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300">
+                    <th className="py-2 pr-3">Farmer ID</th>
+                    <th className="py-2 pr-3">Name</th>
+                    <th className="py-2 pr-3">District</th>
+                    <th className="py-2 pr-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assignedFarmers.map((farmer) => {
+                    const name = `${farmer.personal_info?.first_name || ""} ${farmer.personal_info?.last_name || ""}`.trim() || "Unknown";
+                    return (
+                      <tr key={farmer.farmer_id || name} className="border-b border-gray-100 dark:border-gray-700/60 text-gray-800 dark:text-gray-100">
+                        <td className="py-2 pr-3 font-mono">{farmer.farmer_id || "N/A"}</td>
+                        <td className="py-2 pr-3">{name}</td>
+                        <td className="py-2 pr-3">{farmer.address?.district_name || "N/A"}</td>
+                        <td className="py-2 pr-3 capitalize">{farmer.registration_status || "registered"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

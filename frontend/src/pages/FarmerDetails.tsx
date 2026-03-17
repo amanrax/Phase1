@@ -275,15 +275,16 @@ export default function FarmerDetails() {
 
   // Auto-open and scroll to verification panel when arriving from QR scan (P1)
   useEffect(() => {
-    if ((location.state as Record<string, unknown>)?.fromQR) {
+    const state = (location.state as Record<string, unknown>) || {};
+    if (state.fromQR || state.openVerification) {
       setVerificationOpen(true);
       setTimeout(() => verificationRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 400);
     }
   }, [location.state]);
 
   // P2 — document review state
-  const { user } = useAuthStore();
-  const canReview = user?.role === "ADMIN" || user?.role === "OPERATOR";
+  const { user, role } = useAuthStore();
+  const canReview = role === "ADMIN" || role === "OPERATOR";
   const [reviewDocs, setReviewDocs] = useState<VerificationDocument[]>([]);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -685,7 +686,7 @@ export default function FarmerDetails() {
                 <img src={qrCodeUrl} alt="Farmer QR Code" className="w-12 h-12 rounded border-2 border-amber-400 shadow cursor-pointer hover:opacity-80 transition" />
               </button>
             )}
-            <button onClick={() => navigate(`/farmers/edit/${farmerId}`)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
+            <button onClick={() => navigate(`/farmers/edit/${farmerId}`, { state: { farmerData: farmer } })} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow transition-all active:scale-95">
               ✏️ Edit Farmer
             </button>
           </div>
@@ -944,8 +945,10 @@ export default function FarmerDetails() {
                         setSavingStatus(true);
                         try {
                           await verificationService.updateStatus(farmer.farmer_id, { status: selectedStatus, notes: statusNotes || undefined });
+                          const refreshed = await verificationService.getDocuments(farmer.farmer_id);
+                          setReviewDocs(refreshed.documents);
+                          await loadFarmerData();
                           showSuccess(`Status updated to "${selectedStatus}"`);
-                          setFarmer(f => f ? { ...f, verification_status: selectedStatus, registration_status: selectedStatus } : f);
                           setSelectedStatus("");
                           setStatusNotes("");
                         } catch (err) { showError(getErrorMessage(err)); }
@@ -995,10 +998,10 @@ export default function FarmerDetails() {
                           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                             {/* thumbnail or icon */}
                             <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                              {doc.url && /\.(jpe?g|png|webp)$/i.test(doc.url) ? (
-                                <img src={doc.url} alt={doc.doc_type} className="w-full h-full object-cover" />
+                              {doc.url ? (
+                                <span className="text-2xl">{/\.(jpe?g|png|webp)$/i.test(doc.url) ? "🖼️" : "📄"}</span>
                               ) : (
-                                <span className="text-2xl">{doc.url ? "📄" : "❌"}</span>
+                                <span className="text-2xl">❌</span>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -1019,7 +1022,9 @@ export default function FarmerDetails() {
                                   setDocActing(a => ({ ...a, [doc.doc_type]: true }));
                                   try {
                                     await verificationService.approveDocument(farmer.farmer_id, doc.doc_type);
-                                    setReviewDocs(d => d.map(x => x.doc_type === doc.doc_type ? { ...x, status: "verified" } : x));
+                                    const refreshed = await verificationService.getDocuments(farmer.farmer_id);
+                                    setReviewDocs(refreshed.documents);
+                                    await loadFarmerData();
                                     showSuccess(`"${doc.doc_type}" verified`);
                                   } catch (err) { showError(getErrorMessage(err)); }
                                   finally { setDocActing(a => ({ ...a, [doc.doc_type]: false })); }
@@ -1061,7 +1066,9 @@ export default function FarmerDetails() {
                                   setDocActing(a => ({ ...a, [doc.doc_type]: true }));
                                   try {
                                     await verificationService.rejectDocument(farmer.farmer_id, doc.doc_type, reason);
-                                    setReviewDocs(d => d.map(x => x.doc_type === doc.doc_type ? { ...x, status: "rejected", rejection_reason: reason } : x));
+                                    const refreshed = await verificationService.getDocuments(farmer.farmer_id);
+                                    setReviewDocs(refreshed.documents);
+                                    await loadFarmerData();
                                     setRejectOpen(r => ({ ...r, [doc.doc_type]: false }));
                                     showSuccess(`"${doc.doc_type}" rejected`);
                                   } catch (err) { showError(getErrorMessage(err)); }

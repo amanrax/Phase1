@@ -212,7 +212,7 @@ function SectionHeader({ title, action, onAction }: { title: string; action?: st
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const { logout, user } = useAuthStore();
+  const { logout, user, token } = useAuthStore();
   const navigate = useNavigate();
   const notify = useNotification();
   useTheme(); // Ensure theme context is active
@@ -322,8 +322,9 @@ export default function AdminDashboard() {
   }, [logout, notify, user?.email]);
 
   useEffect(() => {
+    if (!token) return;
     loadData();
-  }, [loadData]);
+  }, [loadData, token]);
 
   const handleTabChange = (tab: NavTab) => {
     logger.info("AdminDashboard", "Tab navigation", { tab, from: activeTab });

@@ -22,6 +22,11 @@ export interface OperatorListResponse {
   total?: number;
 }
 
+export interface OperatorFarmersResponse {
+  count: number;
+  results: Array<Record<string, any>>;
+}
+
 export const operatorService = {
   async getOperators(limit = 50, offset = 0): Promise<OperatorListResponse> {
     try {
@@ -86,6 +91,11 @@ export const operatorService = {
 
   async getCurrentOperatorStats(): Promise<any> {
     const response = await api.get("/operators/me/stats");
+    return response.data;
+  },
+
+  async getOperatorFarmers(operatorId: string, limit = 50, skip = 0): Promise<OperatorFarmersResponse> {
+    const response = await api.get(`/operators/${operatorId}/farmers`, { params: { limit, skip } });
     return response.data;
   },
 };

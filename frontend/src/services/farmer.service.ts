@@ -144,7 +144,29 @@ export const farmerService = {
       const { data } = await api.get(`/farmers/${farmerId}`);
       const elapsed = Math.round(performance.now() - start);
       logger.info("farmerService", `Loaded farmer ${farmerId} (${elapsed}ms)`);
-      return data;
+      const farmer = data?.farmer || data;
+
+      if (farmer?.farm_info) {
+        const farmInfo = farmer.farm_info;
+        if (!farmInfo.crops_grown && Array.isArray(farmInfo.crop_types)) {
+          farmInfo.crops_grown = farmInfo.crop_types;
+        }
+        if (!farmInfo.crops_grown && Array.isArray(farmInfo.crops)) {
+          farmInfo.crops_grown = farmInfo.crops;
+        }
+        if (!farmInfo.livestock_types && Array.isArray(farmInfo.livestock)) {
+          farmInfo.livestock_types = farmInfo.livestock;
+        }
+      }
+
+      if (Array.isArray(farmer?.identification_documents)) {
+        farmer.identification_documents = farmer.identification_documents.map((doc: Record<string, unknown>) => ({
+          ...doc,
+          status: doc.verification_status ?? doc.status,
+        }));
+      }
+
+      return farmer;
     } catch (err: any) {
       logger.error("farmerService", `Failed to load farmer ${farmerId}`, { error: err?.message, status: err?.response?.status });
       throw err;

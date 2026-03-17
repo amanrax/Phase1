@@ -22,7 +22,7 @@ export interface UpdateStatusPayload {
   notes?: string;
 }
 
-const BASE = "/api/farmers";
+const BASE = "/farmers";
 
 export const verificationService = {
   /** Get all documents for a farmer with per-document verification status */

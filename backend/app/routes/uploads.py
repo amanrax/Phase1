@@ -2,6 +2,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status, Request
 import logging, traceback
 from pathlib import Path
+from datetime import datetime, timezone
 from app.database import get_db
 from app.dependencies.roles import require_role, require_operator
 from app.services.logging_service import log_event
@@ -117,6 +118,15 @@ async def upload_document(
         # Read file content
         file_data = await file.read()
 
+        farmer = await db.farmers.find_one(
+            {"farmer_id": farmer_id},
+            {"operator_id": 1, "created_by": 1, "personal_info": 1, f"documents.{document_type}_file_id": 1},
+        )
+        if not farmer:
+            raise HTTPException(status_code=404, detail="Farmer not found")
+
+        previous_file_id = ((farmer.get("documents") or {}).get(f"{document_type}_file_id"))
+
         # Upload to GridFS
         file_id = await gridfs_service.upload_file(
             file_data=file_data,
@@ -131,6 +141,27 @@ async def upload_document(
             {"farmer_id": farmer_id},
             {"$set": {f"documents.{document_type}_file_id": file_id}},
         )
+
+        if previous_file_id:
+            operator_id = farmer.get("operator_id") or farmer.get("created_by")
+            operator = None
+            if operator_id:
+                operator = await db.operators.find_one({"operator_id": operator_id}, {"email": 1})
+
+            personal_info = farmer.get("personal_info") or {}
+            farmer_name = f"{personal_info.get('first_name', '')} {personal_info.get('last_name', '')}".strip() or farmer_id
+            if operator and operator.get("email"):
+                await db.notifications.insert_one({
+                    "user_id": operator["email"],
+                    "user_type": "operator",
+                    "type": "document_reuploaded",
+                    "title": "Document re-uploaded",
+                    "body": f"Farmer {farmer_name} re-uploaded their {document_type.replace('_', ' ')} document. Please review.",
+                    "read": False,
+                    "created_at": datetime.now(timezone.utc),
+                    "expires_at": None,
+                    "metadata": {"farmer_id": farmer_id, "document_type": document_type},
+                })
 
         await log_event(
             level="INFO",

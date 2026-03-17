@@ -53,6 +53,64 @@ class FarmerService:
         """
         self.db = db
         self.collection = db.farmers
+
+    def _build_farmer_query(
+        self,
+        status: Optional[str] = None,
+        district: Optional[str] = None,
+        search: Optional[str] = None,
+        created_by: Optional[str] = None,
+        farmer_id_exact: Optional[str] = None,
+        nrc: Optional[str] = None,
+        allowed_districts: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        query: Dict[str, Any] = {"is_active": True}
+
+        if status:
+            query["registration_status"] = status
+
+        operator_scope_conditions = []
+        if allowed_districts:
+            operator_scope_conditions.append({"address.district_name": {"$in": allowed_districts}})
+        if created_by:
+            operator_scope_conditions.append({"created_by": created_by})
+            operator_scope_conditions.append({"operator_id": created_by})
+
+        if operator_scope_conditions:
+            deduped_conditions = []
+            seen_conditions = set()
+            for condition in operator_scope_conditions:
+                marker = repr(condition)
+                if marker not in seen_conditions:
+                    deduped_conditions.append(condition)
+                    seen_conditions.add(marker)
+
+            if len(deduped_conditions) == 1:
+                query.update(deduped_conditions[0])
+            else:
+                query["$or"] = deduped_conditions
+        elif district:
+            query["address.district_name"] = district
+
+        if farmer_id_exact:
+            query["farmer_id"] = farmer_id_exact
+        elif nrc:
+            query["nrc_hash"] = hmac_hash(nrc, salt="nrc")
+        elif search:
+            safe_search = re.escape(search)
+            search_or = [
+                {"farmer_id": {"$regex": safe_search, "$options": "i"}},
+                {"personal_info.first_name": {"$regex": safe_search, "$options": "i"}},
+                {"personal_info.last_name": {"$regex": safe_search, "$options": "i"}},
+                {"personal_info.phone_primary": {"$regex": safe_search, "$options": "i"}},
+            ]
+
+            if "$or" in query:
+                query["$and"] = [{"$or": query.pop("$or")}, {"$or": search_or}]
+            else:
+                query["$or"] = search_or
+
+        return query
     
     # =======================================================
     # 1️⃣ CREATE Operations
@@ -247,50 +305,15 @@ class FarmerService:
         Returns:
             List[FarmerListItem]: List of farmer summaries
         """
-        # Build query filter
-        query = {"is_active": True}  # Only return active (non-deleted) farmers
-        
-        if status:
-            query["registration_status"] = status
-        
-        # Handle allowed_districts and created_by as OR conditions
-        # Operator can see: farmers in their assigned districts OR farmers they created
-        or_conditions = []
-        
-        if allowed_districts:
-            or_conditions.append({"address.district_name": {"$in": allowed_districts}})
-        
-        if created_by:
-            or_conditions.append({"created_by": created_by})
-        
-        # If we have OR conditions, add them to query
-        if or_conditions:
-            if len(or_conditions) == 1:
-                # Only one condition, don't use $or
-                query.update(or_conditions[0])
-            else:
-                # Both district and created_by, use $or
-                query["$or"] = or_conditions
-        elif district:
-            # No allowed_districts or created_by, apply single district filter
-            query["address.district_name"] = district
-        
-        # Exact farmer_id match takes precedence over search
-        if farmer_id_exact:
-            query["farmer_id"] = farmer_id_exact
-        # NRC exact (hashed) match takes precedence if farmer_id_exact not provided
-        elif nrc:
-            query["nrc_hash"] = hmac_hash(nrc, salt="nrc")
-        elif search and "$or" not in query:
-            # Escape regex special chars to prevent NoSQL regex injection
-            safe_search = re.escape(search)
-            # Text search across multiple fields (only if $or not already in query)
-            query["$or"] = [
-                {"farmer_id": {"$regex": safe_search, "$options": "i"}},
-                {"personal_info.first_name": {"$regex": safe_search, "$options": "i"}},
-                {"personal_info.last_name": {"$regex": safe_search, "$options": "i"}},
-                {"personal_info.phone_primary": {"$regex": safe_search, "$options": "i"}},
-            ]
+        query = self._build_farmer_query(
+            status=status,
+            district=district,
+            search=search,
+            created_by=created_by,
+            farmer_id_exact=farmer_id_exact,
+            nrc=nrc,
+            allowed_districts=allowed_districts,
+        )
         
         # Execute query with pagination
         cursor = self.collection.find(query).skip(skip).limit(limit).sort("created_at", -1)
@@ -357,26 +380,15 @@ class FarmerService:
         Returns:
             int: Total count
         """
-        query = {}
-        
-        if status:
-            query["registration_status"] = status
-        
-        # If allowed_districts is provided, filter by those districts
-        if allowed_districts:
-            query["address.district_name"] = {"$in": allowed_districts}
-        elif district:
-            # Only apply single district filter if allowed_districts not specified
-            query["address.district_name"] = district
-        
-        if created_by:
-            query["created_by"] = created_by
-        
-        if farmer_id_exact:
-            query["farmer_id"] = farmer_id_exact
-        elif nrc:
-            query["nrc_hash"] = hmac_hash(nrc, salt="nrc")
-        
+        query = self._build_farmer_query(
+            status=status,
+            district=district,
+            created_by=created_by,
+            farmer_id_exact=farmer_id_exact,
+            nrc=nrc,
+            allowed_districts=allowed_districts,
+        )
+
         return await self.collection.count_documents(query)
     
     # =======================================================

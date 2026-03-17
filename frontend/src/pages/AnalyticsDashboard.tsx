@@ -58,8 +58,8 @@ function StatCard({ label, value, icon, color, loading }: {
 export default function AnalyticsDashboard() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { logout, user } = useAuthStore();
-  const backPath = roleBackPath(user?.role);
+  const { logout, user, token, role } = useAuthStore();
+  const backPath = roleBackPath((role || user?.role || "").toLowerCase());
 
   const [stats, setStats] = useState<any>(null);
   const [analytics, setAnalytics] = useState<any>(null);
@@ -93,8 +93,9 @@ export default function AnalyticsDashboard() {
   }, []);
 
   useEffect(() => {
+    if (!token) return;
     loadData();
-  }, [loadData]);
+  }, [loadData, token]);
 
   // --- Filters ---
   const [filterMonths, setFilterMonths] = useState<number>(0); // 0 = all time

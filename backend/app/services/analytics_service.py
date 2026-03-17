@@ -68,7 +68,7 @@ async def farmers_by_province(db: AsyncIOMotorDatabase) -> list[dict]:
     pipeline = [
         {
             "$group": {
-                "_id": {"$ifNull": ["$location.province", "$personal_info.province", "Unknown"]},
+                "_id": {"$ifNull": ["$address.province_name", "$location.province", "$personal_info.province", "Unknown"]},
                 "count": {"$sum": 1},
             }
         },
@@ -83,7 +83,7 @@ async def farmers_by_district(db: AsyncIOMotorDatabase) -> list[dict]:
     pipeline = [
         {
             "$group": {
-                "_id": {"$ifNull": ["$location.district", "$personal_info.district", "Unknown"]},
+                "_id": {"$ifNull": ["$address.district_name", "$location.district", "$personal_info.district", "Unknown"]},
                 "count": {"$sum": 1},
             }
         },

@@ -1,5 +1,8 @@
 # backend/app/tasks/id_card_task.py
+import logging
+
 from celery import shared_task
+from celery.exceptions import MaxRetriesExceededError
 from reportlab.lib.pagesizes import landscape
 from reportlab.pdfgen import canvas as pdf_canvas
 from reportlab.lib.utils import ImageReader
@@ -17,21 +20,26 @@ import io
 # Credit card size: 85.6mm x 53.98mm
 CARD_WIDTH = 85.6 * mm
 CARD_HEIGHT = 53.98 * mm
+logger = logging.getLogger(__name__)
 
 
-@shared_task(name="app.tasks.id_card_task.generate_id_card")
-def generate_id_card(farmer_id: str):
+@shared_task(bind=True, max_retries=3, default_retry_delay=30, name="app.tasks.id_card_task.generate_id_card")
+def generate_id_card(self, farmer_id: str):
     """Generate beautiful ID card PDF with QR code for a farmer."""
     # Create MongoDB client (sync)
     client = MongoClient(settings.MONGODB_URL)
     db = client[settings.MONGODB_DB_NAME]
-    farmer = db.farmers.find_one({"farmer_id": farmer_id})
-
-    if not farmer:
-        client.close()
-        raise Exception(f"Farmer {farmer_id} not found in DB.")
 
     try:
+        db.farmers.update_one(
+            {"farmer_id": farmer_id},
+            {"$set": {"id_card_status": "processing", "id_card_error": None, "updated_at": datetime.utcnow()}},
+        )
+
+        farmer = db.farmers.find_one({"farmer_id": farmer_id})
+        if not farmer:
+            raise Exception(f"Farmer {farmer_id} not found in DB.")
+
         # Generate QR code with farmer data
         qr_data = json.dumps({
             "farmer_id": farmer_id,
@@ -60,7 +68,7 @@ def generate_id_card(farmer_id: str):
             farmer_id=farmer_id,
             file_type="qr"
         )
-        print(f"✅ QR code uploaded to GridFS: {qr_file_id}")
+        logger.info("QR code uploaded to GridFS", extra={"farmer_id": farmer_id, "qr_file_id": qr_file_id})
 
         # Get photo from GridFS if available (check multiple locations)
         # Note: photo_file_id is stored at root level, NOT in documents subdocument
@@ -72,19 +80,24 @@ def generate_id_card(farmer_id: str):
         )
         photo_data = None
         
-        print(f"🔍 Looking for photo - farmer_id: {farmer.get('farmer_id')}")
-        print(f"   photo_file_id (root): {farmer.get('photo_file_id')}")
-        print(f"   documents.photo: {documents.get('photo')}")
+        logger.info(
+            "Looking up farmer photo for ID card generation",
+            extra={
+                "farmer_id": farmer.get("farmer_id"),
+                "photo_file_id": farmer.get("photo_file_id"),
+                "documents_photo": documents.get("photo"),
+            },
+        )
         
         if photo_file_id:
             try:
                 photo_bytes, _ = sync_gridfs_service.download_file(photo_file_id)
                 photo_data = io.BytesIO(photo_bytes)
-                print(f"✅ Photo loaded from GridFS: {photo_file_id}")
+                logger.info("Photo loaded from GridFS", extra={"farmer_id": farmer_id, "photo_file_id": photo_file_id})
             except Exception as e:
-                print(f"⚠️ Photo load failed from GridFS ({photo_file_id}): {e}")
+                logger.warning("Photo load failed from GridFS", extra={"farmer_id": farmer_id, "photo_file_id": photo_file_id, "error": str(e)})
         else:
-            print(f"⚠️ No photo_file_id found. Farmer data: {farmer.get('farmer_id')}")
+            logger.warning("No photo_file_id found for farmer", extra={"farmer_id": farmer.get("farmer_id")})
         
         # Create PDF in memory
         pdf_buffer = io.BytesIO()
@@ -126,9 +139,9 @@ def generate_id_card(farmer_id: str):
             try:
                 img = ImageReader(photo_data)
                 c.drawImage(img, photo_x, photo_y, photo_w, photo_h, mask='auto')
-                print(f"✅ Photo added from GridFS: {photo_file_id}")
+                logger.info("Photo rendered from GridFS", extra={"farmer_id": farmer_id, "photo_file_id": photo_file_id})
             except Exception as e:
-                print(f"⚠️ Photo failed to render from GridFS: {e}")
+                logger.warning("Photo failed to render from GridFS", extra={"farmer_id": farmer_id, "error": str(e)})
                 c.setFillColor(colors.HexColor('#e5e7eb'))
                 c.rect(photo_x, photo_y, photo_w, photo_h, fill=1, stroke=0)
                 c.setFillColor(colors.HexColor('#9ca3af'))
@@ -138,9 +151,9 @@ def generate_id_card(farmer_id: str):
             try:
                 img = ImageReader(photo_path)
                 c.drawImage(img, photo_x, photo_y, photo_w, photo_h, mask='auto')
-                print(f"✅ Photo added: {photo_path}")
+                logger.info("Photo rendered from filesystem", extra={"farmer_id": farmer_id, "photo_path": photo_path})
             except Exception as e:
-                print(f"⚠️ Photo failed: {e}")
+                logger.warning("Photo failed to render from filesystem", extra={"farmer_id": farmer_id, "error": str(e)})
                 c.setFillColor(colors.HexColor('#e5e7eb'))
                 c.rect(photo_x, photo_y, photo_w, photo_h, fill=1, stroke=0)
                 c.setFillColor(colors.HexColor('#9ca3af'))
@@ -251,7 +264,7 @@ def generate_id_card(farmer_id: str):
         c.setFillColor(colors.HexColor('#4b5563'))
         c.setFont("Helvetica-Bold", 5)
         c.drawCentredString(qr_x + qr_size/2, qr_y - 4*mm, "SCAN TO VERIFY")
-        print(f"✅ QR code added to PDF")
+        logger.info("QR code rendered into PDF", extra={"farmer_id": farmer_id})
         
         # Right column boxes - only Address and Operator (Farm Details removed)
         info_x = 38*mm
@@ -322,7 +335,7 @@ def generate_id_card(farmer_id: str):
         
         # Save PDF
         c.save()
-        print(f"✅ PDF generated in memory")
+        logger.info("ID card PDF generated in memory", extra={"farmer_id": farmer_id})
         
         # Upload PDF to GridFS
         pdf_buffer.seek(0)
@@ -333,7 +346,7 @@ def generate_id_card(farmer_id: str):
             farmer_id=farmer_id,
             file_type="idcard"
         )
-        print(f"✅ ID card PDF uploaded to GridFS: {pdf_file_id}")
+        logger.info("ID card PDF uploaded to GridFS", extra={"farmer_id": farmer_id, "pdf_file_id": pdf_file_id})
 
         # Update farmer record in database with GridFS file IDs
         result = db.farmers.update_one(
@@ -342,32 +355,68 @@ def generate_id_card(farmer_id: str):
                 "$set": {
                     "id_card_file_id": pdf_file_id,
                     "qr_code_file_id": qr_file_id,
-                    "id_card_generated_at": datetime.utcnow()
+                    "id_card_generated_at": datetime.utcnow(),
+                    "id_card_status": "completed",
+                    "id_card_error": None,
                 }
             }
         )
-        print(f"✅ Database updated: matched={result.matched_count}, modified={result.modified_count}")
+        logger.info("Farmer ID card metadata updated", extra={"farmer_id": farmer_id, "matched_count": result.matched_count, "modified_count": result.modified_count})
 
         # TC-110/TC-113 — notify farmer that their ID card is ready
-        db.notifications.insert_one({
-            "user_id": farmer_id,
-            "user_type": "farmer",
-            "type": "id_card_ready",
-            "title": "ID card ready",
-            "body": "Your digital ID card has been generated and is ready to download.",
-            "read": False,
-            "created_at": datetime.utcnow(),
-            "expires_at": None,
-        })
+        try:
+            db.notifications.insert_one({
+                "user_id": farmer_id,
+                "user_type": "farmer",
+                "type": "id_card_ready",
+                "title": "ID card ready",
+                "body": "Your digital ID card has been generated and is ready to download.",
+                "read": False,
+                "created_at": datetime.utcnow(),
+                "expires_at": None,
+            })
+        except Exception as notify_error:
+            logger.warning("Failed to create ID card ready notification", extra={"farmer_id": farmer_id, "error": str(notify_error)})
 
-        client.close()
         return {
             "message": "ID card generated",
             "id_card_file_id": pdf_file_id,
             "qr_code_file_id": qr_file_id
         }
-    
+
     except Exception as e:
+        logger.exception("ID card generation failed", extra={"farmer_id": farmer_id, "retry": self.request.retries})
+        db.system_logs.insert_one({
+            "timestamp": datetime.utcnow(),
+            "level": "ERROR",
+            "module": "id_card_task",
+            "endpoint": None,
+            "user_id": farmer_id,
+            "role": "system",
+            "action": "id_card_generation_failed",
+            "details": {
+                "farmer_id": farmer_id,
+                "retry": self.request.retries,
+                "max_retries": self.max_retries,
+                "error": str(e),
+            },
+            "ip_address": None,
+            "request_id": f"id-card-{farmer_id}",
+            "duration_ms": None,
+        })
+        if self.request.retries >= self.max_retries:
+            db.farmers.update_one(
+                {"farmer_id": farmer_id},
+                {"$set": {"id_card_status": "failed", "id_card_error": str(e), "updated_at": datetime.utcnow()}},
+            )
+            raise
+        try:
+            raise self.retry(exc=e)
+        except MaxRetriesExceededError:
+            db.farmers.update_one(
+                {"farmer_id": farmer_id},
+                {"$set": {"id_card_status": "failed", "id_card_error": str(e), "updated_at": datetime.utcnow()}},
+            )
+            raise
+    finally:
         client.close()
-        print(f"❌ Error generating ID card: {e}")
-        raise

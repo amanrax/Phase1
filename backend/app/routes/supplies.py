@@ -556,6 +556,22 @@ async def get_request_detail_admin(
     if not doc:
         raise HTTPException(404, "Supply request not found")
 
+    if "OPERATOR" in current_user.get("roles", []) and "ADMIN" not in current_user.get("roles", []):
+        operator = await db.operators.find_one({"email": current_user.get("email")}, {"operator_id": 1})
+        operator_id = operator.get("operator_id") if operator else None
+        if not operator_id:
+            raise HTTPException(403, "Operator profile not found")
+
+        farmer = await db.farmers.find_one(
+            {
+                "farmer_id": doc.get("farmer_id"),
+                "$or": [{"operator_id": operator_id}, {"created_by": operator_id}],
+            },
+            {"farmer_id": 1},
+        )
+        if not farmer:
+            raise HTTPException(403, "Access denied")
+
     await _log(request, "INFO", "admin_get_detail.success", {"request_id": request_id}, current_user)
     return _format_request(doc)
 

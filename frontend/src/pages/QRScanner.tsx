@@ -315,7 +315,7 @@ const QRScanner: React.FC = () => {
     if (isAuthenticated) {
       triggerVibration("qr_success");
       triggerSound("qr_success");
-      navigate(`/farmers/${farmerId}`, { state: { fromQR: true } });
+      navigate(`/farmers/${farmerId}`, { state: { fromQR: true, openVerification: true } });
       return;
     }
 

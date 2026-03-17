@@ -60,6 +60,8 @@ interface Farmer {
   id_card_path?: string;
   id_card_file_id?: string;
   id_card_generated_at?: string;
+  id_card_status?: string;
+  id_card_error?: string;
   qr_code_path?: string;
   qr_code_file_id?: string;
   created_at?: string;
@@ -105,6 +107,9 @@ const FarmerIDCard: React.FC = () => {
       const start = performance.now();
       const data = await farmerService.getFarmer(farmerId);
       setFarmer(data);
+      if (data?.id_card_status === "failed") {
+        setError(data.id_card_error || "ID card generation failed. Please try again.");
+      }
       logger.info(COMPONENT, `Farmer data loaded (${Math.round(performance.now() - start)}ms)`);
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.message || "Failed to load farmer data";
@@ -200,6 +205,18 @@ const FarmerIDCard: React.FC = () => {
         
         try {
           const updated = await farmerService.getFarmer(farmer.farmer_id);
+
+          if (updated?.id_card_status === "failed") {
+            clearInterval(poll);
+            setFarmer(updated);
+            const msg = updated.id_card_error || "ID card generation failed. Please try again.";
+            logger.error(COMPONENT, 'generation failed', { msg, farmerId: farmer.farmer_id });
+            if (notifId) dismiss(notifId);
+            setError(msg);
+            showError(msg, 5000);
+            setGenerating(false);
+            return;
+          }
           
           if (updated?.id_card_file_id || updated?.id_card_path || updated?.id_card_generated_at) {
             clearInterval(poll);
@@ -584,11 +601,16 @@ const FarmerIDCard: React.FC = () => {
                 </div>
               ) : (
                 <div>
-                  <div className="bg-yellow-50 border-2 border-yellow-500 rounded-lg p-4 mb-4">
-                    <p className="text-yellow-800 font-bold flex items-center gap-2">
-                      <span>⚠️</span> Not Generated
+                  <div className={`${farmer?.id_card_status === "failed" ? "bg-red-50 border-red-500" : "bg-yellow-50 border-yellow-500"} border-2 rounded-lg p-4 mb-4`}>
+                    <p className={`${farmer?.id_card_status === "failed" ? "text-red-800" : "text-yellow-800"} font-bold flex items-center gap-2`}>
+                      <span>{farmer?.id_card_status === "failed" ? "❌" : "⚠️"}</span>
+                      {farmer?.id_card_status === "failed" ? "Generation Failed" : "Not Generated"}
                     </p>
-                    <p className="text-yellow-700 text-xs mt-2">Click below to create your digital ID</p>
+                    <p className={`${farmer?.id_card_status === "failed" ? "text-red-700" : "text-yellow-700"} text-xs mt-2`}>
+                      {farmer?.id_card_status === "failed"
+                        ? (farmer.id_card_error || "The last ID card generation attempt failed. Try again.")
+                        : "Click below to create your digital ID"}
+                    </p>
                   </div>
 
                   <button

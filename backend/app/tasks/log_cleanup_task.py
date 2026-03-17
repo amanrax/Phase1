@@ -29,30 +29,47 @@ def cleanup_logs():
     db = client[settings.MONGODB_DB_NAME]
     coll = db[LOG_COLLECTION]
 
-    cutoff = datetime.utcnow() - timedelta(days=RETENTION_DAYS)
+    try:
+        cutoff = datetime.utcnow() - timedelta(days=RETENTION_DAYS)
 
-    result = coll.delete_many({"timestamp": {"$lt": cutoff}})
+        result = coll.delete_many({"timestamp": {"$lt": cutoff}})
 
-    # Log the cleanup action itself
-    coll.insert_one({
-        "timestamp": datetime.utcnow(),
-        "level": "INFO",
-        "module": "log_cleanup_task",
-        "endpoint": None,
-        "user_id": None,
-        "role": "system",
-        "action": "log_cleanup_complete",
-        "deleted_count": result.deleted_count,
-        "details": {
+        # Log the cleanup action itself
+        coll.insert_one({
+            "timestamp": datetime.utcnow(),
+            "level": "INFO",
+            "module": "log_cleanup_task",
+            "endpoint": None,
+            "user_id": None,
+            "role": "system",
+            "action": "log_cleanup_complete",
             "deleted_count": result.deleted_count,
-            "cutoff_date": cutoff.isoformat(),
-            "retention_days": RETENTION_DAYS,
-        },
-        "ip_address": None,
-        "request_id": "log-cleanup",
-        "duration_ms": None,
-    })
+            "details": {
+                "deleted_count": result.deleted_count,
+                "cutoff_date": cutoff.isoformat(),
+                "retention_days": RETENTION_DAYS,
+            },
+            "ip_address": None,
+            "request_id": "log-cleanup",
+            "duration_ms": None,
+        })
 
-    client.close()
-    return {"deleted": result.deleted_count}
+        return {"deleted": result.deleted_count}
+    except Exception as exc:
+        coll.insert_one({
+            "timestamp": datetime.utcnow(),
+            "level": "ERROR",
+            "module": "log_cleanup_task",
+            "endpoint": None,
+            "user_id": None,
+            "role": "system",
+            "action": "log_cleanup_failed",
+            "details": {"error": str(exc), "retention_days": RETENTION_DAYS},
+            "ip_address": None,
+            "request_id": "log-cleanup",
+            "duration_ms": None,
+        })
+        raise
+    finally:
+        client.close()
 

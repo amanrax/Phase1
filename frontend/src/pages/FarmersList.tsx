@@ -245,20 +245,41 @@ interface FarmerCardProps {
 function FarmerCard({ farmer, actioningId, offlineReadOnly, onView, onEdit, onReview, onToggleActive }: FarmerCardProps) {
   const meta    = getStatusMeta(farmer);
   const busy    = actioningId === farmer.farmer_id;
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPhoto = async () => {
+      if (!farmer.photo_file_id) {
+        setPhotoUrl(null);
+        return;
+      }
+
+      const url = await farmerService.getPhotoUrl(farmer);
+      if (!cancelled) {
+        setPhotoUrl(url);
+      }
+    };
+
+    loadPhoto();
+    return () => {
+      cancelled = true;
+    };
+  }, [farmer]);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
       {/* Top row */}
       <div className="flex items-start gap-3 p-4">
-        {farmer.photo_file_id ? (
+        {photoUrl ? (
           <img
-            src={`/api/files/${farmer.photo_file_id}`}
+            src={photoUrl}
             alt={getFarmerName(farmer)}
             className="w-11 h-11 rounded-full object-cover flex-shrink-0 bg-gray-200 dark:bg-gray-700"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden"); }}
           />
         ) : null}
-        <div className={`w-11 h-11 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold text-base flex-shrink-0 ${farmer.photo_file_id ? "hidden" : ""}`}>
+        <div className={`w-11 h-11 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold text-base flex-shrink-0 ${photoUrl ? "hidden" : ""}`}>
           {getFarmerName(farmer)[0]?.toUpperCase() ?? "F"}
         </div>
         <div className="flex-1 min-w-0">
@@ -506,16 +527,20 @@ export default function FarmersList() {
             <button
               onClick={() => { logger.info("FarmersList", "Refresh triggered"); loadFarmers(currentPage, true); }}
               disabled={refreshing || loading}
-              onClick={() => { logger.info("FarmersList", "Navigate: Add Farmer"); navigate("/farmers/create"); }}
-              disabled={!isOnline}
-              className="text-xs font-bold px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition active:scale-95 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              className="text-xs font-bold px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl transition active:scale-95 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span className={refreshing ? "animate-spin block" : "block"}>🔄</span>
             </button>
             <button
               onClick={() => { logger.info("FarmersList", "Navigate: Add Farmer"); navigate("/farmers/create"); }}
-              className="text-xs font-bold px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition active:scale-95 shadow-sm"
+              disabled={!isOnline}
+              className="text-xs font-bold px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition active:scale-95 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
             >
+              + Add
+            </button>
+          </div>
+        </div>
+      </header>
 
       {!isOnline && (
         <div className="mx-auto max-w-4xl mt-3 px-4">
@@ -524,11 +549,6 @@ export default function FarmersList() {
           </div>
         </div>
       )}
-              + Add
-            </button>
-          </div>
-        </div>
-      </header>
 
       <div className="max-w-4xl mx-auto px-4 pt-4 space-y-4">
         {/* Pull-to-refresh indicator */}

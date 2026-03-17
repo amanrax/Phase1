@@ -159,6 +159,8 @@ async def update_farmer_verification_status(
     if not farmer:
         return {"error": "Farmer not found"}
 
+    old_status = farmer.get("verification_status") or farmer.get("registration_status")
+
     update_fields: dict = {
         "verification_status": new_status,
         "updated_at": datetime.utcnow(),

@@ -108,6 +108,16 @@ class IDCardService:
         try:
             from app.tasks.id_card_task import generate_id_card
             generate_id_card.delay(farmer_id)
+            await db.farmers.update_one(
+                {"farmer_id": farmer_id},
+                {
+                    "$set": {
+                        "id_card_status": "queued",
+                        "id_card_error": None,
+                        "updated_at": datetime.utcnow(),
+                    }
+                },
+            )
         except (KombuOperationalError, RedisTimeoutError) as exc:
             logging.exception("Failed to enqueue ID card generation task")
             raise HTTPException(status_code=503, detail="Service unavailable: background queue unreachable")

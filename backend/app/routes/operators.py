@@ -450,9 +450,17 @@ async def get_operator_farmers(
     operator_id: str,
     skip: int = 0,
     limit: int = 50,
-    db=Depends(get_db)
+    db=Depends(get_db),
+    current_user: dict = Depends(require_role([UserRole.ADMIN.value, UserRole.OPERATOR.value])),
 ):
-    cursor = db.farmers.find({"created_by": operator_id}).skip(skip).limit(limit)
+    # Operators can only access their own farmer list.
+    if UserRole.OPERATOR.value in current_user.get("roles", []) and UserRole.ADMIN.value not in current_user.get("roles", []):
+        own_op = await db.operators.find_one({"email": current_user.get("email")}, {"operator_id": 1})
+        if not own_op or own_op.get("operator_id") != operator_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    query = {"$or": [{"created_by": operator_id}, {"operator_id": operator_id}]}
+    cursor = db.farmers.find(query).sort("created_at", -1).skip(skip).limit(limit)
     farmers = await cursor.to_list(length=limit)
     for f in farmers:
         f.pop("_id", None)
