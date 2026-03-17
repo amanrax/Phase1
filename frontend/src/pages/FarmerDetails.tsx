@@ -6,6 +6,7 @@ import { farmerService } from "@/services/farmer.service";
 import { verificationService, type VerificationDocument } from "@/services/verification.service";
 import useAuthStore from "@/store/authStore";
 import { useNotification } from "@/contexts/NotificationContext";
+import api from "@/utils/axios";
 import { logger } from "@/utils/logger";
 import { useFeedback } from "@/utils/feedback";
 
@@ -521,6 +522,35 @@ export default function FarmerDetails() {
     }
   };
 
+  // ─── open verification document (authenticated) ──────────────────────────────
+  const handleViewVerificationDocument = async (doc: VerificationDocument) => {
+    if (!doc.url) {
+      showError("Document URL is missing.", 4000);
+      return;
+    }
+
+    try {
+      let requestPath = doc.url;
+      if (requestPath.startsWith("http")) {
+        requestPath = new URL(requestPath).pathname;
+      }
+      if (requestPath.startsWith("/api/")) {
+        requestPath = requestPath.replace(/^\/api/, "");
+      }
+
+      const response = await api.get(requestPath, { responseType: "blob" });
+      const contentType = response.headers["content-type"] || "application/octet-stream";
+      const fileBlob = new Blob([response.data], { type: contentType });
+      const blobUrl = URL.createObjectURL(fileBlob);
+      window.open(blobUrl, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err);
+      logger.error(COMPONENT, "handleViewVerificationDocument failed", { msg, url: doc.url });
+      showError(msg, 5000);
+    }
+  };
+
   // ─── delete photo ─────────────────────────────────────────────────────────────
   const handleDeletePhoto = () => {
     setConfirm({
@@ -1015,6 +1045,13 @@ export default function FarmerDetails() {
                               {doc.rejection_reason && <p className="text-xs text-red-500 mt-1">Reason: {doc.rejection_reason}</p>}
                             </div>
                             <div className="flex gap-3 flex-shrink-0">
+                              <button
+                                disabled={!doc.url}
+                                onClick={() => handleViewVerificationDocument(doc)}
+                                className="px-4 py-2 min-h-11 text-xs font-bold bg-slate-600 hover:bg-slate-700 text-white rounded-lg disabled:opacity-40 transition"
+                              >
+                                View
+                              </button>
                               <button
                                 disabled={docActing[doc.doc_type] || doc.status === "approved" || doc.status === "verified"}
                                 onClick={async () => {
